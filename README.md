@@ -1,8 +1,12 @@
 <div align="center">
 
-# 🐳 DSH Claude Code Desktop Style
+# 🐳 DSH Claude Desktop Theme — Claude 风格桌面主题
 
-### 为 DeepSeek Harness Desktop 换上 Claude Code Desktop 外观
+### 为 DeepSeek Harness（DSH）Desktop 换上 Claude Code Desktop 外观
+
+**A Claude Code Desktop-style theme plugin for DeepSeek Harness (DSH) Desktop on macOS and Windows.**
+
+Light and dark themes, a compact sidebar, model and reasoning-effort pickers, Markdown styling, and an animated pixel whale.
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License Badge"/>
@@ -15,11 +19,21 @@
 
 ---
 
-紧凑侧栏、统一的新会话页与聊天页、独立的模型与 effort 选择器，跟随宿主的浅色 / 深色主题，首次安装后自动开启。
+`dsh-claude-desktop-theme`（npm 包名：`dsh-ccd-style`）是面向 macOS 与 Windows 的 **DSH Claude 风格主题 / 界面美化插件**。CCD 指 Claude Code Desktop；紧凑侧栏、统一的新会话页与聊天页、独立的模型与推理强度（effort）选择器，跟随宿主的浅色 / 深色主题，首次安装后自动开启。
 
-[安装指南](https://github.com/zkforge/dsh-ccd-style/blob/main/install.md) · [架构说明](https://github.com/zkforge/dsh-ccd-style/blob/main/ARCHITECTURE.md) · [问题反馈](https://github.com/zkforge/dsh-ccd-style/issues)
+[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [架构说明](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
 
 </div>
+
+## Quick install / 快速安装
+
+In DSH Desktop, open the plugin page and add `dsh-ccd-style`, or run:
+
+```sh
+dsh plugin --profile desktop add dsh-ccd-style
+```
+
+Requires DSH Desktop **0.2.0-rc.2**. Reload DSH after installation. See the [installation guide](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) for CLI setup and platform-specific steps.
 
 ## 🌟 核心特性
 
@@ -87,7 +101,7 @@
 
 首次安装后插件自动开启，升级沿用已保存的配置。
 
-终端命令需先注册 `dsh`；应用内添加插件无需注册 CLI。安装后重载 DSH，具体步骤、应用内置 CLI 路径与源码安装见 [安装指南](https://github.com/zkforge/dsh-ccd-style/blob/main/install.md)。
+终端命令需先注册 `dsh`；应用内添加插件无需注册 CLI。安装后重载 DSH，具体步骤、应用内置 CLI 路径与源码安装见 [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
 
 ## ⚙️ 配置
 
@@ -145,10 +159,10 @@ npm run pack:local --cache .cache/npm
 
 </details>
 
-代码结构见 [ARCHITECTURE.md](https://github.com/zkforge/dsh-ccd-style/blob/main/ARCHITECTURE.md)。
+代码结构见 [ARCHITECTURE.md](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md)。
 
 ## 📮 反馈与许可
 
-通过 [Issue](https://github.com/zkforge/dsh-ccd-style/issues) 反馈问题，附上 DSH 版本、窗口尺寸和复现步骤。
+通过 [Issue](https://github.com/zkforge/dsh-claude-desktop-theme/issues) 反馈问题，附上 DSH 版本、窗口尺寸和复现步骤。
 
 [MIT](./LICENSE) © 2026 zkforge。

@@ -2,17 +2,38 @@
   "name": "dsh-ccd-style",
   "version": "0.1.0",
   "license": "MIT",
-  "description": "CCD-style presentation plugin for DeepSeek Harness desktop",
+  "description": "Claude Code Desktop-style theme plugin for DeepSeek Harness (DSH) Desktop on macOS and Windows, with light/dark themes and model/effort pickers",
   "author": "zkforge",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zkforge/dsh-ccd-style.git"
+    "url": "git+https://github.com/zkforge/dsh-claude-desktop-theme.git"
   },
-  "homepage": "https://github.com/zkforge/dsh-ccd-style#readme",
+  "homepage": "https://github.com/zkforge/dsh-claude-desktop-theme#readme",
   "bugs": {
-    "url": "https://github.com/zkforge/dsh-ccd-style/issues"
+    "url": "https://github.com/zkforge/dsh-claude-desktop-theme/issues"
   },
-  "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "desktop", "theme", "ccd"],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-desktop",
+    "deepseek",
+    "deepseek-harness",
+    "claude",
+    "claude-code",
+    "claude-desktop",
+    "claude-code-desktop",
+    "dsh-theme",
+    "desktop-theme",
+    "ui-theme",
+    "theme",
+    "skin",
+    "dark-mode",
+    "light-theme",
+    "macos",
+    "windows",
+    "cordis-plugin",
+    "ccd"
+  ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

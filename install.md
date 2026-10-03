@@ -38,8 +38,8 @@ $ccdApp = if ($env:DSH_CCD_APP) { $env:DSH_CCD_APP } else { Join-Path $env:LOCAL
 ## 从源码安装
 
 ```sh
-git clone https://github.com/zkforge/dsh-ccd-style.git
-cd dsh-ccd-style
+git clone https://github.com/zkforge/dsh-claude-desktop-theme.git
+cd dsh-claude-desktop-theme
 ```
 
 已有仓库时，在当前 checkout 执行对应平台的命令。
