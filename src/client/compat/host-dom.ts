@@ -108,6 +108,18 @@ export const HOST = Object.freeze({
   chatViewColumn: '.icaHSq_column',
   chatViewToBottomSlot: '.icaHSq_toBottomSlot',
   chatViewToBottom: '.icaHSq_toBottom',
+  /**
+   * ConversationRoot.module.css + skeleton/ConversationWidthControls.tsx: the
+   * two transcript-width drag handles, one per side, rendered as the
+   * Conversation body's last child (`data-width-handle="left" | "right"` is the
+   * host's own stable hook on them; the class is hashed). `conversation.css`
+   * hides them: dragging one publishes `--dsh-chat-user-width` on the
+   * Conversation root, and `theme/composer.css` replaces the body rule that is
+   * that property's only consumer, so in this interface the handles carry a
+   * cursor and a hover rule and move nothing. This entry is the pinned record of
+   * what is hidden, and the selector a later build can be re-checked against.
+   */
+  conversationWidthHandle: '.ST7X_W_root [data-width-handle]',
   conversationTabs: '.ST7X_W_tabs',
   conversationTab: '.ST7X_W_tab',
   conversationTabActive: '.ST7X_W_tabActive',

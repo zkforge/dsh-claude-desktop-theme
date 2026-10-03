@@ -9,6 +9,42 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root {
   container: ccd-conversation / inline-size;
 }
 
+/*
+ * Transcript width handles: hidden here, because this interface removed what
+ * they control (17).
+ *
+ * `ui-conversation`'s `ConversationWidthControls` renders one handle per side as
+ * the Conversation body's last child (ConversationRoot.module.css,
+ * `ST7X_W_widthHandle`, stable hook `data-width-handle`; component
+ * `skeleton/ConversationWidthControls.tsx`). Each is a transparent full-height
+ * strip — `position: absolute; top: 0; bottom: 0`, `cursor: col-resize`,
+ * `width: min(10px, (100% - var(--dsh-chat-content-width)) / 2 - 48px)` — parked
+ * 24px outside the transcript column, whose only ink is the 2px rule its own
+ * `::after` reveals on hover or while dragging. Dragging one publishes
+ * `--dsh-chat-user-width` on the Conversation root.
+ *
+ * That property has exactly one consumer in the host, the body rule
+ * `--dsh-chat-content-width: var(--dsh-chat-user-width, clamp(680px, …))`, and
+ * this interface replaces it: `theme/composer.css` pins
+ * `--dsh-chat-content-width: var(--ccd-composer-width)` (770px) on the same
+ * element with higher specificity. A drag therefore changes nothing — not the
+ * transcript column, the user stack, the jump-to-bottom slot or the wide-table
+ * bleed — while the handle keeps its pointer capture, its resize cursor and its
+ * hover rule. It is a false affordance whose state cannot be reached: hiding it
+ * takes away no behaviour, and with the plugin off the host's own rule returns
+ * and the handles drag again.
+ *
+ * `display: none`, not `visibility` or a transparent paint, and scoped to the
+ * Conversation root so `ui-layout`'s real column handles (`_6Qf49G_handle`, 8px,
+ * on the sidebar and rightbar tracks) are never touched. The handle is an
+ * absolutely positioned, empty box outside the body's flex flow, so removing it
+ * cannot move a sibling: transcript width, the scroll viewport's stable
+ * scrollbar gutter and the page's scroll range keep the values they had.
+ */
+html[data-dsh-ccd-style="true"] .ST7X_W_root [data-width-handle] {
+  display: none;
+}
+
 html[data-dsh-ccd-style="true"] .ST7X_W_header {
   background: var(--ccd-canvas);
   color: var(--ccd-text);

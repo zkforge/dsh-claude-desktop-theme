@@ -43,6 +43,21 @@ html[data-dsh-ccd-style="true"] {
      even visible rhythm, and the cluster's last button lands on the row's right
      content edge. */
   --ccd-cluster-gap: 6px;
+  /* Context ring. The host draws it as 14px artwork (`ContextMeter.module.css`:
+     viewBox 0 0 14 14, cx=cy=7, r=5.5, 2px stroke, round cap) inside a 28px
+     trigger with 6px of side padding, so the trigger's own box is 26px and the
+     seat the status bar has to hold for it — that box plus one cluster gap — is
+     32px. The host's ring and this plugin's empty-state ring hang in that one
+     seat, which is what keeps the ring's position and size the same before and
+     after a session has usage. */
+  --ccd-context-ring-size: 14px;
+  --ccd-context-ring-trigger: 26px;
+  --ccd-context-ring-seat: calc(var(--ccd-context-ring-trigger) + var(--ccd-cluster-gap));
+  /* The status bar's own glyph size: the command plus, the permission shield,
+     the statistics readouts and the ring all draw 14px artwork in the 28px
+     control row. The speech-to-text control draws 18px of its own; the composer
+     sheet brings that one down to this size. */
+  --ccd-row-icon-size: 14px;
   --ccd-account-menu-width: 236px;
   --ccd-account-menu-padding: 5px;
   --ccd-account-row-height: 28px;
@@ -154,6 +169,11 @@ html[data-dsh-ccd-style="true"] {
      track underneath stays the host's `--dsw-alias-border-l3`, which
      theme/tokens.ts already overrides. */
   --ccd-context-ring-fill: var(--ccd-accent, #4b76ce);
+  /* The empty state's ring draws the host's track alone. It stays the host's
+     own track token (`ContextMeter.module.css` strokes `.y0jqnG_track` with
+     `--dsw-alias-border-l3`, which theme/tokens.ts already retints), so an
+     empty session shows the same hollow ring the host would draw at 0%. */
+  --ccd-context-ring-track: var(--dsw-alias-border-l3);
 
   /* The plugin's one emphasis blue: the selected check in every Menu surface,
      the context ring, and whatever else has to read as "this one is chosen".
@@ -208,6 +228,15 @@ html[data-dsh-ccd-style="true"] {
   --ccd-icon-terminal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3 4L7 8L3 12' stroke='black'/%3E%3Cpath d='M9 12H13' stroke='black'/%3E%3C/svg%3E");
   --ccd-icon-browser: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M7.99986 14.0887C11.3626 14.0887 14.0886 11.3627 14.0886 7.99998C14.0886 4.63727 11.3626 1.91125 7.99986 1.91125C4.63715 1.91125 1.91113 4.63727 1.91113 7.99998C1.91113 11.3627 4.63715 14.0887 7.99986 14.0887Z' stroke='black'/%3E%3Cpath d='M2.34619 8H13.6538' stroke='black' stroke-linecap='square'/%3E%3Cpath d='M7.99976 14.0889C9.23509 14.0889 10.1743 11.3629 10.1743 8.00006C10.1743 4.63739 9.23509 1.91138 7.99976 1.91138' stroke='black'/%3E%3Cpath d='M7.99973 14.0889C6.76445 14.0889 5.8252 11.3629 5.8252 8.00006C5.8252 4.63739 6.76445 1.91138 7.99973 1.91138' stroke='black'/%3E%3C/svg%3E");
 
+  /* The session menu's own mark, stacked. The host draws
+     `IconEllipsisOutlineRegular` (`ui-primitives`, MIT) as three 2px dots on one
+     horizontal line — circles at (3, 8), (8, 8) and (13, 8) of a 16px box — and
+     the reference stacks them, so this is that same geometry transposed to
+     (8, 3), (8, 8) and (8, 13): one dot size, one 5-unit pitch, one 16px box,
+     carried as a mask over the button's own `currentColor` so the host keeps its
+     button and this interface supplies the mark. */
+  --ccd-icon-more: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8 4C8.55228 4 9 3.55228 9 3C9 2.44772 8.55228 2 8 2C7.44772 2 7 2.44772 7 3C7 3.55228 7.44772 4 8 4Z' fill='black'/%3E%3Cpath d='M8 9C8.55228 9 9 8.55228 9 8C9 7.44772 8.55228 7 8 7C7.44772 7 7 7.44772 7 8C7 8.55228 7.44772 9 8 9Z' fill='black'/%3E%3Cpath d='M8 14C8.55228 14 9 13.55228 9 13C9 12.44772 8.55228 12 8 12C7.44772 12 7 12.44772 7 13C7 13.55228 7.44772 14 8 14Z' fill='black'/%3E%3C/svg%3E");
+
   /* A bare plus, the one glyph the reference repeats on every actionable row.
      It is DSH's own `IconPlusOutlineArtwork` geometry (ui-primitives, MIT): two
      1px strokes across a 16px box, so the plugin can put the same mark on the
@@ -238,6 +267,15 @@ html[data-dsh-ccd-style="true"] {
      (the host's `--dsw-alias-label-tertiary`, the spinner's ink) instead of an
      authored colour. */
   --ccd-icon-session-ring: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='9.5' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
+
+  /* The context ring's track, for the seat an empty session has to fill. The
+     host's own `ContextMeter` returns nothing at all until the token meter knows
+     a numerator and the context window, so the plugin draws that ring's track
+     itself — the host's exact geometry from `ContextMeter.module.css`
+     (viewBox 0 0 14 14, cx=cy=7, r=5.5, 2px stroke) carried as a mask, so the
+     colour stays the host track token above. The consumed arc is not drawn: at
+     0% the host's own arc has no length either. */
+  --ccd-icon-context-ring: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none'%3E%3Ccircle cx='7' cy='7' r='5.5' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
 
   /* The Composer whale. DeepSeek's own mark is a blue whale with a pale belly,
      so the two inks are the brand pair rather than a derived palette step: the
@@ -481,6 +519,31 @@ html[data-dsh-ccd-style="true"] {
 
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-text-strong: #ffffff;
+}
+
+/*
+ * Header icon ink.
+ *
+ * The conversation header's trailing cluster is icon-only — the native session
+ * menu, the two views this plugin adds, the scheduled-tasks entry while it has
+ * records, the collapsed right panel's re-entry control — and the reference
+ * draws those marks at full strength where the host uses its secondary label
+ * grey. Like the chosen-value ink above, this pair answers to no configured
+ * surface, so it is declared here rather than in the scheme blocks: the pure
+ * black the reference measured on the light canvas, and its mirror white on the
+ * dark one, because a black mark would vanish into that canvas.
+ *
+ * What each state puts behind the mark stays the host's: a near-black wash at
+ * 6-14% in the light scheme, a white one at 8-14% in the dark, and the button's
+ * own dimmed opacity while it is disabled — so the ink never meets a fill of its
+ * own lightness (see `header-actions.css`).
+ */
+html[data-dsh-ccd-style="true"] {
+  --ccd-header-icon-color: #000000;
+}
+
+html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
+  --ccd-header-icon-color: #ffffff;
 }
 
 /*

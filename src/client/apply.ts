@@ -8,6 +8,7 @@ import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
+import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { createDomPort } from './compat/dom.ts';
@@ -103,6 +104,13 @@ export function apply(ctx: Context): void {
         scope.add(mountComposerStats(
           document,
           error => logger.error('composer: statistics readout observer failed', error),
+        ));
+        /* The voice seat sits in a different flex container from the permission
+           seat, so its place in the status bar is arranged from the compatibility
+           layer rather than by `order`. */
+        scope.add(mountComposerStatusOrder(
+          document,
+          error => logger.error('composer: status-bar order observer failed', error),
         ));
         scope.add(mountComposerPlaceholder(
           document,

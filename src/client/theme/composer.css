@@ -225,12 +225,20 @@ html[data-dsh-ccd-style="true"] .yhfFVG_tools {
   align-items: center;
 }
 
-/* Statistics cluster: the dock is a sibling of the card inside the Composer root,
-   so it is laid over the tool row's right end instead of taking a line of its
-   own. Every readout keeps its own icon and its click-open detail panel; only
-   the narrow-column labels go. The root becomes the containing block, and the
-   offsets below walk back in from the column edge to the card's own right edge,
-   which the dock cannot see from where it sits. */
+/* Statistics cluster and context ring: the dock is a sibling of the card inside
+   the Composer root, so it is laid over the tool row instead of taking a line of
+   its own. Every readout keeps its own icon and its click-open detail panel;
+   only the narrow-column labels go. The root becomes the containing block, and
+   the offsets below walk back in from the column edge to the card's own right
+   edge, which the dock cannot see from where it sits.
+
+   The dock now owns the row's *last* seat rather than the one before the model:
+   the statistics cluster still stops one cluster gap short of the trailing
+   group, and the context ring hangs past it, on the row's right content edge.
+   Both offsets are built from `--ccd-ring-offset` — the trailing cluster's live
+   width, one cluster gap and the ring's own seat — so the ring lands on that
+   edge whatever the cluster measures, and the trailing group's `margin-right`
+   below keeps the model/effort pair clear of it. */
 html[data-dsh-ccd-style="true"] .yhfFVG_root {
   position: relative;
   container: ccd-composer / inline-size;
@@ -238,15 +246,80 @@ html[data-dsh-ccd-style="true"] .yhfFVG_root {
 
 html[data-dsh-ccd-style="true"] .yhfFVG_dock {
   position: absolute;
-  /* Before the model selector, which stays the row's last in-flow control. */
+  --ccd-ring-offset: calc(var(--ccd-trailing-width, 120px) + var(--ccd-cluster-gap)
+    + var(--ccd-context-ring-seat));
   right: calc((100% - min(100% - 32px, var(--ccd-composer-width))) / 2
-    + var(--ccd-composer-row-inset) + var(--ccd-trailing-width, 120px) + var(--ccd-cluster-gap));
+    + var(--ccd-composer-row-inset) + var(--ccd-ring-offset));
   bottom: var(--ccd-composer-bottom-gap);
   height: var(--ccd-control-row-height);
+  /* Never measure narrower than the ring's own trigger box: compat/stats-values.ts
+     subtracts this dock from the model's budget, and an empty dock would
+     otherwise hand the model the ring's seat as well. */
+  min-width: var(--ccd-context-ring-trigger);
   padding: 0;
   gap: var(--ccd-cluster-gap);
   align-items: center;
   justify-content: flex-end;
+  /* The box is an overlay: only its occupants take pointer input, so an empty
+     dock never shadows the row underneath. */
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_dock > * {
+  pointer-events: auto;
+}
+
+/* The context ring's seat: the status bar's last one, where the voice control
+   used to sit. The ring is the host's own element — `ContextMeter` renders
+   `span.y0jqnG_root` as the dock's last child — and is placed rather than
+   re-parented: the host unmounts that ring whenever the voice control expands,
+   and React would then remove it from a parent it no longer belongs to. The
+   plugin's empty-state ring below shares this box exactly, so a session gaining
+   its first tokens hands the seat over without moving or resizing anything. */
+html[data-dsh-ccd-style="true"] .yhfFVG_dock > .y0jqnG_root,
+html[data-dsh-ccd-style="true"] .yhfFVG_dock::after {
+  position: absolute;
+  right: calc(-1 * var(--ccd-ring-offset));
+  top: 0;
+  width: var(--ccd-context-ring-trigger);
+  height: var(--ccd-control-row-height);
+  flex: none;
+}
+
+/* A session with no usage renders no `ContextMeter` at all: the component
+   returns null until the token meter knows both a numerator and the context
+   window, so the empty state is not something the host hides — there is nothing
+   to show. This draws the ring's own track in the seat above, at the host's own
+   geometry (`ContextMeter.module.css`: 14px box, r 5.5, 2px stroke), and
+   withdraws the moment the host's ring exists or the voice control's capture row
+   takes the bar — exactly the states in which the host unmounts its own ring. */
+html[data-dsh-ccd-style="true"] .yhfFVG_dock::after {
+  content: "";
+  background-color: var(--ccd-context-ring-track);
+  mask: var(--ccd-icon-context-ring) center / var(--ccd-context-ring-size) var(--ccd-context-ring-size) no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_dock:has(.y0jqnG_root)::after,
+html[data-dsh-ccd-style="true"] .yhfFVG_root:has(.yhfFVG_trailingActive) .yhfFVG_dock::after {
+  content: none;
+}
+
+/* The trailing cluster stops one ring seat short of the row's right content
+   edge, so the model/effort pair never lands under the ring. While the voice
+   control's capture row owns the bar the ring is unmounted and the seat is given
+   back, leaving the host's own capture layout whole. */
+html[data-dsh-ccd-style="true"] .yhfFVG_trailing {
+  margin-right: var(--ccd-context-ring-seat);
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_root:has(.yhfFVG_trailingActive) .yhfFVG_trailing {
+  margin-right: 0;
+}
+
+/* The host hides a hero-phase dock that has nothing in it; the ring's seat is
+   drawn through a pseudo-element, which `:empty` does not see. */
+html[data-dsh-ccd-style="true"] .yhfFVG_hero .yhfFVG_dock:empty {
+  display: flex;
 }
 
 /*
@@ -262,14 +335,39 @@ html[data-dsh-ccd-style="true"] .yhfFVG_dock {
  * 12px off the row's right content edge. Hiding the empty wrapper moves the pair
  * (and, through `--ccd-trailing-width`, the whole cluster) back onto that edge.
  * An expanded activity control carries the other class and keeps its seat.
+ *
+ * The control itself no longer lives in this group: flex `order` cannot cross
+ * the two containers, so compat/composer-status-order.ts moves the seat into the
+ * leading group's modes cluster, immediately after the permission control. The
+ * same empty-seat rule is repeated for that parent below.
  */
 html[data-dsh-ccd-style="true"] .yhfFVG_trailing,
 html[data-dsh-ccd-style="true"] .yhfFVG_standardControls {
   gap: var(--ccd-cluster-gap);
 }
 
-html[data-dsh-ccd-style="true"] .yhfFVG_trailing > .yhfFVG_activity:not(:has(> :not([data-slot]))):not(:has([data-slot] > *)) {
+html[data-dsh-ccd-style="true"] .yhfFVG_trailing > .yhfFVG_activity:not(:has(> :not([data-slot]))):not(:has([data-slot] > *)),
+html[data-dsh-ccd-style="true"] .yhfFVG_modes > .yhfFVG_activity:not(:has(> :not([data-slot]))):not(:has([data-slot] > *)) {
   display: none;
+}
+
+/* Voice input. The glyph is addressed through the control's own slot outlet —
+   the one stable name the seat has — so its size holds whether the seat still
+   sits in the trailing group or already beside the permission control, which is
+   where compat/composer-status-order.ts moves it; the `data-ccd-voice-seat` mark
+   that module leaves on a relocated seat is what the placement rule reads. The
+   host draws the microphone at 18px, while every other glyph in the status bar
+   (command plus, permission shield, statistics readouts) is 14px artwork in the
+   same 28px box, so the mic takes that size and stays centred in its unchanged
+   hit box. Only `button > svg` is resized: the recording row's waveform is a
+   direct child of its own row and keeps the host's sizing. */
+html[data-dsh-ccd-style="true"] .yhfFVG_modes > [data-ccd-voice-seat] {
+  align-items: center;
+}
+
+html[data-dsh-ccd-style="true"] [data-slot="conversation.input.activity"] button > svg {
+  width: var(--ccd-row-icon-size);
+  height: var(--ccd-row-icon-size);
 }
 
 html[data-dsh-ccd-style="true"] .OpZ85W_root {
@@ -308,9 +406,13 @@ html[data-dsh-ccd-style="true"] .OpZ85W_pill::after {
   }
 }
 
-/* The context ring keeps its percentage: that is already one number. */
+/* The ring carries no reading: the arc is the reading. The host's own text
+   (`span` inside the trigger) goes, while the trigger keeps its box so the
+   seat's geometry is unchanged. The hover panel keeps its numbers, and the
+   accessible name keeps its wording — compat/composer-status-order.ts strips
+   only the percentage from that. */
 html[data-dsh-ccd-style="true"] .y0jqnG_trigger > span {
-  font-variant-numeric: tabular-nums;
+  display: none;
 }
 
 /* The consumed arc is the one reading this control exists to show, so it takes
@@ -335,6 +437,13 @@ html[data-dsh-ccd-style="true"] .y0jqnG_fill {
   html[data-dsh-ccd-style="true"] .OpZ85W_pill,
   html[data-dsh-ccd-style="true"] .y0jqnG_trigger {
     padding-inline: 4px;
+  }
+
+  /* The ring's trigger keeps its 28px height but drops 4px of side padding
+     here, so the seat it occupies is 22px wide; the empty-state ring follows it
+     (the seat the row reserves stays the authored 32px, a hair generous). */
+  html[data-dsh-ccd-style="true"] .yhfFVG_dock {
+    --ccd-context-ring-trigger: 22px;
   }
 }
 

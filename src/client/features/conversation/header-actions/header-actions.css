@@ -1,11 +1,19 @@
 /*
- * The two right-panel views this plugin adds to the conversation header.
+ * The conversation header's trailing cluster: the two right-panel views this
+ * plugin adds, plus the reference's own two adaptations to the host controls of
+ * the same row (issue 16).
  *
- * Their 28px box, hover surface, spacing and compact width all come from the
- * cluster rules in `features/conversation/conversation.css`, so these buttons
- * sit in exactly the same rhythm as the native open / menu / corner controls.
- * Only the artwork is declared here: masks over DSH's own 16px glyph geometry,
+ * The views' 28px box, hover surface, spacing and compact width all come from
+ * the cluster rules in `features/conversation/conversation.css`, so these
+ * buttons sit in exactly the same rhythm as the native controls beside them.
+ * Their artwork is declared here: masks over DSH's own 16px glyph geometry,
  * taken from the packages that draw them (see theme/tokens.css).
+ *
+ * The host classes named below are the pinned ones of `compat/host-dom.ts`:
+ * `ST7X_W_` for the header and its two trailing seats, `iq4beG_` for the
+ * open-in-app control (`openTargetAnchor`／`openTargetSplit`) and `Da3aKq_` for
+ * the native session menu (`sessionMoreButton`). `compat/dom.ts` rewrites each
+ * prefix for the build actually on screen, through `compat/host-builds.ts`.
  */
 .ccd-header-action {
   display: inline-flex;
@@ -14,14 +22,16 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ccd-text-secondary);
+  color: var(--ccd-header-icon-color);
   cursor: pointer;
 }
 
+/* The hover/focus signal is the host's own fill; the ink keeps its full
+   strength in every state, exactly as the native ghost buttons beside this one
+   behave. */
 .ccd-header-action:hover:not(:disabled),
 .ccd-header-action:focus-visible {
   background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--ccd-text);
 }
 
 .ccd-header-action:disabled {
@@ -39,4 +49,89 @@
 
 .ccd-header-action[data-ccd-header-view="browser"]::before {
   mask-image: var(--ccd-icon-browser);
+}
+
+/*
+ * The header's own open-in-app control is retired here (16).
+ *
+ * `ui-open-in-app` registers `open-in-app` into
+ * `conversation.session.header.utilities` at order -10, so its split box is the
+ * first control of that group; in the DOM it is the `Menu` primitive's anchor
+ * wrapper span (`iq4beG_menuAnchor`) wrapped around the `iq4beG_split` box with
+ * its `iq4beG_main` and `iq4beG_chevron` halves. This plugin used to repaint
+ * that box as one generic "open" glyph; the feature moves elsewhere, so the
+ * wrapper goes instead.
+ *
+ * Scoped to the header's utilities seat: the same package's entries in the
+ * right panel (`sidebar.right.tab.files.actions`, the document viewer's own
+ * `sidebar.right.tab.document.actions` and its unpreviewable seat) keep their
+ * control untouched. The wrapper is the flex item — the slot seat around it is
+ * `display: contents` — so taking it out of the box tree takes the whole split
+ * box with it, leaves the group's own `gap` measured between the controls that
+ * remain (no empty cell to compensate, no padding to trim) and keeps both halves
+ * out of the tab order. The width it used to hold is absorbed by the flexible
+ * gap ahead of the group, so the row still ends on the same trailing inset.
+ */
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .iq4beG_menuAnchor {
+  display: none;
+}
+
+/*
+ * One ink for the trailing cluster (16).
+ *
+ * Every control in the utilities and corner seats is an icon-only ghost button:
+ * the native session menu (`Da3aKq_moreButton`, the "More actions" menu), the
+ * two views this plugin adds, the collapsed right panel's re-entry control and
+ * the scheduled-tasks entry while a Session has records. The host paints each
+ * with its own secondary label grey; the reference draws them at full strength,
+ * so the cluster takes one token — pure black on the light canvas, its white
+ * mirror on the dark one (theme/tokens.css) — and every state the host owns
+ * stays its own.
+ *
+ * The seat is named in the selector rather than only the group:
+ * `conversation.css` paints this group's buttons with the secondary ink as well,
+ * and that sheet mounts after this one, so an equal-specificity rule here would
+ * lose the cascade. Naming the seat lifts this above it without `!important`,
+ * and keeps the reach at controls: the header's text, its View switcher and the
+ * leading Agent-preset／team chrome are not in these two seats.
+ *
+ * Naming the button and its `svg` covers both a glyph that inherits
+ * `currentColor` (the session menu's ellipsis) and one a later build might paint
+ * with a fill of its own. Hover, active and keyboard focus keep the host's
+ * translucent fills, disabled keeps the button's own dimmed opacity, so this ink
+ * never lands on a fill of its own lightness.
+ */
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button,
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button svg,
+html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner > [data-slot] button,
+html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner > [data-slot] button svg {
+  color: var(--ccd-header-icon-color);
+}
+
+/*
+ * The session menu's mark, stacked (16).
+ *
+ * The host draws `IconEllipsisOutlineRegular` (`ui-primitives`, MIT) as three
+ * 2px dots on one horizontal line — circles at (3, 8), (8, 8) and (13, 8) of
+ * its 16px box. The reference stacks them, so the host's own glyph steps aside
+ * and the same geometry, transposed to (8, 3), (8, 8) and (8, 13), is painted as
+ * a mask over the button's `currentColor` (theme/tokens.css, `--ccd-icon-more`).
+ *
+ * Nothing else about the control moves: the button keeps the cluster's box and
+ * its zeroed padding, so the hit area, the `aria-haspopup` menu and the click
+ * handler stay the host's own; the mark is centred by the primitive's own
+ * `inline-flex` centring, takes the ink above in every state and dims with the
+ * button's disabled opacity. A mask repaints rather than rotates, so there is no
+ * transform here for `prefers-reduced-motion` to answer.
+ */
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton svg {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton::before {
+  content: "";
+  width: var(--ccd-header-icon-size);
+  height: var(--ccd-header-icon-size);
+  background-color: currentColor;
+  mask: var(--ccd-icon-more) center / var(--ccd-header-icon-size) var(--ccd-header-icon-size) no-repeat;
 }
