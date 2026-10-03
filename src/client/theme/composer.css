@@ -313,6 +313,18 @@ html[data-dsh-ccd-style="true"] .y0jqnG_trigger > span {
   font-variant-numeric: tabular-nums;
 }
 
+/* The consumed arc is the one reading this control exists to show, so it takes
+   the interface's accent blue instead of the host's tertiary label grey, which
+   painted it the same ink as the percentage beside it. Only the colour moves:
+   the host's 14px box, 2px stroke and round cap are untouched, and the track
+   underneath keeps `--dsw-alias-border-l3` (already a theme override), so the
+   two arcs stay clearly apart. The blue holds at every percentage — the
+   reference draws no warning step, and a hue that changed near the limit would
+   leave the ring's own reading ambiguous. */
+html[data-dsh-ccd-style="true"] .y0jqnG_fill {
+  stroke: var(--ccd-context-ring-fill);
+}
+
 /* Narrow columns abbreviate the actionable permission control, retaining the
    model's name and effort according to the measured space above. */
 @container ccd-composer (max-width: 560px) {
@@ -380,4 +392,35 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace:hover:not(:disabled),
 html[data-dsh-ccd-style="true"] .bocITq_workspace[aria-expanded="true"] {
   background: var(--ccd-hover);
   color: var(--ccd-text);
+}
+
+/* Workspace picker menu. The chip above opens a card whose rows are the
+   workspaces, and DSH gives each of them a folder glyph in the Menu
+   primitive's icon seat; the reference draws those rows as text alone. The chip
+   reports `aria-expanded` while that card is open — the empty Composer card
+   opens the same picker from the same state — so the guard reaches the
+   portalled menu and nothing else: the model, permission and session-… menus
+   never sit in it.
+
+   The card keeps its rows in two direct child groups: the scrolling `.viewport`
+   holds the workspaces, and the `.footer` pinned below it holds the add row.
+   Both groups render their rows through the Menu primitive's one entry
+   renderer, so the plus is the same seat as the folders — a 14px `.itemIcon`
+   (`ui-primitives/lib/Menu.js`, which the web frontend ships as `_4ub78_`) —
+   and a rule that names both groups reaches it.
+
+   The seat is removed, not reserved: out of the flex line it leaves neither
+   itself nor the row's 6px gap behind, so the label falls back to the row's own
+   8px start padding inside the card's 4px — 12px from the card's left edge, and
+   the same x on every row of the card, the workspaces, the add row and the
+   selected row alike, because none of them leads with anything else and nothing
+   compensates for what the seat held. The card takes those 20px back with it:
+   it is shrink-to-fit, sized by its widest row's measure, and the reference
+   draws the rows as text alone. The trailing check is an `svg` the row renders
+   beside its label rather than inside a seat, so it stays where it was. */
+html[data-dsh-ccd-style="true"]:has(.bocITq_workspace[aria-expanded="true"])
+  [role="menu"] > ._viewport_4ub78_19 > ._itemWrap_4ub78_90 > ._item_4ub78_90 > ._itemIcon_4ub78_148,
+html[data-dsh-ccd-style="true"]:has(.bocITq_workspace[aria-expanded="true"])
+  [role="menu"] > ._footer_4ub78_62 > ._itemWrap_4ub78_90 > ._item_4ub78_90 > ._itemIcon_4ub78_148 {
+  display: none;
 }

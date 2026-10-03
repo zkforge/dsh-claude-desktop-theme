@@ -8,6 +8,7 @@ import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
+import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { createDomPort } from './compat/dom.ts';
 import { CleanupScope } from './core/cleanup.ts';
@@ -106,6 +107,12 @@ export function apply(ctx: Context): void {
         scope.add(mountComposerPlaceholder(
           document,
           error => logger.error('composer: placeholder observer failed', error),
+        ));
+        /* The workspace picker's labels come from the host's own locale namespace,
+           so the typed ellipsis is rewritten in the rendered text nodes instead. */
+        scope.add(mountWorkspaceMenu(
+          document,
+          error => logger.error('workspace menu: label rewrite failed', error),
         ));
         if (next.features.conversation) {
           /* The header cluster's open control is host-rendered, so its mode and

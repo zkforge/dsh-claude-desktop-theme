@@ -32,15 +32,37 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-menu] {
   border-radius: var(--ccd-radius-panel);
 }
 
-/* The account header the reference shows above the rows. */
+/* The account header the reference shows above the rows.
+ *
+ * The name sits on the row icon's own left edge rather than on the rows' text
+ * edge: the card's first column is the icon seat, and both the row icons and
+ * this line start it. A row starts its content at its own padding, a fixed
+ * distance from the card edge (the `padding: 0 10px` on the row rule below,
+ * which the card's own padding sits outside of), so the header takes that same
+ * inline padding and the two left edges stay one line. The vertical padding is
+ * deliberately left alone: the name's top and bottom whitespace and the card's
+ * height depend on it, and the alignment is horizontal.
+ *
+ * The property holds one *quoted* CSS string token (`compat/account-menu.ts`
+ * `accountNameToken`), and the fallback is a quoted string for the same reason:
+ * `content` takes no bare word, and a value that is not one `<string>` is
+ * invalid at computed-value time, which computes to `none` on `::before` and
+ * drops this whole line — padding included. */
 html[data-dsh-ccd-style="true"] [data-ccd-account-menu]::before {
   content: var(--ccd-account-name, "");
   display: block;
-  padding: 4px 8px 8px;
+  padding: 4px 10px 8px;
   color: var(--ccd-text-muted);
   font-size: var(--ccd-font-size-muted);
   font-weight: 400;
   line-height: 18px;
+  /* The header is painted content, not an element the host lays text into, so
+     the trigger's own ellipsis never reaches it: without these the name runs
+     out of the card and the window edge cuts it. Keep it on the header's one
+     line and let the long end ellipsize, as the trigger's own label does. */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-menu] [role="menuitem"] {

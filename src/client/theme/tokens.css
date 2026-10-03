@@ -97,6 +97,15 @@ html[data-dsh-ccd-style="true"] {
      at full black, so the stack reads as one current entry plus quieter
      neighbours instead of three equally loud labels. */
   --ccd-text-nav: #4a4a47;
+  /* Archived Session row. The host fades that title with its own caption ink,
+     but this plugin's row ink outranks the host pair, so the state needs a step
+     of its own: one above --ccd-text-muted on the same warm ramp, which is the
+     faded row the reference draws while still reading against the sidebar. A row
+     that is current or under the pointer takes the second value, because the
+     hover and selected fills sit a step below the sidebar the first one was
+     measured on. */
+  --ccd-text-archived: #a0a09b;
+  --ccd-text-archived-hover: #8a8a85;
 
   /* New-session statistics card. The reference panel is a stacked translucent
      grey: the card is 5% black over the canvas and a stat tile (and an empty
@@ -135,6 +144,24 @@ html[data-dsh-ccd-style="true"] {
   --ccd-inline-code-text: #b63630;
   --ccd-inline-code-fill: #f1f1f0;
   --ccd-inline-code-border: #e2e2e0;
+
+  /* Context meter. The host paints the ring's consumed arc with the same
+     tertiary label grey as the percentage beside it, so the reading carries no
+     weight. The accent blue is this plugin's one emphasis colour: taking it
+     through `var()` lets the ring follow `--ccd-accent` the moment that token
+     exists, and the fallback is the blue measured off the target arc
+     (docs/issues/img/12-2.png), so the ring is never left grey meanwhile. The
+     track underneath stays the host's `--dsw-alias-border-l3`, which
+     theme/tokens.ts already overrides. */
+  --ccd-context-ring-fill: var(--ccd-accent, #4b76ce);
+
+  /* The plugin's one emphasis blue: the selected check in every Menu surface,
+     the context ring, and whatever else has to read as "this one is chosen".
+     It is the blue measured off the reference check mark
+     (docs/issues/img/01-3.png: the stroke's own pixels are #4b76d0/#507ad2, so
+     the token takes the darker mode) and shares the stats heat ramp's hue
+     family (hsl(217 …)), which keeps every blue in the interface one voice. */
+  --ccd-accent: #4b76ce;
 
   /* State colours that DSH already owns semantics for. */
   --ccd-diff-added: #508c48;
@@ -193,6 +220,24 @@ html[data-dsh-ccd-style="true"] {
      (ui-primitives, MIT). It is painted over the host's mark slot, so the host's
      own `arrowOpen` state still drives the quarter turn. */
   --ccd-icon-chevron-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M6 12L9.29289 8.70711C9.68342 8.31658 9.68342 7.68342 9.29289 7.29289L6 4' stroke='black'/%3E%3C/svg%3E");
+
+  /* The archived Session row's leading mark. The host deliberately leaves that
+     16px cell empty, so the plugin paints the same geometry itself: DSH's own
+     `IconArchiveOutlineRegular` artwork (ui-primitives, MIT) — a lid, a body and
+     a handle drawn with 1px strokes — carried as a mask like the marks around
+     it, so no third-party asset or copied component enters the stylesheet. */
+  --ccd-icon-archive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M13.5 2.5H2.5C1.94772 2.5 1.5 2.94772 1.5 3.5V4.5C1.5 5.05228 1.94772 5.5 2.5 5.5H13.5C14.0523 5.5 14.5 5.05228 14.5 4.5V3.5C14.5 2.94772 14.0523 2.5 13.5 2.5Z' stroke='black'/%3E%3Cpath d='M2.5 5.5V13.5C2.5 13.7652 2.60536 14.0196 2.79289 14.2071C2.98043 14.3946 3.23478 14.5 3.5 14.5H12.5C12.7652 14.5 13.0196 14.3946 13.2071 14.2071C13.3946 14.0196 13.5 13.7652 13.5 13.5V5.5' stroke='black'/%3E%3Cpath d='M6.5 9.5H9.5' stroke='black'/%3E%3C/svg%3E");
+
+  /* The idle Session row's leading ring. The host hands that cell to the
+     plugin's `sidebar.session.row.leading` seat as soon as a row has no status
+     of its own, and the running row's activity ring is `ui-primitives`'
+     StateDot spinner: a 2-unit stroke on a 9.5-unit radius in a 24-unit box.
+     The same circle is carried here as a mask, so the still mark and the
+     spinning one are one geometry at the one 8px scale the stylesheet already
+     gives the spinner — and the ring takes the cell's own `currentColor`
+     (the host's `--dsw-alias-label-tertiary`, the spinner's ink) instead of an
+     authored colour. */
+  --ccd-icon-session-ring: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='9.5' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
 
   /* The Composer whale. DeepSeek's own mark is a blue whale with a pale belly,
      so the two inks are the brand pair rather than a derived palette step: the
@@ -254,6 +299,10 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
      the same distance below --ccd-text as #4a4a47 sits below #1f1f1d. */
   --ccd-text-nav: #d3d0ca;
   --ccd-text-placeholder: #8b8983;
+  /* Archived rows, dark side: the same two steps below the row ink, kept
+     readable against this sidebar and the selected fill that sits above it. */
+  --ccd-text-archived: #82807c;
+  --ccd-text-archived-hover: #a6a39c;
 
   /* Composer whale, dark side: the same mark, with the blue raised so it reads
      against this canvas; the belly keeps the light ink. */
@@ -288,6 +337,19 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-inline-code-text: #f0918a;
   --ccd-inline-code-fill: #35332f;
   --ccd-inline-code-border: #454239;
+
+  /* Context meter ring, dark side: the same hue as the light accent, one step
+     up in lightness (55% → 68%) and saturation so the arc keeps its blue on
+     this canvas instead of greying into it. Same `var()` order as the light
+     block. */
+  --ccd-context-ring-fill: var(--ccd-accent, #789be3);
+
+  /* The accent, dark side: the same hue and the same 55% → 68% lightness step
+     the statistics heat ramp takes on this canvas, so the check keeps its blue
+     against the menu's surface instead of sinking into it. The hue is the
+     reference's measured blue (220) rather than the ramp's 217, but the two sit
+     in one family. */
+  --ccd-accent: #789be3;
 
   /* State colours that DSH already owns semantics for. */
   --ccd-diff-added: #7cbd72;
@@ -419,4 +481,76 @@ html[data-dsh-ccd-style="true"] {
 
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-text-strong: #ffffff;
+}
+
+/*
+ * The selected check in every Menu surface.
+ *
+ * The host paints it with `--dsw-alias-label-primary` in the Menu primitive's
+ * own `Menu.module.css` (`.check`), so the workspace picker, the permission
+ * menu, the view-options menu and the session ⋯ menu all show the same
+ * near-black mark — a selection reads no louder than the label beside it. One
+ * rule recolours all of them, because they all come from that one primitive.
+ * The model picker is not one of them: it is this plugin's own card, and the
+ * block at the end of this file is the rule that reaches its mark.
+ *
+ * Only the colour changes: the mark keeps the host's 14px seat, its
+ * `display: grid` centring, its row height and every hover fill. The class is
+ * the one the shipped static web frontend gives that module (`_4ub78_`, whose
+ * local names run `_check_4ub78_179`, `_item_4ub78_90`, …), and that asset is
+ * platform-independent — both installers carry the identical
+ * `@deepseek-ai/dsh-web-frontend` dist — so it is the same name on Windows and
+ * needs no second spelling in `host-builds.ts` (`host-dom.ts` records the same
+ * prefix).
+ *
+ * The rule covers the seat and its artwork: the svg inherits through
+ * `currentColor`, and naming it as well keeps the mark blue even if a future
+ * build moves the colour onto the artwork instead of the seat.
+ */
+html[data-dsh-ccd-style="true"] [role="menu"] ._check_4ub78_179,
+html[data-dsh-ccd-style="true"] [role="menuitem"] ._check_4ub78_179,
+html[data-dsh-ccd-style="true"] [role="menu"] ._check_4ub78_179 svg,
+html[data-dsh-ccd-style="true"] [role="menuitem"] ._check_4ub78_179 svg {
+  color: var(--ccd-accent);
+}
+
+/*
+ * The selected mark in the model picker.
+ *
+ * The Composer's model seat is not the host's `ModelSelect`: this plugin's
+ * `ModelControls` wins `conversation.input.model` (its registration carries
+ * `priority: -10` while the host registers the same seat at the default 0, and
+ * the slot chain takes the lowest priority that answers), and the card that
+ * seat opens marks the chosen model with the text `✓` in the row's trailing
+ * `span[aria-hidden="true"]` (`features/model-controls/ModelControls.tsx`).
+ * `features/model-controls/controls.css` paints that row `--ccd-text-strong`,
+ * so the mark inherits full black — which is exactly what it did: it is
+ * neither `._check_4ub78_179` nor an svg, so the Menu rule above cannot reach
+ * it, and no `fill`/`stroke` override would either, because a text glyph is
+ * painted by `color` alone.
+ *
+ * Only the ink changes: the row keeps its height, padding and hover, and the
+ * artwork is named beside the seat so a later icon in the same seat stays
+ * covered. The seat is reached two ways — the row's own selected state
+ * (`aria-pressed`, which React writes as `"true"`/`"false"`) and the seat that
+ * actually holds a glyph (`:not(:empty)`, because the unchosen rows render an
+ * empty span) — so a later switch to `aria-checked` on a `menuitemradio` row
+ * cannot silently return this mark to black.
+ *
+ * The host's own `ModelSelect` card is covered as well, for the path where
+ * that seat is the one on screen: its `.check` seat holds an svg whose path
+ * strokes `currentColor` (ui-primitives `IconCheckOutlineArtwork`), so the
+ * same `color` reaches the artwork. `cl2Rlq_` is already in the prefix table
+ * (`compat/host-dom.ts`), and the Windows build's `wq12jW_` spelling is what
+ * `compat/dom.ts` substitutes when this sheet is mounted.
+ */
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button[aria-pressed="true"] > span[aria-hidden="true"],
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button[aria-pressed="true"] > span[aria-hidden="true"] svg,
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button > span[aria-hidden="true"]:not(:empty),
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button > span[aria-hidden="true"]:not(:empty) svg,
+html[data-dsh-ccd-style="true"] [role="menu"] .cl2Rlq_check,
+html[data-dsh-ccd-style="true"] [role="menuitemradio"] .cl2Rlq_check,
+html[data-dsh-ccd-style="true"] [role="menu"] .cl2Rlq_check svg,
+html[data-dsh-ccd-style="true"] [role="menuitemradio"] .cl2Rlq_check svg {
+  color: var(--ccd-accent);
 }

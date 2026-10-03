@@ -4,8 +4,49 @@ import { hostSelectors } from './host-dom.ts';
 /** Marks the portalled account menu for the stylesheet. */
 export const ACCOUNT_MENU_ATTRIBUTE = 'data-ccd-account-menu';
 
-/** Custom property carrying the signed-in name shown as the menu header. */
+/**
+ * Custom property carrying the signed-in name shown as the menu header.
+ *
+ * The value is one *quoted* CSS string token (`accountNameToken`); the
+ * stylesheet paints it with `content: var(--ccd-account-name, "")`.
+ */
 export const ACCOUNT_NAME_PROPERTY = '--ccd-account-name';
+
+/**
+ * One account name as a complete CSS string token.
+ *
+ * The quotes are part of the value, not decoration: `content` has no production
+ * that takes a bare word, so after `var()` substitution the value is matched
+ * against the property's grammar, and a name that is not exactly one `<string>`
+ * leaves the declaration invalid at computed-value time. `content` is not
+ * inherited, so that behaves as `unset` — the initial `normal`, which computes
+ * to `none` on `::before`. The pseudo-element is then never generated, and the
+ * header disappears whole, its padding with it. CSS's own custom-property
+ * examples keep the quotes for the same reason (`--external-link: "external
+ * link"` feeding `content: " (" var(--external-link) ")"`).
+ *
+ * Inside the quotes a name travels as written, except for the three things CSS
+ * string syntax cannot carry raw: the quote and the backslash take a preceding
+ * backslash, and a control character takes a hex escape padded to six digits
+ * followed by one space (`\00000a `) — the form CSS serializes strings in. That
+ * space terminates the escape while the value is tokenized, so it is consumed
+ * rather than painted, and the six digits leave no room for a hex digit of the
+ * following character to be swallowed by the escape.
+ *
+ * @param name - the signed-in name as read from the trigger.
+ * @returns the name as one quoted CSS string token for the custom property.
+ */
+export function accountNameToken(name: string): string {
+  let token = '"';
+  for (const character of name) {
+    /* Astral characters arrive as one pair and are painted as they stand. */
+    const code = character.codePointAt(0) ?? 0;
+    if (character === '"' || character === '\\') token += `\\${character}`;
+    else if (code < 0x20 || code === 0x7f) token += `\\${code.toString(16).padStart(6, '0')} `;
+    else token += character;
+  }
+  return `${token}"`;
+}
 
 /**
  * The reference draws the signed-in account menu as a card whose first block is
@@ -51,8 +92,9 @@ export function mountAccountMenu(document: Document, report: (error: unknown) =>
     if (target === null) return;
     const name = trigger?.querySelector(host.accountLabel)?.textContent?.trim() ?? '';
     target.setAttribute(ACCOUNT_MENU_ATTRIBUTE, '');
-    /* A quoted CSS string, so a name with spaces or quotes stays one token. */
-    target.style.setProperty(ACCOUNT_NAME_PROPERTY, JSON.stringify(name));
+    /* The stylesheet reads this back as `content`, so it is written as one
+       *quoted* CSS string token even when the name carries spaces or quotes. */
+    target.style.setProperty(ACCOUNT_NAME_PROPERTY, accountNameToken(name));
     marked.add(target);
   };
 

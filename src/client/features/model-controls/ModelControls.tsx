@@ -3,7 +3,7 @@ import type { ModelSelectInjected } from '@deepseek-ai/dsh-client-ui-model-selec
 import type { ModelDirectoryState } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
 import type { ModelSelection } from '@deepseek-ai/dsh-api-session-controller/types';
-import { effortChoices, modelSelection } from './selection.ts';
+import { effortView, modelSelection } from './selection.ts';
 import { EffortPanel } from './EffortPanel.tsx';
 import { usePopup } from './popup.ts';
 
@@ -25,11 +25,16 @@ export function ModelControls({ locked, available, useDirectory, load, select, s
   const disabled = locked || !available || busy;
   const current = state.current;
   const model = state.groups.find(group => group.id === current?.provider)?.models.find(model => model.id === current?.model);
-  const choices = useMemo(() => effortChoices(model, t('effort.providerDefault')), [model, t]);
-  const effort = current?.reasoningEffort ?? model?.reasoning?.defaultEffort;
-  const selected = choices.findIndex(choice => choice.id === effort);
-  const previewIndex = selected < 0 ? Math.max(0, choices.findIndex(choice => choice.id === model?.reasoning?.defaultEffort)) : selected;
-  const effortName = choices[selected]?.name ?? state.retainedEffort ?? effort;
+  const view = useMemo(() => effortView(model, current, {
+    /* The host wording is read only where the catalog advertises no tier to
+       name: the trigger then falls back to it and stays disabled. */
+    defaultName: t('effort.providerDefault'),
+    retainedEffort: state.retainedEffort,
+  }), [model, current, t, state.retainedEffort]);
+  const { choices, preview, caption, effort } = view;
+  /* Two stops are the least a slider can travel between: a catalog with fewer
+     has nothing to pick, so the trigger stays shut and no empty track is drawn. */
+  const pickable = choices.length > 1;
   const label = model?.name ?? current?.model ?? t('trigger.fallback');
   const close = useCallback(() => setOpen(null), []);
   useEffect(() => { if (available && state.status === 'idle') load(); }, [available, state.status, load]);
@@ -44,10 +49,10 @@ export function ModelControls({ locked, available, useDirectory, load, select, s
       onClick={() => { setOpen(open === 'model' ? null : 'model'); load(); }}>
       <span className="ccd-model-label">{label}</span>
     </button>
-    {effortName !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || choices.length < 2}
-      aria-label={`Effort: ${effortName}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
-      onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{effortName}</span></button>}
-    {open === 'effort' && current && choices.length > 0 && <EffortPanel key={`${current.provider}/${current.model}`} anchor={effortAnchor} choices={choices} selected={previewIndex} disabled={locked || !available} busy={busy} error={state.error}
+    {caption !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || !pickable}
+      aria-label={`Effort: ${caption}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
+      onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{caption}</span></button>}
+    {open === 'effort' && current && pickable && <EffortPanel key={`${current.provider}/${current.model}`} anchor={effortAnchor} choices={choices} selected={preview} disabled={locked || !available} busy={busy} error={state.error}
       onClose={close} onCommit={index => { const choice = choices[index]; if (choice && choice.id !== effort) selectEffort(current, choice.id); }} />}
     {open === 'model' && <ModelPanel anchor={modelAnchor} state={state} disabled={disabled} load={load} t={t} onClose={close}
       onSelect={selection => { restoreModelFocus.current = true; void select(selection).then(result => { if (!alive.current) return; if (result?.ok) { modelAnchor.current?.focus(); close(); } }).catch(() => {}); }} />}

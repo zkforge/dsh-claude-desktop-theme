@@ -161,9 +161,21 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_n
   margin-inline: 1px;
 }
 
+/* The browsing region opens on the navigation stack's own row rhythm. The
+   header below is a 30px box carrying 28px buttons — that box *is* the icon row,
+   and 30px is also what the host's expanded search pill measures — so the only
+   whitespace the stack can give up is the margin that used to sit here: 10px on
+   top of the header's own 2px bottom margin left the three icons floating in a
+   band about twice the stack's own pitch. Measured at @2x on
+   docs/issues/img/06.png the last navigation row's ink ended 26px above the icon
+   glyphs, against the 14.5px between two navigation rows. The margin drops to
+   the row gap, which lifts the icon row and the list together by 9px and leaves
+   the 28px hit areas, the header's 30px box and every row above untouched. The
+   host's own `margin-top: 2px` on that header never applies: the plugin's
+   `margin: 0 0 2px` below outranks its `:not(rail)` rule. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelList {
   gap: var(--ccd-nav-gap);
-  margin-bottom: 10px;
+  margin-bottom: var(--ccd-nav-gap);
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow {
@@ -190,17 +202,38 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_p
   color: var(--ccd-text);
 }
 
-/* One glyph size across the stack. The three marks arrive from three different
-   owners at a 16px box; the plugins-panel sparkle paints nearly edge to edge
-   (measured 15px of ink against the other two glyphs' 13px), so the panel rows
-   take their artwork down to 14px, which lands that mark beside the others. */
+/* One icon column, one optical size. The panel glyph's slot is the same 16px
+   the New Session plus already occupies (14px of artwork plus its 1px inline
+   margins), so all three labels start at the same x and all three glyphs share
+   one centre axis. The artwork *inside* that slot is then sized per mark,
+   because each owner draws its ink at a different width on the primitives'
+   16-unit grid: the plus spans 13 units, the plugins pinwheel 13.8 and the
+   automation clock 12. Matched to the plus's 12.5px of ink, the pinwheel
+   renders at 13.5px and the clock at 15.4px (below), which lands all three
+   inks at 12.51px — inside the 0.5px this stack is checked to. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelGlyph {
+  width: 16px;
+  height: 16px;
   color: var(--ccd-text-nav);
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelGlyph svg {
-  width: 14px;
-  height: 14px;
+  width: 13.5px;
+  height: 13.5px;
+}
+
+/* The automation clock carries more of the grid as padding than the pinwheel —
+   its circle spans 12 of the 16 units against the pinwheel's 13.8 — so at the
+   shared panel size it reads about 1.5px small. It is matched by its own
+   geometry: of the three marks, only its circle starts on the grid's bottom
+   vertex. Scaling it up inside the same 16px slot leaves the exception free to
+   move nothing — the slot, the label's start and the glyph's centre all stay
+   where the stack puts them. A later build that redraws the clock simply stops
+   matching and falls back to the shared 13.5px artwork. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed)
+  ._3WPZCG_panelGlyph:has(> svg > path[d^="M8 14C11.3137"]) > svg {
+  width: 15.4px;
+  height: 15.4px;
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow:hover ._3WPZCG_panelGlyph,
@@ -241,14 +274,22 @@ html[data-dsh-ccd-style="true"] ._7514NG_sectionLabel {
 
 /* Add workspace: the host draws a folder with a plus; the reference's rows use a
    bare mark, so the button keeps its own hit box and callback and takes the
-   shared plus artwork over a 14px box. */
-html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-child svg,
-html[data-dsh-ccd-style="true"] ._7514NG_headerActions > *:last-child button svg {
+   shared plus artwork over a 14px box.
+
+   Both declarations key off the trigger being the container's last *button*,
+   not its last child (05). The host's Tooltip runs with `portal` off, so while
+   its bubble is up it appends that bubble as a `span[role="tooltip"]` sibling
+   directly after the trigger, inside this container: `:last-child` then falls to
+   the bubble, these two rules stop matching under the pointer, and the host's
+   own folder-plus comes back. `:last-of-type` counts elements of the trigger's
+   own type, which the span bubble never enters, so the mask and the
+   `display: none` that suppresses the host's svg both hold in every state —
+   hover with the bubble up, keyboard focus, and the open menus. */
+html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-of-type svg {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-child::before,
-html[data-dsh-ccd-style="true"] ._7514NG_headerActions > *:last-child button::before {
+html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-of-type::before {
   content: "";
   width: 14px;
   height: 14px;
@@ -287,10 +328,12 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_folder {
 }
 
 /* The host reveals this mark on hover and keeps the text flexible; here it is
-   the row's permanent disclosure control, sitting right after the label. The
-   host's own state still owns the turn — `arrowOpen` rotates the mark a quarter
-   turn — but its artwork is a filled triangle where the reference draws a line
-   chevron, so the mark slot paints the shared chevron geometry instead. */
+   the row's disclosure control, sitting right after the label. The slot is
+   always laid out and only its ink converges (see below), so the label's
+   measure never depends on where the pointer is. The host's own state still
+   owns the turn — `arrowOpen` rotates the mark a quarter turn — but its artwork
+   is a filled triangle where the reference draws a line chevron, so the mark
+   slot paints the shared chevron geometry instead. */
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_projectText {
   flex: 0 1 auto;
 }
@@ -323,6 +366,30 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_chevron:has(.jJkEga_a
   transform: rotate(90deg);
 }
 
+/* Hover convergence (08). A collapsed row keeps its › — the reference's
+   discoverability cue — while an expanded row shows the turned mark only while
+   the pointer is on the row, one of its buttons holds keyboard focus, or that
+   row's menu is open: the host portals that menu out of the row, so the row
+   loses `:hover` as the pointer sets off towards it and the mark would blink
+   out mid-gesture. Focus is read as `:focus-visible`, not `:focus-within`, so a
+   mouse click on ⋯/+ does not keep the mark up.
+
+   `visibility`, not `display`: the slot keeps its 16px box and its place in the
+   row's gap in both states, so the row never reflows, the label cannot
+   re-truncate as the mark appears, and the trailing actions — pinned by
+   `margin-left: auto` — cannot move. The slot holds no text and nothing
+   focusable, so hiding it takes no entry point away, and the row's state still
+   reaches assistive technology as the row's own `aria-expanded`.
+
+   `@media (hover: hover)` guards the whole rule: where `:hover` never arrives
+   (a touch screen) an expanded row would lose its state mark for good, so the
+   mark stays up in both states there — the state this plugin shipped before. */
+@media (hover: hover) {
+  html[data-dsh-ccd-style="true"] .jJkEga_projectRow:has(.jJkEga_arrowOpen):not(:hover):not(:has(:focus-visible)):not(.jJkEga_menuOpen) .jJkEga_chevron {
+    visibility: hidden;
+  }
+}
+
 /* Project text then disclosure, with the row's actions pinned to the trailing
    edge: `order` moves the mark after the label without touching the host's DOM.
    Both actions are permanent — the create button mirrors the reference's
@@ -336,13 +403,20 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions {
   margin-left: auto;
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:last-child svg,
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > *:last-child button svg {
+/* The create button is the container's last *button*, not its last child, for
+   the same reason as the header's add-workspace trigger (05): its Tooltip's
+   bubble is appended as a `span[role="tooltip"]` sibling right after the
+   trigger, so `:last-child` would land on that bubble the moment the pointer
+   arrives, and the host's own circle-plus would come back with it. The sibling
+   ⋯ trigger sits inside the menu primitive's own wrapper, which is why the
+   button here is the container's only button child; `:last-of-type` keeps the
+   plus artwork, and the `display: none` that suppresses the host's svg, through
+   hover, keyboard focus, and the row's menu being open. */
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:last-of-type svg {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:last-child::before,
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > *:last-child button::before {
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:last-of-type::before {
   content: "";
   width: 14px;
   height: 14px;
@@ -385,6 +459,37 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot > svg[data-sta
   height: 8px;
 }
 
+/* An idle Session keeps that cell empty. The host gives the leading mark only
+   to a row that has one — running keeps the activity ring, completed or
+   waiting keeps its state dot — and every other row gets the plugin's own
+   `sidebar.session.row.leading` seat instead, which nothing registers into by
+   default. The title therefore starts 16px left of the marked rows above and
+   below it, and the column loses its left edge wherever a Session is idle.
+
+   The seat is filled with the ring's own geometry, not a second mark: the same
+   circle the activity ring draws (`--ccd-icon-session-ring`, read from
+   `ui-primitives`' StateDot spinner) at the same 8px scale the rule above
+   already puts the spinner at, so an idle row and a running row carry one mark
+   that differs only by motion. `currentColor` is the cell's own
+   `--dsw-alias-label-tertiary` — the ink the spinner paints with — so the still
+   ring needs no colour of its own and follows the host theme.
+
+   The seat's outlet is what the `:has()` guard reads: `renderSlot` mounts a
+   `div[data-slot]` whose children are the registered entries, so an *empty*
+   outlet is exactly "idle, and nothing else asked for this cell". A row whose
+   seat is taken keeps its own mark and never gets a ring behind it — the
+   shipped `ui-schedule` puts its task mark there. Archived and provisional rows
+   render no seat at all, and the archived row's own archive mark stays the one
+   thing in that cell; the `:not(.jJkEga_archived)` is that guarantee written
+   down rather than left to the host's current shape. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:not(.jJkEga_archived) > .jJkEga_slot:has(> div[data-slot="sidebar.session.row.leading"]:empty)::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+  mask: var(--ccd-icon-session-ring) center / 8px 8px no-repeat;
+}
+
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_title {
   font-size: var(--ccd-font-size-muted);
   line-height: 18px;
@@ -405,13 +510,77 @@ html[data-dsh-ccd-style="true"] .jJkEga_time {
   color: var(--ccd-text-muted);
 }
 
+/* Archived rows. The host fades an archived title with its own caption ink, but
+   that pair is one class lighter than the title rule above, so the grey never
+   reaches the screen. The state is restated here a step heavier than that rule
+   and covers the whole line: title, time and the leading mark together, since a
+   full-strength time under a faded title would read as the louder half. The host
+   keeps the rest of the state — hover card, restore button and the click that
+   clears the class — so a restored row simply leaves this block behind. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow.jJkEga_archived :is(.jJkEga_title, .jJkEga_time, .jJkEga_slot) {
+  color: var(--ccd-text-archived);
+}
+
+/* The host leaves an archived row's leading cell empty on purpose — neither a
+   status dot nor a decoration renders there — so the mark is painted here from
+   the shared archive mask. That cell is the same 16x20 inline-flex box every
+   status dot is centred in, and the row (28px, `align-items: center`) centres
+   the cell on its own line, so a mark centred in the cell lands on the row's
+   centre line and on the dot's axis.
+
+   What has to land there is the mark's ink, not the square it was drawn in. The
+   host artwork is a 1px stroke on a 16-unit canvas and its paths span x 1..15
+   and y 2..15 — the lid's top edge sits at y 2.5, the body ends at y 14.5 — so
+   the ink is 14 x 13 units with its centre 0.5 unit below the canvas centre (it
+   is already symmetric across x 8, so only y needs saying). Painted at 14px one
+   unit is 0.875px, so a box-centred mark hangs 0.4375px low: 0.875 device pixels
+   at 2x, which is the whole of the bias the eye picked up, the air above the
+   mark being 1.75px against 0.875px below it. Half a unit is given back to the
+   top, which leaves 1.3125px of air on either side. `center` keeps the image
+   centred in the cell for any box and image size and the -0.4375px is the
+   artwork's own offset read off that geometry, so neither term is fitted by eye.
+
+   The correction rides on the mask's placement rather than on the box or on the
+   artwork: the flex line still centres the same 14px square the status dot's
+   cell centres, `--ccd-icon-archive` stays the host's geometry verbatim (a later
+   DSH build can be re-read into that token without this being lost with it), and
+   the placement is applied on every paint instead of being baked into a
+   rasterised mark. It is a second declaration rather than part of the shorthand
+   so artwork, size and repeat stay on one line — and so an engine that ignored
+   it would still paint a half-unit-low mark instead of painting none. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow.jJkEga_archived .jJkEga_slot::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  mask: var(--ccd-icon-archive) center / 14px 14px no-repeat;
+  mask-position: center calc(50% - 0.4375px);
+}
+
+/* Pointer or current row: hover and selection paint a fill a step darker than
+   the sidebar the faded ink was chosen against, and an archived Session can be
+   the current one, so the ink steps back up while the row is being acted on. It
+   stays short of the unarchived row's own ink, which is what keeps the archived
+   state readable instead of merely faint. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow.jJkEga_archived:is(:hover, .jJkEga_selected) :is(.jJkEga_title, .jJkEga_time, .jJkEga_slot) {
+  color: var(--ccd-text-archived-hover);
+}
+
 /* Provisional New Session row. DSH creates the Session with the click on New
    Session and keeps the row in the list while the host still calls it `blank`;
    the column shows the new-session page alone and lets the entry arrive with
    the first sent message. `compat/blank-session-rows.ts` writes the marker from
    the host's own `blank` fact — the stylesheet only hides what it tagged, so an
    untagged (native or unsupported) row is never touched. The row keeps its
-   place in the host's list model; only the list's presentation drops it. */
+   place in the host's list model; only the list's presentation drops it.
+
+   This is the marker's half of the filter, and its fallback. The module also
+   writes the ids into a plugin-owned sheet keyed by the row key, because
+   `ui-workspace`'s AnimatedRows measures every keyed row inside the commit that
+   mounts it: a row a marker reaches one microtask later is a row the host has
+   already measured, and the height it then drops out of the flow is animated
+   as a jump instead of never being laid out (04). Both halves hide exactly the
+   ids the host still calls `blank`, and neither touches a fork child. */
 html[data-dsh-ccd-style="true"] [data-row-key^="session:"][data-ccd-blank-session] {
   display: none;
 }
