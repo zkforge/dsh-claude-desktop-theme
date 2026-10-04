@@ -56,7 +56,7 @@ export function ModelControls({ locked, available, useDirectory, load, select, s
       onClose={close} onCommit={index => { const choice = choices[index]; if (choice && choice.id !== effort) selectEffort(current, choice.id); }} />}
     {open === 'model' && <ModelPanel anchor={modelAnchor} state={state} disabled={disabled} load={load} t={t} onClose={close}
       onSelect={selection => { restoreModelFocus.current = true; void select(selection).then(result => { if (!alive.current) return; if (result?.ok) { modelAnchor.current?.focus(); close(); } }).catch(() => {}); }} />}
-    {open === null && state.error && <div className="ccd-model-error" role="alert">{state.error}<button type="button" onClick={load}>{t('action.reload')}</button></div>}
+    {open === null && state.error && <div className="ccd-model-error" role="alert">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
   </div>;
 }
 
@@ -74,10 +74,10 @@ function ModelPanel({ anchor, state, disabled, load, t, onClose, onSelect }: Pro
   return <div ref={panel} className="ccd-model-panel" role="dialog" aria-label={t('menu.model')} style={position}>
     <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} placeholder={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); panel.current?.querySelector<HTMLButtonElement>('[data-model-option]')?.focus(); } }} />
-    {state.status === 'loading' && <p role="status">{t('status.loading')}</p>}
-    {state.error && <div role="alert">{state.error}<button type="button" onClick={load}>{t('action.reload')}</button></div>}
-    {state.failures.map(failure => <div key={failure.id} role="status" className="ccd-model-warning">{failure.name}: {failure.message}<button type="button" onClick={load}>{t('action.reload')}</button></div>)}
-    {groups.length === 0 && state.status !== 'loading' && <p>{query ? t('search.empty') : t('empty.models')}</p>}
+    {state.status === 'loading' && <p role="status" className="ccd-model-note">{t('status.loading')}</p>}
+    {state.error && <div role="alert" className="ccd-model-note">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
+    {state.failures.map(failure => <div key={failure.id} role="status" className="ccd-model-note">{failure.name}: {failure.message}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>)}
+    {groups.length === 0 && state.status !== 'loading' && <p className="ccd-model-note">{query ? t('search.empty') : t('empty.models')}</p>}
     <div className="ccd-model-options" onKeyDown={event => {
       const targets = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
       const index = targets.indexOf(document.activeElement as HTMLButtonElement);

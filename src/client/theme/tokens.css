@@ -35,13 +35,37 @@ html[data-dsh-ccd-style="true"] {
   --ccd-composer-row-inset: 4px;
   --ccd-composer-bottom-gap: 5px;
   --ccd-control-row-height: 28px;
+  /* Status-bar chip. The tool row's controls are all this one box: the row's
+     28px is the layout line, and every control inside it is a chip of this
+     height rather than a box stretched to the line. The reference draws the
+     model chip's fill as one label line — 40 device px at @2x, so the row's
+     12px label sits 5.5px from the chip's top and bottom where the row itself
+     would leave it 10px — and the same box now carries the command plus, the
+     permission control, the voice control, the statistics readouts and the
+     context ring, so a pointer crossing the row finds one fill height instead
+     of three. The row keeps `--ccd-control-row-height`: the dock, the ring's
+     seat and the trailing cluster are all measured from it. The corner follows
+     the height — 12 device px at @2x, the same curve the transcript's table and
+     code cards carry, rather than the row's 8px radius, which is nearly half of
+     a 20px chip and would round every fill towards a pill. */
+  --ccd-chip-height: 20px;
+  --ccd-chip-radius: 6px;
+  /* The chip family's inline padding: the model/effort chips, the permission
+     control and the two square glyph buttons (plus, voice), whose boxes are
+     their 14px artwork plus one of these on each side. Six to seven px is the
+     whole range in the reference; the readouts and the ring keep their own
+     slightly tighter 6px, which is a 1px difference in ink and nothing in a
+     fill's shape. */
+  --ccd-chip-padding-inline: 7px;
   --ccd-send-size: 24px;
   --ccd-send-reserve: 30px;
-  /* One gap for every control in the Composer's trailing cluster — the two
-     native readouts, the context ring and the model/effort pair. Each control
-     carries its own 6-7px inner padding, so an even box gap also reads as an
-     even visible rhythm, and the cluster's last button lands on the row's right
-     content edge. */
+  /* One gap for the whole status row: the row itself, the leading tools group,
+     its modes cluster, the trailing cluster (the native readouts, the context
+     ring, the model/effort pair) and the statistics dock all space their
+     children with this. The host's own row ran 12px in the leading groups and
+     the plugin's 6px in the trailing one, which read as two different rows in
+     one bar. Each control carries its own 6-7px inner padding, so an even box
+     gap also reads as an even visible rhythm. */
   --ccd-cluster-gap: 6px;
   /* Context ring. The host draws it as 14px artwork (`ContextMeter.module.css`:
      viewBox 0 0 14 14, cx=cy=7, r=5.5, 2px stroke, round cap) inside a 28px
@@ -169,11 +193,6 @@ html[data-dsh-ccd-style="true"] {
      track underneath stays the host's `--dsw-alias-border-l3`, which
      theme/tokens.ts already overrides. */
   --ccd-context-ring-fill: var(--ccd-accent, #4b76ce);
-  /* The empty state's ring draws the host's track alone. It stays the host's
-     own track token (`ContextMeter.module.css` strokes `.y0jqnG_track` with
-     `--dsw-alias-border-l3`, which theme/tokens.ts already retints), so an
-     empty session shows the same hollow ring the host would draw at 0%. */
-  --ccd-context-ring-track: var(--dsw-alias-border-l3);
 
   /* The plugin's one emphasis blue: the selected check in every Menu surface,
      the context ring, and whatever else has to read as "this one is chosen".
@@ -244,6 +263,17 @@ html[data-dsh-ccd-style="true"] {
      authoring artwork of its own. */
   --ccd-icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8 2V14' stroke='black'/%3E%3Cpath d='M2 8H14' stroke='black'/%3E%3C/svg%3E");
 
+  /* The workspace picker chip's leading mark. DSH switches that glyph with the
+     chip's own state — `IconFolderOpenRegular` once a workspace is chosen, a
+     closed folder while the chip only carries a placeholder — and the open one
+     draws a slanted front panel over a translucent back panel, where the
+     reference's button leads with one closed folder in either state. The
+     geometry below is DSH's own `FolderCloseArtwork` (`ui-primitives`, MIT) on
+     its 16-unit grid and 1px stroke, with the artwork's second path — the rule
+     line across the body — left out: the reference draws the body empty, and
+     the tab, the step and the four rounded corners are the whole of the mark. */
+  --ccd-icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M1.50439 3.11059C1.50439 2.55831 1.95211 2.1106 2.50439 2.1106H5.43389C5.67773 2.1106 5.91318 2.19969 6.09593 2.36113L7.71649 3.79265C7.89924 3.95409 8.1347 4.04319 8.3785 4.04319H13.4958C14.0481 4.04319 14.4958 4.4909 14.4958 5.04319V12.8894C14.4958 13.4417 14.0481 13.8894 13.4958 13.8894H2.50439C1.95211 13.8894 1.50439 13.4417 1.50439 12.8894V4.04319V3.11059Z' stroke='black'/%3E%3C/svg%3E");
+
   /* The reference's disclosure mark is a 1px line chevron where the host draws a
      filled triangle; this is DSH's own `IconChevronRightOutlineArtwork` geometry
      (ui-primitives, MIT). It is painted over the host's mark slot, so the host's
@@ -289,6 +319,26 @@ html[data-dsh-ccd-style="true"] {
   /* Elevation */
   --ccd-shadow-card: 0 1px 2px rgb(0 0 0 / 4%);
   --ccd-shadow-segment: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+/*
+ * Host-token aliases belong on `body`, exactly where the host writes them.
+ *
+ * `--dsw-*` values are not in the document stylesheets: DSH's theme presenter
+ * writes them, and this plugin's own overrides, as inline styles on `body`
+ * (theme/tokens.ts). A custom property is resolved *where it is declared*, so an
+ * alias of a host token declared on the root would reference a variable that is
+ * not in scope there: it computes to the guaranteed-invalid value and inherits
+ * as invalid into every subtree, and the rule consuming it falls back to
+ * `transparent` rather than the host's colour. The empty-state context ring
+ * (theme/composer.css, `.yhfFVG_dock::after`) vanished exactly that way.
+ */
+html[data-dsh-ccd-style="true"] body {
+  /* The empty state's ring draws the host's track alone. It stays the host's
+     own track token (`ContextMeter.module.css` strokes `.y0jqnG_track` with
+     `--dsw-alias-border-l3`, which theme/tokens.ts already retints), so an
+     empty session shows the same hollow ring the host would draw at 0%. */
+  --ccd-context-ring-track: var(--dsw-alias-border-l3);
 }
 
 /*

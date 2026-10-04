@@ -1,6 +1,23 @@
 /* Separate model/effort controls, sharing the official Composer's selection seat. */
 html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items: center; gap: var(--ccd-cluster-gap, 4px); min-width: 0; max-width: var(--ccd-model-max-width, 45cqw); }
-.ccd-model-trigger, .ccd-effort-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; height: var(--ccd-control-row-height); padding: 0 7px; border: 0; border-radius: var(--ccd-radius-row); background: transparent; color: var(--ccd-text-strong); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+/*
+ * Both controls are the status bar's value chips, and a chip's fill is one
+ * label line tall rather than one control row: `--ccd-chip-height` (20px)
+ * inside the row's own 28px, so the model name and the effort beside it sit
+ * 5.5px from the chip's edge instead of the 10px a full-height box leaves. The
+ * row keeps `--ccd-control-row-height` — the dock, the ring's seat and the
+ * trailing cluster are all measured from it — and this flex line centres the
+ * chip in it. The corner is the height's own (`--ccd-chip-radius`, the
+ * reference's 12 device px at @2x) rather than the row's 8px, which on a 20px
+ * box would round the fill towards a pill, and the inline padding is the row's
+ * one chip padding (`--ccd-chip-padding-inline`), which is what the command
+ * plus, the permission control and the readouts beside them also take. The 12px
+ * label, its chosen-value ink and the hover and expanded fills are unchanged;
+ * only the box those fills paint is. All three tokens keep a fallback so a sheet
+ * mounted without tokens.css still draws a chip rather than collapsing the
+ * control to its text.
+ */
+.ccd-model-trigger, .ccd-effort-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; height: var(--ccd-chip-height, 20px); padding: 0 var(--ccd-chip-padding-inline, 7px); border: 0; border-radius: var(--ccd-chip-radius, 6px); background: transparent; color: var(--ccd-text-strong); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
 .ccd-model-trigger { flex: 1 1 auto; overflow: hidden; }
 .ccd-model-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .ccd-effort-trigger { flex: 0 0 auto; }
@@ -22,12 +39,68 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-trigger,
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-effort-trigger,
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { color: var(--ccd-text-strong); }
+/*
+ * The model card is a popup of the plugin's own making, so it answers to the
+ * popup section of the design document rather than to the Composer it hangs
+ * from: 12px corner, 1px outline, three-layer hairline shadow, card fill
+ * (DESIGN.md §6.7). Its model names keep the chosen-value ink the rule above
+ * gives them; everything the card decides for itself — how tall a row is, what
+ * a heading is worth, where an editable face's line steps — is below.
+ */
 .ccd-model-panel, .ccd-model-error { position: fixed; z-index: 1000; box-sizing: border-box; width: min(240px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; padding: 6px; border: 1px solid var(--ccd-border); border-radius: 12px; background: var(--ccd-card); color: var(--ccd-text); box-shadow: var(--ccd-effort-shadow); font: 13px/1.4 var(--ccd-font-ui); }
-.ccd-model-search { box-sizing: border-box; width: 100%; height: 32px; margin-bottom: 4px; padding: 0 8px; border: 1px solid var(--ccd-border); border-radius: 6px; background: var(--ccd-card); color: inherit; font: inherit; }
-.ccd-model-provider { padding: 7px 8px 3px; color: var(--ccd-text-secondary); font-size: 11px; }
-.ccd-model-options button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 8px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
-.ccd-model-options button:hover, .ccd-model-options button:focus-visible { background: var(--ccd-hover); outline: none; }
+/*
+ * The card's one editable face. A face carries a stronger line than the card
+ * outline around it (DESIGN.md §二.4: `--ccd-border-strong`, the line the
+ * Composer's own input face draws). It is also a cell of the card's own
+ * rhythm, not a banner above it: 24px — the same box the rows and the group
+ * headings below it occupy, a 20px line with 2px above and below — with the
+ * corner that height asks for (the rows' 6px, not the popup's 12px). The
+ * placeholder is the muted ink, so the empty field reads in the palette
+ * instead of in the browser's own grey.
+ */
+.ccd-model-search { box-sizing: border-box; width: 100%; height: 24px; margin-bottom: 4px; padding: 0 8px; border: 1px solid var(--ccd-border-strong); border-radius: 6px; background: var(--ccd-card); color: inherit; font: inherit; }
+.ccd-model-search::placeholder { color: var(--ccd-text-muted); }
+.ccd-model-search:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+/*
+ * The provider heading is a cell of the same 24px rhythm as the rows it opens,
+ * not a block with a size of its own: one 20px line with 2px above and below,
+ * in the control-label size (12px — the document's scale has no 11px step) and
+ * the secondary ink. It never takes a fill, because it is not a choice.
+ */
+.ccd-model-provider { padding: 2px 8px; color: var(--ccd-text-secondary); font-size: 12px; line-height: 20px; }
+/*
+ * One row is 24px (DESIGN.md §6.7): a 13px label on a 20px line with 2px above
+ * and below — the reference's 48 device px at @2x, against the 34px this card
+ * used to draw (13px/1.4 plus 8px of block padding). The corner follows the
+ * height: 6px, because the host's 12px row radius is a pill at half of 24px.
+ * Height is pinned against the box model rather than inherited from it: the
+ * button leaves `box-sizing` to the page, so the same declarations would build
+ * a 28px row under the content-box default.
+ */
+.ccd-model-options button { display: flex; align-items: center; justify-content: space-between; gap: 8px; box-sizing: border-box; width: 100%; min-height: 24px; padding: 2px 8px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; font: inherit; line-height: 20px; cursor: pointer; }
+.ccd-model-options button:hover, .ccd-model-options button:focus-visible { background: var(--ccd-hover); }
+/*
+ * Keyboard focus is the one state the fill cannot state on its own: the same
+ * fill is what the pointer paints, so a filled row says "the pointer is here"
+ * and not "the keyboard is here". The row takes the document's focus ring
+ * (§七: 2px solid accent, 2px offset, the shape following the control's own 6px
+ * corner) beside the fill, which is the pair this plugin's settings popup
+ * already draws on its own rows. The row is centred in the card's 6px padding
+ * and 2px of offset stay inside it, so the ring never reaches the card's edge.
+ */
+.ccd-model-options button:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 .ccd-model-options button:disabled { opacity: .55; cursor: default; }
-.ccd-model-warning { padding: 8px; color: var(--ccd-text-secondary); }
+/*
+ * The card's cells that are not choices: loading, empty, a failed provider and
+ * the inline error. They take the rows' geometry and ink so the card reads as
+ * one column whatever state it is in — the row is a flex line here for the same
+ * reason it is one above, so the message and the retry after it keep the card's
+ * 8px gap — and the retry is a bare accent label: the card has no room for the
+ * host's filled button, and flat ink is the document's default control (§二.1).
+ */
+.ccd-model-note { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 0; padding: 2px 8px; color: var(--ccd-text-secondary); line-height: 20px; }
+.ccd-model-retry { padding: 0; border: 0; border-radius: 6px; background: none; color: var(--ccd-accent); font: inherit; cursor: pointer; }
+.ccd-model-retry:hover { text-decoration: underline; }
+.ccd-model-retry:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 .ccd-model-error { bottom: 60px; right: 16px; }
 @container ccd-composer (max-width: 420px) { .ccd-model-trigger { padding-inline: 4px; } .ccd-effort-trigger { padding-inline: 4px; } }

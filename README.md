@@ -21,7 +21,7 @@ Light and dark themes, a compact sidebar, model and reasoning-effort pickers, Ma
 
 `dsh-claude-desktop-theme`（npm 包名：`dsh-ccd-style`）是面向 macOS 与 Windows 的 **DSH Claude 风格主题 / 界面美化插件**。CCD 指 Claude Code Desktop；紧凑侧栏、统一的新会话页与聊天页、独立的模型与推理强度（effort）选择器，跟随宿主的浅色 / 深色主题，首次安装后自动开启。
 
-[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [架构说明](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
+[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [架构说明](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [设计规范](DESIGN.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
 
 </div>
 

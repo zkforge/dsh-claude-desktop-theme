@@ -28,6 +28,20 @@ function declarations(sheet: string): Map<string, string> {
     .map(match => [match[1] ?? '', (match[2] ?? '').trim()]));
 }
 
+interface CssRule {
+  readonly selector: string;
+  readonly body: string;
+}
+
+/** Flat `selector { body }` pairs, comments removed. `tokens.css` nests nothing. */
+function cssRules(sheet: string): CssRule[] {
+  const source = sheet.replace(/\/\*[\s\S]*?\*\//gu, '');
+  return [...source.matchAll(/([^{}]+)\{([^{}]*)\}/gu)].map(([, selector, body]) => ({
+    selector: (selector ?? '').trim().replace(/\s+/gu, ' '),
+    body: body ?? '',
+  }));
+}
+
 const lightVars = declarations(lightSheet);
 const darkVars = declarations(darkSheet);
 
@@ -75,6 +89,26 @@ test('the built-in surfaces agree with the stylesheet they fall back to', () => 
   assert.equal(declaredColour('ccd-canvas'), BUILT_IN_SURFACES.canvas);
   assert.equal(declaredColour('ccd-sidebar'), BUILT_IN_SURFACES.sidebar);
   assert.equal(declaredColour('ccd-border'), BUILT_IN_SURFACES.border);
+});
+
+test('a host-token alias is declared where the host writes its tokens', () => {
+  /*
+   * The theme presenter writes every `--dsw-*` value as an inline style on
+   * `body`, so an alias declared anywhere above that element references a
+   * variable which is not in scope *where it is declared*. Such a custom
+   * property computes to the guaranteed-invalid value and inherits as invalid
+   * into the whole subtree, and the rule consuming it falls back to
+   * `transparent`: the empty-state context ring disappeared that way, having
+   * aliased the host's ring track from the root block.
+   */
+  const aliases = cssRules(tokensSheet).filter(rule => /var\(--dsw-[a-z0-9-]+\)/u.test(rule.body));
+  assert.ok(aliases.length > 0, 'the ring track still asks the host for its own track colour');
+  for (const rule of aliases) {
+    assert.match(rule.selector, /\bbody\b/u, `${rule.selector} aliases a host token it cannot see`);
+  }
+  const track = aliases.filter(rule => rule.body.includes('--ccd-context-ring-track'));
+  assert.equal(track.length, 1, 'one body-scoped rule carries the ring track alias');
+  assert.match(track[0]?.body ?? '', /--ccd-context-ring-track:\s*var\(--dsw-alias-border-l3\)/u);
 });
 
 test('the built-in dark palette agrees with the dark block it mirrors', () => {
