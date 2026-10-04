@@ -12,6 +12,10 @@ export interface HeaderLabels {
   readonly terminal: string;
   /** Names the right panel's browser view. */
   readonly browser: string;
+  /** Names the corner control that shows the session's project directory. */
+  readonly files: string;
+  /** Names the Session menu's row that reveals a collapsed right panel. */
+  readonly expand: string;
 }
 
 /**
@@ -21,7 +25,19 @@ export interface HeaderLabels {
 export function headerLabels(document: Document): HeaderLabels {
   const language = (document.documentElement.lang || globalThis.navigator?.language || '').toLowerCase();
   if (language.startsWith('zh')) {
-    return { open: '选择打开方式', terminal: '打开终端', browser: '打开浏览器' };
+    return {
+      open: '选择打开方式',
+      terminal: '打开终端',
+      browser: '打开浏览器',
+      files: '打开项目文件夹',
+      expand: '打开侧边栏',
+    };
   }
-  return { open: 'Choose how to open', terminal: 'Open terminal', browser: 'Open browser' };
+  return {
+    open: 'Choose how to open',
+    terminal: 'Open terminal',
+    browser: 'Open browser',
+    files: 'Open project folder',
+    expand: 'Open sidebar',
+  };
 }

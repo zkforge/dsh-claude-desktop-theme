@@ -1,13 +1,19 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
-/** Fixed viewport-clamped surface; all focus, listeners and observers die with the panel. */
+/** Viewport-clamped top-layer surface; focus and observers die with the panel. */
 export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void) {
   const panel = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: 0, top: 0, visibility: 'hidden' as 'hidden' | 'visible' });
   useLayoutEffect(() => {
     const surface = panel.current, trigger = anchor.current;
     if (!surface || !trigger) return;
+    /* The Composer row/container and shell.overlay have separate stacking
+       contexts. A manual popover escapes those contexts without moving the
+       React tree or changing the existing outside-click and focus handling.
+       The supported DSH Electron runtime supplies the native Popover API. */
+    surface.setAttribute('popover', 'manual');
+    surface.showPopover();
     const place = () => {
       const a = trigger.getBoundingClientRect(), p = surface.getBoundingClientRect();
       const left = Math.max(12, Math.min(a.right - p.width, innerWidth - p.width - 12));
@@ -47,6 +53,7 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       document.removeEventListener('pointerdown', onPointer, true);
       document.removeEventListener('focusin', onFocus);
       surface.removeEventListener('keydown', onKey);
+      if (surface.matches(':popover-open')) surface.hidePopover();
     };
   }, [anchor, close]);
   return { panel, position };

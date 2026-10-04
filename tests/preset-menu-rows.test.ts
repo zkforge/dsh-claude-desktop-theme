@@ -4,18 +4,19 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 /*
- * Agent-preset (mode) picker contract.
+ * Agent-preset (mode) picker: the one row rule that is genuinely this card's.
  *
  * The second chip in the hero chips row opens the host's `Menu` primitive with
  * `ui-agent-preset`'s own row content: a name span and a description span
  * stacked inside the row label (`AgentPresetSeat.module.css`). That stack is
  * what makes a row 66px tall and the card 324px wide, against the design
  * document's popup row — one 20px line in a 24px box with a trailing mark
- * (DESIGN.md §6.7). `theme/composer.css` therefore drops the second line,
- * flattens the cells, and gives the card the document's popup chrome; this test
- * pins the shape of those three rules.
+ * (DESIGN.md §6.7). `theme/composer.css` therefore drops the second line; the
+ * card's chrome and the row's 24px cell are the shared popup rules
+ * (theme/menus.css, pinned by tests/menu-surfaces.test.ts), and this test keeps
+ * the content rule that is this card's alone.
  *
- * Two facts decide how they are written, and both are asserted here:
+ * Two facts decide how it is written, and both are asserted here:
  * - the guard is the preset seat's own expanded state, told apart from the
  *   workspace chip beside it by `:not(.bocITq_workspace)` — the one class of the
  *   two that `compat/host-dom.ts` pins for both shipped builds;
@@ -50,9 +51,6 @@ const GUARD = 'html[data-dsh-ccd-style="true"]:has(.ST7X_W_heroWorkspaceRow butt
 /** The mode card's one row group: it has no `.footer`, so this is the whole card. */
 const ROW = '[role="menu"] > ._viewport_4ub78_19 > ._itemWrap_4ub78_90 > ._item_4ub78_90';
 
-/** Both chips' cards: either expanded menu button in the row reaches one surface. */
-const CARD_GUARD = 'html[data-dsh-ccd-style="true"]:has(.ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"][aria-expanded="true"])';
-
 test('the mode card hides the row’s description line structurally', () => {
   const hidden = composer.filter(rule => rule.body.includes('display: none')
     && rule.selector.includes('._itemLabel_4ub78_190'));
@@ -68,48 +66,14 @@ test('the mode card hides the row’s description line structurally', () => {
   assert.equal((rule?.body ?? '').trim(), 'display: none;');
 });
 
-test('the mode card draws the same flat cell as the workspace card', () => {
-  const flat = composer.filter(rule => rule.selector.startsWith(GUARD)
-    && rule.body.includes('min-height: 24px'));
-  assert.equal(flat.length, 1, 'one row rule for the mode card');
-  const rule = flat[0];
-  const selector = rule?.selector ?? '';
-  /* One group: the mode card renders no footer. */
-  assert.ok(selector.includes(`${GUARD} ${ROW},`) || selector.endsWith(`${GUARD} ${ROW}`), selector);
-  assert.ok(!selector.includes('_footer_4ub78_62'), selector);
-  assert.match(rule?.body ?? '', /box-sizing:\s*border-box/u);
-  assert.match(rule?.body ?? '', /min-height:\s*24px/u);
-  assert.match(rule?.body ?? '', /padding-block:\s*2px/u);
-  assert.match(rule?.body ?? '', /border-radius:\s*6px/u);
-  /* The label's own type, x and gap stay the host's. */
-  for (const property of ['font-size', 'line-height', 'gap', 'padding:', 'padding-inline']) {
-    assert.ok(!(rule?.body ?? '').includes(property), `${property} is the host's`);
-  }
-});
-
-test('both hero picker cards answer to the design document’s popup chrome', () => {
-  const cards = composer.filter(rule => rule.selector.includes('[data-menu-material]'));
-  assert.equal(cards.length, 1, 'composer.css should draw exactly one hero picker card');
-  const rule = cards[0];
-  const selector = rule?.selector ?? '';
-  /* One rule for both chips: the guard is the row's own expanded menu button,
-     so the two cards cannot drift apart. */
-  assert.ok(selector.startsWith(CARD_GUARD), selector);
-  assert.ok(!selector.includes(':not(.bocITq_workspace)'), selector);
-  const body = rule?.body ?? '';
-  assert.match(body, /border:\s*1px solid var\(--ccd-border\)/u);
-  assert.match(body, /border-radius:\s*var\(--ccd-radius-panel\)/u);
-  assert.match(body, /background:\s*var\(--ccd-card\)/u);
-  /* The popup's three-layer shadow (DESIGN.md §三), the same one this plugin's
-     own model card carries. */
-  assert.match(body, /box-shadow:\s*var\(--ccd-effort-shadow\)/u);
-  /* The fill is the material layer's own token: naming that layer's class would
-     pin another hash the Windows table does not carry. */
-  assert.match(body, /--dsw-menu-surface-fill:\s*var\(--ccd-card\)/u);
-  assert.match(body, /--dsw-menu-backdrop-filter:\s*none/u);
-  /* Nothing else moves: the card keeps the primitive's padding, its own
-     scrollbar rebinding and the host's row treatment. */
-  for (const property of ['padding:', 'font-size', 'min-height']) {
-    assert.ok(!body.includes(property), `${property} is the host's`);
+test('the mode card no longer carries a copy of the shared popup chrome', () => {
+  for (const rule of composer) {
+    assert.ok(!rule.selector.includes('[data-menu-material]'), rule.selector);
+    assert.ok(!rule.selector.includes('._itemIcon_4ub78_148'), rule.selector);
+    /* The one 24px box this sheet still states is the editor's own text line;
+       the popup's row cell lives in menus.css. */
+    if (rule.body.includes('min-height: 24px')) {
+      assert.ok(!rule.selector.includes('[role="menu"]'), rule.selector);
+    }
   }
 });

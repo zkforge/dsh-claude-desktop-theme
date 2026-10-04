@@ -8,8 +8,8 @@
  * `crispEdges` keeps every step on a whole device pixel. The eye sits near the
  * tail, as in the mark; the head is the blunt left end.
  *
- * There is no click reaction: the pet is a decoration that shows the session's
- * own running state and nothing else, so the artwork is the whole story here.
+ * ComposerPet owns the local click reactions. The spray is offset three grid
+ * pixels towards the middle of the head, matching the approved preview.
  *
  * The parts are classes, not fixed fills: `pet.css` paints the body from
  * `--ccd-pet-blue` and the belly／eye from `--ccd-pet-light`, so the mark
@@ -25,6 +25,12 @@ export function Whale() {
         <path className="ccd-pet-fin" d="M17 17H19V18H21V19H24V20H26V21H23V22H20V21H18V20H17Z" />
         <path className="ccd-pet-eye" d="M17 11H19V12H20V14H18V13H17Z" />
         <path className="ccd-pet-eye-shut" d="M17 12H20V13H17Z" />
+        <g className="ccd-pet-spout-position" transform="translate(3 0)">
+          <g className="ccd-pet-spout ccd-pet-spout-stem"><path d="M9 4V-3H10V-4H11V4Z M7 -4H9V-2H7Z M11 -4H13V-2H11Z" /></g>
+          <g className="ccd-pet-spout ccd-pet-spout-left"><path d="M6 -5H8V-3H6Z" /></g>
+          <g className="ccd-pet-spout ccd-pet-spout-right"><path d="M12 -5H14V-3H12Z" /></g>
+          <g className="ccd-pet-spout ccd-pet-spout-top"><path d="M9 -7H11V-5H9Z" /></g>
+        </g>
       </g>
     </svg>
   );

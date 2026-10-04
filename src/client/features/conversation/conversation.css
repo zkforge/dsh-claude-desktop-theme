@@ -115,25 +115,21 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities {
   gap: var(--ccd-header-action-gap);
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
-  order: 4;
-  /* The utilities group and the corner seat are siblings of the header itself,
-     which carries no gap: this margin is that last 2px step. */
-  margin: 0 0 0 var(--ccd-header-action-gap);
-}
-
 /*
- * A Blank Session renders the corner seat alone — its only entry is the
- * collapsed right panel's expand control — and the host keeps that one control
- * on the trailing edge with `margin-left: auto` (`.headerBlank .headerCorner`,
- * ConversationRoot.module.css). The rule above replaces that auto margin with
- * the cluster's fixed step, which is right only while the row has a title and a
- * utilities group to sit after. Without the auto margin the blank row's single
- * button falls to the leading edge beside the window controls; the trailing
- * edge here is the same 12px inset the populated row uses, so nothing moves.
+ * The corner seat is retired, and the utilities group owns the trailing edge.
+ *
+ * That single cell's shipped occupant is `ui-sidebar-right`'s collapsed-panel
+ * expand control, which this interface does not draw; the plugin shadows it with
+ * an entry that renders nothing (`features/conversation/header-actions/entries.ts`)
+ * and keeps the expand action in the Session menu instead. So the seat has no
+ * box of its own to place — its own gap in front of the utilities would be 2px
+ * of trailing space after the last control, and the reference measures the
+ * cluster's inset from the header's own padding. A Blank Session renders the
+ * same empty seat, which is why the host's `margin-left: auto` for that row
+ * needs no answer here: there is nothing left in the corner to place either way.
  */
-html[data-dsh-ccd-style="true"] .ST7X_W_headerBlank .ST7X_W_headerCorner {
-  margin-left: auto;
+html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
+  margin: 0;
 }
 
 /*
@@ -259,10 +255,17 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerActions ._2tNPVa_trigger {
  *
  * The renderer wraps every list entry in a `display: contents` seat
  * (`[data-slot="conversation.session.header.utilities"]`), so the boxes are the
- * seat's children — the seat itself has no box to size.
+ * seat's children — the seat itself has no box to size. (The corner seat is
+ * retired and holds nothing: see the rule above.)
+ *
+ * `[role="tooltip"]` is named out because a seat's children are not always
+ * controls. `ui-primitives`' `Tooltip` clones its anchor and renders its bubble
+ * as a *sibling* of it, inside the same React fragment — which lands both nodes
+ * in the seat. Sizing that bubble to the control box clipped it to one glyph
+ * and a half the moment it appeared; the bubble keeps its own geometry on
+ * every hover.
  */
-html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *,
-html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner > [data-slot] > * {
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([role="tooltip"]) {
   box-sizing: border-box;
   flex: none;
   width: var(--ccd-header-action-size);
@@ -341,17 +344,17 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
 
 /*
  * Narrow columns. The cluster keeps every control at 24px down to the collapsed
- * macOS shell's 400px column; below 420px the two views this plugin adds step
- * aside so the native team entry keeps its full label. Both views stay reachable
- * from the right panel's own guide tab and from their shortcuts.
+ * macOS shell's 400px column; below 420px the three views this plugin adds —
+ * the project folder among them — step aside so the native team entry keeps its
+ * full label. All three stay reachable from the right panel's own guide tab and
+ * from their shortcuts.
  */
 @container ccd-conversation (max-width: 520px) {
   html[data-dsh-ccd-style="true"] .ST7X_W_header {
     padding-right: var(--ccd-header-trailing-inset-compact);
   }
 
-  html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *,
-  html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner > [data-slot] > * {
+  html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([role="tooltip"]) {
     width: var(--ccd-header-action-compact);
     height: var(--ccd-header-action-compact);
   }

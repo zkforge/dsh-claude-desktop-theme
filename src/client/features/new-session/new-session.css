@@ -67,25 +67,3 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .bocITq_previewB
 html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_composerSeat {
   padding-bottom: 0;
 }
-
-/*
- * Hero page: the header's right-panel entry goes away.
- *
- * A blank Conversation renders this header without chrome — `hideChrome` keeps
- * `ConversationSessionHeader` from rendering its title cluster and its
- * utilities — and the corner seat's `single` slot has exactly one occupant,
- * sidebar-right's collapsed-panel expand control (`ExpandButton`, the button
- * carrying `[data-sidebar-right-expand]`). The panel is empty on this page and
- * its expand control only duplicates the sidebar's own top-strip toggle, so the
- * lone icon is dropped instead of floating in the corner.
- *
- * Hiding the button leaves no placeholder: the seat's only other child is the
- * renderer's slot anchor, which is `display: contents`, so the seat has no box
- * left to hold open and keeps absorbing the row's free space with the same
- * `margin-left: auto` the blank header gives it. Every other header control is
- * untouched — a Session that is not blank never matches this rule, so its
- * expand button, tooltip and handler all stay as the host rendered them.
- */
-html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] [data-conversation-header-corner] [data-sidebar-right-expand] {
-  display: none;
-}

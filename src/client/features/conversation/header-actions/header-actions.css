@@ -1,7 +1,9 @@
 /*
- * The conversation header's trailing cluster: the two right-panel views this
- * plugin adds, plus the reference's own two adaptations to the host controls of
- * the same row (issue 16).
+ * The conversation header's trailing cluster: the three right-panel views this
+ * plugin adds — the project folder first, then terminal and browser — plus the
+ * reference's own adaptations to the host controls of the same row (issue 16).
+ * The corner seat past the cluster is retired, so these three are the whole of
+ * the row's own additions.
  *
  * The views' 28px box, hover surface, spacing and compact width all come from
  * the cluster rules in `features/conversation/conversation.css`, so these
@@ -52,6 +54,20 @@
 }
 
 /*
+ * The folder opens the row, and is the mark of the control that does it.
+ *
+ * Its seat is the head of the utilities group — the reference draws the project
+ * folder as the cluster's first control, ahead of the terminal and browser views
+ * and ahead of every native entry in that group — and what it opens is the right
+ * panel's file list for the Session's own directory. The glyph is the closed
+ * folder the workspace chip already draws (`theme/tokens.css`), so the interface
+ * has one folder, not two.
+ */
+.ccd-header-action[data-ccd-header-view="files"]::before {
+  mask-image: var(--ccd-icon-folder);
+}
+
+/*
  * The header's own open-in-app control is retired here (16).
  *
  * `ui-open-in-app` registers `open-in-app` into
@@ -79,11 +95,11 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .iq4beG_menuAnchor {
 /*
  * One ink for the trailing cluster (16).
  *
- * Every control in the utilities and corner seats is an icon-only ghost button:
+ * Every control in the utilities seat is an icon-only ghost button:
  * the native session menu (`Da3aKq_moreButton`, the "More actions" menu), the
- * two views this plugin adds, the collapsed right panel's re-entry control and
- * the scheduled-tasks entry while a Session has records. The host paints each
- * with its own secondary label grey; the reference draws them at full strength,
+ * three views this plugin adds and the scheduled-tasks entry while a Session
+ * has records. The host paints each with its own secondary label grey; the
+ * reference draws them at full strength,
  * so the cluster takes one token — pure black on the light canvas, its white
  * mirror on the dark one (theme/tokens.css) — and every state the host owns
  * stays its own.
@@ -93,7 +109,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .iq4beG_menuAnchor {
  * and that sheet mounts after this one, so an equal-specificity rule here would
  * lose the cascade. Naming the seat lifts this above it without `!important`,
  * and keeps the reach at controls: the header's text, its View switcher and the
- * leading Agent-preset／team chrome are not in these two seats.
+ * leading Agent-preset／team chrome are not in this seat.
  *
  * Naming the button and its `svg` covers both a glyph that inherits
  * `currentColor` (the session menu's ellipsis) and one a later build might paint
@@ -102,9 +118,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .iq4beG_menuAnchor {
  * never lands on a fill of its own lightness.
  */
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button,
-html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button svg,
-html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner > [data-slot] button,
-html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner > [data-slot] button svg {
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button svg {
   color: var(--ccd-header-icon-color);
 }
 

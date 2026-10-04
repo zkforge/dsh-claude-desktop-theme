@@ -455,7 +455,7 @@
 }
 
 .ccd-effort .panel { position: static; width: 100%; }
-.ccd-effort { position: fixed; z-index: 1000; margin: 0; }
+.ccd-effort { position: fixed; z-index: 1000; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
 .ccd-effort .level-stage::after {
   content: attr(data-longest);
   visibility: hidden;

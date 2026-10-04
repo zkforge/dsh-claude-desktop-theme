@@ -24,19 +24,33 @@ html[data-dsh-ccd-style="true"]:has([data-submission-echo], [data-pending-steeri
   display: none;
 }
 
-/* Hide while EffortPanel.tsx renders .ccd-effort. Composer's tool row is a
- * stacking context (ui-conversation/InputBar.module.css, yhfFVG_row), so its
- * popup appears below the shell overlay containing the whale.
- */
-html[data-dsh-ccd-style="true"]:has(.ccd-effort) .ccd-pet-blank-seat {
-  display: none;
-}
-
 html[data-dsh-ccd-style="true"] .ccd-composer-pet {
   display: block;
+  position: relative;
   width: 32px;
   height: 24px;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--ccd-pet-blue);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* A 44px target grows upwards, leaving the input surface below click-through.
+   The measured seat and the artwork keep their original 32 × 24 geometry. */
+html[data-dsh-ccd-style="true"] .ccd-composer-pet::before {
+  content: "";
+  position: absolute;
+  inset: -20px -6px 0;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-composer-pet:focus-visible {
+  outline: 1px solid var(--ccd-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 html[data-dsh-ccd-style="true"] .ccd-pet-art {
@@ -55,10 +69,15 @@ html[data-dsh-ccd-style="true"] .ccd-pet-eye-shut {
    blink keyframes, so the closed pose is drawn rather than faked with opacity
    on a single shape. */
 html[data-dsh-ccd-style="true"] .ccd-pet-eye-shut { opacity: 0; }
+html[data-dsh-ccd-style="true"] .ccd-pet-spout { opacity: 0; }
 
-html[data-dsh-ccd-style="true"] .ccd-pet-eye { animation: ccd-pet-blink 7.8s steps(1, end) infinite; }
-html[data-dsh-ccd-style="true"] .ccd-pet-eye-shut { animation: ccd-pet-blink-shut 7.8s steps(1, end) infinite; }
-html[data-dsh-ccd-style="true"] .ccd-pet-tail { animation: ccd-pet-rest-tail 11s steps(1, end) infinite; }
+html[data-dsh-ccd-style="true"] .ccd-composer-pet:not([data-reaction]) .ccd-pet-eye { animation: ccd-pet-blink 7.8s steps(1, end) infinite; }
+html[data-dsh-ccd-style="true"] .ccd-composer-pet:not([data-reaction]) .ccd-pet-eye-shut { animation: ccd-pet-blink-shut 7.8s steps(1, end) infinite; }
+html[data-dsh-ccd-style="true"] .ccd-composer-pet:not([data-reaction]) .ccd-pet-tail { animation: ccd-pet-rest-tail 11s steps(1, end) infinite; }
+
+html[data-dsh-ccd-style="true"] .ccd-pet-body { transform-origin: 16px 23px; }
+html[data-dsh-ccd-style="true"] .ccd-pet-tail { transform-origin: 24px 14px; }
+html[data-dsh-ccd-style="true"] .ccd-pet-fin { transform-origin: 17px 18px; }
 
 /* A hidden document pauses every frame instead of dropping them: the pet is
    still there when the window comes back, without a timer running behind it. */

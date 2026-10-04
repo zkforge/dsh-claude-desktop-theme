@@ -118,6 +118,8 @@ let teardown;
 let paletteLayers = 0;
 const modelSeats = new Set();
 const headerViews = new Set();
+/** The corner cell's retirement entry: it renders nothing and takes the seat. */
+const cornerSeats = new Set();
 /** The Composer whale's one overlay seat, and the scope that owns it. */
 const blankPetSeats = new Set();
 /** The row configuration page and its dictionary outlive the activation scope. */
@@ -137,7 +139,7 @@ const sidebarRight = {
   openTabs: { getSnapshot: () => sidebarTabs },
 };
 const sidebarRightTabs = {
-  kinds: new Set(['terminal', 'browser']),
+  kinds: new Set(['terminal', 'browser', 'files']),
   listeners: new Set(),
   get(kind) { return this.kinds.has(kind) ? { kind } : undefined; },
   subscribe(listener) { this.listeners.add(listener); return () => this.listeners.delete(listener); },
@@ -148,6 +150,7 @@ const slots = {
     assert.ok([
       'conversation.input.model',
       'conversation.session.header.utilities',
+      'conversation.session.header.corner',
       'shell.overlay',
       'plugins.row.config',
     ].includes(name), `unexpected slot: ${name}`);
@@ -173,10 +176,20 @@ const slots = {
       blankPetSeats.add(options);
       return () => blankPetSeats.delete(options);
     }
+    if (options.name === 'conversation.session.header.corner') {
+      // The corner is a single cell whose shipped occupant is the panel's own
+      // expand control: this registration takes it by sitting below that
+      // occupant's rank, and its component renders nothing (see `cornerSeats`).
+      assert.equal(options.priority, -10);
+      assert.equal('id' in options, false);
+      cornerSeats.add(options);
+      return () => cornerSeats.delete(options);
+    }
     assert.equal(options.name, 'conversation.session.header.utilities');
-    // The added views sit ahead of the native session menu (order 0) and behind
-    // the native open control (-10) and scheduled tasks (-5).
-    assert.ok(options.order > -5 && options.order < 0, `header view order: ${options.order}`);
+    // The project folder leads the row, below every native seat (the retired
+    // open-in-app control at -10 and scheduled tasks at -5); the terminal and
+    // browser views then sit ahead of the native session menu at 0.
+    assert.ok(options.order < 0, `header view order: ${options.order}`);
     assert.equal(typeof options.inject, 'function');
     headerViews.add(options);
     return () => headerViews.delete(options);
@@ -299,21 +312,29 @@ assert.equal(settingsScopes, 1);
 // Re-enabling through the settings transport activates without a reload.
 configForms.published({ ...disabled, enabled: true });
 assert.equal(attributes.get('data-dsh-ccd-style'), 'true');
-// Design variables, the shared composer geometry, and the page stylesheet.
-assert.equal(styles.size, 3);
+// Design variables, the shared composer geometry, the host popup chrome, and the page stylesheet.
+assert.equal(styles.size, 4);
 assert.equal(paletteLayers, 1);
 // Exercise the actual bundled model-seat registration and its cleanup scope.
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, conversation: true } });
 assert.equal(modelSeats.size, 1);
 assert.equal(modelScopes, 1);
-assert.equal(headerViews.size, 2);
+assert.equal(headerViews.size, 3);
+assert.equal(cornerSeats.size, 1);
 assert.equal(headerScopes, 1);
-assert.equal(styles.size, 7); // page + theme + Composer + model controls + effort + conversation + header actions
+assert.equal(styles.size, 8); // page + theme + Composer + menus + model controls + effort + conversation + header actions
 /* The whale has its own switch, so the conversation feature alone mounts none. */
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);
-/* The added header views open their right-panel kind, and focus the Session's
-   existing tab of that kind instead of stacking a second one. */
+/* The project folder is the cluster's first entry, and the three added views
+   open their right-panel kind — focusing the Session's existing tab of that
+   kind instead of stacking a second one. */
+assert.deepEqual([...headerViews].map(view => view.id), ['ccd-folder', 'ccd-terminal', 'ccd-browser']);
+const folderView = [...headerViews][0];
+assert.equal(folderView.inject('session-1').kind, 'files');
+folderView.inject('session-1').open();
+assert.deepEqual(openedKinds, ['files']);
+openedKinds.length = 0;
 const terminalView = [...headerViews].find(view => view.id === 'ccd-terminal');
 assert.equal(terminalView.inject('session-1').kind, 'terminal');
 terminalView.inject('session-1').open();
@@ -323,16 +344,18 @@ terminalView.inject('session-1').open();
 assert.deepEqual(focusedTabs, ['tab7']);
 /* A build without a panel kind keeps no button for it, and recovers when the
    kind registers again — the registry's own signal drives both. */
+sidebarRightTabs.kinds.delete('files');
 sidebarRightTabs.kinds.delete('browser');
 sidebarRightTabs.refresh();
 assert.deepEqual([...headerViews].map(view => view.id), ['ccd-terminal']);
+sidebarRightTabs.kinds.add('files');
 sidebarRightTabs.kinds.add('browser');
 sidebarRightTabs.refresh();
-assert.equal(headerViews.size, 2);
+assert.equal(headerViews.size, 3);
 // Repeated unchanged configuration must not register a duplicate seat.
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, conversation: true } });
 assert.equal(modelSeats.size, 1);
-assert.equal(headerViews.size, 2);
+assert.equal(headerViews.size, 3);
 /* The Composer whale: one switch, one overlay seat, on the new-session page
    only. The seat belongs to that page's own layout, so it arrives with
    `new-session` — and the compat anchor measures the card under
@@ -345,8 +368,8 @@ configForms.published({
 });
 assert.equal(blankPetSeats.size, 1);
 assert.equal(petScopes, 1);
-// page + theme + Composer + model controls + effort + conversation + header actions + new session + pet
-assert.equal(styles.size, 9);
+// page + theme + Composer + menus + model controls + effort + conversation + header actions + new session + pet
+assert.equal(styles.size, 10);
 const petFace = [...blankPetSeats][0].inject();
 // The pet is decoration: the seat injects the measured corner and nothing else
 // — no session, no reaction state, no timer, no copy.
@@ -361,7 +384,7 @@ configForms.published({ ...disabled, enabled: true, features: { ...disabled.feat
 assert.equal(blankRow.getAttribute('data-ccd-blank-session'), '', 'the blank Session row must be tagged');
 assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Session row stays in the list');
 /* The sidebar feature mounts its column stylesheet and the account-menu sheet. */
-assert.equal(styles.size, 5);
+assert.equal(styles.size, 6);
 assert.ok(beforeSidebarStyles > styles.size, 'the previous feature scope was released first');
 configForms.published({ ...disabled, enabled: true });
 assert.equal(blankRow.getAttribute('data-ccd-blank-session'), null, 'disabling releases the tag');
@@ -373,6 +396,7 @@ assert.equal(paletteLayers, 0);
 assert.equal(modelSeats.size, 0);
 assert.equal(modelScopes, 0);
 assert.equal(headerViews.size, 0);
+assert.equal(cornerSeats.size, 0);
 assert.equal(headerScopes, 0);
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);

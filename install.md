@@ -6,34 +6,50 @@
 
 ### 官方插件页
 
-打开 DSH「插件 → 添加插件」，输入 `dsh-ccd-style` 并安装。安装后按下方「启用与配置」重载应用。
+打开 DSH「插件 → 添加插件」，输入 `dsh-claude-desktop-theme` 并安装。安装后按下方「启用与配置」重载应用。
 
 ### 终端
 
 已注册 `dsh` 命令时执行：
 
 ```sh
-dsh plugin --profile desktop add dsh-ccd-style
+dsh plugin --profile desktop add dsh-claude-desktop-theme
 ```
 
 macOS 未注册命令时，可使用应用内置 CLI：
 
 ```sh
-"${DSH_CCD_APP:-/Applications/DeepSeek Harness.app}/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add dsh-ccd-style
+"${DSH_CCD_APP:-/Applications/DeepSeek Harness.app}/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add dsh-claude-desktop-theme
 ```
 
 Windows 可先通过「应用 → 管理 dsh 命令…」安装命令，再重开 PowerShell；也可直接调用应用内置启动器：
 
 ```powershell
 $ccdApp = if ($env:DSH_CCD_APP) { $env:DSH_CCD_APP } else { Join-Path $env:LOCALAPPDATA 'Programs\DeepSeek Harness' }
-& (Join-Path $ccdApp 'resources\runtime\cli\bin\dsh.cmd') plugin --profile desktop add dsh-ccd-style
+& (Join-Path $ccdApp 'resources\runtime\cli\bin\dsh.cmd') plugin --profile desktop add dsh-claude-desktop-theme
 ```
 
-安装的是已构建的 [npm 包](https://www.npmjs.com/package/dsh-ccd-style)，无需克隆源码或在本机编译。安装到应用正在使用的 `DSH_HOME` 与 profile；桌面版默认使用 `desktop`，不要安装到独立的 `web` profile。
+安装的是已构建的 [npm 包](https://www.npmjs.com/package/dsh-claude-desktop-theme)，无需克隆源码或在本机编译。安装到应用正在使用的 `DSH_HOME` 与 profile；桌面版默认使用 `desktop`，不要安装到独立的 `web` profile。
 
 ### 插件市场
 
 插件目录收录尚未完成，目前请通过官方插件页或终端安装。
+
+## 从旧包名迁移
+
+`0.1.0` 的 npm 包名为 `dsh-ccd-style`，从 `0.2.0` 起改为 `dsh-claude-desktop-theme`。这是安装新的 npm 包，旧包的更新命令不会自动切换包名。
+
+1. 在旧插件设置中记录颜色、字体、模块开关；有手动覆盖配置时先备份当前 profile 的 `cordis.patch.yml`。
+2. 使用应用正在使用的 CLI、`DSH_HOME` 和 `desktop` profile，先移除旧包，再安装新包：
+
+   ```sh
+   dsh plugin --profile desktop remove dsh-ccd-style
+   dsh plugin --profile desktop add dsh-claude-desktop-theme
+   ```
+
+3. 重载应用，在「插件 → dsh-claude-desktop-theme → ui-skin-ccd-style」核对并重新设置自定义项。不要同时启用旧包和新包。
+
+包名迁移不会自动复制旧包的自定义配置。手动维护用户层覆盖配置时，将插件 `name: dsh-ccd-style` 改为 `name: dsh-claude-desktop-theme`；条目 id 仍为 `ui-skin-ccd-style`，请勿添加重复 id。未注册 `dsh` 时，使用上面的应用内置 CLI 路径。
 
 ## 从源码安装
 
@@ -55,8 +71,8 @@ ccd_app="${DSH_CCD_APP:-/Applications/DeepSeek Harness.app}"
 ccd_cli="$ccd_app/Contents/Resources/runtime/cli/bin/dsh"
 ccd_version="$(node -p 'require("./package.json").version')"
 ccd_install_dir="$(mktemp -d "$PWD/artifacts/install.XXXXXX")"
-ccd_tarball="$ccd_install_dir/dsh-ccd-style-$ccd_version.tgz"
-cp "$PWD/artifacts/dsh-ccd-style-$ccd_version.tgz" "$ccd_tarball"
+ccd_tarball="$ccd_install_dir/dsh-claude-desktop-theme-$ccd_version.tgz"
+cp "$PWD/artifacts/dsh-claude-desktop-theme-$ccd_version.tgz" "$ccd_tarball"
 "$ccd_cli" plugin --profile desktop add "$ccd_tarball"
 ```
 
@@ -74,8 +90,8 @@ npm run pack:local --cache .cache/npm
 $ccdVersion = node -p "require('./package.json').version"
 $ccdInstallDir = Join-Path $PWD ("artifacts/install." + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory -Path $ccdInstallDir | Out-Null
-$ccdTarball = Join-Path $ccdInstallDir "dsh-ccd-style-$ccdVersion.tgz"
-Copy-Item "artifacts/dsh-ccd-style-$ccdVersion.tgz" $ccdTarball
+$ccdTarball = Join-Path $ccdInstallDir "dsh-claude-desktop-theme-$ccdVersion.tgz"
+Copy-Item "artifacts/dsh-claude-desktop-theme-$ccdVersion.tgz" $ccdTarball
 dsh plugin --profile desktop add $ccdTarball
 ```
 
@@ -95,7 +111,7 @@ $ccdCli = Join-Path $ccdApp 'resources\runtime\cli\bin\dsh.cmd'
 
 安装后重载 DSH：macOS 按 **⌘R**；Windows 从托盘菜单退出后重新打开应用。首次加载自动显示风格。升级保留此前的开关和配置。
 
-在「插件 → dsh-ccd-style → ui-skin-ccd-style」调整：
+在「插件 → dsh-claude-desktop-theme → ui-skin-ccd-style」调整：
 
 - 总开关与各模块开关。
 - 跟随系统、浅色或深色主题。
@@ -114,7 +130,7 @@ $ccdCli = Join-Path $ccdApp 'resources\runtime\cli\bin\dsh.cmd'
 npm 安装的插件可通过同一 CLI 和 profile 更新：
 
 ```sh
-dsh plugin --profile desktop update dsh-ccd-style
+dsh plugin --profile desktop update dsh-claude-desktop-theme
 ```
 
 未注册 `dsh` 时，替换为上面的应用内置 CLI 路径。源码安装则更新源码，重新执行对应平台的安装命令。升级后重载 DSH，保留已有开关和配置。
@@ -124,13 +140,13 @@ dsh plugin --profile desktop update dsh-ccd-style
 macOS：
 
 ```sh
-"${DSH_CCD_APP:-/Applications/DeepSeek Harness.app}/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop remove dsh-ccd-style
+"${DSH_CCD_APP:-/Applications/DeepSeek Harness.app}/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop remove dsh-claude-desktop-theme
 ```
 
 Windows（已注册 `dsh` 时）：
 
 ```powershell
-dsh plugin --profile desktop remove dsh-ccd-style
+dsh plugin --profile desktop remove dsh-claude-desktop-theme
 ```
 
 如曾手动添加用户层覆盖配置，移除其中 `id: ui-skin-ccd-style` 的条目，然后重载 DSH。

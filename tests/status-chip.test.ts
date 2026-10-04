@@ -115,6 +115,33 @@ test('every control in the row takes the one chip box', () => {
   assert.match(seat[1]?.body ?? '', /align-items:\s*center/u);
 });
 
+test('the permission chip is its text: no mode glyph, no disclosure mark', () => {
+  /* Both of the host's marks leave the line in one rule: the mode glyph it
+     leads with and the chevron it closes with. */
+  const marks = composer.filter(rule => rule.body.includes('display: none')
+    && (rule.selector.includes('.wXeviG_triggerIcon') || rule.selector.includes('.wXeviG_chevron')));
+  assert.equal(marks.length, 1, 'one rule withdraws the glyph and the chevron');
+  const selector = marks[0]?.selector ?? '';
+  assert.ok(selector.includes('html[data-dsh-ccd-style="true"] .wXeviG_triggerIcon'), selector);
+  assert.ok(selector.includes('html[data-dsh-ccd-style="true"] .wXeviG_chevron'), selector);
+  assert.equal((marks[0]?.body ?? '').trim(), 'display: none;');
+
+  /* The label is the whole control, so no rule hides it: the plugin's own
+     narrow-column rule is gone, and the host's `≤460px`
+     `.wXeviG_trigger:has(.wXeviG_triggerIcon) .wXeviG_triggerLabel` — which
+     reads the glyph as the reading that survives there — is outranked by a
+     rule that names the same seat with `:has()` and the child combinator. */
+  const hidden = composer.filter(rule =>
+    rule.selector.includes('.wXeviG_triggerLabel') && rule.body.includes('display: none'));
+  assert.deepEqual(hidden, [], 'the permission label is drawn at every width');
+  const kept = composer.filter(rule =>
+    rule.selector.includes('.wXeviG_triggerLabel') && rule.body.includes('display: inline'));
+  assert.equal(kept.length, 1, 'one rule keeps the permission label');
+  const keeper = kept[0]?.selector ?? '';
+  assert.ok(keeper.includes(':has(.wXeviG_triggerIcon)'), keeper);
+  assert.ok(keeper.includes('> .wXeviG_triggerLabel'), keeper);
+});
+
 test('every container in the row spaces its children with the one gap', () => {
   const gapRule = ruleFor(composer, ROW_CONTAINERS.join(', html[data-dsh-ccd-style="true"] '));
   assert.match(gapRule.body, /gap:\s*var\(--ccd-cluster-gap\)/u);

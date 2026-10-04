@@ -48,6 +48,10 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * a heading is worth, where an editable face's line steps — is below.
  */
 .ccd-model-panel, .ccd-model-error { position: fixed; z-index: 1000; box-sizing: border-box; width: min(240px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; padding: 6px; border: 1px solid var(--ccd-border); border-radius: 12px; background: var(--ccd-card); color: var(--ccd-text); box-shadow: var(--ccd-effort-shadow); font: 13px/1.4 var(--ccd-font-ui); }
+/* Native top-layer placement keeps the existing anchor coordinates. The
+   backdrop stays click-through so usePopup still owns outside dismissal. */
+.ccd-model-panel[popover], .ccd-effort[popover] { inset: auto; margin: 0; }
+.ccd-model-panel::backdrop, .ccd-effort::backdrop { background: transparent; pointer-events: none; }
 /*
  * The card's one editable face. A face carries a stronger line than the card
  * outline around it (DESIGN.md §二.4: `--ccd-border-strong`, the line the

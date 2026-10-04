@@ -93,7 +93,14 @@ export const HOST = Object.freeze({
   openTargetAppIcon: '.iq4beG_appIcon',
   /** session-log-export/HeaderAction.module.css: native session action menu. */
   sessionMoreButton: '.Da3aKq_moreButton',
-  /** sidebar-right/ExpandButton.tsx: the collapsed rightbar's only re-entry control. */
+  /**
+   * sidebar-right/ExpandButton.tsx: the collapsed rightbar's only re-entry
+   * control. This plugin no longer styles it: the corner entry shadows it in
+   * that single cell (`features/conversation/header-actions/entries.ts`,
+   * `OVERRIDE_PRIORITY`) and the expand action moves into the Session menu, so
+   * the marker is the pinned record of the control that was displaced — the
+   * thing to re-check against a later build.
+   */
   sidebarRightExpand: '[data-sidebar-right-expand]',
   conversationBody: '.ST7X_W_body',
   assistantMarkdown: '.gKv1-q_root',
@@ -195,6 +202,13 @@ export const ANCHOR = Object.freeze({
   sessionRows: '[data-row-key^="session:"]',
   settings: '[data-slot="sidebar.settings"]',
   conversation: '[data-conversation-content]',
+  /**
+   * AppFrame.tsx: the frame element itself while the right panel's column has no
+   * width. The host writes `data-rightbar-collapsed` from `cols.rightbar === 0`,
+   * so it is the collapsed state's own statement — the header's expand control
+   * reads it rather than a measurement of our own.
+   */
+  rightbarCollapsed: '[data-slot="root"] > div[data-rightbar-collapsed]',
   /** The element that actually scrolls the Conversation page. In the pinned
       layout the transcript column inside it is `overflow: visible`, so this is
       the scroll viewport the edge fade has to describe. */

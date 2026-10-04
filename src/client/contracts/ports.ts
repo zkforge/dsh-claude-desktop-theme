@@ -85,6 +85,15 @@ export interface SidebarRightPort {
   focus(tabId: string): void;
   /** Open tab metadata across adopted Sessions. */
   readonly openTabs: { getSnapshot(): readonly SidebarTabRecord[] };
+  /**
+   * Collapse the column, or expand it and focus its active dock pane.
+   *
+   * The header's shipped re-entry control (`ExpandButton`) is shadowed by this
+   * plugin's corner entry, so the Session menu's own row is what reveals a
+   * collapsed column again; a build whose face does not carry this member
+   * keeps that row out rather than offering one that cannot act.
+   */
+  toggleExpanded?(): void;
 }
 
 /**

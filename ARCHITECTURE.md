@@ -11,7 +11,7 @@
 | `src/client/contracts` | feature、服务、DOM 与配置表单端口 |
 | `src/client/core` | 清理作用域与 feature 装配 |
 | `src/client/compat` | SDK 接入、宿主选择器与布局量测 |
-| `src/client/theme` | 设计变量、调色板、语义 token 与 Composer 样式 |
+| `src/client/theme` | 设计变量、调色板、语义 token、Composer 与宿主弹层样式 |
 | `src/client/features` | 界面模块、模型控件与配置页 |
 | `src/client/apply.ts` | 客户端组合入口 |
 | `scripts` | 构建、架构与安装包检查 |
@@ -30,9 +30,11 @@ Host 依赖 shared 与 Host 运行库；客户端各层通过 contracts、core�
 | composer-pet | 新会话输入卡右上角的小鲸鱼 | 开启 |
 | statistics | 用量概览、热力图与模型图表 | 关闭 |
 
-模型与 effort 控件由新会话页和聊天页共用，选择操作调用官方 ModelDirectory。聊天顶栏的终端和浏览器入口转发宿主右侧栏操作。工具调用沿用 DSH 原生展示。
+模型与 effort 控件由新会话页和聊天页共用，选择操作调用官方 ModelDirectory。聊天顶栏的项目文件夹、终端与浏览器三个入口都转发宿主右侧栏操作，文件夹占工具组的第一位。顶栏最右的角位是宿主的单格槽位，原本由「收起右侧栏」的展开按钮占据：插件以更低优先级顶掉该条目，注册一个不渲染内容的条目把这一格留空；展开动作移进会话 ⋯ 菜单的第一项（`compat/session-menu.ts`），只在右侧栏收起时出现。工具调用沿用 DSH 原生展示。
 
-小鲸鱼通过 `shell.overlay` 挂载，位置由 `compat/pet-anchor.ts` 量测。它只显示在 `data-phase="hero"` 的新会话页；输入卡上方有其他内容、发送回显或 effort 弹窗时收起。
+小鲸鱼通过 `shell.overlay` 挂载，位置由 `compat/pet-anchor.ts` 量测。它只显示在 `data-phase="hero"` 的新会话页；输入卡上方有其他内容或发送回显时收起。模型与 effort 选单使用原生 Popover 顶层显示，覆盖重叠的鲸鱼，不因选单打开而隐藏宠物。
+
+点击鲸鱼会等概率播放喷一口水、轻弹眨眼、摆尾回应之一，播放期间忽略连点。动作只属于宠物自身，不读写会话；隐藏页面或卸载组件时取消，减少动态效果偏好下只显示短暂闭眼反馈。
 
 ## 配置与生命周期
 

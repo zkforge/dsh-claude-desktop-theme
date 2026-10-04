@@ -77,10 +77,11 @@ html[data-dsh-ccd-style="true"] {
   --ccd-context-ring-size: 14px;
   --ccd-context-ring-trigger: 26px;
   --ccd-context-ring-seat: calc(var(--ccd-context-ring-trigger) + var(--ccd-cluster-gap));
-  /* The status bar's own glyph size: the command plus, the permission shield,
-     the statistics readouts and the ring all draw 14px artwork in the 28px
-     control row. The speech-to-text control draws 18px of its own; the composer
-     sheet brings that one down to this size. */
+  /* The status bar's own glyph size: the command plus, the statistics readouts
+     and the ring all draw 14px artwork in the 28px control row. The
+     speech-to-text control draws 18px of its own; the composer sheet brings that
+     one down to this size. The permission control draws no glyph at all — it is
+     its text (composer.css). */
   --ccd-row-icon-size: 14px;
   --ccd-account-menu-width: 236px;
   --ccd-account-menu-padding: 5px;
@@ -227,11 +228,12 @@ html[data-dsh-ccd-style="true"] {
      as a chosen value rather than as chrome (model, reasoning effort). */
   --ccd-font-weight-strong: 600;
 
-  /* DSH 0.2.0-rc.2 ui-primitives shared artwork (MIT): IconSendOutlineRegular
-     and IconStopFillRegular. Masks reuse their 16px geometry with currentColor
-     while keeping React's official Composer buttons and SVG state markers. */
-  --ccd-icon-send: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M6.97211 1.94476C7.55785 1.35914 8.50767 1.35919 9.09343 1.94476L13.921 6.77228L13.2138 7.47939L8.38632 2.65187C8.19108 2.45682 7.87443 2.45677 7.67922 2.65187L2.74397 7.58711L2.03687 6.88L6.97211 1.94476Z' fill='black'/%3E%3Cpath d='M7.97571 14.5732L8.02421 2.34139' stroke='black' stroke-width='1'/%3E%3C/svg%3E");
-  --ccd-icon-stop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M12.5 2.5H3.5C2.94772 2.5 2.5 2.94772 2.5 3.5V12.5C2.5 13.0523 2.94772 13.5 3.5 13.5H12.5C13.0523 13.5 13.5 13.0523 13.5 12.5V3.5C13.5 2.94772 13.0523 2.5 12.5 2.5Z' fill='black'/%3E%3C/svg%3E");
+  /* Hand-drawn 16px marks matching the CCD interaction recording: return
+     arrow and a small square in a ring. The host keeps its buttons, handlers
+     and SVG state markers; these masks replace only their visible artwork. */
+  --ccd-send-radius: 6px;
+  --ccd-icon-send: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M12 4.5V8A2 2 0 0 1 10 10H3.5M6.5 7L3.5 10L6.5 13' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --ccd-icon-stop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5.5' fill='none' stroke='black' stroke-width='1.25'/%3E%3Crect x='6' y='6' width='4' height='4' rx='.6' fill='black'/%3E%3C/svg%3E");
 
   /* The header's three painted glyphs, taken from DSH 0.2.0-rc.2 shared
      artwork (MIT) so no host component is copied:
@@ -334,6 +336,8 @@ html[data-dsh-ccd-style="true"] {
  * (theme/composer.css, `.yhfFVG_dock::after`) vanished exactly that way.
  */
 html[data-dsh-ccd-style="true"] body {
+  /* Resolve on body so dark mode and configured palettes both participate. */
+  --ccd-composer-focus-border: color-mix(in srgb, var(--ccd-card) 60%, var(--ccd-text-secondary));
   /* The empty state's ring draws the host's track alone. It stays the host's
      own track token (`ContextMeter.module.css` strokes `.y0jqnG_track` with
      `--dsw-alias-border-l3`, which theme/tokens.ts already retints), so an

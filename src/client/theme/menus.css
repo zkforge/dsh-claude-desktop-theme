@@ -1,0 +1,205 @@
+/*
+ * Host popup surfaces — menus and panels (DESIGN.md §6.7).
+ *
+ * The document draws one popup for the whole interface: a 12px card with a 1px
+ * outline, the three-layer hairline shadow and the card fill, and one flat 24px
+ * cell per row — the host's own 13px label on a 20px line with 2px above and
+ * below, a 6px corner, and no leading icon seat, because a row is text plus a
+ * trailing mark.
+ *
+ * Every host popup is built from two shared pieces, so this sheet is two
+ * families of rules rather than one per menu:
+ *
+ * - **The card** is `MenuSurface` (`ui-primitives`), which tags itself
+ *   `data-menu-material`; that node is the same whichever primitive renders
+ *   inside it — a `Menu` list, a submenu, the signed-in account card, or the
+ *   Composer's command palette. Its own skin is a translucent material: a 16px
+ *   `--dsw-radius-lg` corner, a 0.5px elevation stroke and the
+ *   `--dsw-elevation-prominent` shadow on the card, plus a `.material` child
+ *   covering its padding box with `--dsw-menu-surface-fill` (a 58%-alpha
+ *   near-white) under a `blur(40px) saturate(150%)` backdrop.
+ *
+ * - **The rows** belong to whichever primitive renders them. `ui-primitives`'
+ *   `Menu` renders `button[role="menuitem"]` — `Menu.js` `MenuItemButton`: an
+ *   optional `.itemIcon` seat, the label and an optional trailing shortcut —
+ *   and the Composer's command palette renders `button[role="option"]` inside a
+ *   `[role="listbox"]` viewport whose classes are a frontend asset hash
+ *   `compat/host-dom.ts` does not pin, so those rows are reached through ARIA
+ *   and structure instead of a class name.
+ *
+ * Until this sheet existed the document's chrome was written per menu: the two
+ * hero chips' pickers in `composer.css`, the account card in
+ * `features/sidebar/account-menu.css`. The workspace `⋯`, session `⋯`,
+ * view-options and permission menus — which open from the sidebar and from the
+ * Composer's own status bar — therefore still drew the host's translucent 16px
+ * material with 34px cells and a leading glyph, next to hero pickers that drew
+ * this one. The rules below are now the single place that draws a host popup;
+ * the sheets that used to carry a copy keep only what is genuinely theirs.
+ *
+ * Deliberately outside those rules:
+ *
+ * - the **account menu** (`compat/account-menu.ts` tags the card
+ *   `data-ccd-account-menu`) keeps its own row rhythm and its leading glyphs:
+ *   the reference for that card draws them
+ *   (`features/sidebar/account-menu.css`), and it is a wide account card rather
+ *   than a list of choices. Its *card* is still the document's popup and takes
+ *   the rule below; only the row rules step around it.
+ * - the plugin's own **model and effort cards** (`features/model-controls`) are
+ *   not `MenuSurface` nodes at all — they already draw this chrome from their
+ *   own sheets and answer to their own tests.
+ *
+ * Host classes are pinned in src/client/compat/host-dom.ts.
+ */
+
+/* The card.
+ *
+ * Three of the material's four values move here: the corner, the outline and
+ * the shadow. The fourth, the fill, moves through the token the `.material`
+ * layer reads rather than by naming that layer's class — one less hash to pin,
+ * and the layer keeps its own `inset: 0`, so its arc still follows the card.
+ *
+ * The card states `--ccd-card` beside the token for the one pixel the material
+ * cannot cover: the material is inset by the card's border, so without a
+ * background of its own the corner arc would leave a sliver of the page showing
+ * through. `--dsw-menu-backdrop-filter` is withdrawn with the fill: the palette
+ * fill is opaque, so the 40px blur would only cost compositing.
+ *
+ * Everything else the surface decides for itself — its 4px padding, the
+ * scrollable viewport, the footer's pinned row, the card's own
+ * `--dsh-scrollbar-*` rebinding — stays the host's. */
+html[data-dsh-ccd-style="true"] [data-menu-material] {
+  box-sizing: border-box;
+  border: 1px solid var(--ccd-border);
+  border-radius: var(--ccd-radius-panel);
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-effort-shadow);
+  --dsw-menu-surface-fill: var(--ccd-card);
+  --dsw-menu-backdrop-filter: none;
+}
+
+/* One row, one cell.
+ *
+ * The host's cell is 34px — a 13px label on a 20px line under a 34px minimum
+ * with 6px of block padding — and its dense variant is 30px; the reference
+ * measures one row as 48 device px at @2x, the same line in a 24px box. Cutting
+ * the minimum and the block padding to that row's own 2px is the whole change:
+ * the 8px inline padding, the 6px gap, the 13px/20px label and the 14px
+ * trailing mark are still the host's, so the label's x and measure do not move.
+ *
+ * `min-height` and `padding-block` are one decision — 2px around that 20px line
+ * is exactly the 24px the reference draws — and they only add up under
+ * `border-box`, which the renderer's own button default supplies and nothing the
+ * host's cell declares. Stating it keeps the row at 24px whatever the page does
+ * with padding instead of resting the arithmetic on a default.
+ *
+ * The corner follows the height: the reference's highlight fits a 12-device-px
+ * curve at @2x, the same 6px the transcript's table and code cards carry. The
+ * host's row radius is 12px, exactly half of a 24px row, so every hover and
+ * focus fill would round into a pill instead of the reference's soft rectangle.
+ *
+ * The command palette's rows are `[role="option"]`, not `[role="menuitem"]`,
+ * and they answer to the same cell: its row is the same 34px box with the same
+ * 12px corner, and one row per command is what the reference draws there too.
+ *
+ * The account card is named out: its rows are its reference's own
+ * (`features/sidebar/account-menu.css`, 28px rows with their leading glyphs), and
+ * that sheet mounts after this one, so an exclusion is a decision rather than a
+ * race. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"],
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"] {
+  box-sizing: border-box;
+  min-height: 24px;
+  padding-block: 2px;
+  border-radius: var(--ccd-table-radius);
+}
+
+/* No leading icon seat.
+ *
+ * A row is a label and a trailing mark, so the seat is removed rather than
+ * reserved: out of the flex line it leaves neither itself nor the row's 6px gap
+ * behind, and the label falls back to the row's own 8px start padding inside the
+ * card's 4px — 12px from the card's left edge, the same x on every row of every
+ * popup, and the same x the hero pickers' rows already had.
+ *
+ * Both seats are named by the fact that makes them seats rather than by a class
+ * this sheet cannot pin: `ui-primitives`' `Menu.js` gives its icon span the
+ * `.itemIcon` class (`_4ub78_` is in `compat/host-dom.ts`), while the command
+ * palette renders its icon as the row's first child span with
+ * `aria-hidden="true"` — a decorative seat, and the palette's own class prefix
+ * is not pinned anywhere. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"] > ._itemIcon_4ub78_148,
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"] > span[aria-hidden="true"]:first-child {
+  display: none;
+}
+
+/* One fill for the row's states.
+ *
+ * The pointer gets the fill every other control in this palette gets — one
+ * hover step for the whole interface rather than the host's 6%-bluish
+ * `--dsw-alias-interactive-bg-hover` inside a popup — and the keyboard walk
+ * takes the same fill, because the host already reads focus that way and the
+ * ring that would have told the two apart is not drawn in this family (below).
+ * The destructive row keeps its red ink (the host's own semantic colour, not
+ * this palette's accent) and takes the same fill: one row, one fill. Selection
+ * is not a fill in this document — it is the accent check the trailing seat
+ * draws (`theme/tokens.css`) and that the host's `.selected` class already
+ * leaves transparent.
+ *
+ * The command palette's active row is its keyboard cursor (the listbox keeps DOM
+ * focus and publishes `aria-activedescendant`), so it takes the fill by
+ * `aria-selected` rather than by a pseudo-class. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]:hover:not(:disabled),
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]:focus-visible:not(:disabled),
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"]:hover,
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"][aria-selected="true"] {
+  background: var(--ccd-hover);
+}
+
+/* Filling the row is the whole state: no emphasis ring on a popup row.
+ *
+ * §七's ring was drawn here first and taken out again. It is a box on a 24px
+ * cell, so it cannot sit still: at the first and the last row the scrolling
+ * viewport cuts it open (the rows sit on its edge — measured in the running
+ * interface, the top stroke of `重命名` and the bottom stroke of `删除工作区`
+ * both lost their line), and on any row between them it paints 2px into the
+ * neighbour's cell. The host's own keyboard walk answers focus with the fill
+ * for the same reason (`Menu.module.css` `.item:focus-visible` states
+ * `outline: none`), so the family keeps one indication and the rule below is
+ * the statement of that decision rather than a leftover of the host's. The
+ * account card is left out here as everywhere else in this sheet. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]:focus-visible,
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"][aria-selected="true"] {
+  outline: none;
+}
+
+/* The card's non-option rows — group headings, and the palette's section and
+ * group titles — are cells of the same rhythm, not blocks with a size of their
+ * own: one 20px line with 2px above and below, in the control-label size (12px;
+ * the document's scale has no 11px step) and the secondary ink. The host draws
+ * them at 11px/15-16px with 5-6px of block padding and the tertiary ink, which
+ * makes a heading the tallest thing in a card of 24px rows.
+ *
+ * They are reached structurally: both primitives render those titles as direct
+ * `role="presentation"` children of the scrolling container — the `Menu` list's
+ * `.viewport` and the palette's own `[role="listbox"]` viewport — while rows sit
+ * one wrapper deeper and separators carry `role="separator"`. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) ._viewport_4ub78_19 > [role="presentation"],
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="listbox"] > [role="presentation"] {
+  box-sizing: border-box;
+  padding: 2px 8px;
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* The card's two internal hairlines — a data separator and the pinned footer's
+ * top edge — take the palette's soft line rather than the host's
+ * `--dsw-alias-border-l2`, so a line inside a card is one step under the card's
+ * own outline. Sizes stay the host's: a 0.5px hairline and its margins. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="separator"] {
+  background: var(--ccd-border-soft);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) ._footer_4ub78_62 {
+  border-top-color: var(--ccd-border-soft);
+}

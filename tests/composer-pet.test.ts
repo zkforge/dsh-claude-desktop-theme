@@ -249,7 +249,7 @@ test('the seat is inset from the card\u2019s trailing edge by the measured amoun
   assert.equal(PET_INSET, 12);
 });
 
-/* ------------------------------------------------------------------ 装饰契约 */
+/* ------------------------------------------------------------------ 宠物契约 */
 
 const whaleArt = readFileSync(new URL('../src/client/features/composer-pet/Whale.tsx', import.meta.url), 'utf8');
 const composerPet = readFileSync(new URL('../src/client/features/composer-pet/ComposerPet.tsx', import.meta.url), 'utf8');
@@ -268,16 +268,12 @@ test('the artwork\u2019s grid is the box the anchor measures', () => {
   assert.match(whaleArt, /M1 11V9H2V7H4V5H7V4H12V5H15V4H18V5/);
 });
 
-test('the pet is decoration: no click reaction, no timer, and no pointer events', () => {
-  /* The user asked for the click reaction to be gone for good, so this guards
-     the whole shape of it: nothing in the component reacts to a press, and
-     nothing in the stylesheet takes the pointer back from the seat. */
-  assert.match(composerPet, /aria-hidden="true"/);
-  assert.doesNotMatch(composerPet, /onClick|onPointerDown|setTimeout|SPOUT/);
-  assert.doesNotMatch(whaleArt, /ccd-pet-spout/);
-  assert.doesNotMatch(petCss, /ccd-pet-spout|pointer-events:\s*auto|cursor:\s*pointer/);
-  /* Nothing in the pet knows about a session either: it has no state to show. */
-  assert.doesNotMatch(composerPet, /running|useSyncExternalStore|data-ccd-pet-state/);
+test('only the whale accepts clicks: the surrounding seat stays click-through and reactions stay local', () => {
+  assert.match(ruleBody('.ccd-pet-blank-seat'), /pointer-events:\s*none/);
+  assert.match(ruleBody('.ccd-composer-pet'), /pointer-events:\s*auto/);
+  assert.match(composerPet, /type="button"/);
+  assert.match(composerPet, /aria-label="Play with the whale"/);
+  assert.doesNotMatch(withoutComments(composerPet), /setTimeout|running|useSyncExternalStore|data-ccd-pet-state/);
 });
 
 test('the pet has one seat, and it is the new-session one', () => {

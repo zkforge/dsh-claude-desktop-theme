@@ -54,6 +54,13 @@ html[data-dsh-ccd-style="true"] .yhfFVG_cardWorkspaceTrigger .yhfFVG_scroll {
   border-style: dashed;
 }
 
+/* The editor owns the focus cue. Model/effort menus live in this card too,
+   so :focus-within would leave the ring on while a menu has keyboard focus.
+   Darken the existing 1px border without changing the surface geometry. */
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_input:focus) .yhfFVG_scroll {
+  border-color: var(--ccd-composer-focus-border);
+}
+
 /* Attachments: the `ui-attachment` plugin renders the draft-image rail as a
    sibling of the input panel inside the card (`conversation.input.attachments`
    slot, class pinned in src/client/compat/host-dom.ts — ComposerAttachments
@@ -80,6 +87,11 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .dVdiKa_rail {
 html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .yhfFVG_scroll {
   border-top: 0;
   border-radius: 0 0 var(--ccd-composer-radius) var(--ccd-composer-radius);
+}
+
+/* The attachment cap shares the editor's focused border colour. */
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_input:focus) .dVdiKa_rail {
+  border-color: var(--ccd-composer-focus-border);
 }
 
 /* Match the image tile to the outer editable surface, including its clipping. */
@@ -126,9 +138,9 @@ html[data-dsh-ccd-style="true"] .yhfFVG_primary {
   right: var(--ccd-composer-padding-inline);
   width: var(--ccd-send-size);
   height: var(--ccd-send-size);
-  border-radius: var(--ccd-radius-row);
+  border-radius: var(--ccd-send-radius);
   background: transparent;
-  color: var(--ccd-text-secondary);
+  color: var(--ccd-text-nav);
   transform: none;
   transition: background-color 0.1s, color 0.1s;
 }
@@ -378,7 +390,7 @@ html[data-dsh-ccd-style="true"] .yhfFVG_modes > .yhfFVG_activity:not(:has(> :not
    where compat/composer-status-order.ts moves it; the `data-ccd-voice-seat` mark
    that module leaves on a relocated seat is what the placement rule reads. The
    host draws the microphone at 18px, while every other glyph in the status bar
-   (command plus, permission shield, statistics readouts) is 14px artwork, so the
+   (command plus, statistics readouts, context ring) is 14px artwork, so the
    mic takes that size and stays centred in its box. Only `button > svg` is
    resized: the recording row's waveform is a direct child of its own row and
    keeps the host's sizing. */
@@ -476,10 +488,11 @@ html[data-dsh-ccd-style="true"] .y0jqnG_fill {
 /* The permission control is the row's other text chip: the host draws it on the
    row's full 28px with a 4px/8px inline padding, so beside the model chip it kept
    a taller fill and a different ink rhythm. It takes the chip box and the chip's
-   own 7px padding on both sides — the chevron already carries its own seat, so
-   the asymmetry was the host's trailing room, not a reading. Its hover fill is
-   the row's warm step for the same reason the readouts above are. Host class
-   pinned in src/client/compat/host-dom.ts (`ui-permission-presets`'s
+   own 7px padding on both sides — the host's asymmetry was the two marks it
+   reserved room for, and neither of them is drawn (below), so the label sits on
+   the chip's even padding. Its hover fill is the row's warm step for the same
+   reason the readouts above are. Host class pinned in
+   src/client/compat/host-dom.ts (`ui-permission-presets`'s
    PermissionSelect.module.css, `wXeviG_`). */
 html[data-dsh-ccd-style="true"] .wXeviG_trigger {
   box-sizing: border-box;
@@ -492,13 +505,37 @@ html[data-dsh-ccd-style="true"] .wXeviG_trigger:hover:not(:disabled) {
   background: var(--ccd-hover);
 }
 
-/* Narrow columns abbreviate the actionable permission control, retaining the
-   model's name and effort according to the measured space above. */
-@container ccd-composer (max-width: 560px) {
-  html[data-dsh-ccd-style="true"] .wXeviG_triggerLabel {
-    display: none;
-  }
+/* The chip is its text, and nothing else. The host leads the control with the
+   mode's own glyph — `PermissionIconReadOnlyRegular` / `...WorkspaceWrite` /
+   `...FullAccess`, the same 14px artwork the command plus beside it draws — and
+   closes it with `IconChevronDownOutlineRegular`. Neither says anything the chip
+   does not: the glyph repeats the mode the label already spells out, and this
+   row's other menu controls (the two hero chips) draw no disclosure mark either.
+   Both come out of the line, and with them the host's two 4px gaps and the
+   4px/8px asymmetry they reserved. The control keeps the host's `aria-label`
+   ("模式 …") and its `title`, so a screen reader still hears the mode in full,
+   and the button keeps its own name — it is the same control, drawn shorter.
+   Its open state has no mark left to turn; the row's one fill already answers
+   the pointer that opened it. */
+html[data-dsh-ccd-style="true"] .wXeviG_triggerIcon,
+html[data-dsh-ccd-style="true"] .wXeviG_chevron {
+  display: none;
+}
 
+/* The label is what is left, so it is drawn at every width. The host's own
+   container query drops it below 460px
+   (`.wXeviG_trigger:has(.wXeviG_triggerIcon) .wXeviG_triggerLabel`), reading the
+   glyph as the reading that survives the narrow column; with that glyph
+   withdrawn the rule would leave a chip that still answers a click and shows
+   nothing. `:has()` plus the child combinator is what outranks the host's rule
+   — the sheet order does not decide it. */
+html[data-dsh-ccd-style="true"] .wXeviG_trigger:has(.wXeviG_triggerIcon) > .wXeviG_triggerLabel {
+  display: inline;
+}
+
+/* Narrow columns tighten the readouts' side padding and the ring's seat; the
+   permission chip keeps its label, because the label is the whole control. */
+@container ccd-composer (max-width: 560px) {
   html[data-dsh-ccd-style="true"] .OpZ85W_pill,
   html[data-dsh-ccd-style="true"] .y0jqnG_trigger {
     padding-inline: 4px;
@@ -616,121 +653,14 @@ html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="m
   display: none;
 }
 
-/* Workspace picker menu. The chip above opens a card whose rows are the
-   workspaces, and DSH gives each of them a folder glyph in the Menu
-   primitive's icon seat; the reference draws those rows as text alone. The chip
-   reports `aria-expanded` while that card is open — the empty Composer card
-   opens the same picker from the same state — so the guard reaches the
-   portalled menu and nothing else: the model, permission and session-… menus
-   never sit in it.
+/* Both chips in the hero row open a card from the host's `Menu` primitive, and
+   every other host popup — the workspace `⋯` and session `⋯` menus, view
+   options, the permission picker, the account card, the command palette — is
+   built from the same two pieces. Their card chrome and their 24px flat cells
+   are drawn once for the whole interface in [menus.css](menus.css) (DESIGN.md
+   §6.7), so this sheet keeps only what belongs to the Composer it lays out.
 
-   The card keeps its rows in two direct child groups: the scrolling `.viewport`
-   holds the workspaces, and the `.footer` pinned below it holds the add row.
-   Both groups render their rows through the Menu primitive's one entry
-   renderer, so the plus is the same seat as the folders — a 14px `.itemIcon`
-   (`ui-primitives/lib/Menu.js`, which the web frontend ships as `_4ub78_`) —
-   and a rule that names both groups reaches it.
-
-   The seat is removed, not reserved: out of the flex line it leaves neither
-   itself nor the row's 6px gap behind, so the label falls back to the row's own
-   8px start padding inside the card's 4px — 12px from the card's left edge, and
-   the same x on every row of the card, the workspaces, the add row and the
-   selected row alike, because none of them leads with anything else and nothing
-   compensates for what the seat held. The card takes those 20px back with it:
-   it is shrink-to-fit, sized by its widest row's measure, and the reference
-   draws the rows as text alone. The trailing check is an `svg` the row renders
-   beside its label rather than inside a seat, so it stays where it was. */
-html[data-dsh-ccd-style="true"]:has(.bocITq_workspace[aria-expanded="true"])
-  [role="menu"] > ._viewport_4ub78_19 > ._itemWrap_4ub78_90 > ._item_4ub78_90 > ._itemIcon_4ub78_148,
-html[data-dsh-ccd-style="true"]:has(.bocITq_workspace[aria-expanded="true"])
-  [role="menu"] > ._footer_4ub78_62 > ._itemWrap_4ub78_90 > ._item_4ub78_90 > ._itemIcon_4ub78_148 {
-  display: none;
-}
-
-/* Those rows are also the reference's flat cells, which is the other half of
-   what separates the two cards. The reference measures one row as 48 device px
-   at @2x — a 24px box around the same 13px label on the host's own 20px line —
-   where the host's cell keeps a 34px minimum under 6px of block padding. Cutting
-   the minimum and the padding to this row's own 2px is the whole change: the 8px
-   inline padding, the 6px gap, the 13px/20px label and the 14px trailing check
-   are still the host's, and the card's own 4px and the footer's hairline spacing
-   stay where the host put them. With the row 10px shorter the card's top and
-   bottom edges sit on the first and last label instead of on a tall cell, and
-   the whole card loses 10px a row.
-
-   `min-height` and `padding-block` are one decision — 2px of block padding
-   around that 20px line is exactly the 24px the reference draws — and they only
-   add up under `border-box`, which is the renderer's own button default and
-   nothing the host's cell declares. Stating it keeps the row at 24px whatever
-   the page does with padding instead of resting the arithmetic on a default.
-
-   The corner follows the height: the reference's highlight fits a 12-device-px
-   curve at @2x, the same 6px the transcript's table and code cards already
-   carry. The host's row radius is 12px, which is exactly half of a 24px row —
-   every hover, focus and selected fill would round into a pill instead of the
-   reference's soft rectangle. Only the radius moves with it; the fill colours
-   are still the host's own. */
-html[data-dsh-ccd-style="true"]:has(.bocITq_workspace[aria-expanded="true"])
-  [role="menu"] > ._viewport_4ub78_19 > ._itemWrap_4ub78_90 > ._item_4ub78_90,
-html[data-dsh-ccd-style="true"]:has(.bocITq_workspace[aria-expanded="true"])
-  [role="menu"] > ._footer_4ub78_62 > ._itemWrap_4ub78_90 > ._item_4ub78_90 {
-  box-sizing: border-box;
-  min-height: 24px;
-  padding-block: 2px;
-  border-radius: 6px;
-}
-
-/* Both chips in the hero row open the same card from the host's `Menu`
-   primitive — the workspace picker from the chip on the left, the agent-preset
-   (mode) picker from the seat beside it — and the reference draws that card as
-   the design document's popup (DESIGN.md §6.7): 12px corner, 1px outline, the
-   three-layer hairline shadow, card fill. One rule draws both, so the two cards
-   keep one appearance whichever chip is open.
-
-   The primitive's own surface is a translucent material instead. Three of its
-   values live on the card's own class (`.list`): the host's 16px
-   `--dsw-radius-lg` corner, the 0.5px elevation stroke and the
-   `--dsw-elevation-prominent` shadow — and the fourth, the fill, is painted by
-   the material layer the primitive renders inside it (`MenuSurface.module.css`:
-   a `.material` child covering the card's padding box, filled with
-   `--dsw-menu-surface-fill` — a 58%-alpha near-white in the light scheme, under
-   a `blur(40px) saturate(150%)` backdrop). That token is declared on `body` by
-   the host theme — light on `body`, dark on `body[data-ds-dark-theme]` — and a
-   custom property declared on the card wins over the inherited one in both
-   schemes, so the fill is replaced through the token rather than by naming the
-   layer class.
-
-   The card states its own background beside the token for the one pixel the
-   material cannot cover: the material inherits the card's radius but is inset
-   by the card's border, so its corner arc would leave a sliver of the page
-   showing through. Everything else the surface decides for itself — its 4px
-   padding, the footer's hairline, the scroll viewport, the card's own
-   `--dsh-scrollbar-*` rebinding — stays the host's. The guard is the hero row's
-   expanded menu button, so the permission, session, view-options and account
-   menus keep the host's material, corner and shadow. */
-html[data-dsh-ccd-style="true"]:has(.ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"][aria-expanded="true"]) [role="menu"][data-menu-material] {
-  box-sizing: border-box;
-  border: 1px solid var(--ccd-border);
-  border-radius: var(--ccd-radius-panel);
-  background: var(--ccd-card);
-  box-shadow: var(--ccd-effort-shadow);
-  --dsw-menu-surface-fill: var(--ccd-card);
-  --dsw-menu-backdrop-filter: none;
-}
-
-/* The mode card's rows are the same flat cells as the workspace card's, spelled
-   for the chip that opens them: one 24px box around the host's own 20px line,
-   with the corner the height asks for (6px), and `border-box` holding that
-   arithmetic off the button's inherited box model. The mode card has no
-   `.footer` group — every row comes from the primitive's scrolling `.viewport`
-   — so this rule names that group alone. */
-html[data-dsh-ccd-style="true"]:has(.ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"]:not(.bocITq_workspace)[aria-expanded="true"])
-  [role="menu"] > ._viewport_4ub78_19 > ._itemWrap_4ub78_90 > ._item_4ub78_90 {
-  box-sizing: border-box;
-  min-height: 24px;
-  padding-block: 2px;
-  border-radius: 6px;
-}
+   What is genuinely the mode card's own is the second line of its rows: */
 
 /* The mode card's second line, and the reason its rows were not flat cells in
    the first place: `ui-agent-preset` renders each row's label as a stack of a
