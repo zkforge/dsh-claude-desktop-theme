@@ -17,9 +17,9 @@ import { fileURLToPath } from 'node:url';
  * under it rather than a framed box — a cell that bleeds to the card's edges,
  * so its inline padding is stated against the rows' rather than on its own.
  * `features/model-controls/controls.css`
- * carries the geometry and this test pins it; the chosen row is a fill from
- * that sheet plus the accent mark's ink, and a tokens.css rule carries the ink
- * half, so both halves are pinned here.
+ * carries the geometry and this test pins it; the chosen row is the accent
+ * mark's ink and no fill of its own, and a tokens.css rule carries that ink, so
+ * the card's two sheets are both pinned here.
  */
 
 const read = (path: string): string =>
@@ -185,29 +185,17 @@ test('the cells that are not choices wear the rows’ geometry', () => {
   assert.match(retry, /background:\s*none/u);
 });
 
-test('the chosen row softens the selected step onto the card, not onto the hover step', () => {
-  /* Two steps, as the sidebar's current row reads beside its hovered
-     neighbour: the selected step for the row you are on, `--ccd-hover` for the
-     row you are pointing at. The rule is the only one that names the chosen
-     state, and it sits after the hover rule at the same specificity, so a row
-     that is both keeps the chosen step. */
-  const chosen = exactRule(controls, '.ccd-model-options button[aria-pressed="true"]').body;
-  /* The selected step is measured against the canvas, and this card is white:
-     at full strength the pill reads two steps too grey on it — the regression
-     the user reported, which the reference's own pill (12/255 below its card,
-     against the step's 20) confirms. */
-  assert.ok(!/background:\s*var\(--ccd-selected\)\s*;/u.test(chosen), chosen);
-  /* Softened rather than replaced: the mix is what keeps the pill
-     palette-relative, so a configured canvas and the dark scheme move both ends
-     together. */
-  assert.match(chosen,
-    /background:\s*color-mix\(in srgb, var\(--ccd-selected\) 60%, var\(--ccd-card\)\)/u);
-  /* And not the hover step either: its dark value sits 1/255 from the dark
-     card, which would leave the chosen row invisible in the dark scheme. */
-  assert.ok(!/var\(--ccd-hover\)/u.test(chosen), chosen);
-  /* The state is the fill alone: the ink the row already carries and the mark
-     in its trailing seat. No weight, no second box, no recoloured label. */
-  assert.ok(!/font-weight|box-shadow|border|color:/u.test(chosen), chosen);
+test('the chosen row is the mark alone: no rule fills the selected state', () => {
+  /* Selection is not a fill in this document: the accent check in the row's
+     trailing seat states which model is in use, the way the host menus this
+     plugin repaints already read (theme/menus.css), and the one fill on the
+     card belongs to the pointer and the keyboard (`--ccd-hover`, pinned
+     above). The card spent a second grey on its current option for a while —
+     the selected step softened six tenths toward the card's own white — and
+     the user took it out, so no rule here may reach the state at all: not the
+     `aria-pressed` React writes, not the selected step, not a font weight. */
+  assert.deepEqual(controls.filter(rule => /aria-pressed/u.test(rule.selector)), []);
+  assert.deepEqual(controls.filter(rule => /--ccd-selected/u.test(rule.body)), []);
   const weights = controls.filter(rule => /font-weight/u.test(rule.body));
   assert.deepEqual(weights, []);
 });

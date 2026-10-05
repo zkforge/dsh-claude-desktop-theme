@@ -95,38 +95,34 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * a 28px row under the content-box default.
  */
 .ccd-model-options button { display: flex; align-items: center; justify-content: space-between; gap: 8px; box-sizing: border-box; width: 100%; min-height: 24px; padding: 2px 8px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; font: inherit; line-height: 20px; cursor: pointer; }
+/*
+ * The row you are on versus the row you are pointing at: the mark says which
+ * model is in use, the fill says where the pointer (or the keyboard) is.
+ *
+ * That is the family's own answer — the host menus this plugin repaints state
+ * selection with the accent check their trailing seat draws and leave the row
+ * itself transparent (theme/menus.css, "Selection is not a fill in this
+ * document"). The card was the one member that spent a second grey on its
+ * current option: the selected step softened six tenths toward the card, so
+ * "the model in use" and "the row under the pointer" read as two steps, as the
+ * sidebar's current row reads beside its hovered neighbour. The user took that
+ * fill out, so the card now states the chosen model the way the rest of the
+ * family does — the accent `✓` in the row's trailing seat (theme/tokens.css)
+ * and nothing else, with one fill for the pointer and the keyboard.
+ *
+ * The one step is `--ccd-hover`, which is what the row already took; the
+ * chosen row takes it like any other, so pointing at the model in use fills
+ * that row rather than resting on a grey it had all along.
+ */
 .ccd-model-options button:hover, .ccd-model-options button:focus-visible { background: var(--ccd-hover); }
 /*
- * The row you are on versus the row you are pointing at. The reference marks
- * its current option with a filled pill behind the accent check, so the chosen
- * row is stated by the fill as well as by the mark, and the two states take two
- * steps — as the sidebar's current row reads beside its hovered neighbour
- * (features/sidebar/sidebar.css): `--ccd-hover` for the row under the pointer
- * or the keyboard, the theme's selected step for the model this card would
- * select.
- *
- * The selected step is measured against the canvas, but this card is white, and
- * at full strength the pill reads two steps too grey on it (the reference's own
- * pill measures 12/255 below its card, the selected step 20). So the card
- * softens the step back toward its own surface rather than restating a colour:
- * the mix lands on the measured value and keeps the relation in the palette's
- * terms, so a configured canvas and the dark scheme move both ends together. It
- * is also what keeps the pill off `--ccd-hover`, whose dark value is a 1/255
- * step from the dark card and would leave the chosen row invisible there.
- *
- * The rule sits after the hover one at the same specificity (0-2-1), so the row
- * that is both chosen and pointed at keeps the chosen step rather than flapping
- * between two greys.
- */
-.ccd-model-options button[aria-pressed="true"] { background: color-mix(in srgb, var(--ccd-selected) 60%, var(--ccd-card)); }
-/*
- * Keyboard focus is the one state the fill cannot state on its own: a fill now
- * means either "you are on this row" (the hover step) or "this is the model in
- * use" (the chosen step), so a filled row says nothing about where the
- * keyboard is. The row takes the document's focus ring (§七: 2px solid accent,
- * 2px offset, the shape following the control's own 6px corner) beside the
- * fill, which is the pair this plugin's settings popup already draws on its
- * own rows. The row is centred in the card's 6px padding and 2px of offset
+ * Keyboard focus is more than the fill the walk shares with the pointer: the
+ * row the keyboard is on and the row the pointer is on look the same, so the
+ * card states the keyboard's seat twice — the fill for "this row is live" and
+ * the document's focus ring (§七: 2px solid accent, 2px offset, the shape
+ * following the control's own 6px corner) for "the keyboard is here". That is
+ * the pair this plugin's settings popup already draws on its own rows. The row
+ * is centred in the card's 6px padding and 2px of offset
  * stay inside it, so the ring never reaches the card's edge.
  */
 .ccd-model-options button:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
