@@ -53,18 +53,31 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
 .ccd-model-panel[popover], .ccd-effort[popover] { inset: auto; margin: 0; }
 .ccd-model-panel::backdrop, .ccd-effort::backdrop { background: transparent; pointer-events: none; }
 /*
- * The card's one editable face. A face carries a stronger line than the card
- * outline around it (DESIGN.md §二.4: `--ccd-border-strong`, the line the
- * Composer's own input face draws). It is also a cell of the card's own
- * rhythm, not a banner above it: 24px — the same box the rows and the group
- * headings below it occupy, a 20px line with 2px above and below — with the
- * corner that height asks for (the rows' 6px, not the popup's 12px). The
- * placeholder is the muted ink, so the empty field reads in the palette
- * instead of in the browser's own grey.
+ * The card's one editable face is a bare line, not a box.
+ *
+ * The reference draws that cell chrome-free: no outline, no fill, no corner
+ * and no hint text inside it, with one hairline under the cell where the list
+ * begins — the caret and that rule are the whole of the affordance. The user
+ * asked for exactly those two properties, because the panel focuses this cell
+ * as it opens: the accent ring §七 gives a focused control turned the card's
+ * first row into a blue frame, and the placeholder put a hint on a field the
+ * reader had not asked to fill in, which the reference does not draw either
+ * (`ModelControls.tsx` writes no `placeholder` attribute).
+ *
+ * The cell keeps the card's 24px rhythm — the same box the rows and the group
+ * headings below it occupy — and bleeds to the card's edges (`margin: 0 -6px`
+ * with `width: calc(100% + 12px)`, the card's own 6px padding cancelled on
+ * both sides) so the rule under it runs the card's full width like the
+ * reference's own divider. The bleed moves the whole cell 6px left of the
+ * rows, so the inline padding has to give that 6 back on top of the 8 the rows
+ * take: 14px, and typed text — and the caret that opens with the card — lands
+ * on the row labels' x instead of 6px ahead of it.
  */
-.ccd-model-search { box-sizing: border-box; width: 100%; height: 24px; margin-bottom: 4px; padding: 0 8px; border: 1px solid var(--ccd-border-strong); border-radius: 6px; background: var(--ccd-card); color: inherit; font: inherit; }
-.ccd-model-search::placeholder { color: var(--ccd-text-muted); }
-.ccd-model-search:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+.ccd-model-search { box-sizing: border-box; width: calc(100% + 12px); height: 24px; margin: 0 -6px 4px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--ccd-border-soft); border-radius: 0; background: transparent; color: inherit; font: inherit; }
+/* Focus is the caret. Both spellings are named because the panel focuses the
+   field itself rather than a pointer, and a UA stylesheet may paint either
+   one — neither may reach the card. */
+.ccd-model-search:focus, .ccd-model-search:focus-visible { outline: none; }
 /*
  * The provider heading is a cell of the same 24px rhythm as the rows it opens,
  * not a block with a size of its own: one 20px line with 2px above and below,
@@ -84,13 +97,37 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
 .ccd-model-options button { display: flex; align-items: center; justify-content: space-between; gap: 8px; box-sizing: border-box; width: 100%; min-height: 24px; padding: 2px 8px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; font: inherit; line-height: 20px; cursor: pointer; }
 .ccd-model-options button:hover, .ccd-model-options button:focus-visible { background: var(--ccd-hover); }
 /*
- * Keyboard focus is the one state the fill cannot state on its own: the same
- * fill is what the pointer paints, so a filled row says "the pointer is here"
- * and not "the keyboard is here". The row takes the document's focus ring
- * (§七: 2px solid accent, 2px offset, the shape following the control's own 6px
- * corner) beside the fill, which is the pair this plugin's settings popup
- * already draws on its own rows. The row is centred in the card's 6px padding
- * and 2px of offset stay inside it, so the ring never reaches the card's edge.
+ * The row you are on versus the row you are pointing at. The reference marks
+ * its current option with a filled pill behind the accent check, so the chosen
+ * row is stated by the fill as well as by the mark, and the two states take two
+ * steps — as the sidebar's current row reads beside its hovered neighbour
+ * (features/sidebar/sidebar.css): `--ccd-hover` for the row under the pointer
+ * or the keyboard, the theme's selected step for the model this card would
+ * select.
+ *
+ * The selected step is measured against the canvas, but this card is white, and
+ * at full strength the pill reads two steps too grey on it (the reference's own
+ * pill measures 12/255 below its card, the selected step 20). So the card
+ * softens the step back toward its own surface rather than restating a colour:
+ * the mix lands on the measured value and keeps the relation in the palette's
+ * terms, so a configured canvas and the dark scheme move both ends together. It
+ * is also what keeps the pill off `--ccd-hover`, whose dark value is a 1/255
+ * step from the dark card and would leave the chosen row invisible there.
+ *
+ * The rule sits after the hover one at the same specificity (0-2-1), so the row
+ * that is both chosen and pointed at keeps the chosen step rather than flapping
+ * between two greys.
+ */
+.ccd-model-options button[aria-pressed="true"] { background: color-mix(in srgb, var(--ccd-selected) 60%, var(--ccd-card)); }
+/*
+ * Keyboard focus is the one state the fill cannot state on its own: a fill now
+ * means either "you are on this row" (the hover step) or "this is the model in
+ * use" (the chosen step), so a filled row says nothing about where the
+ * keyboard is. The row takes the document's focus ring (§七: 2px solid accent,
+ * 2px offset, the shape following the control's own 6px corner) beside the
+ * fill, which is the pair this plugin's settings popup already draws on its
+ * own rows. The row is centred in the card's 6px padding and 2px of offset
+ * stay inside it, so the ring never reaches the card's edge.
  */
 .ccd-model-options button:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 .ccd-model-options button:disabled { opacity: .55; cursor: default; }

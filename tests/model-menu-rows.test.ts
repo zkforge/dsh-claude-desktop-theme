@@ -13,10 +13,13 @@ import { fileURLToPath } from 'node:url';
  * the host's 34px cell (the same 13px label on `line-height: 1.4` under 8px of
  * block padding). The corner follows the height (6px), the heading above a
  * group is a cell of the same rhythm in the document's control-label size, and
- * the card's one editable face takes the stronger line an editable face gets in
- * this palette. `features/model-controls/controls.css` carries the geometry and
- * this test pins it; the chosen mark's accent ink is a tokens.css rule and is
- * pinned here too, because it is the other half of "selected, without a fill".
+ * the card's one editable face is a chrome-free cell with a single hairline
+ * under it rather than a framed box — a cell that bleeds to the card's edges,
+ * so its inline padding is stated against the rows' rather than on its own.
+ * `features/model-controls/controls.css`
+ * carries the geometry and this test pins it; the chosen row is a fill from
+ * that sheet plus the accent mark's ink, and a tokens.css rule carries the ink
+ * half, so both halves are pinned here.
  */
 
 const read = (path: string): string =>
@@ -48,6 +51,21 @@ function exactRule(sheet: readonly Rule[], selector: string): Rule {
   const found = sheet.filter(rule => rule.selector === selector);
   assert.equal(found.length, 1, `expected one rule for ${selector}`);
   return found[0] as Rule;
+}
+
+/** One declaration's value from a rule body, trimmed. */
+function declared(body: string, property: string): string {
+  const found = new RegExp(`(?:^|;)\\s*${property}:\\s*([^;]+)`, 'u').exec(body)?.[1];
+  assert.ok(found !== undefined, `${property} is not declared in ${body}`);
+  return found.trim();
+}
+
+/** A box shorthand's inline (left/right) value, in px: `2px 8px` → 8, `0 -6px 4px` → -6. */
+function inlineOf(body: string, property: 'padding' | 'margin'): number {
+  const parts = declared(body, property).split(/\s+/u).map(Number.parseFloat);
+  const inline = parts.length === 1 ? parts[0] : parts[1];
+  assert.ok(Number.isFinite(inline), `${property} declares no inline value in ${body}`);
+  return inline as number;
 }
 
 const controls = rules(read('../src/client/features/model-controls/controls.css'));
@@ -83,7 +101,7 @@ test('one row is 24px: a 20px label line with 2px above and below', () => {
   assert.match(body, /border:\s*0/u);
 });
 
-test('the row’s two states are the flat fill and the document’s focus ring', () => {
+test('the pointer’s state is the flat fill and the keyboard’s is the document’s focus ring', () => {
   const fills = controls.filter(rule => /background:\s*var\(--ccd-hover\)/u.test(rule.body)
     && rule.selector.includes('.ccd-model-options button'));
   assert.equal(fills.length, 1, 'one rule paints the row');
@@ -108,17 +126,50 @@ test('the provider heading is a cell of the same rhythm, one size down', () => {
   assert.ok(!/background|box-shadow/u.test(body), body);
 });
 
-test('the card’s one editable face takes the stronger line, not the card outline', () => {
+test('the card’s search cell is a bare line, not a box', () => {
   const search = ruleFor(controls, '.ccd-model-search').body;
-  assert.match(search, /border:\s*1px solid var\(--ccd-border-strong\)/u);
-  /* The field is a cell of the card's rhythm: the rows' 24px box and the
-     corner that height asks for, not a banner twice their height. */
-  assert.match(search, /height:\s*24px/u);
-  assert.match(search, /border-radius:\s*6px/u);
-  /* Without this the field is a content box under the page default and renders
-     taller than the 24px the card is laid out around. */
+  /* No frame, no fill, no corner: the reference's own search row is a bare
+     cell with one hairline under it, which is the pair the user asked for. */
+  assert.match(search, /border:\s*0/u);
+  assert.match(search, /border-bottom:\s*1px solid var\(--ccd-border-soft\)/u);
+  assert.match(search, /background:\s*transparent/u);
+  /* The corner is reset rather than rounded away in an inherited sheet: a bare
+     line has no corner to round. */
+  assert.match(search, /border-radius:\s*0/u);
+  /* The cell is still a cell of the card's rhythm — the rows' 24px box, pinned
+     against the box model because the page default is content-box. */
   assert.match(search, /box-sizing:\s*border-box/u);
-  assert.match(ruleFor(controls, '.ccd-model-search::placeholder').body, /color:\s*var\(--ccd-text-muted\)/u);
+  assert.match(search, /height:\s*24px/u);
+  /* It bleeds past the card's 6px padding so the rule under it runs the card's
+     full width, and that shift carries the cell's text 6px left of the rows'
+     own, so its inline padding has to give the 6 back on top of the rows': the
+     caret the card opens with lands on the row labels' x only while the two
+     numbers still add up. Pinned as that sum and not as a literal — the first
+     cut left the rows' 8px under a -6px bleed and put the caret 6px ahead of
+     every label below it. */
+  assert.match(search, /margin:\s*0 -6px 4px/u);
+  assert.match(search, /width:\s*calc\(100% \+ 12px\)/u);
+  assert.equal(inlineOf(search, 'padding'),
+    inlineOf(exactRule(controls, '.ccd-model-options button').body, 'padding')
+    + Math.abs(inlineOf(search, 'margin')));
+});
+
+test('the search cell paints no ring and no hint text', () => {
+  /* §七's ring is what turned this cell into a blue frame: the panel focuses
+     the field the moment the card opens. The user's rule replaces it with the
+     caret, so no outline may reach the field under either focus spelling. */
+  const focus = controls.filter(rule => rule.selector.includes('.ccd-model-search:'));
+  assert.equal(focus.length, 1, 'one rule states the field’s focus');
+  for (const state of [':focus', ':focus-visible']) {
+    assert.ok(focus[0]?.selector.includes(`.ccd-model-search${state}`), focus[0]?.selector ?? '');
+  }
+  assert.match(focus[0]?.body ?? '', /outline:\s*none/u);
+  /* No placeholder rule survives, and the component writes no attribute for
+     one to paint: the host's string stays as the field's accessible name. */
+  assert.deepEqual(controls.filter(rule => rule.selector.includes('::placeholder')), []);
+  const component = read('../src/client/features/model-controls/ModelControls.tsx');
+  assert.ok(!/\bplaceholder=/u.test(component), 'the search field carries no hint text');
+  assert.match(component, /aria-label=\{t\('search\.placeholder'\)\}/u);
 });
 
 test('the cells that are not choices wear the rows’ geometry', () => {
@@ -134,12 +185,29 @@ test('the cells that are not choices wear the rows’ geometry', () => {
   assert.match(retry, /background:\s*none/u);
 });
 
-test('the chosen row is marked by the accent check alone', () => {
-  /* No rule may paint a chosen row: not with a fill, and not with the same
-     fill smuggled in through a shadow or a border. */
-  const painted = controls.filter(rule => /background|box-shadow|border:|font-weight/u.test(rule.body)
-    && /aria-pressed|aria-checked|data-active/u.test(rule.selector));
-  assert.deepEqual(painted, []);
+test('the chosen row softens the selected step onto the card, not onto the hover step', () => {
+  /* Two steps, as the sidebar's current row reads beside its hovered
+     neighbour: the selected step for the row you are on, `--ccd-hover` for the
+     row you are pointing at. The rule is the only one that names the chosen
+     state, and it sits after the hover rule at the same specificity, so a row
+     that is both keeps the chosen step. */
+  const chosen = exactRule(controls, '.ccd-model-options button[aria-pressed="true"]').body;
+  /* The selected step is measured against the canvas, and this card is white:
+     at full strength the pill reads two steps too grey on it — the regression
+     the user reported, which the reference's own pill (12/255 below its card,
+     against the step's 20) confirms. */
+  assert.ok(!/background:\s*var\(--ccd-selected\)\s*;/u.test(chosen), chosen);
+  /* Softened rather than replaced: the mix is what keeps the pill
+     palette-relative, so a configured canvas and the dark scheme move both ends
+     together. */
+  assert.match(chosen,
+    /background:\s*color-mix\(in srgb, var\(--ccd-selected\) 60%, var\(--ccd-card\)\)/u);
+  /* And not the hover step either: its dark value sits 1/255 from the dark
+     card, which would leave the chosen row invisible in the dark scheme. */
+  assert.ok(!/var\(--ccd-hover\)/u.test(chosen), chosen);
+  /* The state is the fill alone: the ink the row already carries and the mark
+     in its trailing seat. No weight, no second box, no recoloured label. */
+  assert.ok(!/font-weight|box-shadow|border|color:/u.test(chosen), chosen);
   const weights = controls.filter(rule => /font-weight/u.test(rule.body));
   assert.deepEqual(weights, []);
 });

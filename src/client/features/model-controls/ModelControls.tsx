@@ -72,7 +72,11 @@ function ModelPanel({ anchor, state, disabled, load, t, onClose, onSelect }: Pro
   const [query, setQuery] = useState('');
   const groups = state.groups.map(group => ({ ...group, models: group.models.filter(model => `${model.name} ${model.id} ${group.name}`.toLowerCase().includes(query.toLowerCase())) })).filter(group => group.models.length > 0);
   return <div ref={panel} className="ccd-model-panel" role="dialog" aria-label={t('menu.model')} style={position}>
-    <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} placeholder={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
+    {/* The field keeps the host's string as its accessible name only: the card
+        draws no hint text and no frame (controls.css), because the panel
+        focuses this cell the moment it opens and a placeholder plus §七's ring
+        would put a framed, labelled box on the card's first row. */}
+    <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); panel.current?.querySelector<HTMLButtonElement>('[data-model-option]')?.focus(); } }} />
     {state.status === 'loading' && <p role="status" className="ccd-model-note">{t('status.loading')}</p>}
     {state.error && <div role="alert" className="ccd-model-note">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
