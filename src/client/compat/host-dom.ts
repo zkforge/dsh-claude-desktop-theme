@@ -158,6 +158,17 @@ export const HOST = Object.freeze({
   modelSelectEffort: '.cl2Rlq_triggerEffort',
   /** PermissionSelect.module.css: compact permission text, keeping its button. */
   permissionSelectLabel: '.wXeviG_triggerLabel',
+  /** PermissionSelect.module.css: the control itself, in the status bar and in
+      the new-session card alike — `compat/permission-menu.ts` reads the mode's
+      name off it, and writes the card's own wording back. */
+  permissionSelectTrigger: '.wXeviG_trigger',
+  /** PermissionSelect.module.css: the one preset badge DSH marks (`EXP`), on
+      the trigger as well as on the option row it belongs to. */
+  permissionSelectBadge: '.wXeviG_badge',
+  /** PermissionSelect.module.css: the badge row's own name, told apart from the
+      badge beside it — the row label carries both, and only this one is the
+      preset's name. */
+  permissionSelectOptionLabelText: '.wXeviG_optionLabelText',
   /** TeamAction.module.css: native team dialog entry, retaining its label at every width. */
   teamActionTrigger: '._2tNPVa_trigger',
   teamActionLabel: '._2tNPVa_triggerLabel',
@@ -182,6 +193,16 @@ export const HOST = Object.freeze({
   /** Every menu surface the `Menu` primitive renders, portal or in place. */
   menu: '[role="menu"]',
   menuItem: '[role="menuitem"]',
+  /** Menu.module.css: the row's own label seat, the one box this plugin puts a
+      second line after (`compat/permission-menu.ts`). The `_4ub78_` prefix is
+      the static web frontend's bundle, identical in both installers, so it needs
+      no entry in `host-builds.ts` — the same fact `tokens.css` records for the
+      primitive's check mark. */
+  menuItemLabel: '._itemLabel_4ub78_190',
+  /** Menu.module.css: the scrolling row group inside the card — where the
+      permission card's heading is written, above the rows and outside the
+      keyboard's walk (that walk collects `button`s only). */
+  menuViewport: '._viewport_4ub78_19',
 } as const);
 
 /**

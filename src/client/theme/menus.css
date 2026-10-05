@@ -47,6 +47,12 @@
  * - the plugin's own **model and effort cards** (`features/model-controls`) are
  *   not `MenuSurface` nodes at all — they already draw this chrome from their
  *   own sheets and answer to their own tests.
+ * - the **permission card** (`compat/permission-menu.ts` tags the card
+ *   `data-ccd-permission-menu` and each row it drew a second line for) keeps the
+ *   card rule and steps out of the row rule: its rows are the family's one
+ *   two-line cell, and the block at the end of this sheet is that cell. It is
+ *   here rather than in a sheet of its own because the card, the row group and
+ *   the trailing check are all this family's, and only the line heights differ.
  *
  * Host classes are pinned in src/client/compat/host-dom.ts.
  */
@@ -202,4 +208,124 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
 
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) ._footer_4ub78_62 {
   border-top-color: var(--ccd-border-soft);
+}
+
+/* The permission card: the family's one two-line cell.
+ *
+ * Every other card in this family draws a row as text plus a trailing mark, and
+ * DSH's permission card draws its four presets that way too — `仅可查看` and its
+ * neighbours, one 20px line each. The reference draws the same four rows a line
+ * taller: the mode's name over a sentence saying what the mode does, with the
+ * one flagged preset carrying a badge beside its name. `compat/permission-menu.ts`
+ * recognises the rows (by the name each one draws — the primitive gives a row no
+ * identity of its own), writes the second line and tags the row and the card; the
+ * rules below draw what it tagged, and nothing else in this sheet has to move.
+ *
+ * The cell is measured from that reference at @2x, the way §三 measures everything
+ * else: rows repeat every 80.5 device px — 40px — with the name at 14px on a 20px
+ * line and the sentence at 12px on a 16px line flush under it, on the family's own
+ * 2px of block padding (20 + 16 + 4 = the measured 40). 14px is the document's body
+ * step, one above the 13px control label a single-line menu row draws: a row that
+ * carries a sentence reads as a paragraph, not as a list item.
+ *
+ * Two things are stated against the family rule rather than left to it. The host's
+ * flex line becomes the grid below, which is what puts the name and the sentence on
+ * two tracks instead of side by side; and `min-height` and `padding-block` are given
+ * again, because the family rule sets both — at a specificity this selector beats
+ * (0-5-1 to its 0-4-1), so no sheet order is relied on, and a two-line row that
+ * inherited the 24px floor and the 2px padding would be clipped rather than drawn.
+ * The host's 6px `gap` becomes the grid's column gap for the same reason it was a
+ * flex gap: it is the distance to the trailing mark. `row-gap` is stated as 0 to
+ * keep it off the two lines, which sit flush.
+ *
+ * The label and the check are placed by hand, because a grid without explicit
+ * areas fills row-major: the name would take the first cell, the sentence the
+ * second — beside it — and the check the third line. The icon seat needs no
+ * placement at all: the family rule takes it out of the line with `display: none`,
+ * and a `display: none` child generates no box to place. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  row-gap: 0;
+  min-height: 40px;
+  padding-block: 2px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._itemLabel_4ub78_190 {
+  grid-area: 1 / 1;
+}
+
+/* The second line, in the document's 弱化墨: the reference measures its sentence at
+ * 137/255, which is this palette's muted step, a clear one below the name above it.
+ * It is one line and it is not narrowed — `nowrap` is what lets the card size itself
+ * to the longest sentence (its own measure lands just inside the primitive's 360px
+ * ceiling), which is exactly what the reference does and what this family's rows,
+ * being single lines of a name, never have to decide. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-desc] {
+  grid-area: 2 / 1;
+  overflow: hidden;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The trailing mark is the host's own selected check — an accent `✓` by
+ * `theme/tokens.css`, never a fill — and it centres against the two lines rather
+ * than against the name. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._check_4ub78_179 {
+  grid-area: 1 / 2 / span 2;
+  align-self: center;
+}
+
+/* The one badge, as the reference draws it: a 16px pill beside the name, not the
+ * 8px superscript the host sets. The host's own `.badge` is `font-size: 8px` at
+ * weight 600 with `letter-spacing: .2px`, baseline-aligned into the name's line
+ * (`align-self: flex-start` under a -1px pull) — every one of those is a
+ * superscript's, and the reference's badge is a tag with a fill and a corner.
+ *
+ * The fill is the palette's 分段轨道 step, which is the reference's measured
+ * 243/255, and it is also the one fill that survives this row's hover: the pointer
+ * fills the row `--ccd-hover` (240/255 light, 49/255 dark), and the track step
+ * reads lighter than it in the light theme and darker in the dark one, so the pill
+ * is never the fill it sits on. The 4px corner is the smallest in the ladder and a
+ * shade rounder than the reference's measured 3px; 6px — the chip and card step —
+ * would round a 16px box towards a capsule.
+ *
+ * The gap the host leaves between a name and its badge (4px) is widened to the
+ * reference's 6px here, and only here: the pair is one control, and 4px reads
+ * cramped beside a 16px pill. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] .wXeviG_badge {
+  align-self: center;
+  margin-top: 0;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--ccd-track);
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 16px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] .wXeviG_optionLabel {
+  column-gap: 6px;
+}
+
+/* The group's name, above the rows.
+ *
+ * It is the host's own heading row — a `role="presentation"` div inside the row
+ * group, which is what `Menu` renders for a label entry, written there by
+ * `compat/permission-menu.ts` — so the family rule above already gives it the
+ * 12px control-label step, the secondary ink and the 8px start padding every other
+ * cell has. The one thing it does not have is this card's own breathing room: the
+ * reference measures ~29px between the card's top edge and the first row, against
+ * the 24px a cell of the family's rhythm occupies, and the 6px above it is that
+ * difference. The name is a step lighter than the rows' names, which is what a
+ * heading above a card of choices should be. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] ._viewport_4ub78_19 > [data-ccd-permission-heading] {
+  padding-block: 6px 2px;
 }

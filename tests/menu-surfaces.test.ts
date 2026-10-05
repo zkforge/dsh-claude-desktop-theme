@@ -140,7 +140,10 @@ test('the pointer and the keyboard share one fill, and no row draws a ring', () 
 });
 
 test('the card’s non-option rows keep the same 24px rhythm', () => {
-  const headings = menus.filter(rule => rule.body.includes('color: var(--ccd-text-secondary)'));
+  /* The heading cell is told apart by what it draws — the `role="presentation"`
+     children of a row group — rather than by its ink: the permission card's
+     badge wears the same secondary ink for a different job (below). */
+  const headings = menus.filter(rule => rule.selector.includes('> [role="presentation"]'));
   assert.equal(headings.length, 1, 'menus.css should draw exactly one heading cell');
   const rule = headings[0] as Rule;
   /* Both containers: the `Menu` list's `.viewport`, and the command palette's

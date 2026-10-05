@@ -18,14 +18,31 @@ import { hostAnchors, hostSelectors } from '../src/client/compat/host-dom.ts';
  * that build's `app.asar`.
  */
 
-/** Classes the static web frontend owns; both builds ship them unchanged. */
+/**
+ * Classes the static web frontend owns; both builds ship them unchanged.
+ *
+ * `_1ypvv_` / `_1wejo_` are the markdown and code-block sheets. Everything of
+ * `_4ub78_` is `ui-primitives`' `Menu` — its card, its rows, its label seat and
+ * its check — which reaches the renderer from the same `dsh-web-frontend` dist
+ * on both installers; the plugin's sheets and its selector table name those
+ * directly (`theme/menus.css` hides the icon seat, `theme/tokens.css` paints the
+ * check, `theme/composer.css` drops the mode card's second line,
+ * `compat/host-dom.ts` reads the row's label and the row group). That bundle is
+ * matched by shape rather than by name, because an entry-by-entry list would
+ * have to grow with every class the plugin reads next, and because a name like
+ * `_itemLabel_4ub78_190` is one class rather than the `_itemLabel_` prefix the
+ * scan below would otherwise collect.
+ */
 const SHARED_CLASSES = ['_markdown_1ypvv_5', '_fileMention_1ypvv_85', '_markdown_1wejo_28'];
+
+/** One class of the shared `Menu` bundle: `<local>_4ub78_<line>`. */
+const SHARED_MENU = /_[_A-Za-z0-9]*_4ub78_\d+/gu;
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 
 /** Drop the shared classes, so only build-specific ones are collected. */
 function withoutShared(text: string): string {
-  let out = text;
+  let out = text.replace(SHARED_MENU, '');
   for (const name of SHARED_CLASSES) out = out.split(name).join('');
   return out;
 }

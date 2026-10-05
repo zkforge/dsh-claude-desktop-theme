@@ -65,6 +65,7 @@
 | 会话头按钮 | 28px（紧凑 24px）、16px 图形、2px 间距、右侧内缩 12px | 参考图 30px 中心节距、25.75px 尾距 |
 | 回到最新 | 22px 盒 | 参考图 40×44 设备 px，对照宿主 34px 圆钮 |
 | 滚动渐隐 | 24px | 宿主内部请求视图同一带宽 |
+| 弹层行 | 24px（13px 标签的 20px 行 + 上下 2px）；权限卡片 40px（14px/20px 名字 + 12px/16px 说明） | 参考图 @2x 每行 48／80.5 设备 px |
 | 圆角阶梯 | 面 10/12、行与按钮 8、chip 与卡片 6 | 见原则 5 |
 | 阴影 | `0 1px 2px` 4%（卡片）／8%（分段控件）；弹层三层叠加 | 深色主题下加重，见第四节 |
 
@@ -155,7 +156,8 @@
 - 勾选／选中的标记用强调蓝，不用加粗；**当前项自己带一层底色**（选中的那一档向卡片底色软化六成，落在参考图量到的 12/255 上）：参考图里"你选的那一行"是一个填了底的胶囊，勾选蓝落在它右端，于是"你选的"与"你指的"分成两档灰（后者仍是 `--ccd-hover`），与侧栏当前行／相邻行同一组分档规则。破坏性行的红墨是宿主的语义色，填充仍与其它行同一层。
 - 卡片里的非选项行（分组标题、加载／空态／失败提示）走同一条 24px 节奏：分组标题取 12px 控件标签档与次要墨，不拿填充；卡片内的「重试」是强调蓝的纯文字按钮，没有边框与底色。
 - 卡片里唯一可编辑的面（搜索框）是**一条裸线，不是一个盒子**：没有边框、填充与圆角，只在格下留一条通栏细线（`--ccd-border-soft`，比卡片轮廓弱一档；左右越过卡片 6px 内边距，量自参考图里那条与卡片等宽的线）把搜索格与列表分开，盒高仍是与行同一节奏的 24px（20px 行 + 上下 2px），输入的文字与下方行的标签同一条 x：格子越过卡片内边距 6px，所以它自己的行内内边距要在行的 8px 之上把这 6px 还回来（左右 14px），否则卡片一打开就落下的光标会比下面每一行的标签都靠左 6px。格里**不写占位文字**，§七 的焦点环也**不画**：卡片一打开就把焦点交给这一格，蓝环会在卡片第一行围出一个空框，参考图里那里只有一个光标——焦点状态由光标自己说。
-- 落点：宿主弹层的卡片与行在 [menus.css](src/client/theme/menus.css)，勾选蓝在 [tokens.css](src/client/theme/tokens.css)；插件自己的模型卡片在 [controls.css](src/client/features/model-controls/controls.css)；模式选单唯一属于它自己的一条（行里第二行说明不画）留在 [composer.css](src/client/theme/composer.css)。
+- 权限卡片是这一族唯一的**两行行**。DSH 把四档权限画成一行一个模式名（20px 行），参考图把同样的四档画成"模式名 + 一句说明"，带徽章的那一项在名字旁挂一只胶囊。第二行是插件自己写的：`optionDescription` 在宿主的权限目录里存在，但选择器只把它交给触发器的 `title`，行里什么都不画，所以 [permission-menu.ts](src/client/compat/permission-menu.ts) 按行画出的名字认出这一族（`Menu` 的行没有 id、没有 data 属性，预设自己的图形又已被本节上一条隐藏），写进说明并给行与卡片打上 `data-ccd-permission-mode`／`data-ccd-permission-menu`。行高 40px：14px/20px 的名字 + 12px/16px 的说明贴在一起（参考图 @2x 每行 80.5 设备 px），上下仍是本族的 2px；说明取**弱化墨**（参考图量到 137/255）。`min-height` 与 `padding-block` 写在 [menus.css](src/client/theme/menus.css) 末尾那一段，靠更高的特异性压过本族的 24px 行规则，不靠表序。名字保持宿主自己的三个中文名（同一个模式在 chip、设置页与 `title` 里都叫这个），只有 `Auto review` 与它的 `EXP` 徽章改写成中文——**chip 上写同一个词**，否则同一个模式隔一个 chip 宽就叫两个名字。徽章在这一族里是 16px 的胶囊（填充走 `--ccd-track`，量自参考图的 243/255，也是这一族唯一不会被行 hover 的一层填充吃掉的底色），chip 上那只同一类名的徽章保持宿主的 8px 上标，两处层级不同是宿主自己的读法。卡片顶部的分组名「模式」写成宿主自己的 `role="presentation"` 标题行，落在键盘走位之外；识别不到任何一行（部署自定义了预设名）的卡片整张不动。
+- 落点：宿主弹层的卡片与行在 [menus.css](src/client/theme/menus.css)，勾选蓝在 [tokens.css](src/client/theme/tokens.css)；插件自己的模型卡片在 [controls.css](src/client/features/model-controls/controls.css)；模式选单唯一属于它自己的一条（行里第二行说明不画）留在 [composer.css](src/client/theme/composer.css)；权限卡片的第二行由 [permission-menu.ts](src/client/compat/permission-menu.ts) 写、由 [menus.css](src/client/theme/menus.css) 画。
 
 ## 七、状态、动效与可达性
 

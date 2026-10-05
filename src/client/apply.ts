@@ -9,6 +9,7 @@ import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
+import { mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { createDomPort } from './compat/dom.ts';
@@ -119,6 +120,14 @@ export function apply(ctx: Context): void {
         scope.add(mountComposerPlaceholder(
           document,
           error => logger.error('composer: placeholder observer failed', error),
+        ));
+        /* The permission picker's second line is the one piece of copy this
+           plugin writes rather than rewrites, so it is mounted like the other
+           Composer compat modules: beside them, on both pages that render the
+           control. */
+        scope.add(mountPermissionMenu(
+          document,
+          error => logger.error('composer: permission card observer failed', error),
         ));
         /* The workspace picker's labels come from the host's own locale namespace,
            so the typed ellipsis is rewritten in the rendered text nodes instead. */
