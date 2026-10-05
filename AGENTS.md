@@ -27,3 +27,11 @@ README 里小鲸鱼的三个动图不是导出资源：`scripts/pet-gifs.mjs` �
 ```sh
 npm run pet:gifs
 ```
+
+Effort 面板拉到底时的像素流光同理：`scripts/effort-gif.mjs` 直接调 `model-controls/pixels.ts` 的 `drawPixelField`，按毫秒逐帧取图，深浅两套主题各出一条 GIF 到 `assets/effort/`。改了像素场或配色后重跑：
+
+```sh
+npm run effort:gifs
+```
+
+两个脚本共用 `scripts/lib/headless-chrome.mjs` 里的 Chrome 与 DevTools 连接。

@@ -78,7 +78,7 @@ dsh-claude-desktop-theme
 
 - **紧凑侧栏**：工作区导航与会话列表，新会话条目在第一次发送后出现。
 - **统一会话页**：新会话页、输入卡片与聊天布局共用一套样式，正文边缘随滚动渐隐。
-- **模型与 effort**：两个独立选择器，支持搜索、滑块和键盘操作。
+- **模型与 effort**：两个独立选择器，支持搜索、滑块和键盘操作；滑杆停在最后一档时，轨道上的实心填充换成一条像素流光。
 - **会话顶栏**：项目文件夹、终端、浏览器三个右侧栏入口；展开侧栏收进会话 ⋯ 菜单第一项。
 - **输入框与状态栏**：聚焦时加深输入边框；细线发送 / 停止按钮、模型、effort、权限与语音控件统一尺寸和间距，权限始终显示文字，上下文圆环位于行末。
 - **统一菜单**：工作区、会话、权限与模型等选单共用紧凑行高、圆角和悬停反馈，浅色与深色模式保持一致。
@@ -113,9 +113,28 @@ dsh-claude-desktop-theme
 
 </div>
 
+## 🎚️ Effort 选单
+
+<div align="center">
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/effort/effort-light.gif" width="260" alt="浅色 Effort 面板：滑杆停在 Max，实心填充淡出，像素流光从右端扫入并在轨道上持续流动"><br/>
+<b>浅色</b>
+</td>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/effort/effort-dark.gif" width="260" alt="深色 Effort 面板：同一条像素流光，亮紫像素落在深色轨道上"><br/>
+<b>深色</b>
+</td>
+</tr>
+</table>
+
+</div>
+
 ## 🖼️ 界面预览
 
-截图为 macOS 版本，使用默认配色与 Geist 字体，统计卡片与状态栏统计读数已开启。静态截图展示整体布局；小鲸鱼的三种点击回应见上方动图。
+截图为 macOS 版本，使用默认配色与 Geist 字体，统计卡片与状态栏统计读数已开启。静态截图展示整体布局；小鲸鱼的三种点击回应与 Effort 拉到底的动效见上方。
 
 <div align="center">
 
@@ -181,6 +200,7 @@ npm run pack:local --cache .cache/npm
 | `npm run dev` | 客户端增量构建 |
 | `npm run pack:local` | 生成用于本地安装的 tarball |
 | `npm run pet:gifs` | 重新渲染 README 里小鲸鱼的三个动图（需已安装 Chrome 与 ffmpeg） |
+| `npm run effort:gifs` | 重新渲染 README 里 Effort 拉到底的深浅两个动图（同上） |
 
 </details>
 

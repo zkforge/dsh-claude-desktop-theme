@@ -85,7 +85,8 @@
     "check": "npm run typecheck && npm run check:architecture && npm test && npm run build && npm run check:package",
     "prepack": "npm run check",
     "pack:local": "npm pack --pack-destination artifacts",
-    "pet:gifs": "node scripts/pet-gifs.mjs"
+    "pet:gifs": "node scripts/pet-gifs.mjs",
+    "effort:gifs": "node scripts/effort-gif.mjs"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "3.18.4"
