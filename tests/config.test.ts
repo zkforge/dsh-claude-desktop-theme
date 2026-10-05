@@ -60,4 +60,5 @@ test('a default configuration keeps every built-in', () => {
   assert.deepEqual(config.fonts, DEFAULT_FONTS);
   assert.equal(config.features.sidebar, true);
   assert.equal(config.features.statistics, false);
+  assert.equal(config.features['composer-stats'], false);
 });

@@ -14,16 +14,38 @@ export const MODEL_MAX_WIDTH_PROPERTY = '--ccd-model-max-width';
 export const CLUSTER_GAP_PROPERTY = '--ccd-cluster-gap';
 
 /**
+ * Root attribute carrying whether the readouts are drawn, whose values are
+ * `on` and `off`.
+ *
+ * Both states are published rather than only the off one: the stylesheet that
+ * hides the cluster keys on `off`, so a document where this module never ran —
+ * a frame the observers could not attach to — keeps the host's own readouts
+ * instead of losing them to a stylesheet default it cannot correct.
+ */
+export const STATS_ATTRIBUTE = 'data-ccd-composer-stats';
+
+/**
  * The responsive statistics cluster sits before the model selector. Its dock is
  * a sibling of the card rather than a row child, so its wide-layout offset needs
  * the trailing group's live width. Readouts and their detail dialogs stay owned
  * by the host; wide columns mirror one short segment without changing the host label.
  *
+ * The cluster is the configuration's to keep or drop (`features.composer-stats`,
+ * off by default): its state is published on the root for the stylesheet, which
+ * draws it only while the readouts are on. The width measurements below are
+ * outside that switch — they budget the row whether or not the readouts are
+ * drawn, and a hidden cluster simply hands its width back to the model button.
+ *
  * @param document - renderer document carrying the Composer.
  * @param report - sink for observer failures; the native readouts stay.
+ * @param readouts - whether the configuration asks for the plugin's readouts.
  * @returns disposer that disconnects the observers and clears every property.
  */
-export function mountComposerStats(document: Document, report: (error: unknown) => void): Disposer {
+export function mountComposerStats(
+  document: Document,
+  report: (error: unknown) => void,
+  readouts: boolean,
+): Disposer {
   const host = hostSelectors(document);
   let scheduled = 0;
   let trailing: HTMLElement | null = null;
@@ -31,19 +53,21 @@ export function mountComposerStats(document: Document, report: (error: unknown) 
 
   const sync = () => {
     scheduled = 0;
-    for (const pill of document.querySelectorAll<HTMLElement>(host.statsPill)) {
-      const parts = (pill.querySelector(host.statsLabel)?.textContent ?? '')
-        .split('·').map(part => part.trim()).filter(Boolean);
-      /* The speed readout carries a slash; the usage pill's second segment is
-         the cache-hit share the host already prints next to its total
-         ("117M tok · 缓存命中 95%"). Mirror the cache hit rather than the
-         session total, and fall back to the first segment when the host has no
-         billed input to compute a share from. */
-      const value = parts.find(part => part.includes('/')) ?? parts.find(part => part.includes('%')) ?? parts[0] ?? '';
-      const quoted = value === '' ? '' : JSON.stringify(value);
-      if (pill.style.getPropertyValue(STAT_VALUE_PROPERTY) !== quoted) {
-        if (quoted === '') pill.style.removeProperty(STAT_VALUE_PROPERTY);
-        else pill.style.setProperty(STAT_VALUE_PROPERTY, quoted);
+    if (readouts) {
+      for (const pill of document.querySelectorAll<HTMLElement>(host.statsPill)) {
+        const parts = (pill.querySelector(host.statsLabel)?.textContent ?? '')
+          .split('·').map(part => part.trim()).filter(Boolean);
+        /* The speed readout carries a slash; the usage pill's second segment is
+           the cache-hit share the host already prints next to its total
+           ("117M tok · 缓存命中 95%"). Mirror the cache hit rather than the
+           session total, and fall back to the first segment when the host has no
+           billed input to compute a share from. */
+        const value = parts.find(part => part.includes('/')) ?? parts.find(part => part.includes('%')) ?? parts[0] ?? '';
+        const quoted = value === '' ? '' : JSON.stringify(value);
+        if (pill.style.getPropertyValue(STAT_VALUE_PROPERTY) !== quoted) {
+          if (quoted === '') pill.style.removeProperty(STAT_VALUE_PROPERTY);
+          else pill.style.setProperty(STAT_VALUE_PROPERTY, quoted);
+        }
       }
     }
     /* The last measurement is kept across element swaps: the Composer is rebuilt
@@ -92,6 +116,13 @@ export function mountComposerStats(document: Document, report: (error: unknown) 
   };
 
   let observer: MutationObserver | undefined;
+  /* The readout state is a document-wide fact — the host renders the cluster on
+     both pages that carry a Composer — and the value is kept so teardown hands
+     back whatever the root carried before, like `compat/dom.ts` does for the
+     activation gate. */
+  const html = document.documentElement;
+  const state = readouts ? 'on' : 'off';
+  const previous = html.getAttribute(STATS_ATTRIBUTE);
   try {
     observer = new MutationObserver(schedule);
     /* Dragging a panel changes the frame's inline grid tracks, not the window
@@ -102,6 +133,9 @@ export function mountComposerStats(document: Document, report: (error: unknown) 
       attributeFilter: ['style', 'class', 'data-model-compact'],
     });
     window.addEventListener('resize', schedule);
+    /* Published once the observers are live: a run that cannot observe is a run
+       that must not take the host's readouts out of the row. */
+    html.setAttribute(STATS_ATTRIBUTE, state);
     sync();
   } catch (error) {
     observer?.disconnect();
@@ -118,6 +152,10 @@ export function mountComposerStats(document: Document, report: (error: unknown) 
     root?.style.removeProperty(MODEL_MAX_WIDTH_PROPERTY);
     for (const pill of document.querySelectorAll<HTMLElement>(host.statsPill)) {
       pill.style.removeProperty(STAT_VALUE_PROPERTY);
+    }
+    if (html.getAttribute(STATS_ATTRIBUTE) === state) {
+      if (previous === null) html.removeAttribute(STATS_ATTRIBUTE);
+      else html.setAttribute(STATS_ATTRIBUTE, previous);
     }
     root = null;
     trailing = null;

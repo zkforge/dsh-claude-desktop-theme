@@ -101,9 +101,13 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: menu placement observer failed', error),
         ));
+        /* The row's readouts are the configuration's to keep or drop, and the
+           module that mirrors them also publishes the row's width budget, so it
+           mounts either way and reads the switch as an argument. */
         scope.add(mountComposerStats(
           document,
           error => logger.error('composer: statistics readout observer failed', error),
+          next.features['composer-stats'],
         ));
         /* The voice seat sits in a different flex container from the permission
            seat, so its place in the status bar is arranged from the compatibility

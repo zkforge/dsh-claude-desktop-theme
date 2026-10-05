@@ -50,6 +50,8 @@ export const zh = {
   'feature.tool-calls': '工具调用展示',
   'feature.statistics': '统计卡片',
   'feature.composer-pet': '输入框小鲸鱼',
+  'feature.composer-stats': '状态栏统计读数',
+  'hint.composer-stats': '输出速度与缓存命中率，关掉时这两项不显示（默认）',
 } as const;
 
 export type SettingsKey = keyof typeof zh;
@@ -96,6 +98,8 @@ export const en: Record<SettingsKey, string> = {
   'feature.tool-calls': 'Tool call presentation',
   'feature.statistics': 'Statistics card',
   'feature.composer-pet': 'Composer whale',
+  'feature.composer-stats': 'Composer statistics readouts',
+  'hint.composer-stats': 'Output speed and cache-hit rate; the two stay out of the row while this is off (the default)',
 };
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {

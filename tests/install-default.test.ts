@@ -26,6 +26,7 @@ test('the install bundle enables the interface through the Host-served configura
   assert.deepEqual(config.features, DEFAULT_FEATURES);
   assert.equal(config.features.statistics, false);
   assert.equal(config.features['tool-calls'], false);
+  assert.equal(config.features['composer-stats'], false, 'the status-bar readouts are opted into');
 });
 
 test('an explicit saved off switch remains off, and a missing form never activates', () => {

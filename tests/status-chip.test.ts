@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { STATS_ATTRIBUTE } from '../src/client/compat/stats-values.ts';
 
 /*
  * Status-bar contract: one box and one gap for the whole row.
@@ -152,4 +153,15 @@ test('every container in the row spaces its children with the one gap', () => {
     /gap:\s*(?:12px|8px)/u.test(rule.body)
     && [...ROW_CONTAINERS, '.yhfFVG_row', '.OpZ85W_root'].some(container => rule.selector.includes(container)));
   assert.deepEqual(stragglers, []);
+});
+
+test('the statistics readouts leave the row unless the configuration asks for them', () => {
+  /* The state comes from `compat/stats-values.ts` and is read here, so the
+     attribute is pinned across the two files rather than spelled twice, and the
+     host's cluster is named by its own stable marker rather than by a class
+     hash. A default configuration writes `off`, so the row ships without the
+     readouts. */
+  const rule = ruleFor(composer, `[${STATS_ATTRIBUTE}="off"] [data-composer-stats]`);
+  assert.ok(rule.selector.startsWith('html[data-dsh-ccd-style="true"]'), rule.selector);
+  assert.equal(rule.body.trim(), 'display: none;');
 });

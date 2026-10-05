@@ -1,5 +1,16 @@
+/**
+ * The interface modules a configuration switch turns on.
+ *
+ * `composer-stats` is the one entry that mounts nothing of its own: it is the
+ * Composer status bar's statistics readouts — `compat/stats-values.ts` plus the
+ * Composer sheet — and it is off by default, so a fresh install shows the row
+ * without the host's readout cluster. Turning it on mirrors one short value per
+ * pill (the output rate, or the cache-hit share) in place of the host's own
+ * label.
+ */
 export const FEATURE_IDS = [
   'shell', 'sidebar', 'new-session', 'conversation', 'tool-calls', 'statistics', 'composer-pet',
+  'composer-stats',
 ] as const;
 
 export type FeatureId = typeof FEATURE_IDS[number];
@@ -40,6 +51,7 @@ export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
   'tool-calls': false,
   statistics: false,
   'composer-pet': true,
+  'composer-stats': false,
 });
 
 /** Empty strings keep the built-in palette and the system font stack in charge. */

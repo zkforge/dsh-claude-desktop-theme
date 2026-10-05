@@ -422,6 +422,19 @@ html[data-dsh-ccd-style="true"] .OpZ85W_root {
   align-items: center;
 }
 
+/* The readouts are opted into (`features.composer-stats`, off by default);
+   `compat/stats-values.ts` publishes that state on the root. Off, the host's
+   whole cluster leaves the line — each pill and the counts it prints — and the
+   mirroring rules below have nothing to draw on. Nothing moves when it goes:
+   the cluster and the context ring are both occupants of the dock, which is
+   right-aligned, so the ring keeps the edge it already had, and the model
+   button's budget is re-measured from the dock's own width by that same module.
+   `[data-composer-stats]` is the host's stable marker for the cluster, so this
+   rule outlives a build whose class hashes move. */
+html[data-dsh-ccd-style="true"][data-ccd-composer-stats="off"] [data-composer-stats] {
+  display: none;
+}
+
 /* Same control shape as the model and permission selectors next to them: the
    host draws these readouts as full pills (`border-radius: 999px`) on its own
    28px line, which reads as a different family of control in the same row. They

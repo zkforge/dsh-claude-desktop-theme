@@ -59,7 +59,7 @@ const THEME_KEYS: Record<ThemePreference, SettingsKey> = {
   dark: 'theme.dark',
 };
 
-/** Modules the page offers: the ones that actually mount something today. */
+/** Switches the page offers, in row order; `tool-calls` is not one of them. */
 const OFFERED_FEATURES: readonly FeatureId[] = [
   'shell',
   'sidebar',
@@ -67,6 +67,7 @@ const OFFERED_FEATURES: readonly FeatureId[] = [
   'conversation',
   'composer-pet',
   'statistics',
+  'composer-stats',
 ];
 
 const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
@@ -77,6 +78,16 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
   'tool-calls': 'feature.tool-calls',
   statistics: 'feature.statistics',
   'composer-pet': 'feature.composer-pet',
+  'composer-stats': 'feature.composer-stats',
+};
+
+/**
+ * Rows whose label alone does not say what the switch draws. The readouts are
+ * the one such row: "statistics readouts" names a place in the row, not the two
+ * numbers it puts there.
+ */
+const FEATURE_HINTS: Partial<Record<FeatureId, SettingsKey>> = {
+  'composer-stats': 'hint.composer-stats',
 };
 
 /**
@@ -221,15 +232,19 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
 
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.features')}</h4>
-        {OFFERED_FEATURES.map(id => (
-          <SwitchRow
-            key={id}
-            id={`ccd-settings-feature-${id}`}
-            label={translate(FEATURE_KEYS[id])}
-            checked={served.features[id]}
-            onChange={value => void write([setOperation(['features', id], value)])}
-          />
-        ))}
+        {OFFERED_FEATURES.map(id => {
+          const hint = FEATURE_HINTS[id];
+          return (
+            <SwitchRow
+              key={id}
+              id={`ccd-settings-feature-${id}`}
+              label={translate(FEATURE_KEYS[id])}
+              {...(hint === undefined ? {} : { hint: translate(hint) })}
+              checked={served.features[id]}
+              onChange={value => void write([setOperation(['features', id], value)])}
+            />
+          );
+        })}
       </section>
 
       <section className="ccd-settings-section">
