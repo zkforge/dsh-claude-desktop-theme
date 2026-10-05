@@ -21,3 +21,9 @@ DSH 换了构建后，宿主 CSS Module 类名会重新哈希，用下面的命�
 node scripts/host-prefixes.mjs --windows <app.asar> --write
 node scripts/host-prefixes.mjs --pinned <macOS app.asar> --windows <Windows app.asar> --write
 ```
+
+README 里小鲸鱼的三个动图不是导出资源：`scripts/pet-gifs.mjs` 用无头 Chrome 逐帧渲染 `composer-pet/reactions.ts` 的真实动画，再用 ffmpeg 合成 GIF。改了鲸鱼动作或配色后重跑一次（需要机器上已有 Chrome 与 ffmpeg，产物在 `assets/pet/`）：
+
+```sh
+npm run pet:gifs
+```

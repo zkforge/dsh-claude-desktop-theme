@@ -84,7 +84,8 @@
     "test": "node --test tests/*.test.ts",
     "check": "npm run typecheck && npm run check:architecture && npm test && npm run build && npm run check:package",
     "prepack": "npm run check",
-    "pack:local": "npm pack --pack-destination artifacts"
+    "pack:local": "npm pack --pack-destination artifacts",
+    "pet:gifs": "node scripts/pet-gifs.mjs"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "3.18.4"

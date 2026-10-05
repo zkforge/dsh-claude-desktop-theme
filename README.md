@@ -1,12 +1,8 @@
 <div align="center">
 
-# 🐳 DSH Claude Desktop Theme — Claude 风格桌面主题
+# DSH Claude Desktop Theme — Claude 风格桌面主题
 
 ### 为 DeepSeek Harness（DSH）Desktop 换上 Claude Code Desktop 外观
-
-**A Claude Code Desktop-style theme plugin for DeepSeek Harness (DSH) Desktop on macOS and Windows.**
-
-Light and dark themes, a compact sidebar, model and reasoning-effort pickers, Markdown styling, and an interactive pixel whale with three random click reactions.
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License Badge"/>
@@ -19,21 +15,39 @@ Light and dark themes, a compact sidebar, model and reasoning-effort pickers, Ma
 
 ---
 
-`dsh-claude-desktop-theme`是面向 macOS 与 Windows 的 **DSH Claude 风格主题 / 界面美化插件**。CCD 指 Claude Code Desktop；紧凑侧栏、统一的新会话页与聊天页、独立的模型与推理强度（effort）选择器，跟随宿主的浅色 / 深色主题，首次安装后自动开启。
+`dsh-claude-desktop-theme`是面向 macOS 与 Windows 的 **DSH Claude 风格主题 / 界面美化插件**。
 
 [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [架构说明](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [设计规范](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/DESIGN.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
 
 </div>
 
-## Quick install / 快速安装
+## 🚀 快速安装
 
-In DSH Desktop, open the plugin page and add `dsh-claude-desktop-theme`, or run:
+[npm 包](https://www.npmjs.com/package/dsh-claude-desktop-theme)已发布，可通过官方插件页或终端安装。
+
+<div align="center">
+
+| 入口 | 安装方式 |
+| --- | --- |
+| 官方插件页 | 「插件 → 添加插件」输入 `dsh-claude-desktop-theme` |
+| 终端 | `dsh plugin --profile desktop add dsh-claude-desktop-theme` |
+| 插件市场 | 待目录收录后可搜索安装；当前请使用上面两个入口 |
+
+</div>
+
+**终端**（需先注册 `dsh`）
 
 ```sh
 dsh plugin --profile desktop add dsh-claude-desktop-theme
 ```
 
-Requires DSH Desktop **0.2.0-rc.2**. Reload DSH after installation. See the [installation guide](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) for CLI setup and platform-specific steps.
+**插件页**：打开「插件 → 添加插件」，粘贴
+
+```text
+dsh-claude-desktop-theme
+```
+
+首次安装后插件自动开启，升级沿用已保存的配置。应用内添加插件无需注册 CLI；安装后重载 DSH，具体步骤、应用内置 CLI 路径与源码安装见 [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
 
 ## 🌟 核心特性
 
@@ -71,38 +85,37 @@ Requires DSH Desktop **0.2.0-rc.2**. Reload DSH after installation. See the [ins
 - **Markdown 排版**：链接、行内代码、表格与代码块按 CCD 风格重绘。
 - **像素小鲸鱼**：停在新会话页的输入卡旁，待机时眨眼与摆尾；点击随机喷一口水、轻弹眨眼或摆尾回应。
 - **主题跟随**：跟随 DSH 的浅色、深色和系统主题，支持自定义背景色与字体。
-- **用量统计卡片**：Overview／Models 视图、时间范围、贡献热力图与模型图表，默认关闭。
+- **用量统计卡片**：Overview／Models 视图、时间范围、贡献热力图与模型图表。
 
 ## 🐳 与小鲸鱼互动
 
-小鲸鱼以 **32 × 24 像素**的造型停在新会话输入框右上方，配色跟随浅色 / 深色主题。待机时偶尔眨眼、轻轻摆尾；点击鲸鱼，或用 Tab 聚焦后按 **Enter / Space**，会等概率播放一次回应：
+<div align="center">
 
-| 动作 | 动效 | 时长 |
-| --- | --- | --- |
-| 喷一口水 | 身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下 | 约 1.05 秒 |
-| 轻弹眨眼 | 蓄力、向上轻跳、落地回弹并眨眼 | 约 0.68 秒 |
-| 摆尾回应 | 身体左右轻晃，尾巴与胸鳍摆动并眨眼 | 约 0.90 秒 |
+<table>
+<tr>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-spout.gif" width="150" alt="喷一口水：身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下"><br/>
+<b>喷一口水</b><br/>
+身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下
+</td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-hop.gif" width="150" alt="轻弹眨眼：蓄力、向上轻跳、落地回弹并眨眼"><br/>
+<b>轻弹眨眼</b><br/>
+蓄力、向上轻跳、落地回弹并眨眼
+</td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-wag.gif" width="150" alt="摆尾回应：身体左右轻晃，尾巴与胸鳍摆动并眨眼"><br/>
+<b>摆尾回应</b><br/>
+身体左右轻晃，尾巴与胸鳍摆动并眨眼
+</td>
+</tr>
+</table>
 
-动作结束后回到待机，再接受下一次点击。透明点击区域扩到 44 × 44 像素，向上延伸，避免遮挡下方输入框。打开模型或 effort 选单时，小鲸鱼仍在原位，选单显示在它上方；输入框上方出现额外内容、发送回显或进入聊天页时，它会收起。
-
-系统开启「减少动态效果」时，待机动画关闭，点击仅短暂闭眼约 0.2 秒。窗口进入后台时暂停待机动画并取消正在播放的回应；回到前台后恢复。可在插件设置的模块开关中关闭「输入框小鲸鱼」。
-
-## 📦 0.2.0 更新与旧包迁移
-
-从 **0.2.0** 起，npm 包名与 GitHub 仓库名统一为 **`dsh-claude-desktop-theme`**，旧包名为 `dsh-ccd-style`。本次增加鲸鱼点击动效、项目文件夹入口，统一菜单与状态栏样式，并完善输入框聚焦和按钮反馈。
-
-已安装旧包的用户请先记录自定义颜色、字体与模块开关，再移除旧包、安装新包，避免同时启用两套主题：
-
-```sh
-dsh plugin --profile desktop remove dsh-ccd-style
-dsh plugin --profile desktop add dsh-claude-desktop-theme
-```
-
-安装后重载 DSH，并核对设置。包名迁移不会自动复制旧包的自定义配置；同名包的后续升级继续沿用已保存的配置。完整步骤见 [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md#从旧包名迁移)。
+</div>
 
 ## 🖼️ 界面预览
 
-截图为 macOS 版本，使用默认配色与 Geist 字体，统计卡片已开启。静态截图展示整体布局，小鲸鱼交互及本次细节调整以以上说明为准。
+截图为 macOS 版本，使用默认配色与 Geist 字体，统计卡片已开启。静态截图展示整体布局；小鲸鱼的三种点击回应见上方动图。
 
 <div align="center">
 
@@ -114,27 +127,9 @@ dsh plugin --profile desktop add dsh-claude-desktop-theme
 
 </div>
 
-## 🚀 安装
-
-[npm 包](https://www.npmjs.com/package/dsh-claude-desktop-theme)已发布，可通过官方插件页或终端安装。
-
-<div align="center">
-
-| 入口 | 安装方式 |
-| --- | --- |
-| 官方插件页 | 「插件 → 添加插件」输入 `dsh-claude-desktop-theme` |
-| 终端 | `dsh plugin --profile desktop add dsh-claude-desktop-theme` |
-| 插件市场 | 待目录收录后可搜索安装；当前请使用上面两个入口 |
-
-</div>
-
-首次安装后插件自动开启，升级沿用已保存的配置。
-
-终端命令需先注册 `dsh`；应用内添加插件无需注册 CLI。安装后重载 DSH，具体步骤、应用内置 CLI 路径与源码安装见 [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
-
 ## ⚙️ 配置
 
-打开「插件 → dsh-claude-desktop-theme → ui-skin-ccd-style」，调整总开关、模块、主题、颜色和字体。改动即时生效。
+打开「插件 → dsh-claude-desktop-theme」，调整总开关、模块、主题、颜色和字体。改动即时生效。
 
 <div align="center">
 
@@ -185,6 +180,7 @@ npm run pack:local --cache .cache/npm
 | `npm run check` | 依次执行以上全部 |
 | `npm run dev` | 客户端增量构建 |
 | `npm run pack:local` | 生成用于本地安装的 tarball |
+| `npm run pet:gifs` | 重新渲染 README 里小鲸鱼的三个动图（需已安装 Chrome 与 ffmpeg） |
 
 </details>
 
