@@ -36,9 +36,12 @@ interface Placement {
 
 /**
  * Place bottom-edge Composer and hero-chip menus above their anchors, using
- * the Menu primitive's side=top geometry. Cap only cards taller than the free
- * space above the anchor so later content growth keeps its natural height.
- * MutationObserver and resize reapply placement when the host updates it.
+ * the Menu primitive's side=top geometry. The side is decided from the two free
+ * spaces alone — the room above wins whenever it is the larger one — so a card
+ * short enough to fit below does not stay under a control the reference opens
+ * upwards from. Cap only cards taller than the free space above the anchor so
+ * later content growth keeps its natural height. MutationObserver and resize
+ * reapply placement when the host updates it.
  * @returns disposer that restores each menu and releases the observers.
  */
 export function mountComposerMenuPlacement(document: Document, report: (error: unknown) => void): Disposer {
@@ -123,11 +126,19 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
   const place = (menu: HTMLElement, anchor: DOMRect, viewport: number): void => {
     const height = naturalHeight(menu);
     if (height === 0) return;
-    /* Below the anchor is the primitive's own placement; leave it when it fits,
-       and when the native clamp would still show more than opening upwards. */
+    /* Below the anchor is the primitive's own placement, and that space is not
+       free here: under the hero chips row it is the Composer itself, and for a
+       Composer control it is the rest of the tool row. A card that fits down
+       there still covers the surface it belongs to — and the picker is the case
+       that shows why "it fits below" cannot decide the side: with one workspace
+       the card is a row shorter than that space and stays down, with two it is
+       tall enough to be lifted, so the picker would appear to change sides as
+       workspaces are added. The reference opens both families upwards, so only a
+       window where the room below is genuinely the larger one keeps the native
+       side. */
     const below = viewport - MARGIN - (anchor.bottom + GAP);
     const above = anchor.top - GAP - topMargin();
-    if (height <= below || above <= below) {
+    if (above <= below) {
       restore(menu);
       return;
     }

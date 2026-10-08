@@ -127,6 +127,69 @@ export interface BlankSessionsPort {
   subscribe(listener: () => void): Disposer;
 }
 
+/** One group of the host's view-options menu, as the host drew it. */
+export interface ViewOptionsGroupRead {
+  /** The heading the host drew above this group, in the document's language. */
+  readonly label: string;
+  /** Every row's own label, in the host's order. */
+  readonly labels: readonly string[];
+  /** Index of the row the host marks as current, or −1 when none is marked. */
+  readonly selected: number;
+}
+
+/** The host's view-options menu, read out of its own card. */
+export interface ViewOptionsRead {
+  /** The three groups in the host's own order: group by, order by, archived filter. */
+  readonly groups: readonly ViewOptionsGroupRead[];
+}
+
+/** Which of the host's three groups a choice belongs to. */
+export type ViewOptionsGroup = 0 | 1 | 2;
+
+/** What the card is drawn from: whether it is up, what it hangs from, and the
+    host's three values as they were read when it opened. */
+export interface ViewOptionsSnapshot {
+  readonly open: boolean;
+  readonly anchor: Element | null;
+  /** Null before the first open, and after the host's card could not be read. */
+  readonly values: ViewOptionsRead | null;
+}
+
+/**
+ * The sidebar's view-options menu, as this plugin's card needs it.
+ *
+ * DSH keeps the three view settings in the browser and publishes no way to read
+ * or write them, so the only handle is the host's own menu: opening this card
+ * reads it, and `choose` clicks one of its rows. `getSnapshot`/`subscribe`
+ * carry the whole of what the DOM side owns — the trigger, whether the card is
+ * up, and the values read for it.
+ */
+export interface ViewOptionsPort {
+  /** The current state; the object identity changes only when the state does. */
+  getSnapshot(): ViewOptionsSnapshot;
+  /** Observe opening, closing, and the trigger being replaced. */
+  subscribe(listener: () => void): Disposer;
+  /** Put the card away; the trigger's own state follows. */
+  close(): void;
+  /** Choose one option by driving the host's own row; false when it could not be reached. */
+  choose(group: ViewOptionsGroup, index: number): Promise<boolean>;
+}
+
+/** Native view preferences also used by the sidebar's empty-group policy. */
+export interface ViewOptionsSettingsPort {
+  getSnapshot(): ViewOptionsRead | null;
+  subscribe(listener: () => void): Disposer;
+}
+
+/** Authoritative membership, including sessions omitted from collapsed DOM. */
+export interface SidebarSessionsPort {
+  /** Durable history across all groups and filters; null while loading. */
+  hasHistory(): boolean | null;
+  /** Null while either catalog is still arriving; null filter keeps all history. */
+  populatedGroups(filter: number | null, nested: boolean): ReadonlySet<string> | null;
+  subscribe(listener: () => void): Disposer;
+}
+
 /** Actual SDK types, never a second definition of DSH component props. */
 export interface HostServices {
   readonly slots: Context['slots'];
@@ -145,6 +208,7 @@ export interface HostServices {
    * session list; a null port leaves the native rows exactly as they are.
    */
   readonly blankSessions: BlankSessionsPort | null;
+  readonly sidebarSessions: SidebarSessionsPort | null;
   /** The settings transport carrying this plugin's own configuration section. */
   readonly configForms: ConfigFormsPort;
 }

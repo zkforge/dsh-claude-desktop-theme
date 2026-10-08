@@ -614,3 +614,68 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_i
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_iconButton:hover {
   background: var(--ccd-hover);
 }
+
+/* A Workspace with nothing to show.
+ *
+ * `compat/empty-groups.ts` marks the group container — the box holding a
+ * Workspace's row, its nested groups and its Session rows — and this is the
+ * whole of what the plugin's `显示空分组` view option does: off by default, a
+ * Workspace whose rows are all filtered away no longer stands as a heading over
+ * nothing. The marker is an attribute rather than a style written per element,
+ * so one rule answers every re-render the host makes, and clearing the marker is
+ * all it takes to bring the group back. */
+html[data-dsh-ccd-style="true"] [data-ccd-empty-group] {
+  display: none;
+}
+
+/* Center the prompt in the space between navigation and the account footer. */
+html[data-dsh-ccd-style="true"] [data-ccd-list-empty] {
+  position: relative;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  color: var(--ccd-text-muted);
+  text-align: center;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-empty-pixels {
+  flex: none;
+  width: 88px;
+  height: 80px;
+  margin-top: 10px;
+  fill: currentColor;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-empty button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ccd-text-secondary);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-empty button:hover {
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-empty button:focus-visible {
+  outline: 1px solid var(--ccd-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-list-empty] [data-row-key="empty"] {
+  display: none;
+}

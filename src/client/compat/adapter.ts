@@ -1,7 +1,8 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-api-session-controller/client';
+import type {} from '@deepseek-ai/dsh-api-workspace-controller/client';
 import type {
-  BlankSessionsPort, ConfigFormPort, ConfigFormsPort, HostServices, ThemePreferencePort,
+  BlankSessionsPort, ConfigFormPort, ConfigFormsPort, HostServices, SidebarSessionsPort, ThemePreferencePort,
 } from '../contracts/ports.ts';
 import { TARGET_DSH_VERSION } from '../../shared/identity.ts';
 import { blankSessionIds } from './blank-session-rows.ts';
@@ -76,6 +77,57 @@ function resolveBlankSessions(ctx: Context): BlankSessionsPort | null {
   };
 }
 
+/** Read collapsed membership from the same two catalogs the host browser uses. */
+export function createSidebarSessionsPort(ctx: Context): SidebarSessionsPort | null {
+  const sessions = ctx.sessions?.list;
+  const workspaces = ctx.workspaces?.list;
+  if (typeof sessions?.getSnapshot !== 'function' || typeof sessions.subscribe !== 'function'
+    || typeof workspaces?.getSnapshot !== 'function' || typeof workspaces.subscribe !== 'function') return null;
+  return {
+    hasHistory() {
+      const catalog = sessions.getSnapshot();
+      if (catalog.phase !== 'ready') return null;
+      return catalog.ids.some(id => {
+        const row = catalog.byId[id];
+        return row !== undefined && row.origin !== 'subagent' && !(row.blank && row.parentId === undefined);
+      });
+    },
+    populatedGroups(filter, nested) {
+      const catalog = sessions.getSnapshot();
+      const registry = workspaces.getSnapshot();
+      if (catalog.phase !== 'ready' || registry.phase !== 'ready') return null;
+      const archived = new Set(registry.archivedSessionIds);
+      const populated = new Set<string>();
+      const matches = (id: typeof catalog.ids[number]) => {
+        const row = catalog.byId[id];
+        if (row === undefined || row.origin === 'subagent' || (row.blank && row.parentId === undefined)) return false;
+        return filter === 0 ? !archived.has(id) : filter === 2 ? archived.has(id) : true;
+      };
+      const assigned = new Set(registry.items.flatMap(workspace => workspace.sessionIds));
+      if (catalog.ids.some(id => !assigned.has(id) && matches(id))) populated.add('');
+      for (const workspace of registry.items) {
+        if (workspace.sessionIds.some(matches)) populated.add(workspace.workspaceId);
+      }
+      // Tree mode keeps empty ancestor folders when a descendant has history.
+      if (nested) {
+        const path = (value: string) => value.replace(/\\/gu, '/').replace(/\/+$/u, '') + '/';
+        const occupiedPaths = registry.items.filter(row => populated.has(row.workspaceId)).map(row => path(row.path));
+        for (const row of registry.items) {
+          if (occupiedPaths.some(child => child.startsWith(path(row.path)))) populated.add(row.workspaceId);
+        }
+      }
+      return populated;
+    },
+    subscribe(listener) {
+      const offSessions = sessions.subscribe(listener);
+      let offWorkspaces: () => void;
+      try { offWorkspaces = workspaces.subscribe(listener); }
+      catch (error) { offSessions(); throw error; }
+      return () => { offWorkspaces(); offSessions(); };
+    },
+  };
+}
+
 /** This compatibility boundary targets the pinned SDK, not arbitrary DSH versions. */
 export function createHostServices(ctx: Context): HostServices {
   const slots = ctx.slots;
@@ -91,6 +143,7 @@ export function createHostServices(ctx: Context): HostServices {
     theme,
     themePreference: createThemePreferencePort(ctx),
     blankSessions: resolveBlankSessions(ctx),
+    sidebarSessions: createSidebarSessionsPort(ctx),
     configForms: resolveConfigForms(ctx),
     workspace: {
       openSession: target => workspace.openSession(target),

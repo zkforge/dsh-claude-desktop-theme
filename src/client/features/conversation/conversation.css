@@ -451,7 +451,11 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root {
 html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) {
   font-family: var(--ccd-font-ui);
   font-size: inherit;
-  line-height: inherit;
+  /* The host runs the assistant body at 14px/24px; the reference runs the same
+     14px on a 20px line, which is what its paragraphs and its paragraph gaps
+     are measured against. Reasoning and tool Markdown (`[data-markdown-variant
+     ="compact"]`) keep the host's own leading. */
+  line-height: var(--ccd-transcript-line-height);
   color: var(--ccd-text);
 }
 
@@ -468,6 +472,19 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
 
 html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(a, ._fileMention_1ypvv_85):is(:hover, :focus) {
   text-decoration-color: var(--ccd-link);
+}
+
+/*
+ * The host prefixes a URL link with a category glyph — `MarkdownText.module.css`
+ * seats a `.linkIcon` globe inside the anchor (1.1em, -0.25em of optical
+ * offset) — so "外链" draws as "⊕ 外链" where the reference draws the link text
+ * alone. The glyph is not painted inside an anchor; the anchor keeps its text,
+ * its underline and its hit area. The other two shapes that carry the class —
+ * a file mention and URL-promoted inline code — are not anchors but file chips,
+ * and keep their own glyph.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) a ._linkIcon_1ypvv_94 {
+  display: none;
 }
 
 /* Limit chips to the text column so long identifiers can wrap inside them.
@@ -494,23 +511,149 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
 }
 
 /*
+ * Headings. The host draws the transcript's h1/h2/h3 at 21/19/18px inside a
+ * 32px top and 16px bottom margin, a full step larger and a good deal looser
+ * than the reference: its crop measures a 19px h1 and a 16px h2 (the tokens in
+ * `theme/tokens.css` carry that measurement), and the ink between two stacked
+ * headings is 20 device px against this plugin's 68. The margin below is what
+ * puts that gap back — the collapsed 8px plus each heading's own half-leading
+ * lands within a couple of device px of the reference at @2x. h4-h6 keep the
+ * host's size (body size, weight 600) and take the same rhythm.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(h1, h2, h3) {
+  margin: 8px 0 6px;
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) h1 {
+  font-size: var(--ccd-font-size-h1);
+  line-height: 26px;
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) h2 {
+  font-size: var(--ccd-font-size-h2);
+  line-height: 22px;
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) h3 {
+  font-size: var(--ccd-font-size-h3);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(h4, h5, h6) {
+  margin: 10px 0 6px;
+}
+
+/*
+ * Block rhythm. The host spaces the transcript's blocks at 16px. The reference
+ * runs tighter around prose and quotes — its crop puts a paragraph-to-quote and
+ * a quote-to-list run at 18 device px of ink, which is ~7-10px of collapsed
+ * margin once each block's half-leading is taken off — while its lists and its
+ * table and code cards keep the host's step. Only the two that differ move;
+ * list items keep the host's own 8px rhythm.
+ *
+ * The list guard is written on the paragraph — `p:not(li p)` — and not as a
+ * `:not(li) > p` child of the root: a paragraph in this DOM is the root's own
+ * child, and a descendant combinator there asks for a parent *below* the root,
+ * so it matched nothing but the paragraphs nested one level deeper (a quote's)
+ * and every top-level paragraph kept the host's 16px.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) p:not(li p) {
+  margin: 10px 0;
+}
+
+/*
+ * Blockquote. The host draws a 2px rule in `--dsw-alias-label-caption` — its
+ * own mid grey — and leaves the text at full body ink, so a quote reads as an
+ * indented paragraph rather than as a quote. The reference draws a 4px rule in
+ * the same value as this plugin's outline token, with its text one step down in
+ * ink (this plugin's secondary step, against a body that stays near-black). The
+ * rule-to-text distance matches in both (27 and 29 device px), so only the
+ * rule's weight, its colour and the text's ink move.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) blockquote {
+  margin: 10px 0;
+  border-left: 4px solid var(--ccd-border);
+  padding-left: 15px;
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) hr {
+  /* The host spaces the rule at 32px on each side; the reference's crop puts
+     its card-rule-copy run at 71 device px of ink, which is ~20px a side. */
+  margin: 20px 0;
+}
+
+/*
+ * List rhythm. The host sizes its marker's own line at the 24px it used to draw
+ * the body at, so the marker box stands a step taller than the transcript's
+ * leading and stretches every list row to 22px — the item pitch lands at 28
+ * where the reference's own rows measure 26 (its 40 device px at 1.53). The
+ * marker rides the item's line instead, which is what a browser that sets no
+ * marker line at all would do.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) li::marker {
+  line-height: inherit;
+}
+
+/*
+ * Task lists. The host leaves the list marker in place, so a `- [x]` row draws
+ * "• ☑ label" where the reference draws the checkbox alone, and its 6px
+ * inter-item margin — which the reference's own rows do not carry — widens the
+ * pitch to 46 device px against the reference's 35. The marker goes and the
+ * margin goes with it; the checkbox itself already matches (the reference's
+ * fill measures the same 20 device px in the host's grey accent).
+ *
+ * The checkbox sits directly in the item in a tight list and inside the item's
+ * paragraph in a loose one, so both shapes are named.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(li:has(> input[type="checkbox"]), li:has(> p:first-child > input[type="checkbox"])) {
+  list-style: none;
+  margin-top: 0;
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) input[type="checkbox"] {
+  /* The host's 8px trailing margin leaves 20 device px before the label where
+     the reference leaves 10. */
+  margin-right: 6px;
+}
+
+/*
  * Fenced code blocks take the reference's outlined card: a white fill inside a
  * single hairline, replacing the host's cool wash. The host paints three nested
  * surfaces with that wash — the wrapper, the language banner and `pre` itself —
  * and the banner's outer wrapper falls back to the page token, so every one of
  * them is repainted here; leaving any single layer would show a grey band.
- * Everything else stays native: syntax colours, the language label and the
- * copy/wrap controls.
  *
  * `data-code-wrap` is a stable host anchor (the class list also carries
  * `md-code-block`); the inner layers are reached through it so no hashed class
  * name is repeated here.
+ *
+ * The card is also a *row*, because the reference's is. Its one-line fence
+ * draws as a single 33px-tall card (50 device px at @2x) that hugs its content —
+ * code first, the copy control (and the wrap toggle, and the run control on a
+ * shell fence) trailing it — and floors at 320px, which is why its own short
+ * `npm run check` card carries a wide gap between the code and its controls.
+ * The host instead fills the column and stacks a 36px language banner over a
+ * `pre` padded `6px 22px 20px`, which is 135 device px for that same one line.
+ *
+ * So the block becomes a flex row with the banner reversed behind the code: the
+ * banner's controls ride the first code line, the `pre` takes the row's spare
+ * width (pushing those controls to the trailing edge exactly as the reference's
+ * floored card does) and the column stays the ceiling. `min(320px, 100%)` keeps
+ * a narrow transcript from being pushed out by the floor.
  */
 html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) [data-code-wrap] {
   box-sizing: border-box;
   border: 1px solid var(--ccd-border);
   border-radius: var(--ccd-code-radius);
   background: var(--ccd-card);
+  display: flex;
+  /* The banner is the DOM's first child; the code reads first. */
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  width: fit-content;
+  min-width: min(320px, 100%);
+  max-width: 100%;
 }
 
 html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) [data-code-wrap] > *,
@@ -519,6 +662,56 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
   /* The card owns the surface now; the layers inside it only carry text. */
   background: transparent;
   border-radius: 0;
+}
+
+/*
+ * The banner stops being a row above the code. Its wrapper is the sticky
+ * scroller that used to pin the language row to the top of a tall card; in a
+ * row it is the card's trailing control strip, seated on the first code line
+ * (31px = the `pre`'s 6px padding over the host's 19px code line), which is the
+ * whole card when the fence is one line. The host's own compact variant
+ * neutralises the same wrapper the same way.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) [data-code-wrap] > :has(> [data-code-block-banner]) {
+  position: static;
+  z-index: auto;
+  display: flex;
+  align-items: center;
+  height: 31px;
+}
+
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) [data-code-wrap] [data-code-block-banner] {
+  width: 100%;
+  /* 11px, not 12: the card's own 1px outline sits outside this padding and the
+     reference measures its 18 device px from the card's outer edge. */
+  padding: 0 11px 0 0;
+  font: inherit;
+}
+
+/*
+ * The language label is not painted: the reference's card shows the code and its
+ * controls alone, and its short card is 320px wide for 90px of code precisely
+ * because nothing else sits in that row. The label is the banner's leading
+ * group in both of the host's toolbar shapes, so it is named structurally
+ * rather than by its hashed class; the copy and wrap controls, their labels and
+ * the run control on a shell fence all stay.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) [data-code-wrap] [data-code-block-banner] > :first-child {
+  display: none;
+}
+
+/*
+ * The code keeps the host's 19px line and takes the reference's size (one step
+ * under the body, where the host draws it at 11px) and its padding: the
+ * reference holds the line with ~6px above and below and 16px of leading inset
+ * (26 device px at @2x), against the host's `6px 22px 20px`. `min-width: 0`
+ * lets the code shrink below its own content when the wrap toggle is off.
+ */
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) [data-code-wrap] pre {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 16px;
+  font-size: var(--ccd-font-size-muted);
 }
 
 /*
@@ -547,10 +740,12 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
 
 html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(th, td) {
   /* The host sizes table text one step below the transcript; the reference
-     keeps a table at body size. */
+     keeps a table at body size. Its row is 33px — the transcript's 20px line
+     with 6px above and below, which is the 51 device px both shots measure —
+     so the cells keep the body leading and pay the difference in padding. */
   font-size: inherit;
   line-height: inherit;
-  padding: 4px 10px;
+  padding: 6px 10px;
   border: 0;
   border-bottom: 1px solid var(--ccd-border);
   vertical-align: middle;

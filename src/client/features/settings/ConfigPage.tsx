@@ -284,6 +284,21 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
         <p className="ccd-settings-note">{translate('note.coloursApplyToLight')}</p>
       </section>
 
+      {/* The one view setting this plugin owns. The sidebar's view-options card
+          writes the same field through the same transport, so the two surfaces
+          cannot disagree; the menu carries the reference's wording, this page
+          the configuration's. */}
+      <section className="ccd-settings-section">
+        <h4 className="ccd-settings-title">{translate('section.view')}</h4>
+        <SwitchRow
+          id="ccd-settings-show-empty-groups"
+          label={translate('field.showEmptyGroups')}
+          hint={translate('hint.showEmptyGroups')}
+          checked={served.view.showEmptyGroups}
+          onChange={value => void write([setOperation(['view', 'showEmptyGroups'], value)])}
+        />
+      </section>
+
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.fonts')}</h4>
         {OFFERED_FONTS.map(field => {

@@ -17,6 +17,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-nav-gap: 1px;
   --ccd-radius-row: 8px;
   --ccd-radius-panel: 12px;
+  /* View-options reference: 20 device px corners at @2x. */
+  --ccd-view-menu-radius: 10px;
   /* Assistant table card. The reference crop's corner curve fits a 12-device-px
      radius at @2x, so the card is rounder than the row radius it borrows its
      scale from. */
@@ -116,6 +118,15 @@ html[data-dsh-ccd-style="true"] {
   --ccd-track: #f3f3f2;
   --ccd-raised: #f0f0ef;
   --ccd-hover: #f0f0ee;
+  /* Sampled from the supplied view-options reference, separate from the
+     warmer surfaces used by Composer and the host's other menus. */
+  --ccd-view-menu-hover: #f5f5f5;
+  --ccd-view-menu-text: #0b0b0b;
+  --ccd-view-menu-muted: #9b9994;
+  --ccd-view-menu-border: #d7d7d6;
+  --ccd-view-menu-separator: #ebebeb;
+  --ccd-view-menu-accent: #2a78d6;
+  --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 8px 20px rgba(0, 0, 0, .12), 0 16px 32px rgba(0, 0, 0, .06);
   --ccd-selected: #ecebe8;
 
   /* Lines */
@@ -224,6 +235,24 @@ html[data-dsh-ccd-style="true"] {
      `--cds-font-size-title` (1.25rem, ~20px) with a 25px leading at weight 400,
      which is a good deal quieter than the 26px this used to be. */
   --ccd-font-size-headline: 20px;
+  /* Transcript headings. The reference's ladder sits one step under the host's
+     (DSH draws h1/h2/h3 at 21/19/18px): its own crop measures a 19px h1 and a
+     16px h2 over the 14px body — 27 and 23 device px of CJK ink against the
+     21-device-px body line at @2x — and the h2 is confirmed independently by
+     the inline-code chip, whose 0.95em/1.2 rule this plugin already matches:
+     it lands on the reference's 33 device px exactly at 16px. h3 has no crop of
+     its own and takes the next step down. */
+  --ccd-font-size-h1: 19px;
+  --ccd-font-size-h2: 16px;
+  --ccd-font-size-h3: 15px;
+  /* Transcript leading. The host sets the assistant body at 14px/24px; the
+     reference runs the same 14px on a 20px line. Its own window measures a
+     30.7-device-px pitch between two lines of a paragraph where this plugin's
+     24px draws 36.6, and both shots put their body's CJK ink at 20 device px
+     with a 770px Composer at 1176 (1.53 device px per CSS px), so the two are
+     read at one scale. The reference's paragraph-to-paragraph gap is 46 device
+     px — this 20px line plus the 10px margin both sides already share. */
+  --ccd-transcript-line-height: 20px;
   /* The one step up from the host's own 400: used where a control has to read
      as a chosen value rather than as chrome (model, reasoning effort). */
   --ccd-font-weight-strong: 600;
@@ -374,6 +403,13 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-track: #1f1e1d;
   --ccd-raised: #2f2f2d;
   --ccd-hover: #313130;
+  --ccd-view-menu-hover: var(--ccd-selected);
+  --ccd-view-menu-text: var(--ccd-text);
+  --ccd-view-menu-muted: var(--ccd-text-muted);
+  --ccd-view-menu-border: var(--ccd-border);
+  --ccd-view-menu-separator: var(--ccd-border-soft);
+  --ccd-view-menu-accent: var(--ccd-accent);
+  --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .3), 0 16px 32px rgba(0, 0, 0, .2);
   --ccd-selected: #3a3a37;
 
   /* Lines */

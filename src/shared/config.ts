@@ -20,12 +20,16 @@ export type FeatureFlags = Readonly<Record<FeatureId, boolean>>;
 export const APPEARANCE_FIELDS = ['canvas', 'sidebar'] as const;
 /** Fields of the typeface section; an empty string means "system stack". */
 export const FONT_FIELDS = ['uiLatin', 'uiCjk', 'code'] as const;
+/** Fields of the view-options section. */
+export const VIEW_FIELDS = ['showEmptyGroups'] as const;
 
 export type AppearanceField = typeof APPEARANCE_FIELDS[number];
 export type FontField = typeof FONT_FIELDS[number];
+export type ViewField = typeof VIEW_FIELDS[number];
 
 export type AppearanceConfig = Readonly<Record<AppearanceField, string>>;
 export type FontsConfig = Readonly<Record<FontField, string>>;
+export type ViewConfig = Readonly<Record<ViewField, boolean>>;
 
 export interface StyleConfig {
   readonly enabled: boolean;
@@ -33,6 +37,7 @@ export interface StyleConfig {
   readonly features: FeatureFlags;
   readonly appearance: AppearanceConfig;
   readonly fonts: FontsConfig;
+  readonly view: ViewConfig;
 }
 
 export interface StyleOptions {
@@ -41,6 +46,7 @@ export interface StyleOptions {
   readonly features?: Partial<FeatureFlags>;
   readonly appearance?: Partial<Record<AppearanceField, unknown>>;
   readonly fonts?: Partial<Record<FontField, unknown>>;
+  readonly view?: Partial<Record<ViewField, unknown>>;
 }
 
 export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
@@ -64,6 +70,18 @@ export const DEFAULT_FONTS: FontsConfig = Object.freeze({
   uiLatin: '',
   uiCjk: '',
   code: '',
+});
+
+/**
+ * The view-options section's defaults.
+ *
+ * `showEmptyGroups` is off, which means the sidebar hides a Workspace that has
+ * no Session under the current filter — the reference's own default for that
+ * switch, and the reason the row in the view-options card reads as "off" on a
+ * fresh install.
+ */
+export const DEFAULT_VIEW: ViewConfig = Object.freeze({
+  showEmptyGroups: false,
 });
 
 /** Three- or six-digit hex, with the leading `#`; both forms normalize to six. */
@@ -152,12 +170,21 @@ export function resolveConfig(input: StyleOptions = {}): StyleConfig {
       throw new TypeError(`${key} must be boolean`);
     }
   }
+  const view = { ...DEFAULT_VIEW };
+  for (const field of VIEW_FIELDS) {
+    const value = input.view?.[field];
+    if (value !== undefined) {
+      if (typeof value !== 'boolean') throw new TypeError(`view.${field} must be boolean`);
+      view[field] = value;
+    }
+  }
   return Object.freeze({
     enabled: input.enabled ?? false,
     debug: input.debug ?? false,
     features: Object.freeze(features),
     appearance: resolveSection('appearance', APPEARANCE_FIELDS, DEFAULT_APPEARANCE, normalizeColour, input.appearance, true),
     fonts: resolveSection('fonts', FONT_FIELDS, DEFAULT_FONTS, normalizeFontName, input.fonts, true),
+    view: Object.freeze(view),
   });
 }
 
@@ -184,12 +211,20 @@ export function adoptConfig(value: unknown): StyleConfig {
       if (typeof rawFeatures[id] === 'boolean') features[id] = rawFeatures[id];
     }
   }
+  const view: Record<ViewField, boolean> = { ...DEFAULT_VIEW };
+  const rawView = section(input.view);
+  if (rawView !== undefined) {
+    for (const field of VIEW_FIELDS) {
+      if (typeof rawView[field] === 'boolean') view[field] = rawView[field];
+    }
+  }
   return resolveConfig({
     ...(typeof input.enabled === 'boolean' ? { enabled: input.enabled } : {}),
     ...(typeof input.debug === 'boolean' ? { debug: input.debug } : {}),
     features,
     appearance: pickFields(APPEARANCE_FIELDS, section(input.appearance), normalizeColour),
     fonts: pickFields(FONT_FIELDS, section(input.fonts), normalizeFontName),
+    view,
   });
 }
 

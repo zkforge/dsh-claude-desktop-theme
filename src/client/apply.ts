@@ -5,6 +5,7 @@ import { adoptConfig } from '../shared/config.ts';
 import { ENTRY_ID, PLUGIN_ID } from '../shared/identity.ts';
 import { createHostServices } from './compat/adapter.ts';
 import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
+import { mountEmptyGroups } from './compat/empty-groups.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
@@ -17,6 +18,7 @@ import { CleanupScope } from './core/cleanup.ts';
 import { mountFeatures } from './core/mount-features.ts';
 import { mountTheme } from './theme/mount.ts';
 import { mountModelControls } from './features/model-controls/mount.ts';
+import { mountViewOptions } from './features/view-options/mount.ts';
 import { mountHeaderActions } from './features/conversation/header-actions/mount.ts';
 import { mountComposerPet } from './features/composer-pet/mount.ts';
 import { mountSettingsPage } from './features/settings/mount.ts';
@@ -42,7 +44,7 @@ const FEATURES = [
  * a service that is not declared here, so the dependency is named rather than
  * discovered at the point of use.
  */
-export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions'];
+export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions', 'workspaces'];
 
 /**
  * The only assembly point allowed to import multiple feature domains.
@@ -151,6 +153,18 @@ export function apply(ctx: Context): void {
         /* Compose the frame-wide pet seat alongside the page features. */
         if (next.features['composer-pet']) {
           mountComposerPet(ctx, environment, scope);
+        }
+        /* The sidebar's view-options card is this plugin's own surface over the
+           host's menu, and the empty-group rule is the one view setting the
+           plugin owns; both follow the sidebar switch that draws the trigger. */
+        if (next.features.sidebar) {
+          const view = mountViewOptions(ctx, environment, scope);
+          scope.add(mountEmptyGroups(
+            document,
+            !next.view.showEmptyGroups,
+            error => logger.error('sidebar: empty-group observer failed', error),
+            { source: host.sidebarSessions, settings: view.settings, showAll: view.showAllSessions },
+          ));
         }
         mountFeatures(FEATURES, environment, scope);
         /* Host class names are hashed per DSH build, so a build this plugin has

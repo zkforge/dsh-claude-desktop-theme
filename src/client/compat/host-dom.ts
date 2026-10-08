@@ -72,6 +72,22 @@ export const HOST = Object.freeze({
   browserSectionHeader: '._7514NG_sectionHeader',
   browserSectionLabel: '._7514NG_sectionLabel',
   browserListArea: '._7514NG_listArea',
+  /**
+   * WorkspaceBrowser.module.css: the section header's view-options trigger —
+   * the one control there that is an `iconButton` *and* carries `wide` (its
+   * neighbours are `searchButton` and a plain `iconButton`), and the list class
+   * its card puts on the `Menu` surface. `compat/view-options.ts` reads the
+   * values out of that card and clicks its rows; the card itself is kept off
+   * screen while it does.
+   */
+  viewOptionsTrigger: '._7514NG_sectionHeader ._7514NG_iconButton._7514NG_wide',
+  viewOptionsMenu: '._7514NG_viewOptionsMenu',
+  /**
+   * WorkspaceBrowser.module.css: one Workspace's row container — the box that
+   * holds its Workspace row, its nested groups and its Session rows, and the
+   * box `compat/empty-groups.ts` hides when the group has nothing to show.
+   */
+  workspaceGroup: '._7514NG_groupSection',
   settingsTrigger: '.Dws9Sa_trigger',
   settingsTriggerRow: '.Dws9Sa_triggerRow',
   accountTrigger: '.ZogL4G_trigger',
@@ -106,6 +122,12 @@ export const HOST = Object.freeze({
   assistantMarkdown: '.gKv1-q_root',
   markdownBody: '._markdown_1ypvv_5:not([data-markdown-variant="compact"])',
   markdownFileMention: '._fileMention_1ypvv_85',
+  /**
+   * MarkdownText.module.css: the category glyph the host seats inside a URL
+   * anchor (and inside file mentions and URL-promoted inline code). `conversation.css`
+   * hides the anchor's copy; the reference draws link text alone.
+   */
+  markdownLinkIcon: '._linkIcon_1ypvv_94',
   conversationScroll: '.ST7X_W_scrollBody',
   /** ChatView.module.css: the transcript's own scroll column, inside the page's
       scroll viewport, and the two shells of the floating jump-to-bottom control
@@ -199,6 +221,10 @@ export const HOST = Object.freeze({
       no entry in `host-builds.ts` — the same fact `tokens.css` records for the
       primitive's check mark. */
   menuItemLabel: '._itemLabel_4ub78_190',
+  /** Menu.module.css: the trailing mark a *selected* row draws — `Menu` renders
+      it only for the row whose id is in `selectedIds`, so its presence is how
+      `compat/view-options.ts` reads which option is current. */
+  menuItemCheck: '._check_4ub78_179',
   /** Menu.module.css: the scrolling row group inside the card — where the
       permission card's heading is written, above the rows and outside the
       keyboard's walk (that walk collects `button`s only). */

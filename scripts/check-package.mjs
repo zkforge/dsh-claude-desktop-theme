@@ -120,8 +120,10 @@ const modelSeats = new Set();
 const headerViews = new Set();
 /** The corner cell's retirement entry: it renders nothing and takes the seat. */
 const cornerSeats = new Set();
-/** The Composer whale's one overlay seat, and the scope that owns it. */
+/** The Composer whale's overlay seat, and the scope that owns it. */
 const blankPetSeats = new Set();
+/** The sidebar's view-options card: its own overlay seat, with the driver. */
+const viewOptionsSeats = new Set();
 /** The row configuration page and its dictionary outlive the activation scope. */
 const rowConfigPages = new Set();
 const dictionaries = [];
@@ -169,9 +171,14 @@ const slots = {
       return () => modelSeats.delete(options);
     }
     if (options.name === 'shell.overlay') {
-      // The whale's only seat: it lives on the new-session page, and the anchor
-      // that places it is also what keeps it off every conversation.
+      // Two occupants, told apart by their ids: the whale, whose anchor is also
+      // what keeps it off every conversation, and the sidebar's view-options
+      // card, which hangs from the host's own trigger.
       assert.equal(typeof options.inject, 'function');
+      if (options.id === 'ccd-view-options') {
+        viewOptionsSeats.add(options);
+        return () => viewOptionsSeats.delete(options);
+      }
       assert.equal(options.id, 'ccd-blank-pet');
       blankPetSeats.add(options);
       return () => blankPetSeats.delete(options);
@@ -241,6 +248,12 @@ const rootServices = {
   uiWorkspace: { startSession() {} },
   configForms,
   sessions,
+  workspaces: {
+    list: {
+      getSnapshot: () => ({ phase: 'ready', items: [], archivedSessionIds: [] }),
+      subscribe: () => () => {},
+    },
+  },
 };
 /** One child injection, with the scope the real Cordis fiber would expose. */
 function injectService(dependencies, mount) {
@@ -383,8 +396,16 @@ const beforeSidebarStyles = styles.size;
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, sidebar: true } });
 assert.equal(blankRow.getAttribute('data-ccd-blank-session'), '', 'the blank Session row must be tagged');
 assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Session row stays in the list');
-/* The sidebar feature mounts its column stylesheet and the account-menu sheet. */
-assert.equal(styles.size, 6);
+/* The sidebar feature mounts its column stylesheet, the account-menu sheet and
+   the view-options card's own. */
+assert.equal(styles.size, 7);
+assert.equal(viewOptionsSeats.size, 1, 'the sidebar draws the view-options card');
+assert.deepEqual(
+  Object.keys([...viewOptionsSeats][0].inject()).sort(),
+  ['port', 'setShowEmptyGroups', 'showEmptyGroups'],
+  'the seat injects the driver, the switch and its writer',
+);
+assert.equal([...viewOptionsSeats][0].inject().showEmptyGroups, false, 'the switch defaults off');
 assert.ok(beforeSidebarStyles > styles.size, 'the previous feature scope was released first');
 configForms.published({ ...disabled, enabled: true });
 assert.equal(blankRow.getAttribute('data-ccd-blank-session'), null, 'disabling releases the tag');

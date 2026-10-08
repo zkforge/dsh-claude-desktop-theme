@@ -1,7 +1,7 @@
 import z from '@deepseek-ai/schemastery';
 import type { Context } from '@deepseek-ai/cordis';
 import {
-  DEFAULT_APPEARANCE, DEFAULT_FEATURES, DEFAULT_FONTS, FONT_NAME_MAX_LENGTH,
+  DEFAULT_APPEARANCE, DEFAULT_FEATURES, DEFAULT_FONTS, DEFAULT_VIEW, FONT_NAME_MAX_LENGTH,
 } from '../shared/config.ts';
 import { mountStatistics } from './stats/service.ts';
 
@@ -58,6 +58,10 @@ export const Config = z.object({
       .description('代码与等宽字体名（留空用系统栈）')
       .pattern(FONT_NAME),
   }).default({ ...DEFAULT_FONTS }).description('字体').volatile(),
+  view: z.object({
+    showEmptyGroups: z.boolean().default(DEFAULT_VIEW.showEmptyGroups)
+      .description('显示空分组（关掉时没有会话的工作区不再显示）'),
+  }).default({ ...DEFAULT_VIEW }).description('视图选项').volatile(),
 });
 
 /**

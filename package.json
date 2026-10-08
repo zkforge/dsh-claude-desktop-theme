@@ -81,7 +81,7 @@
     "typecheck": "tsc --noEmit",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:package": "node scripts/check-package.mjs",
-    "test": "node --test tests/*.test.ts",
+    "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "check": "npm run typecheck && npm run check:architecture && npm test && npm run build && npm run check:package",
     "prepack": "npm run check",
     "pack:local": "npm pack --pack-destination artifacts",
@@ -112,6 +112,7 @@
     "@types/react": "18.3.1",
     "esbuild": "0.28.2",
     "react": "18.3.1",
+    "react-dom": "18.3.1",
     "typescript": "7.0.2",
     "yaml": "2.9.1"
   }

@@ -1,0 +1,206 @@
+/*
+ * The sidebar's view-options card (DESIGN.md §6.7).
+ *
+ * This is the plugin's own popup, drawn where the host's eight-row menu used to
+ * be: three value rows — the dimension on the left, the current choice on the
+ * right, a disclosure mark at the end — one switch row, and one action row,
+ * with the options of a value row one level down in a card of their own. The
+ * numbers are the reference's, measured in §3.5 of docs/plan-sidebar-view-options.md:
+ * a 24px row (13px/20px label, 2px above and below, 8px inline), a 6px row
+ * corner, the value column at 12px in the muted ink, 12px between the columns,
+ * a 16px disclosure mark pulled 4px toward the edge, and 1px separators inset
+ * 8px with 4px above and below.
+ *
+ * Both surfaces carry `data-menu-material` for the shared card fill, with a
+ * scoped 10px corner, hairline outline and broader reference shadow.
+ * The host's driving marker (`html[data-ccd-view-options-driving]`)
+ * keeps the card this plugin *drives* off screen without touching this one.
+ *
+ * Two things are stated rather than inherited:
+ *
+ * - **The row is a grid, not the family's flex line.** A value row has three
+ *   seats — label, value, mark — and the value has to sit against the trailing
+ *   edge however long the label is, so the label takes the flexible column and
+ *   the other two are sized by their contents. Rows with only a label and a
+ *   mark (the switch, and the options inside the flyout) drop the third column,
+ *   because an empty `auto` column would still take its 12px column gap and
+ *   push the mark off the edge.
+ * - **The flyout is positioned inside the card.** The card is a native popover
+ *   in the top layer, so an absolutely positioned child paints outside its
+ *   bounds and above the page without a second top-layer surface. A 1px gap
+ *   and matching hit bridge keep the cards almost touching, while the submenu
+ *   top aligns with the active row, as in the supplied reference.
+ */
+
+.ccd-view-options {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  width: 200px;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 4px;
+  /* Popovers default to overflow:auto, which clips an absolutely positioned
+     submenu outside this surface and prevents pointer input from reaching it. */
+  overflow: visible;
+  color: var(--ccd-view-menu-text);
+  font: 13px/20px var(--ccd-font-ui);
+  /* The seat it is registered in is click-through; a top-layer surface is hit
+     tested on its own, and this states it rather than relying on that. */
+  pointer-events: auto;
+}
+
+/* The UA hides a closed popover with `display: none`; the card's own display
+   has to be scoped to the open state or it would keep that rule from applying. */
+.ccd-view-options:popover-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.ccd-view-options::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+
+/* The supplied reference has a thinner outline and a 10px corner, with a
+   broader shadow. Scope these overrides to the two view-options surfaces. */
+html[data-dsh-ccd-style="true"] .ccd-view-options[data-menu-material],
+html[data-dsh-ccd-style="true"] .ccd-view-submenu[data-menu-material] {
+  /* The shared menu rules also consume these two variables. Rebind them
+     locally so their more specific hover/separator selectors agree. */
+  --ccd-hover: var(--ccd-view-menu-hover);
+  --ccd-border-soft: var(--ccd-view-menu-separator);
+  border: .5px solid var(--ccd-view-menu-border);
+  border-radius: var(--ccd-view-menu-radius);
+  box-shadow: var(--ccd-view-menu-shadow);
+}
+
+.ccd-view-row-wrap {
+  display: contents;
+}
+
+.ccd-view-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: var(--ccd-table-radius);
+  background: none;
+  color: var(--ccd-view-menu-text);
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.ccd-view-row[data-ccd-view-switch],
+.ccd-view-submenu .ccd-view-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* One fill for the row's states, the family's own: the pointer, the keyboard
+   walk and the row whose flyout is open all read as the same hover step, and
+   the selection is the accent check rather than a second fill (DESIGN.md §6.7). */
+.ccd-view-row:hover,
+.ccd-view-row:focus-visible,
+.ccd-view-row[aria-expanded='true'] {
+  background: var(--ccd-view-menu-hover);
+}
+
+.ccd-view-row:focus-visible {
+  outline: none;
+}
+
+.ccd-view-row-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The current value: one step below the label in size and ink, so the row reads
+   as "this dimension, this choice" rather than two labels side by side. */
+.ccd-view-row-value {
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--ccd-view-menu-muted);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ccd-view-chevron,
+.ccd-view-check {
+  width: 16px;
+  height: 16px;
+  margin-right: -4px;
+}
+
+.ccd-view-chevron {
+  color: var(--ccd-view-menu-muted);
+}
+
+.ccd-view-check {
+  color: var(--ccd-view-menu-accent);
+}
+
+.ccd-view-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--ccd-view-menu-separator);
+}
+
+.ccd-view-submenu {
+  position: absolute;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 128px;
+  max-width: 260px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The bridge spans the gap between a row and its flyout, so a pointer crossing
+   it does not fall out of both surfaces and close the card behind it. */
+.ccd-view-submenu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1px;
+  width: 1px;
+}
+
+.ccd-view-submenu[data-ccd-flip='true']::before {
+  left: auto;
+  right: -1px;
+}
+
+/* The host card this plugin drives.
+ *
+ * `compat/view-options.ts` opens DSH's own view-options menu to read the three
+ * view settings and to click one of its rows — that menu is the only handle the
+ * host publishes on values it keeps in the browser — and the reader must never
+ * see it. The marker the driver writes on the document element takes the card
+ * and the vibrancy backing the primitive portals beside it out of the paint;
+ * `visibility` rather than `display` is what keeps the box the host's own
+ * positioning measures.
+ *
+ * The rule lives in this sheet rather than in `theme/menus.css` because it is
+ * the driver's own mechanism, not a fact about the popup family: the family
+ * sheet draws every `MenuSurface` the document has, and this one only ever
+ * applies while this card is driving. The card above carries
+ * `data-menu-material` as well — it *is* that family — so the family sheet draws
+ * its chrome, while this rule names the host's list class and the backing
+ * element alone. */
+html[data-dsh-ccd-style="true"][data-ccd-view-options-driving] ._7514NG_viewOptionsMenu,
+html[data-dsh-ccd-style="true"][data-ccd-view-options-driving] [data-menu-backing] {
+  visibility: hidden;
+  pointer-events: none;
+}

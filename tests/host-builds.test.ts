@@ -33,7 +33,7 @@ import { hostAnchors, hostSelectors } from '../src/client/compat/host-dom.ts';
  * `_itemLabel_4ub78_190` is one class rather than the `_itemLabel_` prefix the
  * scan below would otherwise collect.
  */
-const SHARED_CLASSES = ['_markdown_1ypvv_5', '_fileMention_1ypvv_85', '_markdown_1wejo_28'];
+const SHARED_CLASSES = ['_markdown_1ypvv_5', '_fileMention_1ypvv_85', '_linkIcon_1ypvv_94', '_markdown_1wejo_28'];
 
 /** One class of the shared `Menu` bundle: `<local>_4ub78_<line>`. */
 const SHARED_MENU = /_[_A-Za-z0-9]*_4ub78_\d+/gu;
