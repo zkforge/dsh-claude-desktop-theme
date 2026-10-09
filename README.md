@@ -136,15 +136,15 @@ dsh-claude-desktop-theme
 
 ## 🖼️ 界面预览
 
-截图为 macOS 版本，使用默认配色与 Geist 字体，统计卡片与状态栏统计读数已开启。静态截图展示整体布局；小鲸鱼的三种点击回应与 Effort 拉到底的动效见上方。
+截图为 macOS 版本，使用默认配色与 Geist 字体，统计卡片已开启，状态栏统计读数保持默认关闭。新会话页展示像素小鲸鱼与统计卡片，聊天页展示 Markdown 表格与代码高亮；插件设置两图分别展示模块开关，以及主题、背景色、视图与字体。小鲸鱼的三种点击回应与 Effort 拉到底的动效见上方。
 
 <div align="center">
 
 |  | 浅色 | 深色 |
 | --- | --- | --- |
 | 新会话页 | ![新会话页浅色：工作区与模式选择、像素小鲸鱼和统计卡片](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.png) | ![新会话页深色：工作区与模式选择、像素小鲸鱼和统计卡片](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-dark.png) |
-| 聊天页 | ![聊天页浅色：Markdown 表格、js 代码块和 Effort 滑杆](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.png) | ![聊天页深色：Markdown 表格、js 代码块和 Effort 滑杆](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.png) |
-| 插件设置 | ![插件设置浅色：模块开关、主题、背景色与字体](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.png) | ![插件设置深色：模块开关、主题、背景色与字体](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.png) |
+| 聊天页 | ![聊天页浅色：Markdown 表格、对齐示例与 Python 代码高亮](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.png) | ![聊天页深色：Markdown 表格、对齐示例与 Python 代码高亮](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.png) |
+| 插件设置 | ![插件设置浅色：启用 CCD 风格界面与模块开关](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.png) | ![插件设置深色：上下文分解面板、主题、背景色、空分组与字体](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.png) |
 
 </div>
 
