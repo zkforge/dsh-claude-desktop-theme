@@ -205,6 +205,15 @@ export const HOST = Object.freeze({
   statsSeparator: '.OpZ85W_sep',
   statsPill: '.OpZ85W_pill',
   contextMeterTrigger: '.y0jqnG_trigger',
+  /**
+   * ContextMeter.module.css: the host's own click-open breakdown panel. It is a
+   * `position: fixed` portal on `document.body` at `z-index: 1100` rather than a
+   * native popover, so this plugin's panel — a top-layer popover — paints over
+   * it; the marker the driver writes is the belt to that braces, and it keeps
+   * the host's panel out of the paint if a click ever reaches DSH's own
+   * handler. `compat/context-panel.ts` is the only reader.
+   */
+  contextMeterPanel: '.y0jqnG_panel',
   heroRoot: '.bocITq_root',
   heroHeadline: '.bocITq_headline',
   heroWorkspaceChip: '.bocITq_workspace',
@@ -271,6 +280,13 @@ export const ANCHOR = Object.freeze({
    * with a Session, so this is the seat the no-session pet is measured from.
    */
   composerCardHero: `${HOST.conversationRoot}[data-phase="hero"] [data-composer-card]`,
+  /**
+   * ConversationRoot.tsx: the conversation body, carrying the Session identity
+   * the context panel reads its projections by. The Composer seat — and so the
+   * context ring — is a descendant, which is what makes `closest()` from the
+   * trigger enough. The host's own stable hook rather than the hashed class.
+   */
+  conversationSession: '[data-conversation-session]',
 } as const);
 
 /** One document's selector table, resolved for the build that document runs. */

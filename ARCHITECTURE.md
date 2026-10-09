@@ -30,6 +30,7 @@ Host 依赖 shared 与 Host 运行库；客户端各层通过 contracts、core�
 | composer-pet | 新会话输入卡右上角的小鲸鱼 | 开启 |
 | statistics | 用量概览、热力图与模型图表 | 关闭 |
 | composer-stats | 状态栏末尾的统计读数（输出速度与缓存命中率） | 关闭 |
+| context-panel | 上下文圆环的分段分解面板（收起／展开两态） | 开启 |
 
 `composer-stats` 是唯一不挂载模块的开关：它是状态栏统计读数的接管，由 `compat/stats-values.ts` 与 composer 样式表承担，关闭（默认）时宿主的那一族读数不画；同一模块发布的宽度预算与这个开关无关，读数隐藏只是把它占的宽度还给模型按钮。
 
@@ -44,6 +45,12 @@ Host 依赖 shared 与 Host 运行库；客户端各层通过 contracts、core�
 主卡片宽 200px、子卡片至少 128px、间距 1px，子卡片顶部对齐当前行。10px 圆角、0.5px 轮廓与浅色菜单配色按用户参考图绘制，局部变量为 `--ccd-view-menu-*`，深色沿用主题色阶。主卡片允许溢出以防原生 popover 裁掉子菜单；悬停和点击都展开当前维度，通用键盘走位由卡片处理一次。ARIA 与定位只在值变化时写入，避免观察器通知自身形成死循环。真实 Chrome 测试验证命中、间隙穿越、边缘对齐、浅深色配色与左右展开时的选项映射。
 
 `显示空分组` 是插件设置（`view.showEmptyGroups`，默认关，设置页与卡片写同一字段）。`compat/empty-groups.ts` 按宿主渲染的行判定展开分组；折叠分组则读取 `sessions.list` 与 `workspaces.list` 的权威成员、归档状态，结合菜单驱动发布的当前筛选判断，树模式保留有会话的祖先目录。数据尚未就绪时保留未知分组，临时新会话即使是当前会话也不算可见历史。观察器及源订阅跟踪成员和筛选变化，排除自身标记。没有任何历史会话时，无论空分组开关如何，隐藏分组标题，在列表区域居中显示「你发起的会话会显示在这里」和淡色像素装饰；第一条历史会话出现后恢复列表。仅筛选结果为空时，显示筛选提示及「显示所有会话」按钮；按钮通过宿主菜单选择全部会话。驱动会等待 React 提交菜单关闭，再清理隐藏标记，避免旧 DOM 导致再次切换并打开原生菜单。
+
+上下文圆环点开的是插件自己的分解面板（同一个 `shell.overlay` 槽的第三位占用者，order 40）：**收起态**是标题行（`上下文窗口` + `~已用 / 窗口 (百分比)` + 右端 chevron）加一条 4px 分段条，**展开态**在同一头部下加分类行（色块 + 名称 + token + 百分比）与按需出现的逐项分组。没有底部按钮：标题行整行就是开关，`aria-expanded` 挂在它上面。分段条按 token 权重分配 flex，已用段之间 1px、与「自动压缩余量」灰段之间 4px，宽度不足 2px 的分类整段不画（与参照图一致）；空闲空间是轨道本身。
+
+环的点击在捕获阶段被 `compat/context-panel.ts` 拦下并 `stopPropagation`——宿主的处理器是 React 在根节点委派的 `onClick`，所以在按钮上停住事件就不会走到它——因此宿主那面板从不打开，插件自持开合状态（驱动宿主开合不可行：宿主的 `useDismissOnOutsidePointer` 会把我们面板里的点击当成外部点击）。`data-ccd-context-open` 与 `composer.css` 里那条 `visibility: hidden` 是兜底而不是机制。会话切换、页面切换或环本身消失都会关闭面板；每次打开都从收起态开始。
+
+数字全部是宿主的：头部读 `contextPressure`（与环同一个值），分类行读 `contextBreakdown` 加上插件投影 `ccdContext` 重算的两份明细，`sessions.list` 的 `projectionsBySession` 里三者在同一处到达。分类行与空闲空间按窗口缩放；头部采样值与分类估值可能有差异，面板不展示「估算差额」行。真实会话上这套折叠与宿主自己持久化的 `{systemTokens, toolsTokens, messageTokens}` 逐 token 相同。标题与明细分组的展开状态仅在本次打开期间保留；每次重新打开时全部收起。
 
 点击鲸鱼会等概率播放喷一口水、轻弹眨眼、摆尾回应之一，播放期间忽略连点。动作只属于宠物自身，不读写会话；隐藏页面或卸载组件时取消，减少动态效果偏好下只显示短暂闭眼反馈。
 
@@ -70,6 +77,12 @@ Host `Config` 的 `.volatile()` 字段通过 DSH 设置服务投影到 `configFo
 Host 注册 `ccdUsage` 会话投影单元，折叠提示数与输入、输出、缓存用量，按天、小时和模型聚合。水位与 durable 检查点由宿主的 `sessionProjectionCache` 管理；缺失数据在后台补齐。
 
 `/api/ccd-stats` 通过宿主鉴权 fetch 通道提供快照。浏览器读取快照并渲染 Overview／Models 与 All／30d／7d；首次数据准备完成后显示卡片。聚合服务随总开关启用，卡片显示由 statistics 模块开关控制。
+
+## 上下文分解
+
+Host 注册 `ccdContext` 会话投影单元。宿主的 `contextBreakdown` 只发布三个数（系统提示词／工具／对话），说不出是哪个工具、哪个指令文件、哪个技能占的，所以这个单元按 token meter 自己的启发式（4 字符 1 token、每块与每条消息 4 token 结构开销）重新计价每个产生消息的事件，并严格照 `surfaceOp` 处理替换——一次压缩是覆盖一段范围而不是追加。保留的表面节点连同各自的价格存在状态里，读取时汇总成三类行；`stateVersion` 为 1。
+
+自动压缩余量取自 loader 里启用且声明了 `thresholdRatio` / `headroomTokens` 的条目，阈值按 `floor(min(窗口 × 比例, 窗口 − 输出预留 − 余量))` 在读取时算出；没有这样的条目（本机 `compaction-basic` 是 `disabled: true`）时整行不画，而不是按默认值硬算。
 
 ## 构建与分发
 

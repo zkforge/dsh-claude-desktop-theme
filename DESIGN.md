@@ -189,6 +189,16 @@
 - 落在窗口底部的那一族弹层**一律向上展开**：新会话页工作区选单与模式选单、Composer 工具行的各家菜单、侧栏账号卡片。宿主 `Menu` 的原生方向是「下方放得下就开在下方」，而这一族锚点下方的空间就是 Composer 自己（chip 行下方是输入面，工具行下方是同一行的其余部分），卡片落在那里等于盖住它所属的那张面，而参考图同样是从上方打开。所以 [composer-menus.ts](src/client/compat/composer-menus.ts) 只比锚点上下两段自由空间：上方更大就按 `side: top` 的几何把卡片移上去，**与卡片自身高度无关**——工作区选单只有一项时卡片比"chip 到窗口底边"这段还短，按高度判定就会留在下方，多一个工作区又跳上去，同一个选单随工作区数量换边。卡片高过上方空间时以那段空间为 `max-height`（宿主滚动视口承担溢出），仍贴锚点 4px；只有窗口矮到下方反而更宽裕时才保留宿主自己的方向。真实 Chrome 测试固定"卡片贴在 chip 上方 4px、宿主每帧写回的 `top` 被纠正、卡片长高后重新贴齐、超高时封顶"。
 - 落点：宿主弹层的卡片与行在 [menus.css](src/client/theme/menus.css)，勾选蓝在 [tokens.css](src/client/theme/tokens.css)；插件自己的模型卡片在 [controls.css](src/client/features/model-controls/controls.css)；模式选单唯一属于它自己的一条（行里第二行说明不画）留在 [composer.css](src/client/theme/composer.css)；权限卡片的第二行由 [permission-menu.ts](src/client/compat/permission-menu.ts) 写、由 [menus.css](src/client/theme/menus.css) 画；视图选项卡片在 [view-options.css](src/client/features/view-options/view-options.css)，驱动宿主菜单的那一半在 [view-options.ts](src/client/compat/view-options.ts)。
 
+### 6.8 上下文分解面板
+
+- 上下文环点开的是插件整张绘制的分解面板，**两态**。**收起态**（默认）：标题行 + 一条 4px 分段条。**展开态**：同一头部之下加分类行，再按需加逐项分组。**没有底部按钮**——用户明确去掉参照图里那枚 `See detailed breakdown`，展开由标题行承担：整行是一个 `button`，`aria-expanded` 挂在它上面，右端 12px chevron 随状态转向。
+- 几何量自参照图 @2x（收起态 698×178、展开态 828×1006）：卡片宽 360px（参照图右缘被裁掉，360 是它自己的整数值：条与百分比列都正好落在 360 − 2 − 24 = 334px 处）、圆角 12px、1px 轮廓、内边距上 8px 左右下 12px、行内 12px。标题行 13px/20px，条距其下沿 5px、高 4px、左端 2px 圆角。分类行 19px 一档（13px 文字，行自己声明 line-height——卡片是 20px 行距，不声明就会把每行撑到 20px），逐项行 17px 一档，色块 10px、圆角 3px。右端两列：百分比列 40px 贴内容右缘，列间距 8px，于是 token 列右缘落在内容右缘内 48px 处（参照图 715 设备 px 里的 618）。
+- 分段条按 token 权重分配 flex（段的 flex-grow 就是它的 token 数，轨道拿走窗口剩下的），所以一段占条的比例就是它占窗口的比例。已用段之间 1px，与「自动压缩余量」灰段之间 4px——参照图把那份预留画成独立一块而不是又一类；宽度不足 2px 的分类整段不画（参照图在 9% 那版里正是这样丢掉系统提示词、技能与记忆三段的）。空闲空间不是段，是条自己的底色。
+- 七类颜色从参照图的条与色块采样，集中在 `--ccd-context-*`（浅色）：MCP `#2a78d8`、系统工具 `#e96a33`、系统提示词 `#1ead7c`、技能 `#eda105`、记忆文件 `#ea7ca4`、自动压缩余量 `#c2c0b8`、空闲与轨道 `#eeeeee`。这七个色相刻意在这套调色板的蓝色阶之外——五个分类共用一族蓝就会读成同一个东西。参照图只给了浅色一版，深色按本规范既有做法派生：同一色相按统计色阶与强调色在这张画布上抬升的档位提高明度；两个灰是表面不是墨，所以自动压缩余量降到中灰、空闲轨道抬离卡片。对话消息那一行参照图恰好没有（它的 89k 全是提示词、工具与技能），颜色因此是选定的：与邻座同明度同彩度、色相错开一族的紫，不会被误认成 MCP 的强调蓝。
+- 头部读宿主 `contextPressure`（与环同一个值），分类行读宿主 `contextBreakdown` 加插件投影重算的两份明细。分类行与空闲空间按窗口缩放；采样值与启发式分类可能有差异，面板不展示「估算差额」行。数字格式跟参照图：一位小数、末尾 `.0` 去掉（`48k`／`216.7k`／`878k`／`1M`）。
+- 分组只在该类真有逐项时出现，组头是「chevron + 名称 + 合计 + 条数」，点它展开或收起本组。每次打开弹窗时，标题与所有明细分组都默认收起，展开状态仅在本次打开期间保留。组内列表最多 170px（参照图自己的可见行数）后滚动，卡片本身不随工具数长高。
+- 落点：面板与几何在 [context-panel.css](src/client/features/context-panel/context-panel.css)，两态与文案在 [ContextPanel.tsx](src/client/features/context-panel/ContextPanel.tsx)，颜色在 [tokens.css](src/client/theme/tokens.css)；拦截环点击、自持开合与读取宿主投影的那一半在 [context-panel.ts](src/client/compat/context-panel.ts)。
+
 ## 七、状态、动效与可达性
 
 - 交互反馈只有两种：填充（hover／展开／选中）与墨色（次级 → 强）。需要过渡时只用 0.1s 的 `background-color`／`color`，不做位移动画。

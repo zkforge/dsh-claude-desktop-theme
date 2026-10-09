@@ -11,6 +11,12 @@
 | 16 | 上方栏：删除「选择打开方式」按钮、右侧图标改黑、三点图标改竖排 | 功能调整 + 样式 | P2 | [16-header-open-target-and-icon-tone.md](issues/16-header-open-target-and-icon-tone.md) |
 | 17 | 会话两侧出现了可拖动但无作用的条（疑似原版遗留），定位并删除 | 干扰清理 | P1 | [17-conversation-edge-drag-handles.md](issues/17-conversation-edge-drag-handles.md) |
 
+## 相关计划
+
+| 计划 | 状态 | 文件 |
+| --- | --- | --- |
+| 上下文圆环的分段分解面板（两态、无底部按钮） | 已实施 | [plan-context-breakdown-panel.md](plan-context-breakdown-panel.md) |
+
 ## 共性约束
 
 - 所有改动都走插件样式 / compat 层，不改宿主组件；宿主 class 哈希只经 `src/client/compat/host-dom.ts` 与 `host-builds.ts` 访问。

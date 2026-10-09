@@ -55,6 +55,8 @@ export const zh = {
   'feature.composer-pet': '输入框小鲸鱼',
   'feature.composer-stats': '状态栏统计读数',
   'hint.composer-stats': '输出速度与缓存命中率，关掉时这两项不显示（默认）',
+  'feature.context-panel': '上下文分解面板',
+  'hint.context-panel': '点环打开的分段面板；关掉时环点开的是 DSH 原生面板',
 } as const;
 
 export type SettingsKey = keyof typeof zh;
@@ -106,6 +108,8 @@ export const en: Record<SettingsKey, string> = {
   'feature.composer-pet': 'Composer whale',
   'feature.composer-stats': 'Composer statistics readouts',
   'hint.composer-stats': 'Output speed and cache-hit rate; the two stay out of the row while this is off (the default)',
+  'feature.context-panel': 'Context breakdown panel',
+  'hint.context-panel': 'The segmented panel the ring opens; while this is off the ring opens DSH’s own panel',
 };
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {

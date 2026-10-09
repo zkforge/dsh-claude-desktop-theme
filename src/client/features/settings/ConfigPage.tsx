@@ -68,6 +68,7 @@ const OFFERED_FEATURES: readonly FeatureId[] = [
   'composer-pet',
   'statistics',
   'composer-stats',
+  'context-panel',
 ];
 
 const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
@@ -79,6 +80,7 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
   statistics: 'feature.statistics',
   'composer-pet': 'feature.composer-pet',
   'composer-stats': 'feature.composer-stats',
+  'context-panel': 'feature.context-panel',
 };
 
 /**
@@ -88,6 +90,7 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
  */
 const FEATURE_HINTS: Partial<Record<FeatureId, SettingsKey>> = {
   'composer-stats': 'hint.composer-stats',
+  'context-panel': 'hint.context-panel',
 };
 
 /**

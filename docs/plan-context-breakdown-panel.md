@@ -1,6 +1,7 @@
 # 计划：把上下文圆环面板做成 Claude Code 式「上下文窗口分解」
 
-> 状态：**调研完成，待确认**（尚未实施）。
+> 状态：**已实施**（2026-10-09）。实施记录与三处与本文原方案的偏离见文末「实施记录」。
+> 试用调整（2026-10-09）：保留 360px 尺寸，移除「估算差额」行；每次打开时，标题与各明细分组全部默认收起。下文原方案中的差额行已由这次调整取代。
 > 参照物：Claude Code Desktop 的 Context window 面板，两态。**收起态**：`Context window` + `216.7k / 1M (22%)` + 右侧 chevron，下面一条 4px 分段条（参照图 2）。**展开态**：同一头部之下是分类行 + 百分比 + 可展开的逐工具/逐文件明细（参照图 1）。
 > 用户已明确：**不要「See detailed breakdown」按钮**；展开由标题行的 chevron 承担。
 > 一句话结论：**形态与交互 100% 可做**（仓库已有 5 处「自绘面 + 原生 popover 顶层」先例）；**数据侧 6 成是宿主权威值、3 成可用宿主同一套启发式精确重算、2 处只能作为派生值如实标注**（自动压缩余量、采样值与启发式的差额）。
@@ -120,8 +121,8 @@
 | 自动压缩余量 | `W − floor(min(W × 0.8, W − 输出预留 − 65536))`；策略禁用或读不到 → 整行隐藏 | 派生 |
 | 空闲空间 | `W − U` | 派生 |
 
-- 分段条 = 五行（系统提示词 / 工具 / 技能 / 记忆 / 对话）按 `token / W` 缩放（最小 2px）+ 余量灰段 + 空闲轨道；`R` 不入条。段间 1px 间隙，**已用群与余量段之间留 4px 空隙**（对齐参照图 1、2）；条高 4px、左端圆角。
-- 百分比列 = `token / W × 100`，一位小数（对齐参照物 `0.0%`）；token 用宿主同款紧凑格式（K/M，<100 保留一位小数）。
+- 分段条 = 各行按 `token / W` 缩放（宽度不足 2px 的分类整段不画，对齐参照图 1、2 里被丢掉的三个细分类）+ 余量灰段 + 空闲轨道；`R` 不入条。段间 1px 间隙，**已用群与余量段之间留 4px 空隙**；条高 4px、两端 2px 圆角，空闲空间是条自己的底色而不是一段。
+- 百分比列 = `token / W × 100`，一位小数（对齐参照物 `0.0%`）；token 走参照物的紧凑格式（K/M，一位小数、末尾 `.0` 去掉——见文末实施记录第 3 条，这条与原文的「宿主同款」不同）。
 - 空会话（无 `request/header`）：收起态头部右侧显示「等待首个请求」而不是数字，条只画轨道；展开态不出行，显示同样一句占位。环仍按现有空环逻辑绘制。
 - 每次打开面板**默认收起**；`expanded` 只在本次打开期间有效，关闭即复位（不写本地存储）。
 - 压缩发生后读的是当前 surface，自动反映；不做历史分解。
@@ -184,3 +185,22 @@
 | 会话 id 数据属性 | asar `dsh-client-ui-conversation/lib/client.js:16324-16335` |
 | 本机 compaction 禁用 | `~/.dsh/profiles/desktop/cordis.yml:275-277` |
 | 插件投影已在真实部署持久化 | `~/.dsh/storages/session_projcache/sessions/*.json`（151 份中 149 份含 `ccdUsage`） |
+
+## 十二、实施记录
+
+第 0 步探针的两条都在代码层面证实，没有走认证路由的回退分支：
+
+- 投影通道：`dsh-api-session-controller` 的 `SessionListState.projectionsBySession` 是类型化的客户端字段，宿主列表 RPC 用 `cachedSnapshot`／投影缓存的**全部 wire 值**填它（`list.js` `projectionsFor`），所以新键与 `ccdUsage` 走同一条路。`ccdContext` 已按此注册。
+- 拦截：宿主环的处理器是 React 在渲染根上委派的 `onClick`（asar `ContextMeter.js`：`onClick: () => setOpen(!open)`），在按钮上于捕获阶段 `stopPropagation` 即可拦下——与 `compat/view-options.ts` 同一手法，且那条路已有真 Chrome 测试。宿主面板因此**从不渲染**，`data-ccd-context-open` 那条 `visibility: hidden` 只是兜底。
+
+三处与原方案不同，都是实施中发现原写法不成立：
+
+1. **记忆文件／技能不能「Σ 全部 instructions 消息」**。宿主的 `contextBreakdown` 折的是**当前保留表面**，而表面会被 `surfaceOp` 替换——一次压缩是覆盖一段范围，不是追加。真实会话里 5 条 instructions 消息只有 1 条留在表面上。所以 `ccdContext` 照抄了 token meter 的表面折叠（保留 `[seq, tokens, kind, entries]` 节点列表并处理替换），逐文件／逐技能行按各自文本段落长度分摊节点价格，行相加恒等于节点价格之和。按此实现的折叠在真实 19 MB 会话日志上与宿主自己持久化的 `{systemTokens: 1953, toolsTokens: 7492, messageTokens: 93461}` **逐 token 相同**（`tests/context-pricing.test.ts` 记下了这个事实，fixture 是它的形状）。
+2. **工具两组按比例拆，而不是「总量减逐项之和」**。逐项取整之和会**大于**权威总量（真实会话 37 个工具：逐项 7657 对整数组 7492，+2.2%），相减会得到负数。改为按逐项估值把权威总量按比例分给 MCP 与系统工具两行，两行恒等于宿主自己的 `toolsTokens`，取整差落在系统工具一行。
+3. **数字格式跟参照图而不是跟宿主**。宿主的 `formatTokens` 在超过 100 时取整（`216.7k` 会印成 `217k`），参照图是一位小数、末尾 `.0` 去掉。面板跟参照图；头部仍然与环同值，因为两者读的是同一个 `contextPressure`。
+
+其余按原方案落地：两态且默认收起、无底部按钮、`shell.overlay` order 40、`context-panel` 开关（默认开，6 处改动）、`compaction` 读 loader 条目（本机 `compaction-basic` 是 `disabled: true`，所以那一行不画）、`估算差额` 单列一行且不入条。
+
+配套测试：`context-pricing`（计价与折叠，12 项）、`context-projection`（单元与开关，10 项）、`context-panel-card`（源码契约，11 项）、`context-panel-driver`（拦截与状态，8 项）、`context-panel-browser`（真 Chrome 两态、几何、间隙、丢弃细段、关闭与深浅配色，1 项）。
+
+另修一处与本次改动无关的既有测试脆弱点：`tests/permission-menu-rows.test.ts` 断言「没有语言的文档不算中文」，但 `permissionCopy` 会回退到 `globalThis.navigator.language`，而 Node 的该值跟随 `LANG`——在 `LANG=zh_CN.UTF-8`（本机默认）下这条断言必然失败。现已在那一例里临时移除 navigator 回退，断言重新只描述文档规则。

@@ -2,8 +2,10 @@ import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-api-session-controller/client';
 import type {} from '@deepseek-ai/dsh-api-workspace-controller/client';
 import type {
-  BlankSessionsPort, ConfigFormPort, ConfigFormsPort, HostServices, SidebarSessionsPort, ThemePreferencePort,
+  BlankSessionsPort, ConfigFormPort, ConfigFormsPort, ContextProjectionPort, ContextProjectionRead,
+  HostServices, SidebarSessionsPort, ThemePreferencePort,
 } from '../contracts/ports.ts';
+import { readContextView } from '../../shared/context.ts';
 import { TARGET_DSH_VERSION } from '../../shared/identity.ts';
 import { blankSessionIds } from './blank-session-rows.ts';
 
@@ -128,6 +130,75 @@ export function createSidebarSessionsPort(ctx: Context): SidebarSessionsPort | n
   };
 }
 
+/** One session's projection values, as the session list carries them. */
+interface SessionProjectionValues {
+  readonly contextPressure?: {
+    readonly contextWindow?: number;
+    readonly pressureTokens?: number;
+    readonly projectedTokens?: number;
+  };
+  readonly contextBreakdown?: {
+    readonly systemTokens?: number;
+    readonly toolsTokens?: number;
+    readonly messageTokens?: number;
+  };
+  /** This plugin's own key; read leniently, because its shape is ours alone. */
+  readonly ccdContext?: unknown;
+}
+
+/** A non-negative finite count, or zero. */
+function counted(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+/**
+ * Build the context ring's data face over the client session list.
+ *
+ * `ctx.sessions.list` is the Session Controller's catalog store and the one
+ * place the browser sees host-computed projections: `contextPressure` is the
+ * ring's own occupancy, `contextBreakdown` its three-way composition, and
+ * `ccdContext` this plugin's rows — all of them wire values the host shipped,
+ * carried for sessions that were never opened as well as the live one. Reading
+ * them here rather than recomputing them in the browser is what keeps the
+ * panel's header identical to the ring beside it.
+ *
+ * A session with no capacity yet is null: the host's own `ContextMeter` renders
+ * nothing in that state either, so the ring the panel hangs from is not there
+ * to open.
+ *
+ * @param ctx - client context carrying the session service.
+ * @returns the port, or null when this build does not publish a session list.
+ */
+export function createContextProjections(ctx: Context): ContextProjectionPort | null {
+  const list = ctx.sessions?.list;
+  if (typeof list?.getSnapshot !== 'function' || typeof list.subscribe !== 'function') return null;
+  return {
+    read(sessionId): ContextProjectionRead | null {
+      /* The catalog keys its rows by the branded `SessionId`; this port takes
+         the plain string the DOM carries, so the map is read structurally. */
+      const bySession = list.getSnapshot().projectionsBySession as
+        | Readonly<Record<string, { readonly values?: unknown }>>
+        | undefined;
+      const values = (bySession?.[sessionId]?.values ?? {}) as SessionProjectionValues;
+      const pressure = values.contextPressure;
+      const window = counted(pressure?.contextWindow);
+      if (window === 0) return null;
+      const breakdown = values.contextBreakdown;
+      return {
+        window,
+        /* The ring's own occupancy: a route that projects a shadow price wins
+           over the raw pressure, exactly as `contextOccupancy` decides it. */
+        used: counted(pressure?.projectedTokens ?? pressure?.pressureTokens),
+        systemTokens: counted(breakdown?.systemTokens),
+        toolsTokens: counted(breakdown?.toolsTokens),
+        messageTokens: counted(breakdown?.messageTokens),
+        breakdown: readContextView(values.ccdContext),
+      };
+    },
+    subscribe: listener => list.subscribe(listener),
+  };
+}
+
 /** This compatibility boundary targets the pinned SDK, not arbitrary DSH versions. */
 export function createHostServices(ctx: Context): HostServices {
   const slots = ctx.slots;
@@ -144,6 +215,7 @@ export function createHostServices(ctx: Context): HostServices {
     themePreference: createThemePreferencePort(ctx),
     blankSessions: resolveBlankSessions(ctx),
     sidebarSessions: createSidebarSessionsPort(ctx),
+    contextProjections: createContextProjections(ctx),
     configForms: resolveConfigForms(ctx),
     workspace: {
       openSession: target => workspace.openSession(target),

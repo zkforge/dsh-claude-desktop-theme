@@ -2,6 +2,9 @@ import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client';
 import type { ThemePreference, ThemeRuntime } from '@deepseek-ai/dsh-client-ui-theme/client';
 import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client';
+import type {
+  ContextBreakdown, ContextBreakdownView, ContextEntry,
+} from '../../shared/context.ts';
 
 export type { ThemePreference };
 
@@ -190,6 +193,95 @@ export interface SidebarSessionsPort {
   subscribe(listener: () => void): Disposer;
 }
 
+/**
+ * One session's context readings, as the client session list holds them.
+ *
+ * The host computes all of this itself: `contextPressure` is the ring's own
+ * occupancy and `contextBreakdown` its three-way composition, and both travel
+ * to the browser as wire projections on the session list. The panel reads them
+ * rather than recomputing them, so its header can never disagree with the ring
+ * beside it.
+ */
+export interface ContextProjectionRead {
+  /** `contextPressure.contextWindow`. */
+  readonly window: number;
+  /** Occupancy: `projectedTokens ?? pressureTokens`. */
+  readonly used: number;
+  /** `contextBreakdown.systemTokens`. */
+  readonly systemTokens: number;
+  /** `contextBreakdown.toolsTokens`. */
+  readonly toolsTokens: number;
+  /** `contextBreakdown.messageTokens`. */
+  readonly messageTokens: number;
+  /** This plugin's own `ccdContext` value, or null while it is not there. */
+  readonly breakdown: ContextBreakdownView | null;
+}
+
+/**
+ * The host's context projections, read off the client session list.
+ *
+ * `ctx.sessions.list` publishes every registered wire value per session
+ * (`SessionListState.projectionsBySession`) and carries rows for sessions that
+ * were never opened, so this is a plain snapshot read with no I/O. A build that
+ * does not publish the list yields null and the ring keeps DSH's own panel.
+ */
+export interface ContextProjectionPort {
+  /** One session's readings, or null when the list has nothing for it yet. */
+  read(sessionId: string): ContextProjectionRead | null;
+  /** Observe list replacements and live projection frames. */
+  subscribe(listener: () => void): Disposer;
+}
+
+/** One entry of a drill-down group, as the panel draws it. */
+export interface ContextDetailGroup {
+  /** The group's own name, in the document's language. */
+  readonly label: string;
+  /** The group's total, which is the authoritative number above it. */
+  readonly tokens: number;
+  /** The rows, largest first. */
+  readonly rows: readonly ContextEntry[];
+}
+
+/** What the context panel is drawn from. */
+export interface ContextPanelSnapshot {
+  readonly open: boolean;
+  /** The ring trigger the panel hangs from; null before the shell renders it. */
+  readonly anchor: Element | null;
+  /** The whole reading, or null while the ring has no numbers for this session. */
+  readonly breakdown: ContextBreakdown | null;
+  /** `mcp__` tools, largest first. */
+  readonly mcp: readonly ContextEntry[];
+  /** Built-in tools, largest first. */
+  readonly tools: readonly ContextEntry[];
+  /** Retained instruction files, largest first. */
+  readonly files: readonly ContextEntry[];
+  /** Retained skill-catalog entries, largest first. */
+  readonly skills: readonly ContextEntry[];
+  /** The panel's own expansion; it lives only while the panel is open. */
+  readonly expanded: boolean;
+}
+
+/**
+ * The context ring's breakdown panel, as this plugin's card needs it.
+ *
+ * DSH opens its own 264px panel from the ring's click, and that panel is the
+ * whole of its own affordance — no public face reads or drives it. So this port
+ * owns the interaction instead: the driver intercepts the trigger's click
+ * (DSH's handler is React-delegated at the root, so stopping the event on the
+ * button keeps the host's panel from ever opening), holds the open and expanded
+ * state, and publishes the host's own numbers beside this plugin's rows.
+ */
+export interface ContextPanelPort {
+  /** The current state; the object identity changes only when the state does. */
+  getSnapshot(): ContextPanelSnapshot;
+  /** Observe opening, closing, expanding, and the trigger being replaced. */
+  subscribe(listener: () => void): Disposer;
+  /** Put the panel away; the trigger's own state follows. */
+  close(): void;
+  /** Flip the panel between its collapsed and expanded states. */
+  toggleExpanded(): void;
+}
+
 /** Actual SDK types, never a second definition of DSH component props. */
 export interface HostServices {
   readonly slots: Context['slots'];
@@ -209,6 +301,11 @@ export interface HostServices {
    */
   readonly blankSessions: BlankSessionsPort | null;
   readonly sidebarSessions: SidebarSessionsPort | null;
+  /**
+   * The host's context projections, or null on a build that does not publish
+   * the session list; a null port leaves the ring's own panel in charge.
+   */
+  readonly contextProjections: ContextProjectionPort | null;
   /** The settings transport carrying this plugin's own configuration section. */
   readonly configForms: ConfigFormsPort;
 }

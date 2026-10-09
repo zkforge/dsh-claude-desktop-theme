@@ -1,0 +1,302 @@
+/*
+ * The context ring's breakdown panel (DESIGN.md §6.8).
+ *
+ * This is the plugin's own popup, drawn where DSH's 264px three-row panel used
+ * to be. The geometry is the supplied reference's, measured at @2x and recorded
+ * in `docs/plan-context-breakdown-panel.md` §2: a 360px card with a 12px corner
+ * and a hairline outline, 8px top and 12px inline padding, a 13px/20px header
+ * line, a 4px segmented bar 5px under it, 19px value rows, 17px detail rows,
+ * 10px swatches, and a 40px percentage column whose right edge is the content
+ * edge — the token column's own right edge then lands 48px in, which is the
+ * 618-of-715 device-pixel line the reference draws.
+ *
+ * Three things are stated rather than inherited:
+ *
+ * - **The bar is a flex row of weights, not of percentages.** Every segment's
+ *   `flex-grow` is its token count and the track's is the room left over, so a
+ *   segment's share of the bar *is* its share of the window, and the reference's
+ *   own gaps — 1px between used segments, 4px before the reserved grey — come
+ *   out of that share rather than being added to it. A category under 2px wide
+ *   is dropped by the card before it gets here, exactly as the reference drops
+ *   the categories that round to nothing.
+ * - **The header line is the whole affordance.** There is no button at the
+ *   bottom; the row is a real `button` carrying `aria-expanded`, so the panel's
+ *   two states are one control's two states and the chevron is its mark.
+ * - **The groups scroll rather than the panel.** Ten detail rows is the
+ *   reference's own visible run; a session with 85 tools keeps that height and
+ *   scrolls inside the group, so the card never grows past the viewport.
+ */
+
+.ccd-context-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  box-sizing: border-box;
+  width: var(--ccd-context-panel-width);
+  max-width: calc(100vw - 24px);
+  padding: var(--ccd-context-panel-padding-block) var(--ccd-context-panel-padding-inline)
+    var(--ccd-context-panel-padding-inline);
+  /* Popovers default to overflow:auto, which would put a second scrollbar on
+     the card; the groups own their own overflow instead. */
+  overflow: visible;
+  color: var(--ccd-view-menu-text);
+  font: 13px/20px var(--ccd-font-ui);
+  font-variant-numeric: tabular-nums;
+  /* The seat it is registered in is click-through; a top-layer surface is hit
+     tested on its own, and this states it rather than relying on that. */
+  pointer-events: auto;
+}
+
+/* The UA hides a closed popover with `display: none`; the card's own display
+   has to be scoped to the open state or it would keep that rule from applying. */
+.ccd-context-panel:popover-open {
+  display: block;
+}
+
+.ccd-context-panel::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+
+/* The reference's own chrome: a hairline outline in the family's own border ink
+   and a 12px corner, which is the card fill one step wider than the menu cards'
+   10px. */
+html[data-dsh-ccd-style="true"] .ccd-context-panel[data-menu-material] {
+  border: 1px solid var(--ccd-view-menu-border);
+  border-radius: var(--ccd-context-panel-radius);
+  box-shadow: var(--ccd-view-menu-shadow);
+}
+
+/* The header line: the title takes the flexible column, the reading sits against
+   it, and the disclosure mark ends the row. */
+.ccd-context-head {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--ccd-context-column-gap);
+  width: 100%;
+  min-height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ccd-view-menu-muted);
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.ccd-context-head:focus-visible {
+  outline: none;
+}
+
+.ccd-context-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The reading is the one number on the card, and the reference paints it in the
+   same grey as the title beside it: the row reads as one line, not as a label
+   and a value. */
+.ccd-context-figures {
+  color: var(--ccd-view-menu-muted);
+  white-space: nowrap;
+}
+
+.ccd-context-chevron {
+  width: 12px;
+  height: 12px;
+  color: var(--ccd-view-menu-muted);
+  transition: transform 120ms ease;
+}
+
+.ccd-context-chevron[data-ccd-context-chevron='open'] {
+  transform: rotate(90deg);
+}
+
+/* The bar. Its own background is the free-space track, so the track element the
+   card renders carries no fill of its own — it is there for the flex weights to
+   add up to the window, and the reference's own free space is simply what the
+   segments leave behind. */
+.ccd-context-bar {
+  display: flex;
+  gap: var(--ccd-context-bar-gap);
+  height: var(--ccd-context-bar-height);
+  /* `margin-block` rather than the `margin` shorthand: the token carries the 5px
+     above the bar and the 4px below it, and the inline axis takes no margin. */
+  margin-block: var(--ccd-context-bar-margin-block);
+  margin-inline: 0;
+  border-radius: var(--ccd-context-bar-radius);
+  background: var(--ccd-context-free);
+  overflow: hidden;
+}
+
+.ccd-context-seg,
+.ccd-context-track {
+  flex: 0 0 0;
+  height: 100%;
+  border-radius: 1px;
+}
+
+.ccd-context-track {
+  border-radius: 0;
+}
+
+/* The reserved grey steps away from the used group by 4px where every used
+   segment is 1px apart — the reference draws the reservation as its own block
+   rather than another category. The row's own gap supplies 1px of it. */
+.ccd-context-seg-autocompact {
+  margin-left: calc(var(--ccd-context-bar-reserve-gap) - var(--ccd-context-bar-gap));
+}
+
+.ccd-context-seg-mcp { background: var(--ccd-context-mcp); }
+.ccd-context-seg-tools { background: var(--ccd-context-tools); }
+.ccd-context-seg-system { background: var(--ccd-context-system); }
+.ccd-context-seg-skills { background: var(--ccd-context-skills); }
+.ccd-context-seg-memory { background: var(--ccd-context-memory); }
+.ccd-context-seg-messages { background: var(--ccd-context-messages); }
+.ccd-context-seg-autocompact { background: var(--ccd-context-buffer); }
+
+/* The reference's value rows start 4px under the bar, not 8: the panel's own
+   gap token belongs to the header, and this is a tighter step. */
+.ccd-context-rows {
+  margin-top: 4px;
+}
+
+/* One row of the panel: swatch and name, tokens, percentage. The three columns
+   are the same in every row, the groups included, which is what keeps the
+   numbers in one column down the whole card. */
+.ccd-context-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--ccd-context-percent-width);
+  align-items: center;
+  column-gap: var(--ccd-context-column-gap);
+  /* The card's own 20px leading would make every row 20px tall; the reference's
+     value rows are on a 19px pitch, so the row states its own. */
+  min-height: var(--ccd-context-row-height);
+  line-height: var(--ccd-context-row-height);
+}
+
+/* The swatch-to-name step the reference draws: 4px on a value row, and 3px
+   under a group's own chevron, which is what puts every name in the card on one
+   x — the swatch is 10px, the chevron 12px, and the two gaps differ by exactly
+   the difference in their widths. */
+.ccd-context-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ccd-context-tokens,
+.ccd-context-percent {
+  color: var(--ccd-view-menu-text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ccd-context-percent {
+  color: var(--ccd-view-menu-text);
+}
+
+.ccd-context-swatch {
+  flex: none;
+  width: var(--ccd-context-swatch-size);
+  height: var(--ccd-context-swatch-size);
+  border-radius: var(--ccd-context-swatch-radius);
+}
+
+.ccd-context-swatch-mcp { background: var(--ccd-context-mcp); }
+.ccd-context-swatch-tools { background: var(--ccd-context-tools); }
+.ccd-context-swatch-system { background: var(--ccd-context-system); }
+.ccd-context-swatch-skills { background: var(--ccd-context-skills); }
+.ccd-context-swatch-memory { background: var(--ccd-context-memory); }
+.ccd-context-swatch-messages { background: var(--ccd-context-messages); }
+.ccd-context-swatch-autocompact { background: var(--ccd-context-buffer); }
+.ccd-context-swatch-free { background: var(--ccd-context-free); }
+
+.ccd-context-group {
+  margin-top: 4px;
+}
+
+.ccd-context-group-head {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--ccd-context-percent-width);
+  align-items: center;
+  column-gap: var(--ccd-context-column-gap);
+  width: 100%;
+  min-height: var(--ccd-context-row-height);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ccd-view-menu-text);
+  /* `font` is a shorthand and resets `line-height` with the rest of the font,
+     so the row's own leading has to be stated after it. */
+  font: inherit;
+  font-size: 13px;
+  line-height: var(--ccd-context-row-height);
+  text-align: left;
+  cursor: default;
+}
+
+.ccd-context-group-head:focus-visible {
+  outline: none;
+}
+
+.ccd-context-group-head .ccd-context-label {
+  gap: 3px;
+}
+
+/* The reference pulls the group's chevron 1px past the content edge, which is
+   what puts its own name — and every detail row under it — on the same x as the
+   value rows' labels above. */
+.ccd-context-group-head .ccd-context-chevron {
+  margin-left: -1px;
+}
+
+/* The detail rows are one step tighter than the value rows above them — 17px
+   against 19px, the reference's own pitch — and their names sit one indent in,
+   under the group's own label rather than under its chevron. */
+.ccd-context-detail {
+  max-height: var(--ccd-context-detail-max);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ccd-context-detail-row {
+  min-height: var(--ccd-context-detail-height);
+  line-height: var(--ccd-context-detail-height);
+}
+
+.ccd-context-detail-row .ccd-context-label {
+  /* Indented by the swatch column and its gap, so a detail row's name sits
+     under the group's own name rather than under its chevron. */
+  padding-left: calc(var(--ccd-context-swatch-size) + 4px);
+  color: var(--ccd-view-menu-muted);
+}
+
+.ccd-context-detail-row .ccd-context-tokens {
+  color: var(--ccd-view-menu-muted);
+}
+
+/* The host's own panel, which the driver's marker keeps out of the paint.
+ *
+ * `compat/context-panel.ts` intercepts the ring's click, so DSH never sets its
+ * own open state and this rule is never the mechanism — it is the belt to that
+ * braces, and it exists so that a click that somehow reaches the host's handler
+ * still leaves the reader looking at one panel. `visibility` rather than
+ * `display` is what keeps the box the host's anchored-position hook measures.
+ *
+ * The rule lives in this sheet rather than in `theme/composer.css` because it is
+ * the driver's own mechanism, not a fact about the ring: this sheet only ever
+ * applies while this plugin's panel is the one on screen. */
+html[data-dsh-ccd-style="true"][data-ccd-context-open] .y0jqnG_panel {
+  visibility: hidden;
+  pointer-events: none;
+}

@@ -10,7 +10,7 @@
  */
 export const FEATURE_IDS = [
   'shell', 'sidebar', 'new-session', 'conversation', 'tool-calls', 'statistics', 'composer-pet',
-  'composer-stats',
+  'composer-stats', 'context-panel',
 ] as const;
 
 export type FeatureId = typeof FEATURE_IDS[number];
@@ -58,6 +58,7 @@ export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
   statistics: false,
   'composer-pet': true,
   'composer-stats': false,
+  'context-panel': true,
 });
 
 /** Empty strings keep the built-in palette and the system font stack in charge. */

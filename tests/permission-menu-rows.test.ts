@@ -240,8 +240,18 @@ test('the English table restates the host’s names, so no rewrite is a silent e
 
 test('a document that is not Chinese takes the English table', () => {
   /* The same rule `compat/header-labels.ts` follows: a document without a
-     language of its own is not a Chinese one. */
-  assert.equal(permissionCopy(languageDouble('')).heading, 'Mode');
+     language of its own is not a Chinese one. An empty `lang` falls through to
+     the ambient language, which in a renderer is always there and under Node is
+     whatever the runner's `LANG` says — so the fallback is taken out of the way
+     for that one case rather than letting the assertion describe the machine. */
+  const ambient = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
+  try {
+    assert.equal(permissionCopy(languageDouble('')).heading, 'Mode');
+  } finally {
+    if (ambient === undefined) delete (globalThis as { navigator?: unknown }).navigator;
+    else Object.defineProperty(globalThis, 'navigator', ambient);
+  }
   assert.equal(permissionCopy(languageDouble('de')).heading, 'Mode');
   assert.equal(permissionCopy(languageDouble('zh-Hans-CN')).heading, '模式');
 });

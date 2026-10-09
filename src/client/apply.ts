@@ -19,6 +19,7 @@ import { mountFeatures } from './core/mount-features.ts';
 import { mountTheme } from './theme/mount.ts';
 import { mountModelControls } from './features/model-controls/mount.ts';
 import { mountViewOptions } from './features/view-options/mount.ts';
+import { mountContextPanel } from './features/context-panel/mount.ts';
 import { mountHeaderActions } from './features/conversation/header-actions/mount.ts';
 import { mountComposerPet } from './features/composer-pet/mount.ts';
 import { mountSettingsPage } from './features/settings/mount.ts';
@@ -165,6 +166,12 @@ export function apply(ctx: Context): void {
             error => logger.error('sidebar: empty-group observer failed', error),
             { source: host.sidebarSessions, settings: view.settings, showAll: view.showAllSessions },
           ));
+        }
+        /* The context ring's breakdown panel is this plugin's own surface over
+           the ring the Composer draws, so it follows the same rule: the switch
+           decides whether the ring opens our card or DSH's own panel. */
+        if (next.features['context-panel']) {
+          mountContextPanel(ctx, environment, scope);
         }
         mountFeatures(FEATURES, environment, scope);
         /* Host class names are hashed per DSH build, so a build this plugin has

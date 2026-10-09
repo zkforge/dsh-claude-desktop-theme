@@ -61,4 +61,10 @@ test('a default configuration keeps every built-in', () => {
   assert.equal(config.features.sidebar, true);
   assert.equal(config.features.statistics, false);
   assert.equal(config.features['composer-stats'], false);
+  /* The context breakdown panel is on out of the box: it is the ring's own
+     reading, and the ring is DSH's control rather than one this plugin adds. */
+  assert.equal(config.features['context-panel'], true);
+  assert.equal(adoptConfig({ features: { 'context-panel': 'yes' } }).features['context-panel'], true,
+    'a hand-edited value falls back to the default rather than failing activation');
+  assert.equal(adoptConfig({ features: { 'context-panel': false } }).features['context-panel'], false);
 });

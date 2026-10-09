@@ -4,6 +4,7 @@ import {
   DEFAULT_APPEARANCE, DEFAULT_FEATURES, DEFAULT_FONTS, DEFAULT_VIEW, FONT_NAME_MAX_LENGTH,
 } from '../shared/config.ts';
 import { mountStatistics } from './stats/service.ts';
+import { mountContextBreakdown } from './context/service.ts';
 
 /** Same shapes the client normalizer accepts, so both boundaries agree. */
 const HEX_COLOUR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})?$/;
@@ -34,6 +35,7 @@ export const Config = z.object({
     statistics: z.boolean().default(DEFAULT_FEATURES.statistics),
     'composer-pet': z.boolean().default(DEFAULT_FEATURES['composer-pet']),
     'composer-stats': z.boolean().default(DEFAULT_FEATURES['composer-stats']),
+    'context-panel': z.boolean().default(DEFAULT_FEATURES['context-panel']),
   }).default({ ...DEFAULT_FEATURES }).description('按模块启用').volatile(),
   /* One volatile node per section, exactly like `features`: Cordis rejects a
      volatile field nested inside another volatile field ("volatile fields
@@ -112,4 +114,5 @@ function readValue<T>(node: ConfigCell<T> | T | undefined, fallback: T): T {
 export function apply(ctx: Context, config: unknown): void {
   const host = (typeof config === 'object' && config !== null ? config : {}) as HostConfig;
   mountStatistics(ctx, () => readValue(host.enabled, false) === true);
+  mountContextBreakdown(ctx, () => readValue(host.enabled, false) === true);
 }
