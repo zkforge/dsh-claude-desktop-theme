@@ -1,9 +1,12 @@
 import type { ImplementedFeature } from '../../contracts/feature.ts';
 import { mountAccountMenu } from '../../compat/account-menu.ts';
 import { mountBlankSessionRows } from '../../compat/blank-session-rows.ts';
+import { mountSidebarNavigation } from '../../compat/sidebar-navigation.ts';
 import { probeHost } from '../../compat/host-dom.ts';
 import accountMenuCss from './account-menu.css';
 import sidebarCss from './sidebar.css';
+import navigationCss from './navigation.css';
+import { SIDEBAR_NAVIGATION_ICONS } from './navigation-icons.ts';
 
 /**
  * Sidebar presentation: compact navigation rows, flat project groups and a
@@ -29,6 +32,11 @@ export const sidebarFeature: ImplementedFeature = {
     if (!probe.sidebar) environment.logger.debug('sidebar: column not mounted yet');
     scope.add(environment.dom.mountStyles(sidebarCss));
     scope.add(environment.dom.mountStyles(accountMenuCss));
+    scope.add(environment.dom.mountStyles(navigationCss));
+    scope.add(mountSidebarNavigation(
+      document, SIDEBAR_NAVIGATION_ICONS,
+      error => environment.logger.error('sidebar: navigation observer failed', error),
+    ));
     scope.add(mountAccountMenu(
       document,
       error => environment.logger.error('sidebar: account menu observer failed', error),

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="claude-sidebar-icon" data-icon="routines" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <g stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path class="routine-long-hand" d="M12 12V7.4"/>
+    <path d="M12 12L14.8 13.75"/>
+  </g>
+</svg>

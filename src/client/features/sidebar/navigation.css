@@ -1,0 +1,57 @@
+/* Replace only the decorated native glyphs; all click/focus/selection remains
+   owned by DSH. A 16px seat preserves the existing text column in both layouts. */
+html[data-dsh-ccd-style="true"] [data-ccd-nav="newSession"] ._3WPZCG_newSessionContent > svg,
+html[data-dsh-ccd-style="true"] [data-ccd-nav] ._3WPZCG_panelGlyph > [data-slot="sidebar.panellist"] svg {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-nav] .ccd-nav-glyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root [data-ccd-nav] .ccd-nav-glyph > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  overflow: visible;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root [data-ccd-nav="newSession"] .ccd-nav-glyph > svg {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand) {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html[data-dsh-ccd-style="true"] .ccd-nav-glyph .icon-disc {
+  transition: opacity 180ms ease;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible, [aria-current="page"]) .customize-case {
+  transform: rotate(-6deg);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible, [aria-current="page"]) .routine-long-hand {
+  transform: rotate(45deg);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .icon-disc {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand, .icon-disc) {
+    transition: none;
+  }
+}

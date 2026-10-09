@@ -396,9 +396,9 @@ const beforeSidebarStyles = styles.size;
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, sidebar: true } });
 assert.equal(blankRow.getAttribute('data-ccd-blank-session'), '', 'the blank Session row must be tagged');
 assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Session row stays in the list');
-/* The sidebar feature mounts its column stylesheet, the account-menu sheet and
-   the view-options card's own. */
-assert.equal(styles.size, 7);
+/* The sidebar feature mounts its column, account-menu and navigation artwork
+   sheets, plus the view-options card's own. */
+assert.equal(styles.size, 8);
 assert.equal(viewOptionsSeats.size, 1, 'the sidebar draws the view-options card');
 assert.deepEqual(
   Object.keys([...viewOptionsSeats][0].inject()).sort(),

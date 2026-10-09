@@ -1,0 +1,46 @@
+/* Inline SVGs inside .claude-sidebar-trigger respond to pointer and keyboard.
+   data-motion="active" exposes the same state for the replay/export preview. */
+.claude-sidebar-icon .project-top,
+.claude-sidebar-icon .project-middle,
+.claude-sidebar-icon .artifact-leaf,
+.claude-sidebar-icon .artifact-square,
+.claude-sidebar-icon .routine-long-hand,
+.claude-sidebar-icon .customize-case {
+  transform-box: view-box;
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.claude-sidebar-icon .project-top { transform-origin: 17px 3px; }
+.claude-sidebar-icon .project-middle { transform-origin: 19px 6.7px; }
+.claude-sidebar-icon .artifact-leaf { transform-origin: 12px 12px; }
+.claude-sidebar-icon .artifact-square { transform-origin: 17.15px 15.7px; }
+.claude-sidebar-icon .customize-case { transform-origin: 12px 12px; }
+.claude-sidebar-icon .routine-long-hand { transform-origin: 12px 12px; }
+.claude-sidebar-icon .icon-disc { transition: opacity 180ms ease; }
+
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .project-top {
+  transform: rotate(8deg);
+}
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .project-middle {
+  transform: rotate(3deg);
+}
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .artifact-leaf {
+  transform: rotate(-25deg);
+}
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .artifact-square {
+  transform: translate(-0.4px, -0.5px) rotate(30deg);
+}
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .customize-case {
+  transform: rotate(-6deg);
+}
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .routine-long-hand {
+  transform: rotate(45deg);
+}
+.claude-sidebar-trigger:is(:hover, :focus-visible, [data-motion="active"], [aria-pressed="true"]) .icon-disc {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claude-sidebar-icon :is(.project-top, .project-middle, .artifact-leaf, .artifact-square, .routine-long-hand, .customize-case, .icon-disc) {
+    transition: none;
+  }
+}

@@ -58,6 +58,7 @@ export const HOST = Object.freeze({
   /** SidebarRoot.module.css: expanded macOS window-chrome toggle. */
   sidebarToggle: '._3WPZCG_toggle',
   sidebarNewSession: '._3WPZCG_newSession',
+  sidebarNewSessionContent: '._3WPZCG_newSessionContent',
   sidebarNewSessionLabel: '._3WPZCG_newSessionLabel',
   sidebarNewSessionShortcut: '._3WPZCG_newSessionShortcut',
   sidebarPanelList: '._3WPZCG_panelList',
