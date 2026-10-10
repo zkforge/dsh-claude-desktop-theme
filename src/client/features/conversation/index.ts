@@ -3,6 +3,7 @@ import { mountConversationFade } from '../../compat/conversation-fade.ts';
 import { probeHost } from '../../compat/host-dom.ts';
 import { mountViewSwitch } from '../../compat/view-switch.ts';
 import conversationCss from './conversation.css';
+import { VIEW_SWITCH_ICONS } from './view-switch-icons.ts';
 
 /**
  * Conversation page presentation. The transcript, its scroll behaviour, tool
@@ -10,9 +11,11 @@ import conversationCss from './conversation.css';
  * adapts the header chrome, the transcript column and the message surfaces.
  *
  * The header keeps DSH's own View switcher: the host still owns which View is
- * selected and how it is rendered, and this module only moves the tablist onto
- * the title line and publishes the selected segment's geometry so the
- * stylesheet can slide the thumb onto it.
+ * selected and how it is rendered. This module swaps the two shipped Views'
+ * text labels for bundled artwork, publishes the selected segment's geometry so
+ * the stylesheet can slide the thumb onto it, and parks the tablist in the
+ * sidebar's window-control row while that column has a corner to hold it
+ * (`compat/view-switch.ts`).
  *
  * The transcript's own edge fade is published the same way: the host owns the
  * scroll position, `compat/conversation-fade.ts` turns it into two attributes,
@@ -27,7 +30,7 @@ export const conversationFeature: ImplementedFeature = {
     if (!probe.conversation) environment.logger.debug('conversation: body not mounted yet');
     scope.add(environment.dom.mountStyles(conversationCss));
     scope.add(mountViewSwitch(
-      document,
+      document, VIEW_SWITCH_ICONS,
       error => environment.logger.error('conversation: view switcher observer failed', error),
     ));
     scope.add(mountConversationFade(

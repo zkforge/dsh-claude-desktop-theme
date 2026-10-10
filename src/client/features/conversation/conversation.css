@@ -138,6 +138,13 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
  * `::before` of the tablist — moved with the geometry published by
  * `compat/view-switch.ts`; the buttons keep their roles, labels and handlers,
  * and the host's own underline is dropped.
+ *
+ * Geometry is the reference's own pill (docs/issues/img/todo-sidebar-sessions-target.webp,
+ * @2x): a 66 × 26 track — 131 × 52 device px, so two 33px segments — 6px
+ * corner, with the raised thumb inset 1px top and bottom and carrying a 5px
+ * corner, a 1px outline and the segment shadow. The two segments are the icon
+ * buttons below, not text: `compat/view-switch.ts` swaps each shipped View's
+ * label for the bundled artwork in `view-switch-icons.ts`.
  */
 html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
   order: 1;
@@ -151,7 +158,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
      (the Agent-preset chip today, more to come) follows it. */
   margin: 0 0 0 2px;
   padding: 0;
-  border-radius: var(--ccd-radius-row);
+  border-radius: 6px;
   background: var(--ccd-track);
   -webkit-app-region: no-drag;
 }
@@ -159,14 +166,14 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
 html[data-dsh-ccd-style="true"] .ST7X_W_tabs::before {
   content: "";
   position: absolute;
-  top: 0;
+  top: 1px;
+  bottom: 1px;
   left: 0;
   box-sizing: border-box;
   width: var(--ccd-view-w, 0px);
-  height: 100%;
   transform: translateX(var(--ccd-view-x, 0px));
   border: 1px solid var(--ccd-border-soft);
-  border-radius: var(--ccd-radius-row);
+  border-radius: 5px;
   background: var(--ccd-card);
   box-shadow: var(--ccd-shadow-segment);
   pointer-events: none;
@@ -178,12 +185,14 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tab {
   position: relative;
   z-index: 1;
   box-sizing: border-box;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 22px;
-  padding: 0;
+  /* The reference's 33px segment is a floor, not a fixed width: a View this
+     plugin has no artwork for keeps its own label and its own room. */
+  flex: 0 1 auto;
+  min-width: 33px;
+  height: 26px;
+  padding: 0 6px;
   border: 0;
-  border-radius: var(--ccd-radius-row);
+  border-radius: 5px;
   background: transparent;
   color: var(--ccd-text-muted);
   font-size: var(--ccd-font-size-muted);
@@ -192,12 +201,51 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tab {
   white-space: nowrap;
 }
 
+/* A decorated tab draws bundled artwork in place of the host's label text;
+   `compat/view-switch.ts` writes the marker and the button's accessible name.
+   An unknown View keeps its label and is left alone. */
+html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0;
+}
+
 html[data-dsh-ccd-style="true"] .ST7X_W_tab::after {
   display: none;
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_tabActive {
   color: var(--ccd-text);
+}
+
+/*
+ * Docked: the switcher leaves the header for the sidebar's window-control row.
+ *
+ * The reference keeps it at the top-right of the sidebar column, on the same
+ * row as the traffic lights and the collapse toggle — measured at 8px inside
+ * the column's right edge (its divider sits 16 device px right of the pill),
+ * with the pill's 26px centre on the toggle's own centre (11px + 28 / 2 = 25).
+ * The node stays in the header where React rendered it: `position: fixed` takes
+ * it out of that row and the coordinates come from `compat/view-switch.ts`,
+ * measured live from the sidebar column — the same way the macOS sidebar toggle
+ * is parked. It is written only where the column has the corner to hold it:
+ * macOS with the sidebar expanded, so the host's own row (Windows, or the
+ * collapsed shell's 0px column) keeps the switcher inline.
+ */
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] {
+  position: fixed;
+  top: 12px;
+  right: var(--ccd-view-dock-right, 8px);
+  z-index: 15;
+  margin: 0;
+}
+
+/* The parked switcher no longer sits between the title and the Agent-preset
+   chip, so the chip takes the title's own 8px end padding instead. */
+html[data-dsh-ccd-style="true"] .ST7X_W_header:has(.ST7X_W_tabs[data-ccd-view-dock]) .ST7X_W_headerActions {
+  margin-left: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

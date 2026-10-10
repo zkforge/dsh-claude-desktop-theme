@@ -6,6 +6,12 @@
  * navigation rows, then compact project groups. DSH's column carries its own
  * brand row and a global panel list instead of CCD's Home/Code switch; those
  * real entries are kept and compacted rather than replaced by inert lookalikes.
+ *
+ * The reference's two icon buttons are DSH's own View switcher, which the
+ * reference keeps on this row: the tablist itself stays in the conversation
+ * header where React rendered it, and `features/conversation/conversation.css`
+ * parks it over this strip with the coordinates measured by
+ * `compat/view-switch.ts`.
  */
 /*
  * Navigation overrides below style the *expanded* column. DSH's collapsed sidebar is a

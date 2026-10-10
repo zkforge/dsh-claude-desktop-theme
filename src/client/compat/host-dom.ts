@@ -266,6 +266,15 @@ export const ANCHOR = Object.freeze({
    * reads it rather than a measurement of our own.
    */
   rightbarCollapsed: '[data-slot="root"] > div[data-rightbar-collapsed]',
+  /**
+   * AppFrame.tsx: the same frame element while the sidebar's own track is 0.
+   * The host writes `data-sidebar-collapsed` from the layout store, and on the
+   * desktop builds the collapsed sidebar is not a rail — the frame solves its
+   * grid track to 0px and `sidebarCol`'s `overflow: hidden` clips the whole
+   * column. `compat/view-switch.ts` reads it as the state in which the parked
+   * View switcher has no corner to sit in.
+   */
+  sidebarCollapsed: '[data-slot="root"] > div[data-sidebar-collapsed]',
   /** The element that actually scrolls the Conversation page. In the pinned
       layout the transcript column inside it is `overflow: visible`, so this is
       the scroll viewport the edge fade has to describe. */
