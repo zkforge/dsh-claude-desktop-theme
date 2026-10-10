@@ -34,7 +34,7 @@ Host 依赖 shared 与 Host 运行库；客户端各层通过 contracts、core�
 
 `composer-stats` 是唯一不挂载模块的开关：它是状态栏统计读数的接管，由 `compat/stats-values.ts` 与 composer 样式表承担，关闭（默认）时宿主的那一族读数不画；同一模块发布的宽度预算与这个开关无关，读数隐藏只是把它占的宽度还给模型按钮。
 
-侧栏导航保留宿主按钮与操作：新会话显示「新建会话」及淡圆底加号，插件保留原文字并显示工具箱，自动化任务改为「例程」并显示时钟。`compat/sidebar-navigation.ts` 插入装饰 SVG、更新文字与无障碍名称，兼容展开／折叠和语言切换，卸载时恢复原节点；未知插件入口保持宿主原样。图形在 `features/sidebar/navigation-icons.ts`，悬停、键盘聚焦与当前面板的结束姿态由 `navigation.css` 控制，遵循减少动态效果偏好。
+侧栏导航保留宿主按钮与操作：新会话显示「新建会话」及淡圆底加号，插件保留原文字并显示工具箱，自动化任务改为「例程」并显示时钟。`compat/sidebar-navigation.ts` 插入装饰 SVG、更新文字与无障碍名称，兼容展开／折叠和语言切换，卸载时恢复原节点；未知插件入口保持宿主原样。图形在 `features/sidebar/navigation-icons.ts`，悬停、键盘聚焦与当前面板的结束姿态由 `navigation.css` 控制，遵循减少动态效果偏好。三个入口的当前位置都带持久底色：插件与例程由宿主的 `panelActive` 标记，「新建会话」不是面板、拿不到这个类，所以它的选中态读宿主自己的另一条事实——会话根节点的 `data-phase="hero"`（新会话页；`new-session.css`、`compat/pet-anchor.ts` 与 `composerCardHero` 选择器读的是同一个值）。[sidebar.css](src/client/features/sidebar/sidebar.css) 用一条文档级 `:has()` 直接取它，不发观察器、也不写属性：发送第一条消息（`data-phase` 转 `active`）或选中插件／例程（布局的 keyed `main` 槽按 `activePanelId` 换掉整棵会话根节点）底色都会自行消失，折叠成轨道时它随其余展开布局值一起失效。
 
 模型与 effort 控件由新会话页和聊天页共用，选择操作调用官方 ModelDirectory。聊天顶栏的项目文件夹、终端与浏览器三个入口都转发宿主右侧栏操作，文件夹占工具组的第一位。顶栏最右的角位是宿主的单格槽位，原本由「收起右侧栏」的展开按钮占据：插件以更低优先级顶掉该条目，注册一个不渲染内容的条目把这一格留空；展开动作移进会话 ⋯ 菜单的第一项（`compat/session-menu.ts`），只在右侧栏收起时出现。工具调用沿用 DSH 原生展示。
 

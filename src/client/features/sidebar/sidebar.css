@@ -153,6 +153,29 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] ._3WPZCG_root:not(._3WPZ
   background: var(--ccd-hover);
 }
 
+/* The standing fill of the third entry (TODO 3). New Session is not a panel,
+   so the host never hands the row the `panelActive` class the two panel rows
+   below take their selection from. The location it stands for is stated by the
+   host itself: `ConversationRoot` writes `data-phase="hero"` on the
+   conversation root exactly while the New Session page is what the main panel
+   shows (`sessionId === undefined`, or a Session the host still calls `blank`).
+   The plugin already reads that fact in `new-session.css`, `compat/pet-anchor.ts`
+   and `composerCardHero`, and a second signal is not needed: the root element
+   leaves the document the moment the location does — `ui-layout`'s MainPanel
+   renders the keyed `main` slot by `activePanelId`, so selecting 插件/例程
+   unmounts it, and the first sent message turns the root's phase to `active`.
+   One `:has()` on the document therefore gives the row the selection exactly
+   while the page is current and clears it on its own: no observer, no written
+   attribute, nothing of the plugin's left behind to release. `:not(:hover)`
+   keeps the pointer's own step in charge of the row it is on, as it is on the
+   panel rows. The rail keeps the host's own geometry (the layout scope above),
+   so the fill is one more expanded-layout value and stops at the same boundary. */
+html[data-dsh-ccd-style="true"]:has(.ST7X_W_root[data-phase="hero"]) ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSession:not(:hover),
+html[data-dsh-ccd-style="true"][data-platform="darwin"]:has(.ST7X_W_root[data-phase="hero"]) ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSession:not(:hover) {
+  background: var(--ccd-selected);
+  color: var(--ccd-text);
+}
+
 /* One icon column. The host draws this row's glyph 14px wide and the global
    panel glyphs 16px, and gives the panel rows an 8px gap; left as is, the three
    labels start at different x (39 / 42 / 42) and the glyph centres drift with
