@@ -30,6 +30,8 @@ import { aliasHostClasses, detectHostBuild, type HostBuild } from './host-builds
  * - `packages/client/ui-attachment/src/client/ComposerAttachments.module.css` (`dVdiKa_`)
  * - `packages/client/ui-chat/src/client/chat/StatsPills.module.css` (`OpZ85W_`)
  * - `packages/client/ui-workspace/src/client/WorkspaceBrowser.module.css` (`_7514NG_`)
+ * - `packages/client/ui-workspace/src/client/rows/Rows.module.css` (`jJkEga_`: the
+ *   Workspace and Session rows, and the primary bundle's copy of the same sheet)
  * - `packages/client/ui-workspace/src/client/rows/Rows.tsx` (`data-row-key` on the
  *   Workspace and Session rows: `workspace:<key>` / `session:<id>`)
  * - `packages/client/ui-settings/src/client/SettingsRoot.module.css` (`Dws9Sa_`)
@@ -73,6 +75,25 @@ export const HOST = Object.freeze({
   browserSectionHeader: '._7514NG_sectionHeader',
   browserSectionLabel: '._7514NG_sectionLabel',
   browserListArea: '._7514NG_listArea',
+  /** WorkspaceBrowser.module.css: the header's two control groups, which
+      `sidebar.css` keeps clickable while the header is parked over a row. */
+  browserSectionActions: '._7514NG_headerActions',
+  browserSearchSlot: '._7514NG_searchSlot',
+  /** WorkspaceBrowser.module.css: the search control and its expanded state —
+      the one the parked header paints a background under, because the field
+      then covers the Workspace row it is parked on. */
+  browserSearch: '._7514NG_search',
+  browserSearchExpanded: '._7514NG_searchExpanded',
+  /** WorkspaceBrowser.module.css: the tree's own scroller — the one element
+      whose scroll distance the parked header band follows. */
+  browserList: '._7514NG_list',
+  /** Rows.module.css: one Workspace's row, the line the merged header shares,
+      and its trailing action group (`sidebar.css` parks both). */
+  workspaceRow: '.jJkEga_projectRow',
+  workspaceRowActions: '.jJkEga_rowActions',
+  /** Rows.module.css: the state the host puts on a row whose menu is open —
+      `sidebar.css` keeps that row's own actions visible through it. */
+  workspaceRowMenuOpen: '.jJkEga_menuOpen',
   /**
    * WorkspaceBrowser.module.css: the section header's view-options trigger —
    * the one control there that is an `iconButton` *and* carries `wide` (its
@@ -257,6 +278,12 @@ export const ANCHOR = Object.freeze({
    * Workspace headers share the attribute with other prefixes.
    */
   sessionRows: '[data-row-key^="session:"]',
+  /**
+   * Each Workspace's own row, the first keyed row of its group. `Rows.tsx`
+   * writes it, and `browser-header.ts` reads it to tell a grouped tree from a
+   * flat list before publishing the region's merged-header state.
+   */
+  workspaceRows: '[data-row-key^="workspace:"]',
   settings: '[data-slot="sidebar.settings"]',
   conversation: '[data-conversation-content]',
   /**

@@ -253,8 +253,8 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_regionArea {
   padding-left: 0;
 }
 
-/* Browsing region: no section title, project rows that carry their own create
-   button, compact session rows. */
+/* Browsing region: one header line over compact project groups, then the
+   Sessions. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_root {
   --dsh-session-list-edge-inset: 0px;
   padding-right: 0;
@@ -264,43 +264,150 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_r
    icon in the collapsed layout, and the expanded layout's 8px inset would push
    that one icon off the rail's centre axis. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader {
+  position: relative;
   height: 30px;
   margin: 0 0 2px;
   padding-left: 8px;
   color: var(--ccd-text-muted);
 }
 
-/* The reference has no title over the browsing region: the list starts straight
-   after the navigation stack. The header row stays for its three icon buttons
-   (search, view options, add workspace), each of which carries its own accessible
-   name, so dropping the decorative label costs no entry point. */
-html[data-dsh-ccd-style="true"] ._7514NG_sectionLabel {
+/* One header line (TODO 2).
+ *
+ * The reference's browsing region is a single line: the group's name at the
+ * inline start and, at the trailing edge, the plus that starts a Session,
+ * Search and the view options. DSH renders those controls on a section header
+ * of its own, above a tree whose first row is the first Workspace's, so while
+ * `compat/browser-header.ts` reports that the tree leads with such a row the
+ * header leaves the flow and is parked on that row's line: the tree then starts
+ * at the region's top and its first row lands under the parked header to the
+ * pixel, because the band's height is the Workspace row's own height.
+ *
+ * Nothing moves in the DOM — React still owns every node — and the parked box
+ * takes no pointer events of its own, only its two control groups do, so the row
+ * underneath keeps its click, its hover and its own buttons.
+ *
+ * The band is locked to the tree's content, not to the region's top edge: it
+ * sits on the first Workspace row's line, so it leaves with that row when the
+ * tree scrolls, exactly as the host's own row did. The distance comes from
+ * `compat/browser-header.ts` (`--ccd-header-scroll`, measured on the scroller —
+ * a sibling of this header, which CSS cannot see) and the region clips it: the
+ * band is not inside the scroller and cannot be carried into it, so the region
+ * box is what a scrolled-away band leaves. Nothing else in the region paints
+ * outside that box — the host's tooltip bubbles and hover cards are fixed and
+ * its menus are portalled — and the clip is only declared while merged. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] {
+  position: relative;
+  overflow: hidden;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionHeader {
+  position: absolute;
+  top: calc(-1 * var(--ccd-header-scroll, 0px));
+  left: 0;
+  right: 0;
+  height: var(--ccd-workspace-row-height);
+  margin: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionHeader > :is(._7514NG_searchSlot, ._7514NG_headerActions) {
+  pointer-events: auto;
+}
+
+/* The merged band is named by the Workspace row it sits on, so the header's own
+   word stands down there. Where no group is on screen the header is the region's
+   title line instead and keeps a word: 最近会话 / Recents, written over the
+   host's own dictionary string by `compat/browser-header.ts`. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionLabel {
   display: none;
 }
 
-/* Add workspace: the host draws a folder with a plus; the reference's rows use a
-   bare mark, so the button keeps its own hit box and callback and takes the
-   shared plus artwork over a 14px box.
-
-   Both declarations key off the trigger being the container's last *button*,
-   not its last child (05). The host's Tooltip runs with `portal` off, so while
-   its bubble is up it appends that bubble as a `span[role="tooltip"]` sibling
-   directly after the trigger, inside this container: `:last-child` then falls to
-   the bubble, these two rules stop matching under the pointer, and the host's
-   own folder-plus comes back. `:last-of-type` counts elements of the trigger's
-   own type, which the span bubble never enters, so the mask and the
-   `display: none` that suppresses the host's svg both hold in every state —
-   hover with the bubble up, keyboard focus, and the open menus. */
-html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-of-type svg {
-  display: none;
+/* A search replaces the band for the length of the query: the host expands its
+   field over the whole line and hides the label and the actions it owns, so the
+   band takes the sidebar's own fill — the Workspace row's name and its buttons
+   stay laid out underneath it and must not read through the field. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionHeader:has(._7514NG_searchExpanded) {
+  background: var(--ccd-sidebar);
 }
 
-html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-of-type::before {
-  content: "";
-  width: 14px;
-  height: 14px;
-  background-color: currentColor;
-  mask: var(--ccd-icon-plus) center / 14px 14px no-repeat;
+/* The Workspace row under the band gives the parked controls their room. Search
+   and the view options are two 28px boxes on the header's own 4px gap, so the
+   row's trailing group ends 2px short of that 60px (its own 8px padding spends
+   the rest) and the plus's artwork keeps the reference's 10px to the Search
+   glyph. Every Workspace row takes the same offset, so the groups below the band
+   keep one trailing edge. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] .jJkEga_projectRow .jJkEga_rowActions {
+  margin-right: calc(28px + 4px + 28px - 8px + 2px);
+}
+
+/* The reference gives a Workspace row one standing action — the plus that starts
+   a Session — and hands the rest to the row's own hover. The menu trigger keeps
+   its box (`opacity`, not `visibility`): the plus therefore never moves, the
+   label never re-truncates, and the trigger stays in the keyboard's reach, where
+   focusing it brings it back. The host's own `menuOpen` holds it up while its
+   card is out, which is the state that card's `closeOnPointerLeave` needs. */
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > :first-child {
+  opacity: 0;
+  transition: opacity 0.1s var(--ds-ease-in-out, ease-in-out);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow:is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions > :first-child,
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > :first-child:focus-visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > :first-child {
+    transition: none;
+  }
+}
+
+/* Add workspace leaves the resting line: the reference's line ends at the view
+   options, and the plus this plugin shows there is the Workspace's own
+   new-session button. The control keeps its hit box, its callback, its tooltip
+   and the host's folder-plus artwork — the reference has no such button, and two
+   bare pluses a row apart would read as one control — and it is parked out of
+   the cluster's flow, so bringing it back moves neither Search nor the view
+   options. The 64px is Search's 28px, the header's 4px gap, the view options'
+   28px and 4px of air between the two boxes. */
+html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail) ._7514NG_headerActions > button:last-of-type {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(28px + 4px + 28px + 4px);
+  margin: auto 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s var(--ds-ease-in-out, ease-in-out);
+}
+
+/* In the merged band the button clears the row's action group as well: past the
+   16px menu trigger, the host's 10px gap and the 16px plus (62 + 42 + 4 = 108px),
+   the hover cluster reads as one run — add workspace, the row's menu, the row's
+   new session, Search, view options. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_headerActions > button:last-of-type {
+  right: calc(62px + 42px + 4px);
+}
+
+/* The reveal is the host's own hover-reveal, held open by whatever the pointer
+   is on: the Workspace row this control hangs beside, or the header's own
+   controls — the pointer leaves the row the moment it arrives on this button, so
+   that second half is what keeps the gesture whole. Keyboard focus brings it
+   back as well; while it is hidden it takes no pointer events, so the invisible
+   control can never be clicked. */
+html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail):is(
+  :has(._7514NG_sectionHeader:is(:hover, :focus-within)),
+  :has(.jJkEga_projectRow:is(:hover, :focus-within))) ._7514NG_headerActions > button:last-of-type,
+html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail) ._7514NG_headerActions > button:last-of-type:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-of-type {
+    transition: none;
+  }
 }
 
 /* View options: the reference's two-knob control stands upright, and the host's

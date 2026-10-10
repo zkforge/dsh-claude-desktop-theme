@@ -4,6 +4,7 @@ import type { Logger } from './contracts/ports.ts';
 import { adoptConfig } from '../shared/config.ts';
 import { ENTRY_ID, PLUGIN_ID } from '../shared/identity.ts';
 import { createHostServices } from './compat/adapter.ts';
+import { mountBrowserHeader } from './compat/browser-header.ts';
 import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
 import { mountEmptyGroups } from './compat/empty-groups.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
@@ -160,6 +161,12 @@ export function apply(ctx: Context): void {
            plugin owns; both follow the sidebar switch that draws the trigger. */
         if (next.features.sidebar) {
           const view = mountViewOptions(ctx, environment, scope);
+          /* The browsing region's one header line: the state its stylesheet
+             parks on, and the word its title line draws. */
+          scope.add(mountBrowserHeader(
+            document,
+            error => logger.error('sidebar: browsing header observer failed', error),
+          ));
           scope.add(mountEmptyGroups(
             document,
             !next.view.showEmptyGroups,

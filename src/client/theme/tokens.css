@@ -11,6 +11,10 @@ html[data-dsh-ccd-style="true"] {
   --ccd-sidebar-inline-padding: 10px;
   --ccd-sidebar-bottom-padding: 8px;
   --ccd-row-height: 28px;
+  /* Workspace (group) row. The host's own 34px, pinned because the browsing
+     region's merged header band is this same box: the section header parks on
+     the row's line and the two have to agree to the pixel. */
+  --ccd-workspace-row-height: 34px;
   /* Navigation stack. The reference's three rows measured 26px tall on a 26.5px
      pitch — contiguous, not separated — against the host's own 36px/7px row. */
   --ccd-nav-row-height: 26px;
