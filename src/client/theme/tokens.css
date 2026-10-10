@@ -147,6 +147,26 @@ html[data-dsh-ccd-style="true"] {
      34px floating circle, so the box shrinks to this one step while the glyph
      inside it keeps the host's 16px seat. */
   --ccd-to-bottom-size: 22px;
+  /* Right panel (the Files, terminal and browser tabs). The reference draws it
+     as a floating card: 16 device px in from the column's top, right and bottom
+     edges; a 12px corner (measured off the fill: the curve is 20 device px at
+     @2x from its first inset pixel to the straight edge, plus the 1px outline);
+     a 32px header strip whose 24px tab mark sits 4px under the card's top; and
+     an 8px pane gutter (16 device px), which is where the Files pane's own row
+     line begins. */
+  --ccd-right-panel-inset: 8px;
+  --ccd-right-panel-radius: var(--ccd-radius-panel);
+  --ccd-right-panel-strip-height: 32px;
+  --ccd-right-panel-gutter: 8px;
+  /* The tab's own mark, measured off the reference: a 24px square (5px corner,
+     carried by the chip radius) tinted #d3e2f9 behind the 16px glyph. */
+  --ccd-right-panel-glyph-size: 24px;
+  /* Files tree. The reference's rows run on a 24px pitch (48 device px at @2x)
+     where the host's 13px/1.5 row draws 29.5px, and its pane header is the
+     26px rounded field over them. */
+  --ccd-files-row-height: 24px;
+  --ccd-files-field-height: 26px;
+  --ccd-files-glyph-size: 16px;
 
   /* Surfaces */
   --ccd-canvas: #fcfcfb;
@@ -167,6 +187,10 @@ html[data-dsh-ccd-style="true"] {
   --ccd-view-menu-accent: #2a78d6;
   --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 8px 20px rgba(0, 0, 0, .12), 0 16px 32px rgba(0, 0, 0, .06);
   --ccd-selected: #ecebe8;
+  /* The right panel's tab mark: the reference's own blue-tinted square,
+     sampled at #d3e2f9 with the accent for its glyph. It is the one tinted seat
+     in this plugin's surfaces, so it is stated rather than derived. */
+  --ccd-right-panel-glyph-bg: #d3e2f9;
 
   /* Lines */
   --ccd-border: #e3e3e1;
@@ -175,6 +199,10 @@ html[data-dsh-ccd-style="true"] {
   /* The rule under a table head reads one step stronger than the card outline
      in the reference (#d9d9d9 against #e3e3e3). */
   --ccd-table-head-line: #d9d9d8;
+  /* The right panel's card outline, sampled at #d7d7d6 — one step stronger than
+     the row outline above and the same ink the menu cards' own border carries,
+     which is what makes a floating panel and a menu read as one material. */
+  --ccd-right-panel-border: #d7d7d6;
 
   /* Text */
   --ccd-text: #1f1f1d;
@@ -409,6 +437,11 @@ html[data-dsh-ccd-style="true"] {
   /* Elevation */
   --ccd-shadow-card: 0 1px 2px rgb(0 0 0 / 4%);
   --ccd-shadow-segment: 0 1px 2px rgb(0 0 0 / 8%);
+  /* The right panel's card, read off the reference's own edges: the canvas
+     (252/255) sits at 243 half a pixel beside the card, 235 directly under it
+     and back to 251 eight pixels out — a two-layer shadow, the near one for the
+     edge and the far one for the falloff. */
+  --ccd-right-panel-shadow: 0 1px 3px rgb(0 0 0 / 4%), 0 5px 14px rgb(0 0 0 / 8%);
 }
 
 /*
@@ -470,6 +503,9 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-view-menu-accent: var(--ccd-accent);
   --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .3), 0 16px 32px rgba(0, 0, 0, .2);
   --ccd-selected: #3a3a37;
+  /* The tab mark's tint, dark side: the accent's own hue over this card, which
+     is the #d3e2f9 relationship the light side measures, not its value. */
+  --ccd-right-panel-glyph-bg: #2b3a55;
 
   /* Lines */
   --ccd-border: #3e3e3b;
@@ -477,6 +513,9 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-border-soft: #343431;
   /* The head rule stays the one line drawn stronger than the card outline. */
   --ccd-table-head-line: #4a4a46;
+  /* The card outline's dark side: one step above the row outline, as in the
+     light palette. */
+  --ccd-right-panel-border: #474743;
 
   /* Text */
   --ccd-text: #f0efec;
@@ -562,6 +601,7 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   /* Elevation reads as a shadow under the surface, not as a grey wash. */
   --ccd-shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
   --ccd-shadow-segment: 0 1px 2px rgb(0 0 0 / 50%);
+  --ccd-right-panel-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 4px 10px rgb(0 0 0 / 35%);
 }
 
 /* zanwei effort reference palette, MIT; canvas reads these theme values. */

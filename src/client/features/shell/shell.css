@@ -31,6 +31,55 @@ html[data-dsh-ccd-style="true"] ._6Qf49G_rightbarCol {
   background: var(--ccd-canvas);
 }
 
+/*
+ * The right panel is a floating card (its interior is `right-panel.css`).
+ *
+ * The occupant draws a full-height panel against the column's right edge and
+ * the host sizes it inline; padding on that panel insets every box inside it —
+ * the DockKit surface, and with it the tab strip, the panes and the split
+ * divider — from the column's top, right and bottom edges. The inset therefore
+ * holds at every width (it is not part of the width the host writes), mid-drag
+ * (the width changes per frame, the padding does not) and in the full-screen
+ * state, where the panel is `100vw` wide and the same 8px reads as the window's
+ * own four sides. The drag handle keeps its own coordinates: it is a sibling of
+ * the panel, drawn on the column's left edge.
+ *
+ * The fill, outline and shadow go on the DockKit surface rather than on the
+ * panel box, because the surface is the one box that holds every column of a
+ * split panel: two panes share one card and their divider stays a hairline
+ * inside it. They are scoped to the open state — a collapsed panel keeps the
+ * track's full height while it slides out, and a card painted there would hang
+ * over the centre column.
+ */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] {
+  box-sizing: border-box;
+  padding: var(--ccd-right-panel-inset);
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-surface] {
+  background: var(--ccd-card);
+  border: 1px solid var(--ccd-right-panel-border);
+  border-radius: var(--ccd-right-panel-radius);
+  box-shadow: var(--ccd-right-panel-shadow);
+  /* The card's corner clips the rows and fills of its columns. Floating panes
+     are `position: fixed` children of the surface and escape this, which is the
+     host's own treatment for them. */
+  overflow: hidden;
+}
+
+/* A dock column gives up its own fill: the card is the surface, and the host
+   fills each pane and empty column with the canvas token — the colour of the
+   frame around the card. Column 0's hairline is the column's outer edge, not
+   the card's, so it goes too. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-pane],
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-empty] {
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-column="0"] > [data-dockkit-pane] {
+  border-left: 0;
+}
+
 /* The frame paints the window background behind the rounded macOS corners. */
 html[data-dsh-ccd-style="true"] ._6Qf49G_frame {
   background: var(--ccd-sidebar);

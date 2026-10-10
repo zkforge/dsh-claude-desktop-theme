@@ -1,0 +1,192 @@
+/*
+ * The right panel's interior: the card's header line, the split hairline and
+ * the Files tree (DESIGN.md §6.9).
+ *
+ * The card itself — its inset, surface, outline and shadow — is in `shell.css`,
+ * which owns the frame's columns; this sheet dresses what the panel draws
+ * inside it. Everything here speaks the DockKit and Files packages' own stable
+ * data hooks rather than their hashed class names (`compat/host-dom.ts` pins
+ * each one), and every number is measured off the reference at @2x:
+ * docs/issues/img/todo-rightbar-files.png, with -terminal and -browser for the
+ * shared header row.
+ *
+ * The host keeps the structure, the controls, the handlers and their copy. This
+ * sheet changes what a box looks like: the strip's line, the tab's own mark,
+ * the row pitch of the tree, its disclosure chevrons and the pane header's
+ * field shape.
+ */
+
+/* The card's header line. The reference's strip is 32px tall with its first box
+   (the tab's 24px mark) 4px from the card's top and left edges. The host's
+   inline-start variable is what keeps the strip clear of the macOS traffic
+   lights in the full-screen state, so the reference's 4px is taken out of it
+   rather than stated over it. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-strip] {
+  box-sizing: border-box;
+  height: var(--ccd-right-panel-strip-height);
+  padding-block: 4px;
+  padding-inline: calc(var(--dsh-dockkit-strip-inline-start, 10px) - 6px) 8px;
+}
+
+/* The panel's tabs are the card's title, not chips on a filled rail: the host
+   paints the active tab with its own tag token and pads the chip 10px, while
+   the reference draws the title straight on the card with its mark leading the
+   row. Hover keeps a fill so the chip still answers the pointer. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-tab] {
+  background: none;
+  padding-inline: 0;
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-tab]:hover {
+  background: var(--ccd-hover);
+}
+
+/* The mark the reference puts before the Files title: a 24px tinted square
+   behind the 16px glyph the host draws, its ink in the accent. The seat is a
+   padding on the glyph's own box, so the artwork scales into it and the host
+   keeps its icon. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-tab-title] > svg {
+  box-sizing: border-box;
+  width: var(--ccd-right-panel-glyph-size);
+  height: var(--ccd-right-panel-glyph-size);
+  padding: 4px;
+  border-radius: var(--ccd-chip-radius);
+  background: var(--ccd-right-panel-glyph-bg);
+  color: var(--ccd-accent);
+}
+
+/* The strip's own controls answer with this palette's hover step, as the
+   Composer's row controls do, instead of the host's blue-grey one. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-strip] button:hover {
+  background: var(--ccd-hover);
+}
+
+/* The hairline between two columns. The reference draws it from under the
+   header line down (its first pixel at the card's 32px strip), one step softer
+   than the card's own outline. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-divider]::before {
+  top: var(--ccd-right-panel-strip-height);
+  background: var(--ccd-border);
+}
+
+/* --- the Files pane ------------------------------------------------------ */
+
+/* The pane's own header is the reference's rounded outlined row: 26px tall, a
+   6px corner and a hairline outline, inset 8px from the card's sides and 3px
+   under the strip. The host's root path and its reload / open-in-app controls
+   keep their seats inside it. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]) {
+  box-sizing: border-box;
+  height: var(--ccd-files-field-height);
+  margin: 3px var(--ccd-right-panel-gutter) 0;
+  padding: 0 var(--ccd-right-panel-gutter);
+  gap: 6px;
+  border: 1px solid var(--ccd-border);
+  border-radius: var(--ccd-chip-radius);
+}
+
+/* The field is the one interactive row here, so the reference's own focused
+   state — the accent's hairline and its soft halo — is what it shows while one
+   of its controls holds focus. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]):focus-within {
+  border-color: var(--ccd-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ccd-accent) 11%, transparent);
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]) [data-files-path] {
+  color: var(--ccd-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* The field's own controls sit at its end: the host lays the path label and the
+   reload / open-in-app actions out left to right, and the reference's field is
+   a leading reading with its affordances trailing. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]) > :last-child {
+  margin-left: auto;
+}
+
+/* The tree. Rows run on the reference's 24px pitch (48 device px at @2x) where
+   the host's 13px/1.5 row draws 29.5px, so the row states its own line and
+   padding; the body keeps the host's 8px gutter, which is what puts the first
+   row's mark 16px in from the card's edge. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] {
+  padding: 8px var(--ccd-right-panel-gutter);
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry] > button,
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry] > span {
+  box-sizing: border-box;
+  min-height: var(--ccd-files-row-height);
+  /* The reference puts the mark's box 3px into the row and the name 2px after
+     it, which is what lands the chevron's ink 16.5px and the name 29px in from
+     the card's edge. */
+  padding: 2px 8px 2px 3px;
+  gap: 2px;
+  border-radius: var(--ccd-chip-radius);
+  color: var(--ccd-text);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry] > button:hover {
+  background: var(--ccd-hover);
+}
+
+/* A directory is its name and a disclosure mark: the host's folder glyph is
+   replaced by the shared chevron (the same geometry the sidebar's rows draw),
+   turned a quarter when the directory is open — the host's `aria-expanded` on
+   the row is the state, so the mark needs no observer. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button > svg {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button::before {
+  content: "";
+  flex: none;
+  width: var(--ccd-files-glyph-size);
+  height: var(--ccd-files-glyph-size);
+  color: var(--ccd-text-muted);
+  background-color: currentColor;
+  mask: var(--ccd-icon-chevron-right) center / var(--ccd-files-glyph-size) var(--ccd-files-glyph-size) no-repeat;
+  transition: transform 0.15s var(--ds-ease-in-out, ease-in-out);
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button::before {
+    transition: none;
+  }
+}
+
+/* A file keeps the host's own type glyph — it already classifies by name — in
+   the muted ink the reference draws it with. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="file"] > button > svg {
+  width: var(--ccd-files-glyph-size);
+  height: var(--ccd-files-glyph-size);
+  color: var(--ccd-text-muted);
+}
+
+/* A column no tab has claimed shows the host's own line, centred in the card
+   the way the reference centres its empty state. The pane's last child is its
+   body; the line is the host's own `empty` paragraph inside it. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-empty] [data-dockkit-pane] > div:last-child > div {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-empty] [data-dockkit-pane] > div:last-child > div > p {
+  margin: 0;
+  padding: 0 24px;
+  color: var(--ccd-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+}

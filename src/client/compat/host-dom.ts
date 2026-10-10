@@ -30,6 +30,13 @@ import { aliasHostClasses, detectHostBuild, type HostBuild } from './host-builds
  * - `packages/client/ui-attachment/src/client/ComposerAttachments.module.css` (`dVdiKa_`)
  * - `packages/client/ui-chat/src/client/chat/StatsPills.module.css` (`OpZ85W_`)
  * - `packages/client/ui-workspace/src/client/WorkspaceBrowser.module.css` (`_7514NG_`)
+ * - `packages/client/ui-sidebar-right/src/client/shell/SidebarRight.tsx` (the
+ *   panel box and its `data-sidebar-right-*` hooks)
+ * - `packages/client/ui-dockkit/src/client/DockLayout.tsx` and its
+ *   `DockLayout.module.css` (`_6nhg2_`), shipped on both installers as part of
+ *   the `dsh-web-frontend` dist (`data-dockkit-*` hooks)
+ * - `packages/client/ui-sidebar-files/src/client/FilesBody.tsx` (the file tree
+ *   and its `data-files-*` hooks)
  * - `packages/client/ui-workspace/src/client/rows/Rows.module.css` (`jJkEga_`: the
  *   Workspace and Session rows, and the primary bundle's copy of the same sheet)
  * - `packages/client/ui-workspace/src/client/rows/Rows.tsx` (`data-row-key` on the
@@ -52,6 +59,47 @@ export const HOST = Object.freeze({
   centerColumn: '._6Qf49G_centerCol',
   rightbarColumn: '._6Qf49G_rightbarCol',
   resizeHandle: '._6Qf49G_handle',
+  /**
+   * ui-sidebar-right/shell/SidebarRight.tsx: the right panel's own box, which
+   * the host positions absolutely against the column's right edge and sizes
+   * inline (the resolved width, or `100vw` in full screen). Its
+   * `data-sidebar-right-panel` (`push` / `fullscreen`) and
+   * `data-sidebar-right-open` are the package's own stable hooks, so the card
+   * `shell.css` paints on it survives a build whose classes were rehashed; this
+   * plugin authors no selector for the panel's hashed class.
+   */
+  rightbarPanel: '[data-sidebar-right-panel]',
+  /**
+   * DockKit (`dsh-web-frontend`'s dock layout, the static bundle both installers
+   * ship — the same case `_1ypvv_` records in `host-builds.ts`, so these need no
+   * prefix entry): the boxes inside that panel, also addressed by the package's
+   * own data attributes. `surface` is the layout root the card's fill is drawn
+   * on, `pane` a dock column that would otherwise paint the canvas over it,
+   * `strip` the tab strip (the card's header row), `divider` the hairline
+   * between two columns, `empty` a column no tab has claimed. Only
+   * `features/shell/right-panel.css` reads them.
+   */
+  dockSurface: '[data-dockkit-surface]',
+  dockPane: '[data-dockkit-pane]',
+  dockStrip: '[data-dockkit-strip]',
+  dockTab: '[data-dockkit-tab]',
+  dockTabTitle: '[data-dockkit-tab-title]',
+  dockStripChrome: '[data-dockkit-strip-chrome]',
+  dockDivider: '[data-dockkit-divider]',
+  dockEmpty: '[data-dockkit-empty]',
+  /**
+   * ui-sidebar-files/FilesBody.tsx: the file tree's own hooks. The pane's header
+   * is the root's non-body child (the scroller writes `data-files-body`), each
+   * entry row carries `data-files-entry` (`directory` / `file` / `other`) with
+   * the path it stands for, and the host's folder glyph and per-type glyph are
+   * the row button's first child. The tree's rows are dressed through these
+   * hooks and their own structure, so the Files sheet needs no class name of
+   * that package — whose hashes differ per build and are not in the pinned
+   * tables — either.
+   */
+  filesRoot: '[data-files-root]',
+  filesBody: '[data-files-body]',
+  filesEntry: '[data-files-entry]',
   sidebarRoot: '._3WPZCG_root',
   sidebarLogoRow: '._3WPZCG_logoRow',
   sidebarBrand: '._3WPZCG_brand',

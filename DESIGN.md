@@ -204,6 +204,16 @@
 - 分组只在该类真有逐项时出现，组头是「chevron + 名称 + 合计 + 条数」，点它展开或收起本组。每次打开弹窗时，标题与所有明细分组都默认收起，展开状态仅在本次打开期间保留。组内列表最多 170px（参照图自己的可见行数）后滚动，卡片本身不随工具数长高。
 - 落点：面板与几何在 [context-panel.css](src/client/features/context-panel/context-panel.css)，两态与文案在 [ContextPanel.tsx](src/client/features/context-panel/ContextPanel.tsx)，颜色在 [tokens.css](src/client/theme/tokens.css)；拦截环点击、自持开合与读取宿主投影的那一半在 [context-panel.ts](src/client/compat/context-panel.ts)。
 
+### 6.9 右侧栏（文件 / 终端 / 浏览器）
+
+- **形态是一张浮动卡片，不是一条到边的栏**：离窗口上、右、下缘各 8px，12px 圆角（`--ccd-right-panel-radius` 借 `--ccd-radius-panel`；参考图量到填充曲线在 @2x 是 20 设备 px 加 1px 轮廓），白底 `--ccd-card`、1px `#d7d7d6` 轮廓（与菜单卡片同一种墨）与两层浅阴影。隔着卡片露出的那一圈是画布色——宿主面板自己铺的 `--dsw-alias-bg-base` 就是 `--ccd-canvas`。卡片画在 DockKit 的 surface 上而不是宿主的面板盒上，所以分栏时两列共用一张卡、中间只剩一条内部分隔线；填充只在面板打开时生效（收起态的面板仍占满轨道高度）。
+- **几何落在内缩上**：宿主把宽度写在行内并随网格轨道动画，所以 8px 是面板的 padding——拖动时宽度每帧变、内缩不变；全屏（面板 100vw）时同一份内缩就是窗口自己的四边。右侧栏的拖动把手仍是列左缘上那条 8px 命中带，卡片左缘离它有 8px，不重叠也不吞事件。
+- **页签行** 32px 高，标题图形落在 24px 方座上：圆角 6px、填充 `#d3e2f9`（`--ccd-right-panel-glyph-bg`，参考图采样）、图形取强调蓝；标题本身 13px 正文墨，页签不再画宿主的选中底色。行尾是宿主自己的分栏、全屏与收起按钮，hover 走 `--ccd-hover`。
+- **Files 页签**：页签自己那一行被装扮成参考图的圆角描边行——26px 高、6px 圆角、1px `--ccd-border`，左右各内缩 8px、在页签行下 3px；宿主的根路径（PathLabel）在左，重读与「在应用打开」等动作推到右端，`:focus-within` 时取强调蓝轮廓加 3px 淡晕（参考图里那一格正是聚焦态）。
+- **文件树** 行距 24px（参考图 @2x 48 设备 px，宿主自己的 13px/1.5 行是 29.5px），行圆角 6px，名字 13px 正文墨。目录行不画宿主的文件夹图形，改画共享的 16px chevron（与侧栏行同一份几何），随行自己的 `aria-expanded` 转 90°；文件行保留宿主按名字分类的类型图形，取弱化墨。行内位置按参考图钉住：标记盒 16px 落在离卡片内缘 11px 处（面板的 8px 边距加行自己的 3px，chevron 的墨因此从 16.5px 起），名字从 29px 起，缩进沿用宿主自己的 18px 一档。
+- **分隔线与空列**：两列之间的发丝线取 `--ccd-border`，并且从页签行下沿（32px）起画——参考图里它不穿过头部；没有页签的那一列居中显示宿主自己的空态文案，取弱化墨。
+- 落点：卡片几何在 [shell.css](src/client/features/shell/shell.css)，内部（页签行、文件树、分隔线、空列）在 [right-panel.css](src/client/features/shell/right-panel.css)，颜色与尺寸在 [tokens.css](src/client/theme/tokens.css)；宿主钩子钉在 [host-dom.ts](src/client/compat/host-dom.ts)，真实 Chrome 测试在 [tests/rightbar-card-browser.test.mjs](tests/rightbar-card-browser.test.mjs)。
+
 ## 七、状态、动效与可达性
 
 - 交互反馈只有两种：填充（hover／展开／选中）与墨色（次级 → 强）。需要过渡时只用 0.1s 的 `background-color`／`color`，不做位移动画。
@@ -230,6 +240,8 @@
 | 状态栏图标 | `--ccd-row-icon-size` |
 | 上下文环 | `--ccd-context-ring-size` / `--ccd-context-ring-trigger` / `--ccd-context-ring-seat` / `--ccd-context-ring-fill` |
 | Composer 几何 | `--ccd-composer-*`、`--ccd-send-size`、`--ccd-send-reserve` |
+| 右侧栏卡片 | `--ccd-right-panel-inset` / `--ccd-right-panel-radius` / `--ccd-right-panel-strip-height` / `--ccd-right-panel-gutter` / `--ccd-right-panel-border` / `--ccd-right-panel-shadow` / `--ccd-right-panel-glyph-bg` / `--ccd-right-panel-glyph-size` |
+| 文件树 | `--ccd-files-row-height` / `--ccd-files-field-height` / `--ccd-files-glyph-size` |
 | 圆角阶梯 | `--ccd-radius-row` / `--ccd-radius-panel` / `--ccd-table-radius` / `--ccd-code-radius` |
 | 表面与状态 | `--ccd-canvas` / `--ccd-sidebar` / `--ccd-card` / `--ccd-track` / `--ccd-hover` / `--ccd-selected` |
 | 线 | `--ccd-border` / `--ccd-border-strong` / `--ccd-border-soft` / `--ccd-table-head-line` |
