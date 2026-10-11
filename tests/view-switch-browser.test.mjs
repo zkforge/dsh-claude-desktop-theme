@@ -122,6 +122,19 @@ test('the View switcher parks on the sidebar column and survives rerenders, coll
       const active=document.querySelector('[role=tab][aria-selected=true]');
       const style=getComputedStyle(tabs,'::before');
       return{x:tabs.style.getPropertyValue('--ccd-view-x'),w:tabs.style.getPropertyValue('--ccd-view-w'),transform:style.transform,width:style.width,offset:Math.round((active.getBoundingClientRect().left-tabs.getBoundingClientRect().left)*2)/2};})()`;
+    /* Where each tab's artwork *inks*, not where its 16px box sits: the SVG's
+       own geometry box, widened by half its stroke, measured against the
+       segment the thumb is drawn on. */
+    const ink = `Array.from(document.querySelectorAll('[role=tab]')).map(tab=>{
+      const svg=tab.querySelector('[data-ccd-view-glyph] svg');
+      const box=svg.getBoundingClientRect();
+      const bbox=svg.getBBox();
+      const stroke=parseFloat(getComputedStyle(svg).strokeWidth)||0;
+      const scale=box.height/16;
+      const segment=tab.getBoundingClientRect();
+      return{view:tab.getAttribute('data-ccd-view'),
+        ink:Math.round((box.top+((bbox.y-stroke/2)+(bbox.height+stroke)/2)*scale)*100)/100,
+        segment:Math.round((segment.top+segment.height/2)*100)/100};})`;
 
     const profile = await mkdtemp(join(tmpdir(), 'ccd-view-switch-test-'));
     try {
@@ -177,6 +190,29 @@ test('the View switcher parks on the sidebar column and survives rerenders, coll
           const screenshot = await page.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 560, height: 200, scale: 1 } });
           await writeFile(join(root, 'artifacts/view-switch-sidebar.png'), Buffer.from(screenshot.data, 'base64'));
         }
+
+          /* The artwork inks on the segment's own centre line (±0.5px): the
+             label's line box, the host's padding and any alignment the host
+             wins back must not move it. */
+          const inked = await page.evaluate(ink);
+          assert.deepEqual(inked.map(row => row.view), ['chat', 'trajectory']);
+          for (const row of inked) {
+            assert.ok(Math.abs(row.ink - row.segment) <= 0.5, `glyph ink centred: ${JSON.stringify(row)}`);
+          }
+
+          /* The thumb's box is the active segment's box: measured against the
+             tablist's border box, with no padding-box offset. */
+          const thumbBox = await page.evaluate(`(()=>{
+            const tabs=document.querySelector('[data-conversation-tabs]');
+            const active=document.querySelector('[role=tab][aria-selected=true]');
+            const style=getComputedStyle(tabs,'::before');
+            const track=tabs.getBoundingClientRect();
+            const segment=active.getBoundingClientRect();
+            const left=track.left+new DOMMatrixReadOnly(style.transform).m41;
+            return{left:Math.round(left*100)/100,right:Math.round((left+parseFloat(style.width))*100)/100,
+              segmentLeft:Math.round(segment.left*100)/100,segmentRight:Math.round(segment.right*100)/100};})()`);
+          assert.ok(Math.abs(thumbBox.left - thumbBox.segmentLeft) <= 0.5 && Math.abs(thumbBox.right - thumbBox.segmentRight) <= 0.5,
+            `thumb flush with its segment: ${JSON.stringify(thumbBox)}`);
 
           /* No reserved row: the header measures the same with the tablist
              docked as it does with no tablist at all. */
@@ -242,6 +278,22 @@ test('the View switcher parks on the sidebar column and survives rerenders, coll
           await settle();
           const panelled = await page.evaluate(geometry);
           assert.ok(Math.abs(panelled.tabs.right - (panelled.column.right - 8)) <= 0.51, `right panel open: ${JSON.stringify(panelled)}`);
+
+          /* The live app's failure class: the host's own box rules winning back
+             the button's inner layout — its 9px bottom padding, its own
+             alignment, its 20px line. The seat is out of the button's flow, so
+             none of them may move the ink off the segment's centre line. */
+          await page.evaluate(`(()=>{const style=document.createElement('style');
+            style.dataset.ccdHostile='true';
+            style.textContent=${JSON.stringify(aliasHostClasses('html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view]{padding:0 0 9px;align-items:flex-start;line-height:20px}', buildInfo))};
+            document.head.append(style);})()`);
+          await settle();
+          const hostile = await page.evaluate(ink);
+          for (const row of hostile) {
+            assert.ok(Math.abs(row.ink - row.segment) <= 0.5, `glyph ink centred with the host's tab box back: ${JSON.stringify(row)}`);
+          }
+          await page.evaluate(`document.querySelector('[data-ccd-hostile]').remove()`);
+          await settle();
                   }
 
         await page.evaluate('window.releaseSwitcher()');

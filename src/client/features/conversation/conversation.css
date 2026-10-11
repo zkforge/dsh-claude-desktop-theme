@@ -210,6 +210,35 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] {
   justify-content: center;
   padding: 0;
   font-size: 0;
+  line-height: 0;
+}
+
+/*
+ * The artwork seat leaves the button's own flow and centres on the button's
+ * box — not on a line box beside the host's label, and not inside whatever
+ * content box the host's own rules leave here. The host's `.tab` gives this
+ * button `padding: 0 0 9px`, its own 16px line and its own alignment, and any
+ * of them winning back even one of those declarations moved the icon ~4.5px
+ * above the segment; the seat is absolutely centred on the padding box
+ * instead, which is the box the sliding thumb is drawn on. Measured in
+ * `tests/view-switch-browser.test.mjs`, including a state that hands the
+ * button's inner layout back to the host's rules.
+ */
+html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] > [data-ccd-view-glyph] {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  line-height: 0;
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] > [data-ccd-view-glyph] > svg {
+  display: block;
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_tab::after {
