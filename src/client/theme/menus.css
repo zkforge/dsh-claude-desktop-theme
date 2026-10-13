@@ -147,11 +147,11 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
  * `--dsw-alias-interactive-bg-hover` inside a popup — and the keyboard walk
  * takes the same fill, because the host already reads focus that way and the
  * ring that would have told the two apart is not drawn in this family (below).
- * The destructive row keeps its red ink (the host's own semantic colour, not
- * this palette's accent) and takes the same fill: one row, one fill. Selection
- * is not a fill in this document — it is the accent check the trailing seat
- * draws (`theme/tokens.css`) and that the host's `.selected` class already
- * leaves transparent.
+ * The destructive row is the one exception: it takes a red fill with white ink
+ * (below), in every state, so the danger action reads apart from the rest of
+ * the card. Selection is not a fill in this document — it is the accent check
+ * the trailing seat draws (`theme/tokens.css`) and that the host's `.selected`
+ * class already leaves transparent.
  *
  * The command palette's active row is its keyboard cursor (the listbox keeps DOM
  * focus and publishes `aria-activedescendant`), so it takes the fill by
@@ -161,6 +161,23 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"]:hover,
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"][aria-selected="true"] {
   background: var(--ccd-hover);
+}
+
+/* The host's destructive row (`Menu.module.css` `.danger`, the `_4ub78_` build
+ * the rest of this sheet names) rests in the host's red ink. Hover and the
+ * keyboard walk fill it with the red and white ink, label and shortcut included.
+ * It sits after the hover rule above and is more specific, so the host's own
+ * danger hover tint loses to it. The header session menu's Delete row takes the
+ * same fill in `features/conversation/header-actions/header-menus.css`. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]._danger_4ub78_226:hover:not(:disabled),
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]._danger_4ub78_226:focus-visible:not(:disabled) {
+  background: var(--ccd-menu-danger);
+  color: var(--ccd-menu-danger-ink);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]._danger_4ub78_226:hover:not(:disabled) span,
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]._danger_4ub78_226:focus-visible:not(:disabled) span {
+  color: inherit;
 }
 
 /* Filling the row is the whole state: no emphasis ring on a popup row.

@@ -10,6 +10,7 @@ import { HeaderActionButton } from './HeaderActionButton.tsx';
 import { CORNER_ENTRY, VIEWS, cornerRetirement, sidebarExpandRow, utilitiesEntry } from './entries.ts';
 import { openView, resolveSidebarRight, resolveSidebarTabs } from './sidebar-view.ts';
 import css from './header-actions.css';
+import menuCss from './header-menus.css';
 
 /**
  * A seat entry that renders nothing.
@@ -51,6 +52,7 @@ function renderNothing(): null {
  */
 export function mountHeaderActions(ctx: Context, environment: FeatureEnvironment, cleanup: CleanupScope): void {
   cleanup.add(environment.dom.mountStyles(css));
+  cleanup.add(environment.dom.mountStyles(menuCss));
   const registration = ctx.inject(['slots', 'sidebarRight', 'sidebarRightTabs'], scope => {
     const sidebar = resolveSidebarRight(scope);
     const tabs = resolveSidebarTabs(scope);

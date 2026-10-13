@@ -142,6 +142,14 @@ html[data-dsh-ccd-style="true"] {
   --ccd-header-icon-size: 16px;
   --ccd-header-action-gap: 2px;
   --ccd-header-trailing-inset: 12px;
+  --ccd-header-menu-border: #d6d6d6;
+  --ccd-header-menu-separator: #e2e2e2;
+  --ccd-header-menu-danger: #b4262b;
+  --ccd-menu-danger: #c04742;
+  --ccd-menu-danger-ink: #ffffff;
+  --ccd-header-trigger-hover: #f0f0ef;
+  --ccd-header-project-fill: #e5e5e5;
+  --ccd-header-project-active: #cfcfcf;
   /* Transcript edge fade. 24px is the band the host's own internal-request
      viewer uses for `fadeTop`／`fadeBottom`, so the whole interface softens its
      scroll viewport edges by the same amount. */
@@ -511,6 +519,14 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-canvas: #262624;
   --ccd-sidebar: #1f1e1d;
   --ccd-card: #30302e;
+  --ccd-header-menu-border: var(--ccd-border);
+  --ccd-header-menu-separator: var(--ccd-border-soft);
+  --ccd-header-menu-danger: #f08080;
+  --ccd-menu-danger: #c04742;
+  --ccd-menu-danger-ink: #ffffff;
+  --ccd-header-trigger-hover: var(--ccd-hover);
+  --ccd-header-project-fill: var(--ccd-track);
+  --ccd-header-project-active: var(--ccd-selected);
   --ccd-track: #1f1e1d;
   --ccd-raised: #2f2f2d;
   --ccd-hover: #313130;

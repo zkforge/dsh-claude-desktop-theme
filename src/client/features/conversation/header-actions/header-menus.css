@@ -1,0 +1,205 @@
+/* Reference crops are @2x: 136/192px cards, 24px rows and 10px corners. */
+html[data-dsh-ccd-style="true"] .ST7X_W_header:has([data-ccd-session-title]) {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 18px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-title] {
+  flex: 0 1 auto;
+  gap: 6px;
+  overflow: hidden;
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb {
+  padding: 0;
+  font-size: 14px;
+  line-height: 24px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-icon] {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  width: 16px;
+  height: 24px;
+  color: var(--ccd-header-icon-color);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-trigger] {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-trigger]:hover,
+html[data-dsh-ccd-style="true"] [data-ccd-session-trigger][aria-expanded="true"] {
+  background: var(--ccd-header-trigger-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-project-trigger] {
+  order: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(220px, 40%);
+  height: 20px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--ccd-header-project-fill);
+  color: var(--ccd-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-project-trigger][hidden] { display: none; }
+
+html[data-dsh-ccd-style="true"] [data-ccd-project-trigger]:hover,
+html[data-dsh-ccd-style="true"] [data-ccd-project-trigger][aria-expanded="true"] {
+  background: var(--ccd-header-project-active);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 136px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--ccd-header-menu-border);
+  border-radius: 10px;
+  background: var(--ccd-card);
+  color: var(--ccd-view-menu-text);
+  box-shadow: var(--ccd-view-menu-shadow);
+  font-family: var(--ccd-font-ui);
+  font-size: 13px;
+  line-height: 20px;
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu="session"] { width: 136px; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu="project"] { width: 192px; }
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button > span:first-child { flex: 1; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button:hover,
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button:focus-visible,
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button[aria-expanded="true"] {
+  outline: none;
+  background: var(--ccd-view-menu-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-mark] {
+  flex: none;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [aria-haspopup] [data-ccd-menu-mark] {
+  display: flex;
+  width: 12px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [aria-haspopup] [data-ccd-menu-mark] svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  transform: rotate(-90deg);
+}
+
+/* The destructive row rests in the host's red ink. Only the pointer or the
+ * keyboard walk fills it: the red fill with white ink, the shortcut included, the
+ * same as the host's danger rows (`menus.css`). */
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive] { color: var(--ccd-header-menu-danger); }
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:hover,
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:focus-visible {
+  background: var(--ccd-menu-danger);
+  color: var(--ccd-menu-danger-ink);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:hover [data-ccd-menu-mark],
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:focus-visible [data-ccd-menu-mark] { color: inherit; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] hr {
+  height: 1px;
+  margin: 4px 8px;
+  border: 0;
+  background: var(--ccd-header-menu-separator);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] {
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--ccd-header-menu-border);
+  border-radius: 10px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-view-menu-shadow);
+  font: 13px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] p { margin: 0 0 12px; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] label { display: block; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] input {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 8px 0 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 5px;
+  background: var(--ccd-canvas);
+  color: inherit;
+  font: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] button {
+  margin-right: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 5px;
+  background: var(--ccd-track);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

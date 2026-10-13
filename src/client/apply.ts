@@ -15,6 +15,8 @@ import { mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
+import { headerMenuActions } from './compat/header-menu-actions.ts';
+import { mountHeaderMenus } from './compat/header-menus.ts';
 import { createDomPort } from './compat/dom.ts';
 import { CleanupScope } from './core/cleanup.ts';
 import { mountFeatures } from './core/mount-features.ts';
@@ -157,6 +159,7 @@ export function apply(ctx: Context): void {
             error => logger.error('header: open-target mode observer failed', error),
           ));
           mountHeaderActions(ctx, environment, scope);
+          scope.add(mountHeaderMenus(document, headerMenuActions(ctx), error => logger.error('header menus: operation failed', error)));
         }
         if (next.features.conversation || next.features['new-session']) {
           mountModelControls(ctx, environment, scope);
