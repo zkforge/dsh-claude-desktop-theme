@@ -108,11 +108,15 @@ const nativeStyles = `
 body{margin:0;background:#eaeae8;font-family:system-ui;font-size:13px}
 [data-slot=root]{height:100%}
 ._6Qf49G_frame{display:grid;grid-template-rows:100%;height:100%;position:relative;overflow:hidden;background:#fbfbfa}
+._6Qf49G_frame[data-animating]{transition:grid-template-columns 300ms ease-in-out}
+._6Qf49G_frame[data-animating] ._6Qf49G_handle{transition:left 300ms ease-in-out}
 ._6Qf49G_sidebarCol{min-width:0;overflow:hidden;background:var(--dsw-specific-sidebar-fill);border-right:.5px solid var(--dsw-alias-border-l3)}
 ._6Qf49G_centerCol{display:flex;flex-direction:column;min-width:0;overflow:hidden;background:var(--dsw-alias-bg-base)}
 ._6Qf49G_rightbarCol{min-width:0;position:relative;overflow:visible}
 ._6Qf49G_handle{cursor:col-resize;z-index:11;touch-action:none;width:8px;margin-left:-4px;position:absolute;top:0;bottom:0}
 .irMxjq_panel{pointer-events:none;flex-direction:column;min-width:0;display:flex;position:absolute;top:0;bottom:0;right:0}
+.irMxjq_panel [data-dockkit-host=dock],.irMxjq_panel [data-dockkit-empty],.irMxjq_panel [data-dockkit-divider]{transform:translateX(var(--dsh-sidebar-width));visibility:hidden;transition:transform 300ms ease-in-out,visibility 0s linear 300ms}
+.irMxjq_panel[data-sidebar-right-open] [data-dockkit-host=dock],.irMxjq_panel[data-sidebar-right-open] [data-dockkit-empty],.irMxjq_panel[data-sidebar-right-open] [data-dockkit-divider]{visibility:visible;transition:transform 300ms ease-in-out;transform:none}
 .irMxjq_panelBody{flex:auto;min-height:0;display:flex}
 ._6nhg2_surface{display:flex;flex:1 1 auto;min-width:0;min-height:0}
 ._6nhg2_tabLayout{display:grid;flex:1 1 auto;grid-template-rows:minmax(0,1fr);min-width:0;min-height:0}
@@ -246,22 +250,24 @@ test('the right panel is a floating card at every size, over the host’s own tr
         assert.equal(title.radius, '6px');
         assert.equal(title.color, ACCENT);
 
-        /* The pane's own header is the reference's rounded field: 26px, one
-           hairline, 8px in from the card's sides and 3px under the strip. */
+        /* The pane's own header is the reference's filter line: 32px, no rule
+           under it, its boxes 8px in from the card's sides. The field itself is
+           the plugin's own node (files-pane-browser.test.mjs holds it); what the
+           host draws here is its root path — hidden, since the field takes that
+           seat — and its reload / open-in-app controls at the row's end. */
         const field = await measure(page, '[data-files-root] > div:not([data-files-body])');
-        assert.equal(field.height, 26);
-        assert.equal(field.borderWidth, '1px');
-        assert.equal(field.borderColor, ROW_LINE);
-        assert.equal(field.radius, '6px');
-        assert.equal(field.marginLeft, '8px');
-        assert.equal(field.marginTop, '3px');
-        assert.equal(field.left, surface.left + 9);
-        assert.equal(field.top, surface.top + 1 + 32 + 3);
+        assert.equal(field.height, 32);
+        assert.equal(field.borderWidth, '0px');
+        assert.equal(field.paddingLeft, '8px');
+        assert.equal(field.left, surface.left + 1);
+        assert.equal(field.top, surface.top + 1 + 32);
+        assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-files-path]')).display`),
+          'none');
 
         /* The tree's rows: the reference's 24px pitch, a disclosure chevron on a
            directory (the host's folder glyph gone, the shared chevron turned a
-           quarter when the row says it is open) and the host's own type glyph
-           before a file. */
+           quarter when the row says it is open) and one of the reference's two
+           marks before a file, in place of the host's category glyph. */
         const first = await measure(page, '[data-files-entry="directory"] > button');
         const second = await measure(page, '[data-files-entry="directory"]:nth-of-type(2) > button');
         assert.equal(first.height, 24);
@@ -278,16 +284,18 @@ test('the right panel is a floating card at every size, over the host’s own tr
         const openChevron = await measure(page, '[data-files-entry="directory"]:nth-of-type(2) > button', '::before');
         assert.equal(openChevron.transform, 'matrix(0, 1, -1, 0, 0, 0)');
         const fileGlyph = await measure(page, '[data-files-entry="file"] > button > svg');
-        assert.equal(fileGlyph.width, 16);
-        assert.equal(fileGlyph.color, MUTED);
-        assert.equal(fileGlyph.display, 'block');
-        /* The name is the reference's 29px in from the card's inner edge — the
-           pane's 8px gutter, the row's own 3px and the 16px mark with its 2px
-           step — and a level below adds the host's own 18px. */
+        assert.equal(fileGlyph.display, 'none');
+        const fileMark = await measure(page, '[data-files-entry="file"] > button', '::before');
+        assert.equal(fileMark.computedWidth, '16px');
+        assert.equal(fileMark.color, MUTED);
+        assert.match(fileMark.mask, /url\("data:image\/svg\+xml/u);
+        /* The name is the reference's 33px in from the card's own edge — the
+           pane's 8px gutter, the row's 3px, the 16px mark and its 5px step —
+           and a level below adds the host's own 18px. */
         const name = await measure(page, '[data-files-path="/w/AGENTS.md"] > button > span');
-        assert.equal(name.left, surface.left + 1 + 29);
+        assert.equal(name.left, surface.left + 33);
         const nested = await measure(page, '[data-files-path="/w/shot.png"] > button > span');
-        assert.equal(nested.left, surface.left + 1 + 29 + 18);
+        assert.equal(nested.left, surface.left + 33 + 18);
         const openRow = await measure(page, '[data-files-path="/w/artifacts"] > button');
         assert.equal(openRow.height, 24);
 
@@ -340,7 +348,7 @@ test('the right panel is a floating card at every size, over the host’s own tr
           panel.style.width=${COLUMN_WIDTH}+'px';
           document.getElementById('frame').removeAttribute('data-rightbar-fullscreen');})()`);
 
-        /* Collapsed: the panel keeps the column's height while it slides out, so
+        /* Collapsed: the panel keeps the column's height while hidden, so
            the card's paint is scoped to the open state and nothing hangs over
            the centre column. */
         await page.evaluate(`document.getElementById('panel').removeAttribute('data-sidebar-right-open')`);
@@ -360,13 +368,42 @@ test('the right panel is a floating card at every size, over the host’s own tr
         assert.equal(divider.computedPosition, 'absolute');
         assert.equal(divider.computedTop, '32px');
         assert.equal(divider.background, ROW_LINE);
-        const emptyLine = await measure(page, '[data-dockkit-empty] [data-dockkit-pane] > div:last-child > div > p');
-        assert.equal(emptyLine.color, MUTED);
-        assert.equal(emptyLine.fontSize, '13px');
-        const emptyBox = await measure(page, '[data-dockkit-empty] [data-dockkit-pane] > div:last-child > div');
-        assert.equal(emptyBox.display, 'flex');
+        /* The unclaimed column keeps the card's own surface. What it draws in
+           it is the plugin's landing state, which the host has no node for —
+           `files-pane-browser.test.mjs` mounts the module that supplies it, and
+           holds that block's geometry over this sheet. */
         const secondColumn = await measure(page, '[data-dockkit-empty] > [data-dockkit-pane]');
         assert.equal(secondColumn.background, TRANSPARENT);
+
+        /* Toggle the real host states and tracks. The next painted frame must
+           already have the final geometry, no active transition, and hidden
+           dock content must stop participating in hit testing immediately. */
+        for (const open of [false, true]) {
+          const result = await page.evaluate(`(async()=>{
+            const frame=document.getElementById('frame');
+            const panel=document.getElementById('panel');
+            const handle=document.getElementById('handle');
+            frame.getBoundingClientRect();
+            frame.setAttribute('data-animating','');
+            frame.toggleAttribute('data-rightbar-collapsed',${!open});
+            frame.style.gridTemplateColumns=${JSON.stringify(`264px minmax(${open ? 400 : 0}px, 1fr) minmax(0px, ${open ? COLUMN_WIDTH : 0}px)`)};
+            panel.toggleAttribute('data-sidebar-right-open',${open});
+            handle.style.left=(frame.clientWidth-${open ? COLUMN_WIDTH : 0})+'px';
+            await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+            const dock=[...panel.querySelectorAll('[data-dockkit-host="dock"],[data-dockkit-empty],[data-dockkit-divider]')];
+            return {
+              width:document.getElementById('rightbar').getBoundingClientRect().width,
+              handleLeft:handle.getBoundingClientRect().left,
+              expectedLeft:frame.getBoundingClientRect().right-${open ? COLUMN_WIDTH : 0}-4,
+              visibility:dock.map(node=>getComputedStyle(node).visibility),
+              animations:[frame,handle,...dock].flatMap(node=>node.getAnimations()).length
+            };
+          })()`);
+          assert.equal(result.width, open ? COLUMN_WIDTH : 0);
+          assert.equal(result.handleLeft, result.expectedLeft);
+          assert.ok(result.visibility.every(value => value === (open ? 'visible' : 'hidden')));
+          assert.equal(result.animations, 0);
+        }
 
         if (!windows) {
           const shot = await page.send('Page.captureScreenshot', {

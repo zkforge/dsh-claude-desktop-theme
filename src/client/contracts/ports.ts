@@ -86,8 +86,17 @@ export interface SidebarRightPort {
   openTab(kind: string, options?: { readonly params?: Record<string, string> }): void;
   /** Focus a tab and the pane holding it; a missing tab is left alone. */
   focus(tabId: string): void;
-  /** Open tab metadata across adopted Sessions. */
-  readonly openTabs: { getSnapshot(): readonly SidebarTabRecord[] };
+  /**
+   * Open tab metadata across adopted Sessions — and, in the shipped face, the
+   * snapshot store behind it: the plugin's pane layer re-reads the layout
+   * whenever that list changes, which covers every way a tab opens, closes or
+   * changes pane. A build whose source cannot be observed is read once per
+   * mutation instead.
+   */
+  readonly openTabs: {
+    getSnapshot(): readonly SidebarTabRecord[];
+    subscribe?(listener: () => void): Disposer;
+  };
   /**
    * Collapse the column, or expand it and focus its active dock pane.
    *
@@ -97,6 +106,22 @@ export interface SidebarRightPort {
    * keeps that row out rather than offering one that cannot act.
    */
   toggleExpanded?(): void;
+  /**
+   * Take one docked tab out into a floating pane, and put one back.
+   *
+   * The panel's own renderer draws at most one pane or two horizontal panes —
+   * its layout component throws on anything else — so a vertical split or a
+   * third pane cannot be asked of it. A floating pane has no such limit (the
+   * layout stores a rectangle per float and the package allows any number), so
+   * `compat/right-panes.ts` builds the panel's panes out of these two calls and
+   * draws their boxes itself. A missing `float` means a build that cannot host
+   * panes at all: the panel keeps its tabs, exactly as it does today.
+   * Source: packages/client/ui-sidebar-right/src/client/controller.ts
+   * (`float(tabId, rect)`, `dock(paneId)`).
+   */
+  float?(tabId: string, rect?: { x: number; y: number; width: number; height: number }): void;
+  /** Return one floating pane's tab to the panel's docked column. */
+  dock?(paneId: string): void;
 }
 
 /**

@@ -33,6 +33,18 @@ html[data-dsh-ccd-style="true"] ._6Qf49G_rightbarCol {
   background: var(--ccd-canvas);
 }
 
+/* Opening or closing the right panel is an immediate layout change. The host
+   animates the shared grid tracks and handle positions as well as sliding its
+   docked content, so all three must settle together. Keep the host's final
+   transforms and visibility states; only remove their interpolation. */
+html[data-dsh-ccd-style="true"] ._6Qf49G_frame[data-animating],
+html[data-dsh-ccd-style="true"] ._6Qf49G_frame[data-animating] ._6Qf49G_handle,
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-host="dock"],
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-empty],
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-divider] {
+  transition: none;
+}
+
 /*
  * The right panel is a floating card (its interior is `right-panel.css`).
  *
@@ -50,7 +62,7 @@ html[data-dsh-ccd-style="true"] ._6Qf49G_rightbarCol {
  * panel box, because the surface is the one box that holds every column of a
  * split panel: two panes share one card and their divider stays a hairline
  * inside it. They are scoped to the open state — a collapsed panel keeps the
- * track's full height while it slides out, and a card painted there would hang
+ * track's full height while hidden, and a card painted there would hang
  * over the centre column.
  */
 html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] {

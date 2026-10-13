@@ -14,6 +14,8 @@ import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
 import { mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
+import { mountFilesPane } from './compat/files-pane.ts';
+import { mountRightPanes } from './compat/right-panes.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { headerMenuActions } from './compat/header-menu-actions.ts';
 import { mountHeaderMenus } from './compat/header-menus.ts';
@@ -149,6 +151,23 @@ export function apply(ctx: Context): void {
         scope.add(mountScrollPills(
           document,
           error => logger.error('scrollbars: pill observer failed', error),
+        ));
+        /* The Files pane's filter field, tree control, tab mark and empty
+           column are nodes the host has no counterpart for, so they are
+           supplied from the compatibility layer the same way — beside the
+           sheet that dresses the pane around them. */
+        scope.add(mountFilesPane(
+          document,
+          error => logger.error('files pane: observer failed', error),
+        ));
+        /* The panel's views as blocks rather than tabs: the leaf whose module
+           takes each view out of the strip into a pane of its own
+           (`compat/right-panes.ts`). It needs the panel's own service, so it is
+           mounted here rather than from a feature's own mount. */
+        scope.add(mountRightPanes(
+          ctx,
+          document,
+          error => logger.error('right panes: observer failed', error),
         ));
         if (next.features.conversation) {
           /* The header cluster's open control is host-rendered, so its mode and

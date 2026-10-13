@@ -88,6 +88,33 @@ export const HOST = Object.freeze({
   dockDivider: '[data-dockkit-divider]',
   dockEmpty: '[data-dockkit-empty]',
   /**
+   * DockKit's tab body and its two hosts. Every tab of the panel draws one
+   * `content` box, and where that box sits says how the tab is hosted: inside a
+   * dock column (`host="dock"`) it is a tab of the panel's own strip, while a
+   * `float` box carries `data-dockkit-float` itself and is drawn `position:
+   * fixed` at the rectangle the layout stores for it. `compat/right-panes.ts`
+   * reads the two apart to decide which tabs are still tabs and which are panes.
+   */
+  dockContent: '[data-dockkit-content]',
+  dockFloat: '[data-dockkit-float]',
+  /**
+   * DockKit's float header: the grip a pointer drags the pane by, and the two
+   * controls it draws — "dock back into the panel" and "close". The panes this
+   * plugin draws keep the grip's place as their title row (with the drag
+   * retired) and hide the dock control, because a pane is already docked in
+   * everything but name; the close control stays the reader's way out of one.
+   */
+  dockFloatGrip: '[data-dockkit-float-grip]',
+  dockFloatTitle: '[data-dockkit-float-title]',
+  dockFloatDock: '[data-dockkit-float-dock]',
+  dockFloatResize: '[data-dockkit-float-resize]',
+  /**
+   * ui-sidebar-right/shell/SidebarRight.tsx: the Session the panel on screen is
+   * drawing. The panel element is reused across Session switches, so the tabs
+   * this module floats are read for the Session this hook names rather than for
+   * whatever the layout last held.
+   */
+  rightbarSession: '[data-sidebar-right-session]',
   /**
    * ui-sidebar-files/FilesBody.tsx: the file tree's own hooks. The pane's header
    * is the root's non-body child (the scroller writes `data-files-body`), each

@@ -170,6 +170,7 @@ html[data-dsh-ccd-style="true"] {
   --ccd-right-panel-radius: var(--ccd-radius-panel);
   --ccd-right-panel-strip-height: 32px;
   --ccd-right-panel-gutter: 8px;
+  --ccd-right-panel-gap: 12px;
   /* The tab's own mark, measured off the reference: a 24px square (5px corner,
      carried by the chip radius) tinted #d3e2f9 behind the 16px glyph. */
   --ccd-right-panel-glyph-size: 24px;
@@ -203,6 +204,15 @@ html[data-dsh-ccd-style="true"] {
      sampled at #d3e2f9 with the accent for its glyph. It is the one tinted seat
      in this plugin's surfaces, so it is stated rather than derived. */
   --ccd-right-panel-glyph-bg: #d3e2f9;
+  /* The Files pane's own ink, sampled off the reference at @2x. Its tree names
+     and its empty state's title measure #0b0b0b — a step below this palette's
+     `--ccd-text`, the ink the rest of the interface draws — and its tab title
+     measures #52514f, between `--ccd-text` and `--ccd-text-secondary`. The tab
+     mark's glyph is the one blue that is not this palette's accent: the
+     reference draws it #304e91 on the #d3e2f9 square. */
+  --ccd-files-ink: #0b0b0b;
+  --ccd-right-panel-tab-ink: #52514f;
+  --ccd-files-chip-ink: #304e91;
 
   /* Lines */
   --ccd-border: #e3e3e1;
@@ -215,6 +225,8 @@ html[data-dsh-ccd-style="true"] {
      the row outline above and the same ink the menu cards' own border carries,
      which is what makes a floating panel and a menu read as one material. */
   --ccd-right-panel-border: #d7d7d6;
+  --ccd-browser-canvas: #f7f7f7;
+  --ccd-browser-dot: #d1d0ce;
 
   /* Scrollbar ink. The host paints the scrollbars themselves
      (`ui-theme/src/styles/scrollbar.css`: a 5px track and a pill thumb read
@@ -425,6 +437,28 @@ html[data-dsh-ccd-style="true"] {
      own `arrowOpen` state still drives the quarter turn. */
   --ccd-icon-chevron-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M6 12L9.29289 8.70711C9.68342 8.31658 9.68342 7.68342 9.29289 7.29289L6 4' stroke='black'/%3E%3C/svg%3E");
 
+  /* The Files tree's two file marks, measured off the reference at @2x: a page
+     with its bottom-right corner folded, and the angle-bracket pair, each drawn
+     8–9px wide inside the 16px seat the host's own type glyphs occupy (the
+     reference's names then start on the same 33px the row's own gap states).
+     DSH classifies a file by name and extension too, but its set is a
+     different one — `.gitignore` is a git file to the host and a plain page to
+     the reference, `LICENSE` a page to both — so `right-panel.css` carries the
+     reference's own split as an extension list rather than reading the host's. */
+  --ccd-icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M5.5 4.5H10.5C11.0523 4.5 11.5 4.94772 11.5 5.5V8.5L8.5 11.5H5.5C4.94772 11.5 4.5 11.0523 4.5 10.5V5.5C4.5 4.94772 4.94772 4.5 5.5 4.5Z' stroke='black'/%3E%3Cpath d='M8.5 8.5H11.5L8.5 11.5' stroke='black'/%3E%3C/svg%3E");
+  --ccd-icon-file-code: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M6.2 5.2L4.2 8.05L6.2 10.9' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.8 5.2L11.8 8.05L9.8 10.9' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.4 4.6L6.6 11.4' stroke='black' stroke-linecap='round'/%3E%3C/svg%3E");
+
+  /* The Files tab's mark: the reference draws a three-row list — a bullet and a
+     rule per row — 12px of ink on the tab's own blue square, so the artwork is
+     stated on the square's 24-unit grid. The square itself is a seat the tab
+     sheet paints; this is only the ink that sits in it. */
+  --ccd-icon-files-list: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='black'%3E%3Crect x='6' y='6.5' width='2' height='2' rx='.5'/%3E%3Crect x='9.5' y='6.5' width='8' height='2' rx='.5'/%3E%3Crect x='6' y='11' width='2' height='2' rx='.5'/%3E%3Crect x='9.5' y='11' width='8' height='2' rx='.5'/%3E%3Crect x='6' y='15.5' width='2' height='2' rx='.5'/%3E%3Crect x='9.5' y='15.5' width='8' height='2' rx='.5'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* The Files pane's magnifier, for the filter field's leading seat and for the
+     one control the pane's header adds: a lens and a handle, 13px of ink in the
+     16px box the field's own row draws, one 1px stroke like the marks around it. */
+  --ccd-icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Ccircle cx='6.6' cy='6.6' r='4.6' stroke='black'/%3E%3Cpath d='M9.9 9.9L13.9 13.9' stroke='black' stroke-linecap='round'/%3E%3C/svg%3E");
+
   /* The archived Session row's leading mark. The host deliberately leaves that
      16px cell empty, so the plugin paints the same geometry itself: DSH's own
      `IconArchiveOutlineRegular` artwork (ui-primitives, MIT) — a lid, a body and
@@ -541,6 +575,13 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   /* The tab mark's tint, dark side: the accent's own hue over this card, which
      is the #d3e2f9 relationship the light side measures, not its value. */
   --ccd-right-panel-glyph-bg: #2b3a55;
+  /* The Files pane's inks go back to the palette's own ramp here: the reference
+     is a light-mode capture, and its three sampled values are only meaningful
+     as relationships (a step below the body ink, a step above the muted one and
+     the accent's own hue) that this side already carries. */
+  --ccd-files-ink: var(--ccd-text);
+  --ccd-right-panel-tab-ink: var(--ccd-text);
+  --ccd-files-chip-ink: var(--ccd-accent);
 
   /* Lines */
   --ccd-border: #3e3e3b;
@@ -551,6 +592,8 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   /* The card outline's dark side: one step above the row outline, as in the
      light palette. */
   --ccd-right-panel-border: #474743;
+  --ccd-browser-canvas: #242423;
+  --ccd-browser-dot: #454542;
 
   /* Scrollbar ink, dark side: on this canvas the bar is the one piece of the
      chrome that has to read as raised, so it sits above every surface step
