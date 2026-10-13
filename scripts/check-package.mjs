@@ -32,6 +32,10 @@ const sandbox = {
     __ModuleLoader__: { load(row) { assert.equal(registration, undefined); registration = row; } },
     addEventListener() { listenersOpened += 1; },
     removeEventListener() { listenersClosed += 1; },
+    /* The scrollbars' pills arm a fade when a surface stops moving; nothing
+       scrolls in this fixture, so no timer is ever left behind. */
+    setTimeout: (callback, ms) => setTimeout(callback, ms),
+    clearTimeout: handle => clearTimeout(handle),
   },
   console,
 };
@@ -76,22 +80,51 @@ function fakeSessionRow(key) {
   };
 }
 const [chatRow, blankRow] = [fakeSessionRow('session:session-1'), fakeSessionRow('session:session-2')];
+/**
+ * One element of the fixture's DOM: attributes, inline style and children,
+ * which is everything the modules that build chrome of their own need — the
+ * overlay layer the scrollbars' pills live in, and the stylesheets.
+ */
+function fakeElement(tag) {
+  const elementAttributes = new Map();
+  const children = [];
+  const element = {
+    tagName: String(tag).toUpperCase(),
+    dataset: {},
+    textContent: '',
+    style: {
+      setProperty: (name, value) => elementAttributes.set(`style:${name}`, value),
+      removeProperty: name => elementAttributes.delete(`style:${name}`),
+      getPropertyValue: name => elementAttributes.get(`style:${name}`) ?? '',
+    },
+    children,
+    isConnected: true,
+    getAttribute: name => elementAttributes.get(name) ?? null,
+    setAttribute: (name, value) => elementAttributes.set(name, value),
+    hasAttribute: name => elementAttributes.has(name),
+    removeAttribute: name => elementAttributes.delete(name),
+    append: (...nodes) => children.push(...nodes),
+    remove() {
+      styles.delete(element);
+      const index = children.indexOf(element);
+      if (index >= 0) children.splice(index, 1);
+    },
+  };
+  return element;
+}
 sandbox.document = {
   documentElement: {
     getAttribute: key => attributes.get(key) ?? null,
     setAttribute: (key, value) => attributes.set(key, value),
     removeAttribute: key => attributes.delete(key),
   },
-  body: {},
+  body: fakeElement('body'),
   hidden: false,
   querySelector: selector => (selector === ANCHOR.composerCardHero ? heroCard : null),
   querySelectorAll: selector => (selector === ANCHOR.sessionRows ? [chatRow, blankRow] : []),
   addEventListener() { documentListenersOpened += 1; },
   removeEventListener() { documentListenersClosed += 1; },
-  createElement: () => {
-    const style = { dataset: {}, textContent: '', remove: () => styles.delete(style) };
-    return style;
-  },
+  createElement: tag => fakeElement(tag),
   head: { appendChild: style => styles.add(style) },
 };
 heroCard = {
@@ -130,6 +163,7 @@ const dictionaries = [];
 let modelScopes = 0;
 let headerScopes = 0;
 let petScopes = 0;
+let paneScopes = 0;
 let settingsScopes = 0;
 const openedKinds = [];
 const focusedTabs = [];
@@ -272,6 +306,13 @@ function injectService(dependencies, mount) {
     scope = 'pet';
     release = mount({ slots });
     petScopes += 1;
+  } else if (names === 'sidebarRight') {
+    /* The panel's pane layer (`compat/right-panes.ts`): it reads the panel's own
+       face and, over a document that draws no panel, floats nothing — the
+       injection's lifetime is what this checks. */
+    scope = 'panes';
+    release = mount({ sidebarRight });
+    paneScopes += 1;
   } else {
     assert.equal(names, 'slots,locale', 'unexpected injection');
     scope = 'settings';
@@ -287,6 +328,7 @@ function injectService(dependencies, mount) {
       if (scope === 'header') headerScopes -= 1;
       else if (scope === 'model') modelScopes -= 1;
       else if (scope === 'pet') petScopes -= 1;
+      else if (scope === 'panes') paneScopes -= 1;
       else {
         settingsScopes -= 1;
         for (const effect of settingsEffects.splice(0).reverse()) effect();
@@ -325,8 +367,9 @@ assert.equal(settingsScopes, 1);
 // Re-enabling through the settings transport activates without a reload.
 configForms.published({ ...disabled, enabled: true });
 assert.equal(attributes.get('data-dsh-ccd-style'), 'true');
-// Design variables, the shared composer geometry, the host popup chrome, and the page stylesheet.
-assert.equal(styles.size, 4);
+// Design variables, the shared composer geometry, the host popup chrome, the
+// window's scrollbar ink, and the page stylesheet.
+assert.equal(styles.size, 5);
 assert.equal(paletteLayers, 1);
 // Exercise the actual bundled model-seat registration and its cleanup scope.
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, conversation: true } });
@@ -335,7 +378,8 @@ assert.equal(modelScopes, 1);
 assert.equal(headerViews.size, 3);
 assert.equal(cornerSeats.size, 1);
 assert.equal(headerScopes, 1);
-assert.equal(styles.size, 8); // page + theme + Composer + menus + model controls + effort + conversation + header actions
+assert.equal(paneScopes, 1, 'the pane layer holds the panel face while the interface is on');
+assert.equal(styles.size, 10); // page + theme + Composer + menus + scrollbars + model controls + effort + conversation + header actions + header menus
 /* The whale has its own switch, so the conversation feature alone mounts none. */
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);
@@ -381,8 +425,8 @@ configForms.published({
 });
 assert.equal(blankPetSeats.size, 1);
 assert.equal(petScopes, 1);
-// page + theme + Composer + menus + model controls + effort + conversation + header actions + new session + pet
-assert.equal(styles.size, 10);
+// page + theme + Composer + menus + scrollbars + model controls + effort + conversation + header actions + header menus + new session + pet
+assert.equal(styles.size, 12);
 const petFace = [...blankPetSeats][0].inject();
 // The pet is decoration: the seat injects the measured corner and nothing else
 // — no session, no reaction state, no timer, no copy.
@@ -398,7 +442,7 @@ assert.equal(blankRow.getAttribute('data-ccd-blank-session'), '', 'the blank Ses
 assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Session row stays in the list');
 /* The sidebar feature mounts its column, account-menu and navigation artwork
    sheets, plus the view-options card's own. */
-assert.equal(styles.size, 8);
+assert.equal(styles.size, 9);
 assert.equal(viewOptionsSeats.size, 1, 'the sidebar draws the view-options card');
 assert.deepEqual(
   Object.keys([...viewOptionsSeats][0].inject()).sort(),
@@ -419,6 +463,7 @@ assert.equal(modelScopes, 0);
 assert.equal(headerViews.size, 0);
 assert.equal(cornerSeats.size, 0);
 assert.equal(headerScopes, 0);
+assert.equal(paneScopes, 0, 'the pane layer releases the panel face with the interface');
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);
 assert.equal(rowConfigPages.size, 1);

@@ -11,6 +11,8 @@
 
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { readFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 
 const chromeCandidates = [
   process.env.CHROME,
@@ -124,7 +126,10 @@ export class Devtools {
  * @returns whatever `callback` returns.
  */
 export async function withPage({ url, width, height, scale = 1, transparent = false, profile }, callback) {
-  const port = 9222 + (process.pid % 1000);
+  // Chrome chooses an unused port. PID-modulo ports can collide with a live
+  // DSH renderer or another browser test and attach to the wrong page.
+  const portFile = join(profile, 'DevToolsActivePort');
+  await rm(portFile, { force: true });
   const child = spawn(findChrome(), [
     '--headless=new',
     '--disable-gpu',
@@ -134,11 +139,20 @@ export async function withPage({ url, width, height, scale = 1, transparent = fa
     '--allow-file-access-from-files',
     `--force-device-scale-factor=${scale}`,
     `--user-data-dir=${profile}`,
-    `--remote-debugging-port=${port}`,
+    '--remote-debugging-port=0',
     `--window-size=${width},${height}`,
     'about:blank',
   ], { stdio: 'ignore' });
   try {
+    let port = 0;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const value = await readFile(portFile, 'utf8').catch(() => '');
+      port = Number.parseInt(value, 10);
+      if (Number.isFinite(port) && port > 0) break;
+      if (child.exitCode !== null) throw new Error(`Chrome exited before exposing DevTools (${child.exitCode})`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (!Number.isFinite(port) || port <= 0) throw new Error('Chrome did not publish its DevTools port');
     const devtools = await Devtools.open(port);
     await devtools.ready;
     try {
