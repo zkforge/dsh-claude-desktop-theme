@@ -91,7 +91,10 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         await click('[data-ccd-session-trigger]'); await choose(menu, '重命名');
         await page.evaluate(`const input=document.querySelector('[data-ccd-session-rename]');input.value='  Blurred  ';input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true}))`);
         assert.equal(await page.evaluate('calls.length'), 1, 'IME confirmation does not save');
+        // A headless page without window focus does not dispatch blur(); focus emulation gives the real blur path.
+        await page.send('Emulation.setFocusEmulationEnabled', { enabled: true });
         await page.evaluate(`document.querySelector('[data-ccd-session-rename]').blur()`);
+        await page.send('Emulation.setFocusEmulationEnabled', { enabled: false });
         assert.deepEqual(await page.evaluate('calls.at(-1)'), ['rename', 's1', 'Blurred']);
         await page.evaluate('calls.splice(1)');
         await click('[data-ccd-session-trigger]'); await key('f');

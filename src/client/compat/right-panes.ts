@@ -216,6 +216,9 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       closeTabs: group.tabs,
       onSelect: id => { if (group.id === TERMINAL_GROUP) state.terminal = id; else state.preview = id; sidebar.focus(id); schedule(); },
       onClose: id => {
+        // The group closes one tab at a time; hold the Files tree back while
+        // previews remain, or the sync between two closes reopens it.
+        state.requestedFiles = true;
         const close = root.querySelector<HTMLButtonElement>(`[data-dockkit-content="${id}"] [data-dockkit-float-close]`);
         if (close) { close.setAttribute('data-ccd-close-tab', ''); close.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); close.removeAttribute('data-ccd-close-tab'); }
       },

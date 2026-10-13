@@ -325,8 +325,9 @@ test('the browsing header merges with the first workspace row and falls back wit
       await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 2, y: 418 });
       await devtools.evaluate(`document.activeElement?.blur();new Promise(resolve=>setTimeout(resolve,150))`);
       /* The host wraps the menu trigger in the primitive's own span, which is
-         the box the plugin fades; the trigger inside it keeps its 16px box. */
-      assert.equal(await devtools.evaluate(`document.querySelector('#menu-first').parentElement.getBoundingClientRect().width`), 16);
+         the box the plugin fades; the trigger inside it takes the 28px button
+         treatment that Search and View options share. */
+      assert.equal(await devtools.evaluate(`document.querySelector('#menu-first').parentElement.getBoundingClientRect().width`), 28);
       assert.equal(await settled(devtools, '#menu-first', true), '0', 'the row menu stands down');
       assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'add workspace stays out at rest');
 
@@ -360,7 +361,7 @@ test('the browsing header merges with the first workspace row and falls back wit
       await page(devtools, searching);
       await settle(devtools);
       geometry = await devtools.evaluate(boxes);
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionHeader')).backgroundColor`), 'rgb(251, 251, 250)', 'the band covers the row while the field is up');
+      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionHeader')).backgroundColor`), 'rgb(251, 251, 249)', 'the band covers the row while the field is up');
       assert.equal(await settled(devtools, '._7514NG_searchInput'), '1');
       assert(geometry.search.width >= geometry.header.width - 16, `the field spans the band (${geometry.search.width} of ${geometry.header.width})`);
       assert(Math.abs(geometry.header.y - geometry.row.y) < 1, 'the band still shares the row line');
