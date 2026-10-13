@@ -1,4 +1,4 @@
-/** Reference browser menus, with native webview capture and honest fallbacks. */
+/** Browser capture menu backed by the native webview. */
 export interface BrowserPopupLayout {
   readonly width: number;
   readonly align: 'start' | 'end';
@@ -7,7 +7,6 @@ interface BrowserMenuActions {
   popup(anchor: HTMLElement, content: HTMLElement, layout: BrowserPopupLayout): void;
   dismiss(): void;
   notice(anchor: HTMLElement, text: string): void;
-  address(): void;
 }
 interface CapturedImage {
   isEmpty?(): boolean;
@@ -19,7 +18,6 @@ interface CaptureView extends HTMLElement {
   isLoading?(): boolean;
 }
 export interface BrowserMenus {
-  open(anchor: HTMLElement): void;
   more(anchor: HTMLElement): void;
   release(): void;
 }
@@ -58,38 +56,6 @@ export function mountBrowserMenus(node: HTMLElement, actions: BrowserMenuActions
     parent.append(button);
     return button;
   };
-  const section = (parent: HTMLElement, label: string) => {
-    const group = document.createElement('section');
-    group.setAttribute('role', 'group'); group.setAttribute('aria-label', label);
-    const heading = document.createElement('div');
-    heading.setAttribute('data-ccd-browser-menu-heading', ''); heading.textContent = label;
-    group.append(heading); parent.append(group); return group;
-  };
-  const separator = (parent: HTMLElement) => {
-    const line = document.createElement('hr'); line.setAttribute('role', 'separator'); parent.append(line);
-  };
-  const unavailable = (parent: HTMLElement, label: string, attribute: string, anchor: HTMLElement, message: string) => {
-    const button = row(parent, label, () => actions.notice(anchor, message), attribute);
-    button.setAttribute('aria-disabled', 'true');
-    return button;
-  };
-  const open = (anchor: HTMLElement) => {
-    const content = menu('sources');
-    const servers = section(content, 'Servers');
-    const server = document.createElement('div'); server.setAttribute('data-ccd-browser-server', ''); servers.append(server);
-    const name = row(server, 'dev', actions.address, 'data-ccd-browser-server-address');
-    name.title = 'Enter server address';
-    unavailable(server, 'Run', 'data-ccd-browser-run', anchor, 'DSH 尚未开放开发服务器的启动接口。请在终端启动项目，再在标题栏输入 HTTP/HTTPS 服务地址。');
-    separator(content);
-    const files = section(content, 'Files');
-    unavailable(files, 'Open file', 'data-ccd-browser-open-file', anchor, 'DSH 浏览器只接受 HTTP/HTTPS 地址，暂不支持直接打开本地文件；本地文件可通过 Files 面板查看。');
-    separator(content);
-    const settings = section(content, 'Settings');
-    unavailable(settings, 'Keep cookies', 'data-ccd-browser-cookies', anchor, 'DSH 在本次应用运行期间按工作区保留 Cookie，尚未开放跨应用重启保留的开关。');
-    unavailable(settings, 'Disable auto verify', 'data-ccd-browser-verify', anchor, 'DSH 未提供 Claude 的浏览器自动验证设置。');
-    unavailable(settings, 'Edit configuration in VS Code', 'data-ccd-browser-config', anchor, 'DSH 没有对应的 Claude 浏览器配置文件，暂时无法通过此项在 VS Code 编辑配置。');
-    actions.popup(anchor, content, { width: 204, align: 'start' });
-  };
   const capture = async (anchor: HTMLElement) => {
     const view = frame();
     if (!canCapture() || !view?.capturePage) return;
@@ -112,5 +78,5 @@ export function mountBrowserMenus(node: HTMLElement, actions: BrowserMenuActions
     save.disabled = !canCapture();
     actions.popup(anchor, content, { width: 130, align: 'end' });
   };
-  return { open, more, release() { disposed = true; } };
+  return { more, release() { disposed = true; } };
 }

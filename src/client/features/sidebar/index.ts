@@ -12,7 +12,7 @@ import { SIDEBAR_NAVIGATION_ICONS } from './navigation-icons.ts';
  * Sidebar presentation: compact navigation rows, flat project groups and a
  * calmer foot. Every entry DSH registers — New Session, the global panel list,
  * the workspace browser and Settings — stays exactly where the host put it; the
- * account menu is reshaped, never re-authored.
+ * account menu gains a More submenu that forwards the host feedback action.
  *
  * The one list policy this module owns is the provisional New Session row: DSH
  * creates the Session as soon as New Session is used, and the host marks that
@@ -40,6 +40,7 @@ export const sidebarFeature: ImplementedFeature = {
     scope.add(mountAccountMenu(
       document,
       error => environment.logger.error('sidebar: account menu observer failed', error),
+      environment.host.themePreference,
     ));
     const blankSessions = environment.host.blankSessions;
     if (blankSessions === null) {

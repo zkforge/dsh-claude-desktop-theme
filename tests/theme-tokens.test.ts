@@ -140,12 +140,12 @@ test('the dark palette keeps the light palette relationships', () => {
   const lightCanvas = channels(lightVars, 'ccd-canvas');
   const darkCanvas = channels(darkVars, 'ccd-canvas');
   assert.ok(brightness(darkColour('ccd-canvas') ?? '#000') < brightness(declaredColour('ccd-canvas') ?? '#fff'));
-  /* The canvas is the lighter of the two page surfaces in both schemes, the
-     card is the brightest surface in both, and the track is a groove in both. */
+  /* The active flat sidebar is darker than the page; cards stay brighter.
+     The control track remains below the raised thumb in both schemes. */
   assert.ok(luminance(darkCanvas) > luminance(channels(darkVars, 'ccd-sidebar')));
   assert.ok(luminance(channels(darkVars, 'ccd-card')) > luminance(darkCanvas));
   assert.ok(luminance(channels(lightVars, 'ccd-card')) > luminance(lightCanvas));
-  assert.ok(luminance(darkCanvas) > luminance(channels(darkVars, 'ccd-track')));
+  assert.ok(luminance(channels(darkVars, 'ccd-raised')) > luminance(channels(darkVars, 'ccd-track')));
   assert.ok(luminance(lightCanvas) > luminance(channels(lightVars, 'ccd-track')));
   assert.ok(luminance(channels(darkVars, 'ccd-card')) > luminance(channels(darkVars, 'ccd-track')));
   /* Body copy and secondary copy stay readable on their own canvas. */
@@ -171,7 +171,7 @@ test('colour arithmetic is deterministic and stays in range', () => {
 test('an unconfigured plugin publishes the built-in pair for every host token', () => {
   const tokens = resolveThemeTokens(resolveConfig());
   assert.deepEqual(tokens['--dsw-alias-bg-base'], { light: '#fcfcfb', dark: BUILT_IN_DARK.canvas });
-  assert.deepEqual(tokens['--dsw-specific-sidebar-fill'], { light: '#fbfbfa', dark: BUILT_IN_DARK.sidebar });
+  assert.deepEqual(tokens['--dsw-specific-sidebar-fill'], { light: '#fbfbf9', dark: BUILT_IN_DARK.sidebar });
   assert.deepEqual(tokens['--dsw-alias-border-l3'], { light: '#e3e3e1', dark: BUILT_IN_DARK.border });
   assert.equal('--ccd-canvas' in tokens, false);
   assert.equal('--ccd-sidebar' in tokens, false);
@@ -208,7 +208,7 @@ test('a configured canvas brings its own light steps and leaves the dark palette
   }
   assert.ok(brightness(tokens['--ccd-card']?.light ?? base) > brightness(base), 'the card sits above the canvas');
   assert.equal('--ccd-sidebar' in tokens, false);
-  assert.deepEqual(tokens['--dsw-specific-sidebar-fill'], { light: '#fbfbfa', dark: BUILT_IN_DARK.sidebar });
+  assert.deepEqual(tokens['--dsw-specific-sidebar-fill'], { light: '#fbfbf9', dark: BUILT_IN_DARK.sidebar });
 });
 
 test('a configured sidebar stays independent of the canvas in both schemes', () => {

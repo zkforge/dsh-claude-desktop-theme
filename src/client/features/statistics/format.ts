@@ -1,17 +1,17 @@
 /**
  * Number and date formatting for the statistics card.
  *
- * The card's copy is English, so its separators and its 12-hour clock are too:
- * every formatter here is fixed to `en-US`, which is what the reference uses.
+ * The card uses Simplified Chinese dates and a 24-hour clock. Compact token
+ * units stay unchanged so the metrics and chart labels fit the card.
  * They live in their own module because both the data layer (`view.ts`) and the
  * DOM layer (`card.ts`) need them, and neither should import the other.
  */
 
-/** The copy is English, so the numbers are formatted for it as well. */
-const LOCALE = 'en-US';
+/** Match the Chinese card copy. */
+const LOCALE = 'zh-CN';
 
 const COUNT = new Intl.NumberFormat(LOCALE);
-const HOUR = new Intl.DateTimeFormat(LOCALE, { hour: 'numeric' });
+const HOUR = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 /* The day key is a local calendar day, so it is read back in UTC: parsing
    `YYYY-MM-DD` yields UTC midnight and formatting it in the local zone could
    shift the label by a day. */
@@ -45,7 +45,7 @@ export function formatTokens(value: number): string {
 }
 
 /**
- * One hour of the day, as the reference labels it (`11 AM`).
+ * One hour of the day in the 24-hour clock (`11:00`).
  *
  * @param hour - local hour, 0-23.
  * @returns the label.
@@ -55,7 +55,7 @@ export function formatHour(hour: number): string {
 }
 
 /**
- * One `YYYY-MM-DD` key as the reference labels a chart day (`Sep 30`).
+ * One `YYYY-MM-DD` key as a Chinese chart date (`9月30日`).
  *
  * @param date - local day key.
  * @returns the short label.

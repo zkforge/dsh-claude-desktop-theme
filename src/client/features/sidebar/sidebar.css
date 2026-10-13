@@ -512,6 +512,38 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions {
   display: inline-flex;
   order: 2;
   margin-left: auto;
+  gap: 4px;
+}
+
+/* Workspace actions share the Search/View options button treatment, including
+   the overflow trigger nested inside the host's menu wrapper. */
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button,
+html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ccd-text-secondary);
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button:hover,
+html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton):hover {
+  color: var(--ccd-text);
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button svg,
+html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
 }
 
 /* The create button is the container's last *button*, not its last child — the
@@ -529,10 +561,11 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:l
 
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:last-of-type::before {
   content: "";
-  width: 14px;
-  height: 14px;
+  flex: none;
+  width: 16px;
+  height: 16px;
   background-color: currentColor;
-  mask: var(--ccd-icon-plus) center / 14px 14px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8 2V14M2 8H14' stroke='black' stroke-width='1.25' stroke-linecap='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
 }
 
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_title {

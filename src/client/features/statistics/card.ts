@@ -215,7 +215,7 @@ function createOverview(document: Document, data: StatsOverviewData, tips: Map<H
   const heat = document.createElement('div');
   heat.className = 'ccd-stats-heat';
   heat.setAttribute('role', 'img');
-  heat.setAttribute('aria-label', 'Daily activity heatmap');
+  heat.setAttribute('aria-label', '每日活跃热力图');
   for (let column = 0; column < HEAT_COLUMNS; column += 1) {
     const col = document.createElement('div');
     col.className = 'ccd-stats-heat-col';
@@ -251,7 +251,7 @@ function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLE
   const chart = document.createElement('div');
   chart.className = 'ccd-stats-chart';
   chart.setAttribute('role', 'img');
-  chart.setAttribute('aria-label', 'Daily tokens by model');
+  chart.setAttribute('aria-label', '各模型每日 Token 用量');
 
   const axis = document.createElement('div');
   axis.className = 'ccd-stats-chart-y';
@@ -312,7 +312,7 @@ function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLE
   if (data.legend.length === 0) {
     const empty = document.createElement('span');
     empty.className = 'ccd-stats-empty';
-    empty.textContent = 'No model usage in this range';
+    empty.textContent = '此时间范围内暂无模型用量';
     legend.append(empty);
   }
   data.legend.forEach((row, index) => {
@@ -340,13 +340,13 @@ function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLE
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'ccd-stats-more';
-    more.textContent = `Show ${String(data.moreCount)} more`;
+    more.textContent = `展开其余 ${String(data.moreCount)} 个模型`;
     more.setAttribute('aria-expanded', 'false');
     more.addEventListener('click', () => {
       const expanded = more.getAttribute('aria-expanded') === 'true';
       const next = !expanded;
       more.setAttribute('aria-expanded', String(next));
-      more.textContent = next ? 'Show less' : `Show ${String(data.moreCount)} more`;
+      more.textContent = next ? '收起' : `展开其余 ${String(data.moreCount)} 个模型`;
       for (const [index, row] of [...legend.querySelectorAll<HTMLElement>('.ccd-stats-legend-row')].entries()) {
         row.hidden = !next && index >= LEGEND_LIMIT;
       }
@@ -376,10 +376,10 @@ export function createStatsCard(
 
   const header = document.createElement('div');
   header.className = 'ccd-stats-header';
-  const tabs = createSegments(document, 'Stats view', data.tabs, data.tab, handlers.onTab);
+  const tabs = createSegments(document, '统计视图', data.tabs, data.tab, handlers.onTab);
   const spacer = document.createElement('span');
   spacer.className = 'ccd-stats-spacer';
-  const ranges = createSegments(document, 'Date range', data.ranges, data.range, handlers.onRange);
+  const ranges = createSegments(document, '时间范围', data.ranges, data.range, handlers.onRange);
   header.append(tabs, spacer, ranges);
 
   const body = document.createElement('div');

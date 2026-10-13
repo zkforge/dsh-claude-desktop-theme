@@ -1,5 +1,7 @@
 /* Reference crops are @2x: 136/192px cards, 24px rows and 10px corners. */
 html[data-dsh-ccd-style="true"] .ST7X_W_header:has([data-ccd-session-title]) {
+  /* Equal spacing between the title controls, project chip and team entry. */
+  --ccd-header-group-gap: 10px;
   padding-top: 6px;
   padding-bottom: 6px;
   padding-left: 18px;
@@ -16,6 +18,34 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb {
   padding: 0;
   font-size: 14px;
   line-height: 24px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-editing] > :not([data-ccd-session-icon], [data-ccd-session-trigger], [data-ccd-session-rename]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-rename] {
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 4px;
+  outline: none;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 500 14px/24px var(--ccd-font-ui);
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-title][data-ccd-session-editing] {
+  overflow: visible;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-rename]:focus {
+  outline: 2px solid Highlight;
+  outline-offset: 1px;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-icon] {
@@ -53,7 +83,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-project-trigger] {
   min-width: 0;
   max-width: min(220px, 40%);
   height: 20px;
-  margin-left: 6px;
+  margin-left: var(--ccd-header-group-gap);
   padding: 0 5px;
   border: 0;
   border-radius: 6px;
@@ -181,18 +211,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] {
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] p { margin: 0 0 12px; }
-html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] label { display: block; }
-html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] input {
-  box-sizing: border-box;
-  width: 100%;
-  margin: 8px 0 12px;
-  padding: 6px 8px;
-  border: 1px solid var(--ccd-border);
-  border-radius: 5px;
-  background: var(--ccd-canvas);
-  color: inherit;
-  font: inherit;
-}
 html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] button {
   margin-right: 6px;
   padding: 4px 12px;

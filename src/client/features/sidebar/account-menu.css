@@ -4,7 +4,7 @@
  * The reference draws the card the sidebar's account row opens as a wide menu
  * whose first block is the account itself. The compat layer tags the open menu
  * (`compat/account-menu.ts`) and mirrors the signed-in name onto it, so these
- * rules only reshape the host's own rows: no row is added, renamed or reordered.
+ * rules reshape the host's rows and the plugin's More submenu.
  *
  * Menu surfaces and rows come from ui-primitives `Menu.module.css`; the tag is
  * the plugin's own. Sources are pinned in src/client/compat/host-dom.ts.
@@ -115,4 +115,131 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-menu] div:has(> [role="menuite
    glyph keeps the slot's centre. */
 html[data-dsh-ccd-style="true"] [data-ccd-account-menu] [role="menuitem"] > span:first-child > span > svg {
   transform: scale(0.875);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more] > [data-ccd-account-more-original] {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more] > span[aria-hidden],
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] span[aria-hidden] {
+  display: flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more] svg,
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-chevron] {
+  margin-inline-start: auto;
+  color: var(--ccd-text-muted);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more][aria-expanded="true"] {
+  background: var(--ccd-hover);
+}
+
+/* The top layer keeps the flyout clear of the native menu's scroll viewport. */
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  width: var(--ccd-account-menu-width);
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--ccd-account-menu-padding);
+  border: 1px solid var(--ccd-border);
+  border-radius: var(--ccd-radius-panel);
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-effort-shadow);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu][hidden] {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-weight: 400;
+  text-align: start;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] > [role="separator"] {
+  height: 1px;
+  margin: 4px 10px;
+  background: var(--ccd-border-soft);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  margin-top: 4px;
+  padding: 6px 10px 2px;
+  border-top: 0.5px solid var(--ccd-border-soft);
+  color: var(--ccd-text);
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme] > [role="group"] {
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+  border-radius: var(--ccd-radius-row);
+  background: var(--ccd-track);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme] button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--ccd-radius-row);
+  color: var(--ccd-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme] button:hover {
+  color: var(--ccd-text);
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme] button[aria-checked="true"] {
+  border-color: var(--ccd-border-soft);
+  color: var(--ccd-text);
+  background: var(--ccd-card);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme] button:focus-visible {
+  outline: 1px solid var(--ccd-text-muted);
+  outline-offset: 1px;
 }

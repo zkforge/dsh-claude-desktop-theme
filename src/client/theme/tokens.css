@@ -181,9 +181,10 @@ html[data-dsh-ccd-style="true"] {
   --ccd-files-field-height: 26px;
   --ccd-files-glyph-size: 16px;
 
-  /* Surfaces */
+  /* Claude Desktop 2.31226.1's active flat frame, confirmed by window capture:
+     gray-10 canvas; sidebar mixes gray-20 and gray-10 equally in sRGB. */
   --ccd-canvas: #fcfcfb;
-  --ccd-sidebar: #fbfbfa;
+  --ccd-sidebar: #fbfbf9;
   --ccd-card: #ffffff;
   /* Segmented-control track. The reference measures #f6f6f4 against a white
      page; the same step down from this canvas keeps the same contrast. */
@@ -546,12 +547,11 @@ html[data-dsh-ccd-style="true"] body {
  * separate; text keeps the light palette's descending tone order.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
-  /* Surfaces. The track is the one surface that steps *down* in both schemes:
-     it is the groove a raised thumb or selected segment sits in, so on the dark
-     canvas it takes the sidebar's darker step rather than the card's brighter
-     one (otherwise the raised piece would be invisible). */
-  --ccd-canvas: #262624;
-  --ccd-sidebar: #1f1e1d;
+  /* The same flat frame uses gray-850 for the dark page and mixes it with
+     20% black for the sidebar. The control track stays below its raised thumb
+     while both sit above the darker page. */
+  --ccd-canvas: #151515;
+  --ccd-sidebar: #111111;
   --ccd-card: #30302e;
   --ccd-header-menu-border: var(--ccd-border);
   --ccd-header-menu-separator: var(--ccd-border-soft);

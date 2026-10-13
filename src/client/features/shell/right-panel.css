@@ -823,6 +823,10 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-chrome] [data-dockkit-float-close
 html[data-dsh-ccd-style="true"] [data-ccd-pane-close-icon] {
   display: inline-flex;
 }
+/* Terminal and Files headers omit the overflow control. */
+html[data-dsh-ccd-style="true"] :is([data-ccd-pane-kind="terminal"], [data-ccd-pane-kind="files"], [data-ccd-pane-kind="text"]) [data-ccd-pane-more] {
+  display: none;
+}
 html[data-dsh-ccd-style="true"] [data-ccd-browser-address] {
   border-radius: 6px;
   display: flex;
@@ -830,15 +834,12 @@ html[data-dsh-ccd-style="true"] [data-ccd-browser-address] {
   justify-content: center;
   flex: none;
   gap: 4px;
-  width: 48px !important;
+  width: 24px !important;
   height: 24px !important;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-address] svg:last-child {
-  width: 12px !important;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-pane-controls] > button:disabled {
   color: var(--ccd-text-muted);
@@ -848,28 +849,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-controls] > button:disabled {
 /* The native directory actions live in More; the filter has the whole row. */
 html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) > :not([data-ccd-files-filter]) {
   display: none;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-pane-seam] > [data-ccd-files-switch] {
-  position: absolute;
-  left: -7px;
-  top: -28px;
-  width: 26px;
-  height: 26px;
-  padding: 5px;
-  border: 0;
-  border-radius: var(--ccd-chip-radius);
-  background: var(--ccd-card);
-  color: var(--ccd-text-muted);
-  opacity: 0;
-  cursor: pointer;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-pane-seam]:is(:hover, :focus-within) > [data-ccd-files-switch] {
-  opacity: 1;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-pane-seam] > [data-ccd-files-switch] svg {
-  display: block;
-  width: 16px;
-  height: 16px;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-pane-menu] {
   position: fixed;
@@ -1130,7 +1109,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-terminal-workspace] {
 }
 
 
-/* Browser reference: left-aligned sources card and a single capture command. */
+/* Browser capture menu. */
 html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] {
   padding: 4px;
   border: .5px solid var(--ccd-view-menu-border);
@@ -1140,15 +1119,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] {
   font-family: var(--ccd-font-ui);
   font-size: 13px;
   line-height: 20px;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-menu-heading] {
-  box-sizing: border-box;
-  height: 24px;
-  padding: 4px 8px;
-  color: var(--ccd-view-menu-muted);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] button {
   box-sizing: border-box;
@@ -1167,35 +1137,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] button {
 html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] button:is(:hover, :focus-visible):not(:disabled) {
   background: var(--ccd-view-menu-hover);
   outline: none;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] > hr {
-  height: 0;
-  margin: 4px 8px;
-  border: 0;
-  border-top: 1px solid var(--ccd-view-menu-separator);
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-server] {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 32px;
-  padding-right: 24px;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-server] > [data-ccd-browser-server-address] {
-  width: auto;
-  flex: 1;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-server] > [data-ccd-browser-run] {
-  width: auto;
-  min-height: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border: 1px solid var(--ccd-border);
-  border-radius: 5px;
-  background: var(--ccd-card);
-  box-shadow: var(--ccd-shadow-segment);
-  font-size: 12px;
-  line-height: 18px;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] [data-ccd-browser-save-screenshot]:disabled {
   color: var(--ccd-view-menu-muted);
@@ -1233,4 +1174,21 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-browser-addr
   flex: 1;
   min-width: 0;
   height: 24px;
+}
+
+/* File preview: relative path below the title; reload beside header search. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] :is([data-document-viewer-menu], [data-textpreview-tool="reload"], [data-ccd-preview-path-source]),
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] [data-slot="sidebar.right.tab.document.actions"] {
+  display: none !important;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-preview-path] {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ccd-right-panel-tab-ink);
+  font-family: var(--ccd-font-ui);
+  font-size: 14px;
+  line-height: 20px;
 }

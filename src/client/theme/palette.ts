@@ -40,7 +40,7 @@ export interface Palette {
  */
 export const BUILT_IN_SURFACES = Object.freeze({
   canvas: '#fcfcfb',
-  sidebar: '#fbfbfa',
+  sidebar: '#fbfbf9',
   border: '#e3e3e1',
 });
 
@@ -52,8 +52,8 @@ export const BUILT_IN_SURFACES = Object.freeze({
  * every surface pair.
  */
 export const BUILT_IN_DARK: Palette = Object.freeze({
-  canvas: '#262624',
-  sidebar: '#1f1e1d',
+  canvas: '#151515',
+  sidebar: '#111111',
   card: '#30302e',
   track: '#1f1e1d',
   raised: '#2f2f2d',

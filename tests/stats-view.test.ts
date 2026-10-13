@@ -91,7 +91,7 @@ test('a window with no activity is entirely empty', () => {
   assert.deepEqual([...new Set(window.heat.map(cell => cell.level))], [0, null]);
 });
 
-test('counts, tokens and hours are written the way the reference writes them', () => {
+test('counts and compact tokens use Chinese dates and a 24-hour clock', () => {
   assert.equal(formatCount(1556), '1,556');
   assert.equal(formatCount(0), '0');
   assert.equal(formatTokens(493_100_000), '493.1M');
@@ -100,34 +100,34 @@ test('counts, tokens and hours are written the way the reference writes them', (
   assert.equal(formatTokens(1_500), '1.5k');
   assert.equal(formatTokens(999), '999');
   assert.equal(formatTokens(2_500_000_000), '2.5B');
-  assert.equal(formatHour(11), '11 AM');
-  assert.equal(formatHour(0), '12 AM');
-  assert.equal(formatHour(23), '11 PM');
-  assert.equal(formatDayLabel('2026-09-30'), 'Sep 30');
+  assert.equal(formatHour(11), '11:00');
+  assert.equal(formatHour(0), '00:00');
+  assert.equal(formatHour(23), '23:00');
+  assert.equal(formatDayLabel('2026-09-30'), '9月30日');
 });
 
-test('the heatmap tooltip is the reference\u2019s own line', () => {
-  assert.equal(heatTip('2026-09-30', 1387), 'Sep 30 \u2014 1,387');
-  assert.equal(heatTip('2026-10-03', 0), 'Oct 3 \u2014 0');
+test('the heatmap tooltip uses Chinese dates', () => {
+  assert.equal(heatTip('2026-09-30', 1387), '9月30日 \u2014 1,387');
+  assert.equal(heatTip('2026-10-03', 0), '10月3日 \u2014 0');
 });
 
-test('the card data keeps the reference header, tile order and hidden metrics', () => {
+test('the card data uses Chinese labels and keeps tile order and hidden metrics', () => {
   const data = buildCardData(snapshot({ busyHour: null }), { tab: 'overview', range: 'all' }, () => 0, NOW);
   assert.equal(data.tab, 'overview');
-  assert.deepEqual(data.tabs.map(option => option.label), ['Overview', 'Models']);
-  assert.deepEqual(data.ranges.map(option => option.label), ['All', '30d', '7d']);
+  assert.deepEqual(data.tabs.map(option => option.label), ['概览', '模型']);
+  assert.deepEqual(data.ranges.map(option => option.label), ['全部', '近30天', '近7天']);
   assert.equal(data.range, 'all');
   assert.equal(data.models, null);
   const tiles = data.overview?.tiles ?? [];
   assert.deepEqual(tiles.map(tile => tile.label), [
-    'Sessions', 'Messages', 'Total tokens', 'Active days', 'Peak hour', 'Favorite model',
+    '会话数', '消息数', 'Token 总量', '活跃天数', '高峰时段', '常用模型',
   ]);
   assert.deepEqual(tiles.map(tile => tile.value), [
     '10', '1,556', '493.1M', '3', '\u2014', 'opencode-go/deepseek-v4.1-flash',
   ]);
   assert.equal(tiles.at(-1)?.small, true);
   assert.equal(data.overview?.futureFrom, 25 * 7 + NOW.getDay() + 1);
-  assert.equal(data.overview?.note, 'You\u2019ve used ~22413\u00D7 more tokens than The Little Prince.');
+  assert.equal(data.overview?.note, '已使用的 Token 量约相当于《小王子》的 22413 倍。');
 });
 
 test('the range switch moves the tiles and the footer, but not the heatmap', () => {
@@ -141,7 +141,7 @@ test('the range switch moves the tiles and the footer, but not the heatmap', () 
   });
   const all = buildCardData(snap, { tab: 'overview', range: 'all' }, () => 0, NOW).overview;
   const week = buildCardData(snap, { tab: 'overview', range: '7d' }, () => 0, NOW).overview;
-  assert.deepEqual(week?.tiles.map(tile => tile.value), ['1', '3', '1k', '1', '11 AM', '\u2014']);
+  assert.deepEqual(week?.tiles.map(tile => tile.value), ['1', '3', '1k', '1', '11:00', '\u2014']);
   assert.equal(week?.note, null);
   assert.deepEqual(week?.heat, all?.heat);
 });
@@ -155,11 +155,11 @@ test('a total too small for any book hides the footer line', () => {
 test('the book sentence follows the reference rule', () => {
   assert.equal(bookNote(0, () => 0), null);
   assert.equal(bookNote(21_999, () => 0), null);
-  assert.equal(bookNote(22_000, () => 0), 'You\u2019ve used about as many tokens as The Little Prince.');
-  assert.equal(bookNote(43_999, () => 0), 'You\u2019ve used about as many tokens as The Little Prince.');
-  assert.equal(bookNote(493_100_000, () => 0), 'You\u2019ve used ~22413\u00D7 more tokens than The Little Prince.');
-  assert.equal(bookNote(493_100_000, () => 0.999), 'You\u2019ve used ~675\u00D7 more tokens than War and Peace.');
-  assert.equal(bookNote(500_000, () => 0.999), 'You\u2019ve used about as many tokens as Moby-Dick.');
+  assert.equal(bookNote(22_000, () => 0), '已使用的 Token 量约相当于一本《小王子》。');
+  assert.equal(bookNote(43_999, () => 0), '已使用的 Token 量约相当于一本《小王子》。');
+  assert.equal(bookNote(493_100_000, () => 0), '已使用的 Token 量约相当于《小王子》的 22413 倍。');
+  assert.equal(bookNote(493_100_000, () => 0.999), '已使用的 Token 量约相当于《战争与和平》的 675 倍。');
+  assert.equal(bookNote(500_000, () => 0.999), '已使用的 Token 量约相当于一本《白鲸》。');
 });
 
 test('the y axis is the reference\u2019s own step search', () => {
@@ -191,17 +191,17 @@ test('the models view stacks each day by rank and prints lifetime in/out', () =>
   assert.deepEqual(models.ticks, ['0', '200', '400', '600', '800']);
   assert.equal(models.top, 800);
   assert.deepEqual(models.days.map(day => [day.date, day.label, day.tokens]), [
-    ['2026-09-29', 'Sep 29', 300],
-    ['2026-09-30', 'Sep 30', 700],
+    ['2026-09-29', '9月29日', 300],
+    ['2026-09-30', '9月30日', 700],
   ]);
   assert.deepEqual(models.days[0]?.segments, [{ model: 'b/two', tokens: 300, color: 'var(--ccd-stats-model-2)' }]);
   assert.deepEqual(models.days[1]?.segments, [{ model: 'a/one', tokens: 700, color: 'var(--ccd-stats-model-1)' }]);
   assert.deepEqual(models.legend, [
     {
-      model: 'a/one', color: 'var(--ccd-stats-model-1)', usage: '400 in \u00B7 300 out', percent: '70.0%',
+      model: 'a/one', color: 'var(--ccd-stats-model-1)', usage: '输入 400 \u00B7 输出 300', percent: '70.0%',
     },
     {
-      model: 'b/two', color: 'var(--ccd-stats-model-2)', usage: '100 in \u00B7 200 out', percent: '30.0%',
+      model: 'b/two', color: 'var(--ccd-stats-model-2)', usage: '输入 100 \u00B7 输出 200', percent: '30.0%',
     },
   ]);
   assert.equal(models.moreCount, 0);

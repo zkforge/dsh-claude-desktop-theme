@@ -138,7 +138,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerActions {
      chip always renders, so the gap survives an empty tools group. */
   /* The preceding title has 8px end padding + the track's 2px margin.
      Give the track-to-team boundary the same visible 10px separation. */
-  margin-left: 10px;
+  margin-left: var(--ccd-header-group-gap, 10px);
   gap: 4px;
   margin-right: auto;
 }
@@ -191,7 +191,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
   gap: 0;
   /* The switcher sits directly after the Session title; later header chrome
      (the Agent-preset chip today, more to come) follows it. */
-  margin: 0 0 0 2px;
+  margin: 0 0 0 var(--ccd-header-group-gap, 2px);
   padding: 0;
   border-radius: 6px;
   background: var(--ccd-track);
@@ -316,10 +316,10 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] {
   margin: 0;
 }
 
-/* The parked switcher no longer sits between the title and the Agent-preset
-   chip, so the chip takes the title's own 8px end padding instead. */
+/* With the switcher parked, native crumbs supply 8px end padding. The custom
+   title has no end padding, so its project and team use the full group gap. */
 html[data-dsh-ccd-style="true"] .ST7X_W_header:has(.ST7X_W_tabs[data-ccd-view-dock]) .ST7X_W_headerActions {
-  margin-left: 2px;
+  margin-left: var(--ccd-header-group-gap, 2px);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,7 @@
-import type { Disposer } from '../contracts/ports.ts';
+import type { Disposer, ThemePreferencePort } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { mountAccountMore } from './account-more.ts';
+import { mountAccountTheme } from './account-theme.ts';
 
 /** Marks the portalled account menu for the stylesheet. */
 export const ACCOUNT_MENU_ATTRIBUTE = 'data-ccd-account-menu';
@@ -53,8 +55,8 @@ export function accountNameToken(name: string): string {
  * the account itself (the account name over a workspace line). DSH's account
  * menu is a portalled `Menu` of plain rows and the signed-in name only exists on
  * the sidebar trigger, so this mirrors that real value onto the open menu and
- * tags it: no row is added, renamed or reordered — the stylesheet only reshapes
- * the card and prints the name it was given.
+ * tags it. The contact row becomes a More submenu whose feedback action still
+ * invokes the original host button.
  *
  * The menu is recognised structurally (a fixed-position `[role="menu"]` that is
  * open while the trigger reports `aria-expanded`), so no menu class hash is
@@ -64,13 +66,18 @@ export function accountNameToken(name: string): string {
  * @param report - sink for observer failures; the native menu stays untouched.
  * @returns disposer that disconnects the observers and clears every mark.
  */
-export function mountAccountMenu(document: Document, report: (error: unknown) => void): Disposer {
+export function mountAccountMenu(
+  document: Document, report: (error: unknown) => void, theme: ThemePreferencePort | null = null,
+): Disposer {
   const host = hostSelectors(document);
   const marked = new Set<HTMLElement>();
+  const additions = new Map<HTMLElement, Disposer>();
   let trigger: HTMLElement | null = null;
   let scheduled = 0;
 
   const clear = () => {
+    for (const dispose of additions.values()) dispose();
+    additions.clear();
     for (const menu of marked) {
       menu.removeAttribute(ACCOUNT_MENU_ATTRIBUTE);
       menu.style.removeProperty(ACCOUNT_NAME_PROPERTY);
@@ -87,15 +94,29 @@ export function mountAccountMenu(document: Document, report: (error: unknown) =>
     }
     let target: HTMLElement | null = null;
     for (const candidate of document.querySelectorAll<HTMLElement>(host.menu)) {
+      if (candidate.hasAttribute('data-ccd-account-more-menu')) continue;
       if (getComputedStyle(candidate).position === 'fixed') target = candidate;
     }
     if (target === null) return;
+    for (const [menu, dispose] of additions) {
+      if (menu === target) continue;
+      dispose();
+      additions.delete(menu);
+      menu.removeAttribute(ACCOUNT_MENU_ATTRIBUTE);
+      menu.style.removeProperty(ACCOUNT_NAME_PROPERTY);
+      marked.delete(menu);
+    }
     const name = trigger?.querySelector(host.accountLabel)?.textContent?.trim() ?? '';
     target.setAttribute(ACCOUNT_MENU_ATTRIBUTE, '');
     /* The stylesheet reads this back as `content`, so it is written as one
        *quoted* CSS string token even when the name carries spaces or quotes. */
     target.style.setProperty(ACCOUNT_NAME_PROPERTY, accountNameToken(name));
     marked.add(target);
+    if (!additions.has(target)) {
+      const disposeMore = mountAccountMore(target);
+      const disposeTheme = mountAccountTheme(target, theme);
+      additions.set(target, () => { disposeTheme(); disposeMore(); });
+    }
   };
 
   /* Observer callbacks are batched into one microtask, and the tag has to land

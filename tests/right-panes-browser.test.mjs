@@ -179,6 +179,17 @@ test('file previews stay inside Files, tree collapse preserves preview, tabs can
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-surface]').hasAttribute('data-ccd-panes')"),false);
 }));
 
+test('closing the Files card removes all previews and the tree, preserving other panes',options,async()=>withFixture(async page=>{
+  await page.evaluate("window.add('terminal','terminal');window.add('files','files');window.add('readme','text','s1','dsh-resource://file/session/s1/repo/README.md');window.add('app','text','s1','dsh-resource://file/session/s1/repo/app.ts')");await wait(page);
+  await click(page,'[data-ccd-pane-preview] [data-dockkit-float-close]');await wait(page);
+  assert.deepEqual(await page.evaluate('window.tabs.map(tab=>tab.tabId)'),['terminal']);
+  assert.deepEqual(Object.keys(await boxes(page)),['terminal']);
+  assert.equal(await page.evaluate('window.calls.toggle'),0,'another pane keeps the panel open');
+  await page.evaluate("window.add('files2','files')");await wait(page);
+  await click(page,'[data-dockkit-content="files2"] [data-dockkit-float-close]');await wait(page);
+  assert.deepEqual(await page.evaluate('window.tabs.map(tab=>tab.tabId)'),['terminal'],'a Files card without previews also closes');
+}));
+
 test('session switch and panel replacement keep independent proportions; dragging aborts safely',options,async()=>withFixture(async page=>{
   await page.evaluate("window.add('a','terminal');window.add('b','browser')");await wait(page);
   await drag(page,'row:0:0',105);await wait(page);const s1=await boxes(page);
@@ -239,7 +250,6 @@ test('reference chrome preserves button order and native browser navigation; una
   await page.evaluate("const original=document.querySelector('[data-ccd-browser-toolbar]>button');original.disabled=false;original.onclick=()=>window.backSeen=true");await wait(page);
   await click(page,'[data-ccd-browser-back]');assert.equal(await page.evaluate('window.backSeen'),true);
   await click(page,'[data-ccd-browser-address]');await wait(page);
-  await click(page,'[data-ccd-browser-server-address]');await wait(page);
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-dockkit-tab-title]').textContent='renamed'");await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),'Terminal renamed','native rename is reflected by the reference caption');
@@ -299,13 +309,13 @@ test('plain titles, Files header tree switch, full conversation expansion and te
 }));
 
 
-test('browser source groups and capture menu match the reference; capture delegates to the guest and stops after removal',options,async()=>withFixture(async page=>{
+test('browser globe edits the address without a dropdown; capture delegates to the guest and stops after removal',options,async()=>withFixture(async page=>{
   await page.evaluate("window.add('browser','browser')");await wait(page);
   await click(page,'[data-ccd-pane-zoom]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').getAttribute('data-ccd-browser-wait')"),'idle');
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-browser-wait-mark]')).display"),'none','idle browser is the reference blank canvas');
-  const field=await page.evaluate("(()=>{const button=document.querySelector('[data-ccd-browser-address]'),b=button.getBoundingClientRect(),icons=[...button.querySelectorAll('svg')].map(n=>n.getBoundingClientRect()),f=document.querySelector('[data-ccd-browser-toolbar]'),r=f.getBoundingClientRect(),s=document.querySelector('[data-ccd-browser-address-slot]').getBoundingClientRect();return {iconCenter:(icons[0].left+icons[1].right)/2,buttonCenter:b.left+b.width/2,iconY:icons[0].top+icons[0].height/2,buttonY:b.top+b.height/2,fieldY:r.top+r.height/2,left:r.left,buttonRight:b.right,width:r.width,slotWidth:s.width,parent:f.parentElement.className,popover:f.hasAttribute('popover')}})()");
-  assert.equal(field.iconCenter,field.buttonCenter,'globe and caret are centred together in their background');
+  const field=await page.evaluate("(()=>{const button=document.querySelector('[data-ccd-browser-address]'),b=button.getBoundingClientRect(),icons=[...button.querySelectorAll('svg')].map(n=>n.getBoundingClientRect()),f=document.querySelector('[data-ccd-browser-toolbar]'),r=f.getBoundingClientRect(),s=document.querySelector('[data-ccd-browser-address-slot]').getBoundingClientRect();return {iconCenter:icons[0].left+icons[0].width/2,buttonCenter:b.left+b.width/2,iconY:icons[0].top+icons[0].height/2,buttonY:b.top+b.height/2,fieldY:r.top+r.height/2,left:r.left,buttonRight:b.right,width:r.width,slotWidth:s.width,parent:f.parentElement.className,popover:f.hasAttribute('popover')}})()");
+  assert.equal(field.iconCenter,field.buttonCenter,'globe is centred in its button');
   assert.equal(field.iconY,field.buttonY);assert.equal(field.fieldY,field.buttonY);
   assert.equal(field.left,field.buttonRight+4);assert.equal(field.width,field.slotWidth);assert.ok(field.width>200);
   assert.equal(field.parent,'browserRoot','the controlled form retains its native React parent');assert.equal(field.popover,false);
@@ -318,23 +328,15 @@ test('browser source groups and capture menu match the reference; capture delega
   await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await wait(page);
   assert.equal(await page.evaluate('window.submittedAddress'),'http://localhost:3000','direct entry keeps native Enter submission');
   await click(page,'[data-ccd-browser-address]');await wait(page);
-  assert.deepEqual(await page.evaluate("[...document.querySelectorAll('[data-ccd-browser-menu-heading]')].map(n=>n.textContent)"),['Servers','Files','Settings']);
-  assert.deepEqual(await page.evaluate("[...document.querySelectorAll('[data-ccd-browser-menu] button')].map(n=>n.textContent)"),['dev','Run','Open file','Keep cookies','Disable auto verify','Edit configuration in VS Code']);
-  const menu=await page.evaluate("(()=>{const m=document.querySelector('[data-ccd-browser-menu]').getBoundingClientRect(),a=document.querySelector('[data-ccd-browser-address]').getBoundingClientRect();return {width:m.width,height:m.height,left:m.left,anchorLeft:a.left,top:m.top,anchorBottom:a.bottom,anchorWidth:a.width}})()");
-  assert.equal(menu.width,204);assert.equal(menu.left,menu.anchorLeft);assert.equal(menu.top,menu.anchorBottom+6);assert.equal(menu.anchorWidth,48);
-  const point=await page.evaluate("(()=>{const b=document.querySelector('[data-ccd-browser-open-file]').getBoundingClientRect();return{x:b.x+40,y:b.y+b.height/2}})()");
-  await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',...point});await wait(page);
-  let shot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-browser-sources-menu.png',Buffer.from(shot.data,'base64'));
-  await click(page,'[data-ccd-browser-cookies]');await wait(page);
-  assert.match(await page.evaluate("document.querySelector('[data-ccd-pane-menu]').textContent"),/Cookie/);
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-cookies]')"),null,'unsupported settings do not invent a checked state');
-  await page.evaluate("document.querySelector('[data-ccd-pane-menu]').hidePopover()");await wait(page);
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-address]').getAttribute('aria-expanded')"),'false');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]')"),null,'globe does not open a menu');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-address]').hasAttribute('aria-haspopup')"),false);
+  assert.equal(await page.evaluate("document.querySelectorAll('[data-ccd-browser-address] svg').length"),1,'dropdown caret is removed');
+  assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await click(page,'[data-ccd-pane-more]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').textContent"),'Save screenshot');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-save-screenshot]').disabled"),true);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').getBoundingClientRect().width"),130);
-  shot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-browser-capture-menu.png',Buffer.from(shot.data,'base64'));
+  const shot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-browser-capture-menu.png',Buffer.from(shot.data,'base64'));
   await page.evaluate("document.querySelector('[data-ccd-browser-menu]').hidePopover()");await wait(page);
   await page.evaluate("document.querySelector('[data-ccd-browser-address]').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))");await wait(page);
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true,'native address editing remains reachable');

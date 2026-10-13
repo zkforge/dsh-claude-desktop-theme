@@ -1,5 +1,6 @@
 import { mountBrowserMenus, type BrowserPopupLayout } from './browser-menu.ts';
 import { paneIcon, type PaneIcon } from './pane-icons.ts';
+import { relativeFilePath } from './relative-file-path.ts';
 
 export interface PaneChromeOptions {
   readonly kind: string;
@@ -10,6 +11,7 @@ export interface PaneChromeOptions {
   readonly onNew: () => void;
   readonly onSelect: (id: string) => void;
   readonly onClose: (id: string) => void;
+  readonly closeTabs: readonly string[];
   readonly terminals: readonly { id: string; title: string; selected: boolean }[];
   readonly files: readonly { id: string; title: string; selected: boolean }[];
   readonly panel: HTMLElement;
@@ -34,6 +36,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   let wait: HTMLElement | null = null;
   let menuAnchor: HTMLElement | null = null;
   let addressSlot: HTMLElement | null = null;
+  const paths = new Map<HTMLElement, HTMLElement>();
   const headerFill = title.nextElementSibling instanceof HTMLElement ? title.nextElementSibling : null;
   headerFill?.setAttribute('data-ccd-browser-header-fill', '');
   const caption = document.createElement('span');
@@ -52,9 +55,13 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   node.setAttribute('data-ccd-pane-chrome', '');
 
   const closeGroup = (event: MouseEvent) => {
-    if (close.hasAttribute('data-ccd-close-tab') || options?.kind !== 'terminal' || options.terminals.length < 2) return;
+    if (close.hasAttribute('data-ccd-close-tab') || !options) return;
+    // Files owns both its tree and every retained preview. Closing the card
+    // must remove the whole group, otherwise the previous file resurfaces.
+    if (!options.filesRoot && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    for (const tab of options.terminals) options.onClose(tab.id);
+    const { closeTabs, onClose } = options;
+    for (const id of closeTabs) onClose(id);
   };
   close.addEventListener('click', closeGroup, true);
 
@@ -149,9 +156,34 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     dismiss(); syncAddress();
     const input = form?.querySelector('input'); input?.focus(); input?.select();
   };
-  const browserMenus = mountBrowserMenus(node, { popup, dismiss, notice, address });
+  const browserMenus = mountBrowserMenus(node, { popup, dismiss, notice });
   const nativeNavigation = (index: number) => form?.querySelectorAll<HTMLButtonElement>(':scope > button')[index] ?? null;
   const refreshNative = () => {
+    if (options?.kind === 'text') {
+      const cwd = options.filesRoot?.getAttribute('data-files-root')
+        ?? options.panel.querySelector('[data-files-root]')?.getAttribute('data-files-root');
+      const live = new Set(node.querySelectorAll<HTMLElement>('[data-textpreview-path]'));
+      for (const [source, label] of paths) {
+        if (!live.has(source)) { source.removeAttribute('data-ccd-preview-path-source'); label.remove(); paths.delete(source); }
+      }
+      for (const source of live) {
+        let label = paths.get(source);
+        if (!label) {
+          label = document.createElement('span');
+          label.setAttribute('data-ccd-preview-path', '');
+          source.setAttribute('data-ccd-preview-path-source', '');
+          paths.set(source, label);
+        }
+        const path = source.title;
+        const value = cwd ? relativeFilePath(path, cwd) : path;
+        if (label.textContent !== value) label.textContent = value;
+        if (label.title !== value) label.title = value;
+        if (label.previousElementSibling !== source) source.after(label);
+      }
+      const reload = controls.querySelector<HTMLButtonElement>('[data-ccd-preview-reload]');
+      const original = node.querySelector<HTMLButtonElement>('[data-textpreview-tool="reload"]');
+      if (reload && reload.disabled !== (original?.disabled ?? true)) reload.disabled = original?.disabled ?? true;
+    }
     if (!options || options.kind !== 'browser') return;
     const next = node.querySelector<HTMLFormElement>('form:has(input)');
     if (next !== form) {
@@ -185,7 +217,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     wait.setAttribute('data-ccd-browser-wait', area.getAttribute('aria-busy') === 'true' ? 'loading' : 'idle');
   };
   const observer = new MutationObserver(refreshNative);
-  observer.observe(node, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'aria-busy'] });
+  observer.observe(node, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'aria-busy', 'title'] });
 
   const terminalText = (element: HTMLElement, text: string) => {
     const match = /^(Terminal(?: \d+)?)(?: (.*))?$/u.exec(text);
@@ -201,11 +233,9 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     dismiss(); addressResize?.disconnect(); addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
     node.setAttribute('data-ccd-pane-kind', next.kind);
     if (next.kind === 'browser') {
-      const globe = button(caption, 'Browser menu', 'data-ccd-browser-address', 'Globe', browserMenus.open);
-      globe.setAttribute('aria-haspopup', 'menu'); globe.setAttribute('aria-expanded', 'false');
-      globe.title = 'Browser menu';
+      const globe = button(caption, '编辑地址', 'data-ccd-browser-address', 'Globe', address);
+      globe.title = '编辑地址';
       globe.addEventListener('contextmenu', event => { event.preventDefault(); dismiss(); address(); });
-      globe.insertAdjacentHTML('beforeend', paneIcon('CaretDown'));
       addressSlot = document.createElement('span');
       addressSlot.setAttribute('data-ccd-browser-address-slot', '');
       caption.append(addressSlot);
@@ -252,6 +282,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
         if (hidden) toggle?.click();
         next.filesRoot?.querySelector<HTMLInputElement>('[data-ccd-files-filter] input')?.focus();
       });
+      if (next.kind === 'text') button(controls, 'Reload', 'data-ccd-preview-reload', 'ArrowClockwise', () => node.querySelector<HTMLButtonElement>('[data-textpreview-tool="reload"]')?.click());
     }
     const more = button(controls, 'More', 'data-ccd-pane-more', 'DotsVertical', next.kind === 'browser' ? browserMenus.more : openMenu);
     more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false');
@@ -263,6 +294,8 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     observer.disconnect(); addressResize?.disconnect(); browserMenus.release(); dismiss(); wait?.remove(); caption.remove(); controls.remove(); closeIcon.remove();
     for (const attribute of ['data-ccd-pane-chrome', 'data-ccd-pane-kind']) node.removeAttribute(attribute);
     clearAddress(form);
+    for (const [source, label] of paths) { source.removeAttribute('data-ccd-preview-path-source'); label.remove(); }
+    paths.clear();
     headerFill?.removeAttribute('data-ccd-browser-header-fill');
   } };
 }

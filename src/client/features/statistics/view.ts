@@ -35,15 +35,15 @@ const EMPTY = '\u2014';
 
 /** The reference's own tabs, in its order. */
 export const STATS_TABS: readonly StatsOption<StatsTabId>[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'models', label: 'Models' },
+  { id: 'overview', label: '概览' },
+  { id: 'models', label: '模型' },
 ];
 
 /** The reference's own ranges, in its order. */
 export const STATS_RANGE_OPTIONS: readonly StatsOption<StatsRangeId>[] = [
-  { id: 'all', label: 'All' },
-  { id: '30d', label: '30d' },
-  { id: '7d', label: '7d' },
+  { id: 'all', label: '全部' },
+  { id: '30d', label: '近30天' },
+  { id: '7d', label: '近7天' },
 ];
 
 /** Which view and range the card is showing. */
@@ -168,12 +168,12 @@ export function buildOverview(
   const totals = snapshot.ranges[range];
   const window = heatWindow(snapshot.days, now);
   const tiles: StatsTile[] = [
-    { label: 'Sessions', value: formatCount(totals.sessions) },
-    { label: 'Messages', value: formatCount(totals.messages) },
-    { label: 'Total tokens', value: formatTokens(totals.tokens) },
-    { label: 'Active days', value: formatCount(totals.activeDays) },
-    { label: 'Peak hour', value: snapshot.busyHour === null ? EMPTY : formatHour(snapshot.busyHour) },
-    { label: 'Favorite model', value: totals.topModel ?? EMPTY, small: true },
+    { label: '会话数', value: formatCount(totals.sessions) },
+    { label: '消息数', value: formatCount(totals.messages) },
+    { label: 'Token 总量', value: formatTokens(totals.tokens) },
+    { label: '活跃天数', value: formatCount(totals.activeDays) },
+    { label: '高峰时段', value: snapshot.busyHour === null ? EMPTY : formatHour(snapshot.busyHour) },
+    { label: '常用模型', value: totals.topModel ?? EMPTY, small: true },
   ];
   return {
     tiles,
@@ -233,7 +233,7 @@ export function buildModels(
     return {
       model,
       color: modelColor(at),
-      usage: `${formatTokens(counters.input)} in \u00B7 ${formatTokens(counters.output)} out`,
+      usage: `输入 ${formatTokens(counters.input)} \u00B7 输出 ${formatTokens(counters.output)}`,
       percent: `${((tokens / (totals.tokens || 1)) * 100).toFixed(1)}%`,
     };
   });

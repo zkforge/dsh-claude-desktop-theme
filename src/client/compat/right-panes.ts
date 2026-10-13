@@ -1,7 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type { Disposer, SidebarRightPort, SidebarTabRecord } from '../contracts/ports.ts';
 import { mountPaneChrome, type PaneChrome } from './pane-chrome.ts';
-import { paneIcon } from './pane-icons.ts';
 import { hostSelectors } from './host-dom.ts';
 import { EMPTY_LAYOUT, reconcilePanes, resizePanes, tilePanes, type PaneLayout, type PaneRect, type PaneSeam } from './pane-tiles.ts';
 
@@ -214,6 +213,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         endDrag(); schedule();
       },
       onNew: () => sidebar.openTab('terminal'),
+      closeTabs: group.tabs,
       onSelect: id => { if (group.id === TERMINAL_GROUP) state.terminal = id; else state.preview = id; sidebar.focus(id); schedule(); },
       onClose: id => {
         const close = root.querySelector<HTMLButtonElement>(`[data-dockkit-content="${id}"] [data-dockkit-float-close]`);
@@ -388,16 +388,6 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     }
     setAttribute(root, PANES_ATTRIBUTE, String(groups.length));
     placeSeams(root, boundaries);
-    const treeSeam = seams.get('files:tree');
-    if (treeSeam && !treeSeam.querySelector('[data-ccd-files-switch]')) {
-      const toggle = document.createElement('button');
-      toggle.type = 'button'; toggle.setAttribute('data-ccd-files-switch', '');
-      toggle.setAttribute('aria-label', 'Hide file tree'); toggle.title = 'Hide file tree';
-      toggle.innerHTML = paneIcon('SidebarClose');
-      toggle.addEventListener('pointerdown', event => event.stopPropagation());
-      toggle.addEventListener('click', () => root.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
-      treeSeam.append(toggle);
-    }
     placement = { root, session, boundaries };
   };
 

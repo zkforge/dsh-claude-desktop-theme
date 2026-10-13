@@ -13,8 +13,7 @@
  * ```
  *
  * Only the sentence is copied; nothing is fetched and no book text is
- * involved. The copy stays English, exactly as the reference writes it —
- * including its typographic apostrophe and multiplication sign.
+ * involved. Titles and sentences are localized into Simplified Chinese.
  */
 
 /** One comparable book: the title as printed, and the tokens it would take. */
@@ -25,16 +24,16 @@ export interface Book {
 
 /** The reference's list, in its own order. */
 export const BOOKS: readonly Book[] = Object.freeze([
-  { name: 'The Little Prince', tokens: 22_000 },
-  { name: 'Animal Farm', tokens: 39_000 },
-  { name: 'The Great Gatsby', tokens: 62_000 },
-  { name: 'Harry Potter and the Philosopher\u2019s Stone', tokens: 103_000 },
-  { name: 'The Hobbit', tokens: 123_000 },
-  { name: 'Pride and Prejudice', tokens: 156_000 },
-  { name: 'Dune', tokens: 244_000 },
-  { name: 'Moby-Dick', tokens: 268_000 },
-  { name: 'The Lord of the Rings', tokens: 576_000 },
-  { name: 'War and Peace', tokens: 730_000 },
+  { name: '小王子', tokens: 22_000 },
+  { name: '动物农场', tokens: 39_000 },
+  { name: '了不起的盖茨比', tokens: 62_000 },
+  { name: '哈利·波特与魔法石', tokens: 103_000 },
+  { name: '霍比特人', tokens: 123_000 },
+  { name: '傲慢与偏见', tokens: 156_000 },
+  { name: '沙丘', tokens: 244_000 },
+  { name: '白鲸', tokens: 268_000 },
+  { name: '魔戒', tokens: 576_000 },
+  { name: '战争与和平', tokens: 730_000 },
 ]);
 
 /**
@@ -52,6 +51,6 @@ export function bookNote(totalTokens: number, random: () => number): string | nu
   const book = eligible[Math.floor(draw * eligible.length)];
   if (book === undefined) return null;
   const times = Math.floor(totalTokens / book.tokens);
-  if (times >= 2) return `You\u2019ve used ~${times}\u00D7 more tokens than ${book.name}.`;
-  return `You\u2019ve used about as many tokens as ${book.name}.`;
+  if (times >= 2) return `已使用的 Token 量约相当于《${book.name}》的 ${times} 倍。`;
+  return `已使用的 Token 量约相当于一本《${book.name}》。`;
 }
