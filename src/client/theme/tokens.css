@@ -131,13 +131,17 @@ html[data-dsh-ccd-style="true"] {
   /* Conversation header action cluster. The CCD reference keeps every control
      on one 30px centre pitch with a 12px trailing inset (measured at @2x from
      docs/reference/ccd-conversation.png: icon centres 28.75/30/30px apart, the
-     trailing glyph centre 25.75px from the window edge). */
+     trailing glyph centre 25.75px from the window edge). That inset is what the
+     cluster takes while the Composer is narrower than the column and centred in
+     it; where the Composer fills the column, `conversation.css` ends the
+     cluster on the input surface's own border instead, which is the line the
+     reference puts the closing control on and a measurement rather than a
+     second token. */
   --ccd-header-action-size: 28px;
   --ccd-header-action-compact: 24px;
   --ccd-header-icon-size: 16px;
   --ccd-header-action-gap: 2px;
   --ccd-header-trailing-inset: 12px;
-  --ccd-header-trailing-inset-compact: 8px;
   /* Transcript edge fade. 24px is the band the host's own internal-request
      viewer uses for `fadeTop`／`fadeBottom`, so the whole interface softens its
      scroll viewport edges by the same amount. */

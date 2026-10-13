@@ -184,9 +184,35 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_primary + .yhfFVG_prima
    The row's own gap is the host's 12px, which the leading groups kept while the
    trailing cluster was already on `--ccd-cluster-gap`; the rule below hands the
    same 6px to every container in the bar, so the leading pair, the trailing
-   cluster, the statistics dock and the ring read as one row. */
+   cluster, the statistics dock and the ring read as one row.
+
+   One line, at every width. The host's row wraps
+   (`InputBar.module.css`: `.yhfFVG_row { flex-wrap: wrap }`) and breaks before
+   it shrinks anything: a flex container decides its lines from the children's
+   *base* sizes, so a column too narrow for the leading pair and the whole
+   trailing cluster put — and the cluster lands on a second line of its own, a
+   row lower, while the model chip that could have given up the space is still
+   drawn at its cap. The reference draws the bar as one line
+   at every window width (its `DeepSeek V4.1 Fl…` is the model name clipped by
+   the chip's own ellipsis, not a wrapped row), and the Composer's bottom inset
+   is measured for that one line: two lines push the row over the window edge.
+   So the wrap goes and the squeeze lands where the reference puts it — the
+   model name, whose chip is the one item here that can shorten without
+   losing its reading (`min-width: 0` and the host's own ellipsis on
+   `.cl2Rlq_triggerLabel`), while the leading controls keep their boxes
+   (`.yhfFVG_tools` below), the effort keeps its `flex-shrink: 0` and the ring
+   keeps its reserved seat. Standing in the way of that squeeze is the trailing
+   group's own `flex: none` (the host's, under `.yhfFVG_trailing`): the group is
+   sized from the model chip's budget, and the budget
+   (`compat/stats-values.ts` publishes the row's measured remainder as
+   `--ccd-model-max-width`) is what the row has *left over* — not what the chip
+   may take from a line that also carries the leading pair. Left unshrinkable
+   the cluster would simply run past the Composer's right edge with the chip at
+   its cap; allowed to shrink, the chip settles on what is actually there and
+   ellipsizes, which is the one reading the reference is willing to shorten. */
 html[data-dsh-ccd-style="true"] .yhfFVG_row {
   position: relative;
+  flex-wrap: nowrap;
   gap: var(--ccd-cluster-gap);
   min-height: var(--ccd-control-row-height);
   margin-top: var(--ccd-composer-row-gap);
@@ -241,8 +267,21 @@ html[data-dsh-ccd-style="true"] .yhfFVG_add:hover:not(:disabled) {
   color: var(--ccd-text);
 }
 
+/* The leading pair keeps its boxes: the row no longer wraps, so the only item
+   it may take the slack from is the model chip beside it. The permission chip's
+   label is the whole control (`composer.css`, above), so a shrunk tools group
+   would be a control with its own reading cut off rather than a shorter one. */
 html[data-dsh-ccd-style="true"] .yhfFVG_tools {
+  flex: none;
   align-items: center;
+}
+
+/* The trailing group's half of the same trade: it stays at its own size where
+   there is room (the host's `flex: none`), and gives the model chip up to the
+   line's real remainder where there is not. */
+html[data-dsh-ccd-style="true"] .yhfFVG_trailing {
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 /* Statistics cluster and context ring: the dock is a sibling of the card inside

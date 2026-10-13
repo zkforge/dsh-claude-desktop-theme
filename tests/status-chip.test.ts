@@ -165,3 +165,22 @@ test('the statistics readouts leave the row unless the configuration asks for th
   assert.ok(rule.selector.startsWith('html[data-dsh-ccd-style="true"]'), rule.selector);
   assert.equal(rule.body.trim(), 'display: none;');
 });
+
+test('the row cannot wrap, so the squeeze lands on the model name', () => {
+  /* `InputBar.module.css` gives the row `flex-wrap: wrap`, and a flex container
+     breaks its lines from the children's *base* sizes — so a column too narrow
+     for the leading pair and the whole trailing cluster put the cluster on a
+     line of its own, one control row lower, instead of shortening the model
+     chip that has room to give. The reference's bar is one line at every width
+     (its `DeepSeek V4.1 Fl…` is a clipped name, not a wrapped row) and the
+     Composer's bottom inset is measured for that one line. */
+  assert.match(ruleFor(composer, '.yhfFVG_row').body, /flex-wrap:\s*nowrap/u);
+  /* The squeeze's two ends: the leading pair keeps its boxes, and the trailing
+     group may shrink into whatever the line has left — the host's `flex: none`
+     there would push the cluster through the card's right edge instead. */
+  assert.match(ruleFor(composer, '.yhfFVG_tools').body, /flex:\s*none/u);
+  const trailing = composer.filter(rule => rule.selector.endsWith('.yhfFVG_trailing'));
+  const shrinkable = trailing.filter(rule => /flex-shrink:\s*1/u.test(rule.body));
+  assert.equal(shrinkable.length, 1, 'one rule lets the cluster give up the model chip');
+  assert.match(shrinkable[0]?.body ?? '', /min-width:\s*0/u);
+});

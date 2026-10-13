@@ -242,3 +242,59 @@ test('the corner seat is retired without a control left behind', () => {
      that row needs no rule of its own. */
   assert.ok(!newSession.some(rule => rule.selector.includes('data-conversation-header-corner')));
 });
+
+test('the cluster ends on the Composer where the Composer fills the column', () => {
+  /* The design's 12px trailing inset is measured in a window whose column is
+     wider than the Composer's 770px cap, so the Composer is centred inside the
+     column and the two rows end in different places. Where the Composer fills
+     the column instead — an expanded right panel leaves exactly that — the
+     reference ends the cluster on the input surface's own right border, the
+     line its closing ⋮ sits directly above. The padding is therefore the
+     surface's edge, taken from the numbers that draw it, less half the closing
+     control: the `min()` keeps the measured inset as the ceiling, so a wider
+     side clearance in a deployment cannot push the cluster further in than the
+     reference draws it. */
+  const header = conversation.filter(rule => rule.selector.endsWith('.ST7X_W_header'));
+  const edge = header.filter(rule => /--ccd-composer-trailing-edge:\s*calc\(/u.test(rule.body));
+  assert.equal(edge.length, 1, 'the surface edge is declared once, on the header');
+  assert.match(edge[0]?.body ?? '', /var\(--dsh-composer-side-clearance/u);
+  assert.match(edge[0]?.body ?? '', /var\(--dsh-scrollbar-width/u);
+  const alignment = header.filter(rule => /padding-right:\s*min\(/u.test(rule.body));
+  assert.equal(alignment.length, 2, 'both cluster widths take the surface edge');
+  for (const rule of alignment) {
+    assert.match(rule.body, /min\(\s*var\(--ccd-header-trailing-inset\),/u);
+    assert.match(rule.body, /var\(--ccd-composer-trailing-edge\)/u);
+  }
+  assert.equal(alignment.filter(rule => /--ccd-header-action-compact/u.test(rule.body)).length, 1);
+  /* One inset, not two: the replaced `--ccd-header-trailing-inset-compact` is
+     gone from the token sheet, so no rule can drift back to a second value. */
+  assert.ok(!read('../src/client/theme/tokens.css').includes('--ccd-header-trailing-inset-compact'));
+});
+
+test('the three views and the title step aside only for the switcher still in the row', () => {
+  /* The switcher is normally parked in the sidebar's window-control row
+     (`compat/view-switch.ts` marks the tablist with `data-ccd-view-dock`), and
+     the header row is then the title, the team chip and the cluster — the three
+     views and the title fit every width that state can leave (the frame
+     protects a 400px floor for this column while the right panel is open), and
+     with the right panel expanded the views are the only way back to its other
+     tabs. With the switcher still in the row (a Windows build, or a collapsed
+     macOS sidebar) there are four pieces on the line, and the plugin's own three
+     views and the title are the ones that go — the native team chip keeps its
+     full label either way. */
+  const hidden = conversation.filter(rule => rule.body.includes('display: none')
+    && rule.selector.includes('[data-ccd-header-view]'));
+  assert.equal(hidden.length, 1, 'one rule withdraws the views');
+  const selector = hidden[0]?.selector ?? '';
+  assert.ok(selector.includes(':has(.ST7X_W_tabs:not([data-ccd-view-dock]))'), selector);
+  assert.ok(selector.includes('.ST7X_W_headerUtilities'), selector);
+  /* The title is the piece that still yields at that width — to that same
+     switcher, so a parked one leaves the title on the line — and the team chip
+     keeps its own label: nothing hides the crumbs outside the narrow block, and
+     no rule hides the chip. */
+  const crumbs = conversation.filter(rule => rule.selector.endsWith('.ST7X_W_crumbs') && rule.body.includes('display: none'));
+  assert.equal(crumbs.length, 1, 'the title yields once');
+  const titleSelector = crumbs[0]?.selector ?? '';
+  assert.ok(titleSelector.includes(':has(.ST7X_W_tabs:not([data-ccd-view-dock]))'), titleSelector);
+  assert.ok(!conversation.some(rule => rule.selector.includes('_2tNPVa_triggerLabel') && rule.body.includes('display: none')));
+});

@@ -48,6 +48,10 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root [data-width-handle] {
 html[data-dsh-ccd-style="true"] .ST7X_W_header {
   background: var(--ccd-canvas);
   color: var(--ccd-text);
+  /* The host marks this header as its window-drag surface. The compact flex
+     row replaces the host's two-row grid, so keep that surface explicit on
+     macOS; the host's header controls remain no-drag children. */
+  -webkit-app-region: drag;
   /*
    * The reference has no rule between the header and the transcript — the two
    * read as one page. The host draws a hairline here (`border-bottom: .5px
@@ -68,6 +72,17 @@ html[data-dsh-ccd-style="true"] .ST7X_W_header {
      own; that row is gone, so its `min-height: 76px` goes with it. */
   min-height: 0;
   padding: 10px var(--ccd-header-trailing-inset) 10px 12px;
+  /*
+   * Where the Composer's input surface ends, measured from the column's right
+   * edge in the numbers that draw it, for the narrow-column rules below: the
+   * Composer root's own side clearance (`theme/composer.css` pins the host's
+   * `--dsh-composer-side-clearance` at 16px), the stable scrollbar gutter the
+   * page's scroll viewport reserves (`ST7X_W_scrollBody { scrollbar-gutter:
+   * stable }` over the theme's 5px `--dsh-scrollbar-width` track) and that
+   * viewport's own `margin-right: 2px`.
+   */
+  --ccd-composer-trailing-edge: calc(
+    var(--dsh-composer-side-clearance, 16px) + var(--dsh-scrollbar-width, 5px) + 2px);
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_headerBlank {
@@ -78,6 +93,26 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerBlank {
 
 html[data-dsh-ccd-style="true"] .ST7X_W_headerSessionless {
   min-height: 50px;
+}
+
+/*
+ * On macOS the title line shares the window-control row's centre line: the
+ * traffic lights, the collapse toggle (`top: 11px` + 28 / 2) and the parked
+ * switcher (`top: 12px` + 26 / 2) all centre on y = 25. The flex items above
+ * centre on the header's content box, and with the base padding (10px top and
+ * bottom) that box centred on 20 — the title, the team chip and the right-hand
+ * panel buttons sat 5px above the line they are meant to share.
+ *
+ * Holding the header at 40px — the height it already has, with 20px items —
+ * and dropping the bottom padding leaves a 30px content box from y = 10 to
+ * y = 40 whatever the items' own heights (up to 30px): its centre is 25. A
+ * collapsed inline switcher (26px) therefore centres on the same line too.
+ * Windows has no such row, so its header keeps the base rule, and the
+ * sessionless header already centres on 25 with its own 10px bottom padding.
+ */
+html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header:not(.ST7X_W_headerSessionless) {
+  min-height: 40px;
+  padding-bottom: 0;
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_titleRow,
@@ -160,6 +195,16 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
   padding: 0;
   border-radius: 6px;
   background: var(--ccd-track);
+  -webkit-app-region: no-drag;
+}
+
+/* The docked pill sits over the sidebar's native window-drag strip. Let its
+   empty chrome participate in dragging while keeping the view buttons clickable. */
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] {
+  -webkit-app-region: drag;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] .ST7X_W_tab {
   -webkit-app-region: no-drag;
 }
 
@@ -420,15 +465,43 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
 }
 
 /*
- * Narrow columns. The cluster keeps every control at 24px down to the collapsed
- * macOS shell's 400px column; below 420px the three views this plugin adds —
- * the project folder among them — step aside so the native team entry keeps its
- * full label. All three stay reachable from the right panel's own guide tab and
- * from their shortcuts.
+ * Narrow columns: the cluster ends on the Composer's own trailing edge.
+ *
+ * The design's 12px inset (`--ccd-header-trailing-inset`) is measured in a
+ * window whose transcript column is wider than the Composer's 770px cap, so the
+ * Composer is centred inside the column and the two rows end at different
+ * places — an inset the reference keeps at every width. Where the Composer
+ * *fills* the column instead, its input surface's right border is a line the
+ * cluster sits directly above, and the reference draws the cluster ending on it:
+ * the last control's centre on that border, so the ⋮ reads as the row's closing
+ * mark rather than as an icon hanging outside the Composer. That state is the
+ * one an expanded right panel leaves, and this is where it is answered.
+ *
+ * The column that fills its Composer is the Composer's own 770px cap plus what
+ * surrounds the surface: the root's two clearances and the page scroll
+ * viewport's stable gutter and 2px margin, i.e. 810px. Below it the trailing
+ * padding is the surface's own edge (`--ccd-composer-trailing-edge`, declared
+ * on the header above) less half the closing control, so the box is centred on
+ * the border rather than ending on it; `min()` keeps the design's inset as the
+ * ceiling, for a deployment that hands the Composer a wider clearance.
  */
+@container ccd-conversation (max-width: 810px) {
+  html[data-dsh-ccd-style="true"] .ST7X_W_header {
+    padding-right: min(
+      var(--ccd-header-trailing-inset),
+      calc(var(--ccd-composer-trailing-edge) - var(--ccd-header-action-size) / 2));
+  }
+}
+
+/* Very narrow columns keep every control on the collapsed macOS shell's 24px
+   box, so the same edge is taken against the smaller box: half of it is 2px
+   less, and the cluster's last control stays centred on the input surface's
+   border. */
 @container ccd-conversation (max-width: 520px) {
   html[data-dsh-ccd-style="true"] .ST7X_W_header {
-    padding-right: var(--ccd-header-trailing-inset-compact);
+    padding-right: min(
+      var(--ccd-header-trailing-inset),
+      calc(var(--ccd-composer-trailing-edge) - var(--ccd-header-action-compact) / 2));
   }
 
   html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([role="tooltip"]) {
@@ -437,16 +510,52 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
   }
 }
 
+/*
+ * The title yields before the cluster does — and, like the three views below,
+ * only to a switcher that is still in the row.
+ *
+ * With the switcher in it, the row is four pieces — title, switcher, native team
+ * entry, cluster — and at this width they cannot share one line. The title is
+ * the only piece the sidebar also shows, so it goes: the same trade the
+ * collapsed macOS shell already makes, and every native control keeps its full
+ * label.
+ *
+ * Parked in the sidebar's window-control row (`compat/view-switch.ts` writes
+ * `data-ccd-view-dock`; macOS with the sidebar expanded, which is where an
+ * expanded right panel leaves the column), the switcher takes its 66px track and
+ * the two margins around it out of the row, and the three pieces that remain
+ * occupy 377px of the 400px floor the frame protects for this column while the
+ * right panel is open (`ui-layout`'s `CENTER_MIN`) — so they fit, with the 72px
+ * between the chip and the cluster left to `margin-right: auto`. Withdrawing the
+ * title there bought nothing and cost the one place a narrow column still names
+ * its session.
+ */
 @container ccd-conversation (max-width: 420px) {
-  html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-header-view] {
+  html[data-dsh-ccd-style="true"] .ST7X_W_header:not(.ST7X_W_headerBlank):has(.ST7X_W_tabs:not([data-ccd-view-dock]))
+    .ST7X_W_crumbs {
     display: none;
   }
+}
 
-  /* At this width the title, the View switcher, the native team entry and the
-     cluster cannot share one row. The title is the only piece the sidebar also
-     shows, so it yields — the same trade the collapsed macOS shell already
-     makes — and every native control keeps its full label. */
-  html[data-dsh-ccd-style="true"] .ST7X_W_header:not(.ST7X_W_headerBlank) .ST7X_W_crumbs {
+/*
+ * The three views this plugin adds — the project folder among them — step aside
+ * only while the row still carries the View switcher.
+ *
+ * The switcher is normally parked in the sidebar's window-control row
+ * (`compat/view-switch.ts` writes `data-ccd-view-dock` on the tablist wherever
+ * that column has the corner to hold it), and the row is then the title, the
+ * team chip and the cluster: at most ~235px of chrome, so all three stay drawn
+ * at any width the Composer can still be used at — including the column an
+ * expanded right panel leaves, where they are the only way to switch the
+ * panel's view back. With the switcher still in the row — a Windows build, or a
+ * collapsed macOS sidebar whose window is narrow — there are four pieces on the
+ * line, and these three are the ones that go: they are the plugin's own
+ * controls, they have a second entry in the right panel's own tab strip, and
+ * the native team chip keeps its full label either way.
+ */
+@container ccd-conversation (max-width: 420px) {
+  html[data-dsh-ccd-style="true"] .ST7X_W_header:has(.ST7X_W_tabs:not([data-ccd-view-dock]))
+    .ST7X_W_headerUtilities [data-ccd-header-view] {
     display: none;
   }
 }

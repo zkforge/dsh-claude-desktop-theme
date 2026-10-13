@@ -185,6 +185,16 @@ test('the View switcher parks on the sidebar column and survives rerenders, coll
           assert.ok(Math.abs(first.tabs.centerY - first.toggle.centerY) <= 0.51, `toggle row: ${JSON.stringify(first)}`);
           assert.ok(Math.abs(first.tabs.top - 12) <= 0.51, `top: ${JSON.stringify(first)}`);
 
+          /* The header's own row — title, team chip, utilities — sits on the same
+             centre line as the toggle and the switcher, not 5px above it. */
+          const rowLine = await page.evaluate(`Array.from(document.querySelector(${JSON.stringify(header)})
+            .querySelectorAll('.ST7X_W_crumb, .ST7X_W_headerActions button, .ST7X_W_headerUtilities button, [data-conversation-tabs]'))
+            .map(el=>{const r=el.getBoundingClientRect();return{text:el.textContent.trim(),centerY:(r.top+r.bottom)/2};})`);
+          assert.equal(rowLine.length, 5, `header row items: ${JSON.stringify(rowLine)}`);
+          for (const item of rowLine) {
+            assert.ok(Math.abs(item.centerY - first.toggle.centerY) <= 0.5, `header row on the toggle's line: ${JSON.stringify(item)}`);
+          }
+
         if (!windows) {
           await mkdir(join(root, 'artifacts'), { recursive: true });
           const screenshot = await page.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 560, height: 200, scale: 1 } });
