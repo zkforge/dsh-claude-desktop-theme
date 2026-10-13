@@ -17,9 +17,11 @@ import { aliasHostClasses, PINNED_BUILD, WINDOWS_BUILD } from '../src/client/com
  * new-session plus, Search and the view options at the trailing edge. These
  * checks lay the host's real geometry out in a real browser and hold the parked
  * header to it: the band is the Workspace row's own box, the row's actions clear
- * the parked controls, the row underneath keeps its gestures, and every state
- * that has no group on screen (no history, a flat list, a search) falls back to
- * the header's own line.
+ * the parked controls, the row underneath keeps its gestures, the host's add
+ * workspace leaves the line altogether (the reference draws no such control, so
+ * it is not drawn, not focusable and not clickable), and every state that has no
+ * group on screen (no history, a flat list, a search) falls back to the header's
+ * own line.
  */
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -241,6 +243,16 @@ test('the browsing header merges with the first workspace row and falls back wit
   /** Lay one state out with the host's geometry and the plugin's stylesheets. */
   const page = (devtools, body) => devtools.evaluate(`(() => { window.releaseHeader?.(); document.documentElement.lang='zh'; document.documentElement.dataset.dshCcdStyle='true'; document.body.innerHTML=${JSON.stringify(aliasHostClasses(body, PINNED_BUILD))}; const sheet=document.createElement('style'); sheet.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, PINNED_BUILD))}; document.head.append(sheet); window.mountHeader(); })()`);
   const settle = devtools => devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
+  /* Both hover-only controls fade, and a machine under load can still be read
+     half way through the host's own transition (measured 0.77 where the case
+     expects 1). The transition is finished rather than waited out, then the
+     value is read — the same `getAnimations().finish()` this file already uses
+     to settle the View switcher. */
+  const settled = (devtools, selector, parent = false) => devtools.evaluate(`(() => {
+    document.getAnimations().forEach(animation => animation.finish());
+    const box = document.querySelector(${JSON.stringify(selector)});
+    return getComputedStyle(${parent ? 'box.parentElement' : 'box'}).opacity;
+  })()`);
   const profile = await mkdtemp(join(tmpdir(), 'ccd-sidebar-header-test-'));
   try {
     await withPage({ url: 'about:blank', width: 264, height: 420, scale: 2, profile }, async devtools => {
@@ -266,19 +278,29 @@ test('the browsing header merges with the first workspace row and falls back wit
       assert(!overlaps(geometry.plus, geometry.search) && !overlaps(geometry.plus, geometry.options), 'the row actions overlap nothing parked');
       assert(!overlaps(geometry.title, geometry.search) && !overlaps(geometry.title, geometry.options), 'the name runs clear of the parked controls');
 
-      /* The pointer on the band: the row's menu trigger and the region's add
-         workspace both come back, and the row keeps its own gestures. */
+      /* The pointer on the band: the row's menu trigger comes back and the row
+         keeps its own gestures, while the add-workspace control — which the
+         reference's line does not draw — is absent in this state too. */
       const band = await devtools.evaluate(`(()=>{const r=document.querySelector('#row-first').getBoundingClientRect();return{x:r.x+40,y:r.y+r.height/2}})()`);
       await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...band });
       await devtools.evaluate('document.getAnimations().forEach(animation=>animation.finish())');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#menu-first').parentElement).opacity`), '1', 'the row menu returns on hover');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).opacity`), '1', 'add workspace returns on hover');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).pointerEvents`), 'auto');
+      assert.equal(await settled(devtools, '#menu-first', true), '1', 'the row menu returns on hover');
+      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'add workspace is out of the line while the pointer is on it');
       geometry = await devtools.evaluate(boxes);
-      assert.equal(overlaps(geometry.add, geometry.menu), false, 'add workspace clears the row menu');
-      assert.equal(overlaps(geometry.add, geometry.plus), false, 'add workspace clears the plus');
-      assert(!overlaps(geometry.add, geometry.search) && !overlaps(geometry.add, geometry.options), 'add workspace clears the parked controls');
-      assert(geometry.add.right <= geometry.menu.x + 0.5, 'add workspace sits ahead of the row actions');
+      assert.equal(geometry.add.width, 0, 'the control takes no box on the line');
+      /* The cell it used to be parked in — 4px ahead of the row's own actions —
+         belongs to the Workspace row now: there is nothing of the control left to
+         click there, and the row underneath takes the gesture. */
+      const cell = await devtools.evaluate(`(() => {
+        const menu = document.querySelector('#menu-first').getBoundingClientRect();
+        const row = document.querySelector('#row-first').getBoundingClientRect();
+        const x = Math.round(menu.x - 20);
+        const y = Math.round(row.y + row.height / 2);
+        const found = document.elementFromPoint(x, y);
+        return { x, y, button: found?.closest('button')?.id ?? '', row: found?.closest('#row-first') !== null };
+      })()`);
+      assert.equal(cell.button, '', 'the add-workspace cell holds no button');
+      assert.equal(cell.row, true, 'the Workspace row owns that cell');
 
       /* Clicks: the parked box takes none of the row's, and its own controls work. */
       await devtools.evaluate('window.clicks=[]');
@@ -292,31 +314,28 @@ test('the browsing header merges with the first workspace row and falls back wit
       assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button'], 'Search stays clickable');
       await click({ x: Math.round(geometry.options.x + geometry.options.width / 2), y: Math.round(geometry.options.y + geometry.options.height / 2) });
       assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button', 'view-options'], 'the view options stay clickable');
-      await click({ x: Math.round((geometry.add.x + geometry.add.width / 2) * 1), y: Math.round(geometry.add.y + geometry.add.height / 2) });
-      assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button', 'view-options', 'add-workspace'], 'add workspace is clickable once it is back');
+      await click({ x: cell.x, y: cell.y });
+      assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button', 'view-options', 'workspace:first'], 'the cell the control used to hold clicks through to the row');
 
-      /* Resting state: both hover-only controls are out of the way but laid out.
-         The click above left the button focused, which is a state of its own —
-         focus holds the control up — so the pointer-away state is read after the
-         focus is given up, as it is when the reader moves on. */
+      /* Resting state: the row's hover-only trigger stands down, and the
+         add-workspace control is missing in this state as well. The click above
+         left the menu trigger focused, which is a state of its own — focus holds
+         that control up — so the pointer-away state is read after the focus is
+         given up, as it is when the reader moves on. */
       await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 2, y: 418 });
       await devtools.evaluate(`document.activeElement?.blur();new Promise(resolve=>setTimeout(resolve,150))`);
       /* The host wraps the menu trigger in the primitive's own span, which is
          the box the plugin fades; the trigger inside it keeps its 16px box. */
       assert.equal(await devtools.evaluate(`document.querySelector('#menu-first').parentElement.getBoundingClientRect().width`), 16);
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#menu-first').parentElement).opacity`), '0', 'the row menu stands down');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).opacity`), '0', 'add workspace stands down');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).pointerEvents`), 'none');
-      assert.equal(await devtools.evaluate(`document.querySelector('#add-workspace').getBoundingClientRect().width`), 28, 'the hidden control keeps its box');
+      assert.equal(await settled(devtools, '#menu-first', true), '0', 'the row menu stands down');
+      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'add workspace stays out at rest');
 
-      /* Keyboard: the hidden control stays in the tab order — a faded box still
-         takes focus — and a keyboard-focused arrival brings it back. */
-      assert.equal(await devtools.evaluate(`(() => { const button = document.querySelector('#add-workspace'); button.focus(); return document.activeElement === button; })()`), true, 'the hidden control still takes focus');
-      await devtools.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 40, key: 'ArrowDown', code: 'ArrowDown' });
-      await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', windowsVirtualKeyCode: 40, key: 'ArrowDown', code: 'ArrowDown' });
-      await devtools.evaluate(`document.querySelector('#view-options').focus();document.querySelector('#add-workspace').focus();new Promise(resolve=>setTimeout(resolve,150))`);
-      assert.equal(await devtools.evaluate(`document.querySelector('#add-workspace').matches(':focus-visible')`), true, 'a keyboard arrival is a focus-visible one');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).opacity`), '1', 'keyboard focus returns the control');
+      /* Keyboard: the control is out of the tab order — a `display: none` node
+         takes no focus — while the host's node stays whole in the DOM, so the
+         plugin's one rule is the only thing holding it off the line and dropping
+         that rule hands the host's own header back. */
+      assert.equal(await devtools.evaluate(`(() => { const button = document.querySelector('#add-workspace'); button.focus(); return document.activeElement === button; })()`), false, 'the control is out of the keyboard’s reach');
+      assert.equal(await devtools.evaluate(`document.querySelector('#add-workspace').getAttribute('aria-label')`), 'Add workspace', 'the host’s node is left untouched in the DOM');
 
       /* Several Workspaces: only the first row shares the band, the rest keep
          their own line, and every row keeps one trailing edge. */
@@ -342,7 +361,7 @@ test('the browsing header merges with the first workspace row and falls back wit
       await settle(devtools);
       geometry = await devtools.evaluate(boxes);
       assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionHeader')).backgroundColor`), 'rgb(251, 251, 250)', 'the band covers the row while the field is up');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_searchInput')).opacity`), '1');
+      assert.equal(await settled(devtools, '._7514NG_searchInput'), '1');
       assert(geometry.search.width >= geometry.header.width - 16, `the field spans the band (${geometry.search.width} of ${geometry.header.width})`);
       assert(Math.abs(geometry.header.y - geometry.row.y) < 1, 'the band still shares the row line');
       assert.equal(overlaps(geometry.search, geometry.title), true, 'the field covers the name rather than sitting beside it');
@@ -366,7 +385,10 @@ test('the browsing header merges with the first workspace row and falls back wit
       await settle(devtools);
       assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false);
       assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_sectionLabel').textContent`), '最近会话');
-      assert.equal(await devtools.evaluate(`document.querySelector('#add-workspace').getBoundingClientRect().right <= document.querySelector('#search').getBoundingClientRect().x + 0.5`), true, 'the restored add-workspace sits ahead of Search');
+      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'the region’s own title line carries no add workspace either');
+      geometry = await devtools.evaluate(boxes);
+      assert(geometry.search.x >= geometry.header.x, 'Search keeps its place on the title line');
+      assert(geometry.options.right <= geometry.header.right + 0.5, 'the view options still end the line');
 
       /* The host re-renders the tree: the merge and the word are re-read. */
       await page(devtools, oneWorkspace);
@@ -433,13 +455,14 @@ test('the browsing header merges with the first workspace row and falls back wit
       await settle(devtools);
       assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_root').style.getPropertyValue('--ccd-header-scroll')`, PINNED_BUILD)), '0px', 'a fresh scroller hands the band back to the top');
 
-      /* The collapsed rail keeps the host's own add-workspace control: it is the
-         region's only entry there, so it never leaves the flow or fades. */
+      /* The collapsed rail is this region's other layout and keeps the host's own
+         add-workspace control: it is the only entry there, and the plugin's rule
+         is scoped to the expanded root, so the rail's own line is untouched. */
       await page(devtools, rail);
       await settle(devtools);
       assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false, 'a rail tree has no group to merge with');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).opacity`), '1');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).position`), 'static');
+      assert.equal(await settled(devtools, '#add-workspace'), '1');
+      assert.notEqual(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'the rail keeps the host’s own button');
 
       /* Release: the marker goes and the host's own word returns. */
       await page(devtools, noHistory);
@@ -451,8 +474,9 @@ test('the browsing header merges with the first workspace row and falls back wit
       assert.deepEqual(await devtools.evaluate('window.errors'), []);
 
       /* The proof shots: two Workspaces, resting and with the pointer on the
-         first group's line — the second state is where the row's own menu and
-         the region's add workspace are back. */
+         first group's line — the second state is where the row's own menu is back
+         and the reference's line reads name, row actions, Search, view options,
+         with no add-workspace control anywhere on it. */
       await page(devtools, several);
       await settle(devtools);
       await mkdir(join(root, 'artifacts'), { recursive: true });

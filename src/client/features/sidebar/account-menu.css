@@ -23,6 +23,21 @@ html[data-dsh-ccd-style="true"] .ZogL4G_trigger[data-collapsed="true"] {
   height: var(--ccd-account-trigger-height);
 }
 
+/* The expanded launcher ends in the reference's small downward chevron,
+   including while its menu is open. Keep a fixed icon seat after the label so
+   long names ellipsize before it; the collapsed rail only shows the avatar. */
+html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"])::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-inline-start: auto;
+  background: var(--ccd-text-muted);
+  mask: var(--ccd-icon-chevron-right) center / 16px 16px no-repeat;
+  transform: rotate(90deg);
+  pointer-events: none;
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-account-menu] {
   box-sizing: border-box;
   width: var(--ccd-account-menu-width);

@@ -386,51 +386,26 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > :first-c
   }
 }
 
-/* Add workspace leaves the resting line: the reference's line ends at the view
-   options, and the plus this plugin shows there is the Workspace's own
-   new-session button. The control keeps its hit box, its callback, its tooltip
-   and the host's folder-plus artwork — the reference has no such button, and two
-   bare pluses a row apart would read as one control — and it is parked out of
-   the cluster's flow, so bringing it back moves neither Search nor the view
-   options. The 64px is Search's 28px, the header's 4px gap, the view options'
-   28px and 4px of air between the two boxes. */
+/* Add workspace is not drawn at all. The reference's line ends at the view
+   options, and the only plus that belongs on this line is the Workspace's own
+   new-session button one row below — two bare pluses a row apart read as one
+   control. The host's control therefore leaves with `display: none`, not the
+   hover fade this plugin shipped first: a faded box still holds a 28px cell on
+   the line, a tab stop and a tooltip for a control nobody can see, click or
+   read, and the fade was driven by a Workspace row's own hover, so it turned up
+   whenever the pointer crossed any group — a button standing on the line of a
+   row the reader was not aiming at.
+
+   Nothing else on the line moves when it goes: it sat outside the cluster's own
+   flow already — the fade parked it there — and a `display: none` child takes no
+   space either, so Search and the view options keep the trailing edge they had,
+   and the Workspace row's actions keep the 62px those two 28px boxes, their 4px
+   gap and 4px of air occupy. React still owns the node, so dropping this rule is
+   all it takes to put the host's own line back, and the rail — this region's
+   other layout, where the control is the region's only entry — keeps the host's
+   own geometry and its standing button. */
 html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail) ._7514NG_headerActions > button:last-of-type {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: calc(28px + 4px + 28px + 4px);
-  margin: auto 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.1s var(--ds-ease-in-out, ease-in-out);
-}
-
-/* In the merged band the button clears the row's action group as well: past the
-   16px menu trigger, the host's 10px gap and the 16px plus (62 + 42 + 4 = 108px),
-   the hover cluster reads as one run — add workspace, the row's menu, the row's
-   new session, Search, view options. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_headerActions > button:last-of-type {
-  right: calc(62px + 42px + 4px);
-}
-
-/* The reveal is the host's own hover-reveal, held open by whatever the pointer
-   is on: the Workspace row this control hangs beside, or the header's own
-   controls — the pointer leaves the row the moment it arrives on this button, so
-   that second half is what keeps the gesture whole. Keyboard focus brings it
-   back as well; while it is hidden it takes no pointer events, so the invisible
-   control can never be clicked. */
-html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail):is(
-  :has(._7514NG_sectionHeader:is(:hover, :focus-within)),
-  :has(.jJkEga_projectRow:is(:hover, :focus-within))) ._7514NG_headerActions > button:last-of-type,
-html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail) ._7514NG_headerActions > button:last-of-type:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] ._7514NG_headerActions > button:last-of-type {
-    transition: none;
-  }
+  display: none;
 }
 
 /* View options: the reference's two-knob control stands upright, and the host's
@@ -539,10 +514,10 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions {
   margin-left: auto;
 }
 
-/* The create button is the container's last *button*, not its last child, for
-   the same reason as the header's add-workspace trigger (05): its Tooltip's
-   bubble is appended as a `span[role="tooltip"]` sibling right after the
-   trigger, so `:last-child` would land on that bubble the moment the pointer
+/* The create button is the container's last *button*, not its last child — the
+   same way the header's own add-workspace trigger has to be matched: its
+   Tooltip's bubble is appended as a `span[role="tooltip"]` sibling right after
+   the trigger, so `:last-child` would land on that bubble the moment the pointer
    arrives, and the host's own circle-plus would come back with it. The sibling
    ⋯ trigger sits inside the menu primitive's own wrapper, which is why the
    button here is the container's only button child; `:last-of-type` keeps the
