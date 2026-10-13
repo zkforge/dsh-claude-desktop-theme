@@ -88,6 +88,7 @@ export const HOST = Object.freeze({
   dockDivider: '[data-dockkit-divider]',
   dockEmpty: '[data-dockkit-empty]',
   /**
+  /**
    * ui-sidebar-files/FilesBody.tsx: the file tree's own hooks. The pane's header
    * is the root's non-body child (the scroller writes `data-files-body`), each
    * entry row carries `data-files-entry` (`directory` / `file` / `other`) with
@@ -264,6 +265,10 @@ export const HOST = Object.freeze({
   /** TeamAction.module.css: native team dialog entry, retaining its label at every width. */
   teamActionTrigger: '._2tNPVa_trigger',
   teamActionLabel: '._2tNPVa_triggerLabel',
+  /** TeamAction.module.css: the panel's own body, the one element of that
+      surface that scrolls. `compat/scroll-pill.ts` tracks it like the four
+      page-level scrollers, so the panel carries the interface's bar too. */
+  teamBody: '._2tNPVa_body',
   /** AgentPresetLabel.module.css: passive mode description, omitted from the conversation header. */
   presetModeLabel: '._3li69W_label',
   /** AgentPresetLabel.module.css: redundant icon may yield space to its text. */

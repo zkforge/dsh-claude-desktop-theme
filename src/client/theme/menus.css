@@ -72,7 +72,9 @@
  *
  * Everything else the surface decides for itself — its 4px padding, the
  * scrollable viewport, the footer's pinned row, the card's own
- * `--dsh-scrollbar-*` rebinding — stays the host's. */
+ * `--dsh-scrollbar-*` rebinding — stays the host's. (That rebinding still
+ * stands; `theme/scrollbars.css` is the one sheet that moves the two thumb
+ * colours it resolves to.) */
 html[data-dsh-ccd-style="true"] [data-menu-material] {
   box-sizing: border-box;
   border: 1px solid var(--ccd-border);

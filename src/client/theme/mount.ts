@@ -3,13 +3,14 @@ import type { CleanupScope } from '../core/cleanup.ts';
 import { resolveThemeTokens, THEME_OVERRIDE_SOURCE } from './tokens.ts';
 import composerCss from './composer.css';
 import menuCss from './menus.css';
+import scrollbarCss from './scrollbars.css';
 import tokenCss from './tokens.css';
 
 /**
  * Plugin-scoped presentation base: the root activation marker, the design
  * variables, the shared Composer geometry two features depend on (siblings must
- * not import each other), the host popup chrome (DESIGN.md §6.7) and the
- * semantic token overrides.
+ * not import each other), the host popup chrome (DESIGN.md §6.7), the ink the
+ * window's scrollbars are painted in and the semantic token overrides.
  *
  * The override layer is recomputed on every mount, so a configuration change
  * releases the previous layer through the same scope that owns the stylesheets
@@ -22,6 +23,7 @@ export function mountTheme(environment: FeatureEnvironment, scope: CleanupScope)
   scope.add(environment.dom.mountStyles(tokenCss));
   scope.add(environment.dom.mountStyles(composerCss));
   scope.add(environment.dom.mountStyles(menuCss));
+  scope.add(environment.dom.mountStyles(scrollbarCss));
   const tokens = resolveThemeTokens(environment.config);
   if (Object.keys(tokens).length > 0) {
     scope.add(environment.host.theme.overrideTokens(THEME_OVERRIDE_SOURCE, tokens));

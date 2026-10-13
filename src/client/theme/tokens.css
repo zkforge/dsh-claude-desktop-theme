@@ -204,6 +204,21 @@ html[data-dsh-ccd-style="true"] {
      which is what makes a floating panel and a menu read as one material. */
   --ccd-right-panel-border: #d7d7d6;
 
+  /* Scrollbar ink. The host paints the scrollbars themselves
+     (`ui-theme/src/styles/scrollbar.css`: a 5px track and a pill thumb read
+     from `--dsh-scrollbar-thumb`), and this interface keeps that geometry —
+     the transcript's stable gutter, the sidebar's
+     `--dsh-session-list-scrollbar-width` padding and the dockkit panes are all
+     measured against the host's own width — so these two tokens are the ink
+     alone, bound in theme/scrollbars.css.
+     The ink is near-black by decision rather than by measurement: the bar is
+     5px wide and carries no surface of its own, so none of this palette's
+     surface steps — 5% to 14% black — reads at that size, and the interface
+     this one follows draws a dark scrollbar. Hover goes one step further down,
+     the direction the host's own hover step takes. */
+  --ccd-scrollbar-thumb: #333331;
+  --ccd-scrollbar-thumb-hover: #171716;
+
   /* Text */
   --ccd-text: #1f1f1d;
   --ccd-text-secondary: #6f6f6a;
@@ -516,6 +531,13 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   /* The card outline's dark side: one step above the row outline, as in the
      light palette. */
   --ccd-right-panel-border: #474743;
+
+  /* Scrollbar ink, dark side: on this canvas the bar is the one piece of the
+     chrome that has to read as raised, so it sits above every surface step
+     here and lightens on hover — the mirror of the light palette, whose ink
+     sits below every surface and darkens. */
+  --ccd-scrollbar-thumb: #5c5b57;
+  --ccd-scrollbar-thumb-hover: #75746f;
 
   /* Text */
   --ccd-text: #f0efec;

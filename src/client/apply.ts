@@ -13,6 +13,7 @@ import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
 import { mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
+import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { createDomPort } from './compat/dom.ts';
 import { CleanupScope } from './core/cleanup.ts';
@@ -138,6 +139,14 @@ export function apply(ctx: Context): void {
         scope.add(mountWorkspaceMenu(
           document,
           error => logger.error('workspace menu: label rewrite failed', error),
+        ));
+        /* The window's scrollbars span every feature the plugin draws — the
+           sidebar's tree, the Files pane, the agent-team panel and the
+           Conversation page — so they mount here rather than under one of the
+           switches that draw one of those surfaces. */
+        scope.add(mountScrollPills(
+          document,
+          error => logger.error('scrollbars: pill observer failed', error),
         ));
         if (next.features.conversation) {
           /* The header cluster's open control is host-rendered, so its mode and

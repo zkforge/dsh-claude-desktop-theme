@@ -13,6 +13,8 @@ html[data-dsh-ccd-style="true"] body {
   -webkit-font-smoothing: antialiased;
 }
 
+}
+
 /* Flat, neutral sidebar column: no gradient, no blue cast. */
 html[data-dsh-ccd-style="true"][data-platform="darwin"] ._6Qf49G_sidebarCol,
 html[data-dsh-ccd-style="true"] ._6Qf49G_sidebarCol {

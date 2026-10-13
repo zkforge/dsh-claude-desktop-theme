@@ -297,13 +297,16 @@
   font: var(--dsw-font-xxs-12);
 }
 
+/* The list keeps the window's own scrollbar: `theme/scrollbars.css` lists this
+   scroller, so the host's painted 5px bar is what appears here. (`scrollbar-
+   width: thin` used to stand in its place; the standard property suppresses the
+   host's painting, which is the whole thing that sheet exists to undo.) */
 .ccd-settings-menu-list {
   max-height: 260px;
   margin: 0;
   padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
   list-style: none;
 }
 
