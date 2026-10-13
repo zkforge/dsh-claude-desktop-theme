@@ -29,3 +29,13 @@
    | ![预览：Files 面板](docs/issues/img/todo-rightbar-files.png) | ![预览：终端面板](docs/issues/img/todo-rightbar-terminal.png) | ![预览：浏览器面板](docs/issues/img/todo-rightbar-browser.png) |
 
    涉及文件：`src/client/features/shell/shell.css`（`_6Qf49G_rightbarCol`）、`src/client/features/context-panel/`。
+
+5. ✅ 右侧栏从「标签页」改成「分栏」：不再是一条共用的页签栏，而是每个视图一格、各自一条标题行与关闭，按 1/2/3/4 块铺在面板里（上下左右都能分，像 Claude），格与格之间是可拖的分隔线。
+
+   ![参考：终端与 Files 两块上下排列](docs/issues/img/todo-rightbar-panes.png)
+
+   宿主的限制：右侧栏用的 DockKit 标签式渲染器只接受「一格」或「左右两格」，竖分或第三格会让宿主抛错，分栏按钮也写死两格上限；所以四块只能走宿主自己的**浮层面板**（`float`，`position: fixed` 的卡片，自带标题行、关闭、停靠，内容由宿主渲染）。
+
+   已按 2026-10-12 的 mp4 补齐：两列独立上下拖动、关闭同列补位、移除顶部空行、按视频复刻标题栏按钮与图标、面板放大／还原、Files 内部预览与树宽拖动、会话隔离及最后一块关闭自动收起。
+
+   涉及文件：`src/client/compat/right-panes.ts`、`src/client/compat/host-dom.ts`、`src/client/contracts/ports.ts`（`SidebarRightPort` 补 `float`）、`src/client/features/shell/right-panel.css`。
