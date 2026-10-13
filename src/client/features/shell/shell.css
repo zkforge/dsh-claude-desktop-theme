@@ -11,8 +11,18 @@ html[data-dsh-ccd-style="true"] body {
   font-family: var(--ccd-font-ui);
   color: var(--ccd-text);
   -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
+/* Window chrome and transcript labels should not turn a three-finger window
+   move into a page text selection. Chromium propagates the body's suppression
+   into descendants, so restore selection on message content as well as fields.
+   The assistant body includes code cards; shared Markdown also covers expanded
+   reasoning. Keep action rows and other labels outside these content roots. */
+html[data-dsh-ccd-style="true"] :is(input, textarea, [contenteditable="true"], [role="textbox"], .IzP3Va_bubble, .gKv1-q_body, ._markdown_1ypvv_5) {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Flat, neutral sidebar column: no gradient, no blue cast. */
