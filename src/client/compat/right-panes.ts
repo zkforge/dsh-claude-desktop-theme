@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type { Disposer, SidebarRightPort, SidebarTabRecord } from '../contracts/ports.ts';
 import { mountPaneChrome, type PaneChrome } from './pane-chrome.ts';
+import { paneLabels, paneLanguage } from './pane-labels.ts';
 import { hostSelectors } from './host-dom.ts';
 import { EMPTY_LAYOUT, reconcilePanes, resizePanes, tilePanes, type PaneLayout, type PaneRect, type PaneSeam } from './pane-tiles.ts';
 
@@ -41,6 +42,10 @@ interface SessionState {
   requestedFiles: boolean;
   hadViews: boolean;
   active: string | null;
+  /** Whether this Session's first tab set has been read (a restored layout is not an open). */
+  seeded: boolean;
+  /** Size of the tab set read last, so a reconciliation is told from an open. */
+  records: number;
 }
 interface Group {
   readonly id: string;
@@ -103,7 +108,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
   const stateOf = (session: string): SessionState => {
     let state = sessions.get(session);
     if (state === undefined) {
-      state = { layout: EMPTY_LAYOUT, preview: null, terminal: null, terminals: new Set(), previews: new Set(), fileShare: 0.4, maximized: null, requestedFiles: false, hadViews: false, active: null };
+      state = { layout: EMPTY_LAYOUT, preview: null, terminal: null, terminals: new Set(), previews: new Set(), fileShare: 0.4, maximized: null, requestedFiles: false, hadViews: false, active: null, seeded: false, records: -1 };
       sessions.set(session, state);
     }
     return state;
@@ -118,6 +123,48 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     if (node.style.getPropertyValue(name) !== value) node.style.setProperty(name, value);
   };
   const isFile = (record: SidebarTabRecord) => record.kind === 'text' && record.contentId?.startsWith('dsh-resource://file/') === true;
+
+  /**
+   * Pair a file preview the reader just opened with the Files tree.
+   *
+   * The tree used to be asked for whenever the tab set held previews without a
+   * `files` record. That is also exactly what a *restored* layout looks like
+   * while the host is still dropping the tabs it cannot revive — and the tab
+   * this module opened in that window reached the panel before the seat had
+   * reconciled it, which the host answers by throwing
+   * `sidebarRight: tab "<id>" has no committed occurrence` out of its
+   * `rightbar.session` entry. The whole right column then went dead: no
+   * `openResource`/`openTab` did anything — conversation file links included —
+   * and only an app restart brought the cards back. Measured in the running
+   * app with `artifacts/diagnostics/watch-sidebar.mjs`.
+   *
+   * So the request is bound to the reader's own action instead of to the shape
+   * of the tab set: a preview id this mount has never seen, in a tab set that
+   * is not shrinking (that is a reconciliation, not an open), on a column that
+   * is on screen. The first pass of a Session only seeds what is already there,
+   * and the write is deferred to a later task so it cannot land inside the
+   * host's own commit sequence.
+   */
+  const pairPreviewWithTree = (
+    session: string,
+    panel: HTMLElement,
+    state: SessionState,
+    records: readonly SidebarTabRecord[],
+    previews: readonly string[],
+    opened: boolean,
+  ): void => {
+    if (previews.length === 0) state.requestedFiles = false;
+    if (!opened || state.requestedFiles || records.some(record => record.kind === 'files')) return;
+    state.requestedFiles = true;
+    window.setTimeout(() => {
+      if (disposed || !panel.isConnected || sessionOf(panel) !== session) return;
+      /* Re-read the tab set: the host may have opened the tree by another path,
+         or dropped the preview that asked for it, since this pass. */
+      const live = (sidebar.openTabs?.getSnapshot?.() ?? []).filter(record => record.sessionId === session);
+      if (live.some(record => record.kind === 'files') || !live.some(isFile)) return;
+      try { sidebar.openTab('files'); } catch (error) { report(error); }
+    }, 0);
+  };
 
   const groupsOf = (records: readonly SidebarTabRecord[], state: SessionState, active: string | null): Group[] => {
     const tree = records.find(record => record.kind === 'files');
@@ -203,7 +250,8 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     const kind = record?.kind ?? '';
     const nativeTitle = node.querySelector('[data-dockkit-tab-title]')?.textContent?.trim() ?? '';
     const terminalName = nativeTitle && !/^(?:zsh|bash|fish|pwsh|powershell|cmd|终端|terminal)$/iu.test(nativeTitle) && nativeTitle !== record?.tabId ? nativeTitle : workspace;
-    const title = kind === 'files' ? 'Files' : kind === 'terminal' ? `Terminal${terminalName ? ` ${terminalName}` : ''}`
+    const labels = paneLabels(paneLanguage(document));
+    const title = kind === 'files' ? labels.files.title : kind === 'terminal' ? `${labels.chrome.terminal}${terminalName ? ` ${terminalName}` : ''}`
       : group.preview ? filename(group.preview) : node.querySelector('[data-dockkit-tab-title]')?.textContent?.trim() ?? '';
     chrome.update({ kind, title, filesRoot, zoomed: state.maximized === group.id,
       panel: root.closest<HTMLElement>(host.rightbarPanel)!,
@@ -222,7 +270,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         const close = root.querySelector<HTMLButtonElement>(`[data-dockkit-content="${id}"] [data-dockkit-float-close]`);
         if (close) { close.setAttribute('data-ccd-close-tab', ''); close.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); close.removeAttribute('data-ccd-close-tab'); }
       },
-      terminals: group.id === TERMINAL_GROUP ? group.tabs.map((id, index) => ({ id, title: group.tabs.length > 1 ? `Terminal ${index + 1}${workspace ? ` ${workspace}` : ''}` : title, selected: id === group.terminal })) : [],
+      terminals: group.id === TERMINAL_GROUP ? group.tabs.map((id, index) => ({ id, title: group.tabs.length > 1 ? `${labels.chrome.terminal} ${index + 1}${workspace ? ` ${workspace}` : ''}` : title, selected: id === group.terminal })) : [],
       files: group.tabs.filter(id => id !== group.tree && records.find(record => record.tabId === id)?.kind === 'text')
         .map(id => ({ id, title: filename(id), selected: id === group.preview })),
     });
@@ -278,6 +326,13 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     const state = stateOf(session);
     const records = (sidebar.openTabs?.getSnapshot?.() ?? []).filter(record => record.sessionId === session);
     const active = root.querySelector<HTMLElement>('[data-dockkit-float-active]')?.getAttribute('data-dockkit-content') ?? null;
+    /* Read before `groupsOf` consumes it: what this pass holds that the last one
+       did not is a tab the reader opened, while a smaller set is the host
+       reconciling restored records. A Session's first pass counts as neither. */
+    const previews = records.filter(isFile).map(record => record.tabId);
+    const opened = state.seeded && records.length >= state.records && previews.some(id => !state.previews.has(id));
+    state.seeded = true;
+    state.records = records.length;
     const groups = groupsOf(records, state, active);
     const ids = groups.map(group => group.id);
     const activeGroup = groups.find(group => group.tabs.includes(active ?? ''));
@@ -295,17 +350,28 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     }
     if (groups.length === 0) {
       clear();
-      if (state.hadViews && panel.hasAttribute('data-sidebar-right-open')) sidebar.toggleExpanded?.();
+      /* The host's own `closeTab` plan already collapses the column when the last
+         docked tab goes; this catches the case where the last cards were floats.
+         It is deferred out of this pass and re-reads the column first, so the
+         write can neither land inside the host's commit sequence nor collapse a
+         column a newer open has already filled. */
+      if (state.hadViews && panel.hasAttribute('data-sidebar-right-open')) {
+        window.setTimeout(() => {
+          if (disposed || !panel.isConnected || !panel.hasAttribute('data-sidebar-right-open')) return;
+          /* The host's own records are the authority on whether anything is left
+             to look at: the DOM keeps nodes this module moved while a commit
+             settles, and a newer open has already added its record by now. */
+          const live = (sidebar.openTabs?.getSnapshot?.() ?? []).filter(record => record.sessionId === session);
+          if (live.some(record => record.kind !== 'guide')) return;
+          try { sidebar.toggleExpanded?.(); } catch (error) { report(error); }
+        }, 0);
+      }
       state.hadViews = false;
       state.requestedFiles = false;
       return;
     }
     state.hadViews = true;
-    if (records.some(isFile) && !records.some(record => record.kind === 'files') && !state.requestedFiles) {
-      state.requestedFiles = true;
-      try { sidebar.openTab('files'); } catch (error) { report(error); }
-    }
-    if (!records.some(isFile)) state.requestedFiles = false;
+    pairPreviewWithTree(session, panel, state, records, previews, opened);
     const box = root.getBoundingClientRect();
     let area: PaneRect = { x: box.x, y: box.y, width: box.width, height: box.height };
     if (state.maximized !== null) {
@@ -492,6 +558,10 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
   try {
     observer = new MutationObserver(mutations => {
       const relevant = mutations.some(mutation => {
+        /* `<html lang>` sits outside the body and is not the panel's business
+           except for one thing: the words the panel writes are read from it. */
+        if (mutation.type === 'attributes' && mutation.attributeName === 'lang'
+          && mutation.target === document.documentElement) return true;
         const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
         if (target === null) return false;
         if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') return target.matches(host.rightbarSession);
@@ -509,6 +579,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true,
       attributeFilter: ['hidden', 'data-sidebar-right-open', 'data-sidebar-right-panel', 'data-sidebar-right-session',
         'data-dockkit-content', 'data-dockkit-float', 'data-dockkit-float-active', 'data-dockkit-pane', 'data-dockkit-host', 'data-ccd-files-tree'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     if (typeof ResizeObserver === 'function') resize = new ResizeObserver(schedule);
     unsubscribe = sidebar.openTabs?.subscribe?.(schedule) ?? (() => {});
     document.addEventListener('pointerdown', onPointerDown, true);

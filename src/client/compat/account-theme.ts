@@ -1,21 +1,17 @@
 import type { Disposer, ThemePreference, ThemePreferencePort } from '../contracts/ports.ts';
 
-/** A compact theme row sharing the settings page's native preference service. */
+/** Theme controls beside the account name, sharing the native preference service. */
 export function mountAccountTheme(menu: HTMLElement, theme: ThemePreferencePort | null): Disposer {
-  const more = menu.querySelector('[data-ccd-account-more]');
-  // The pinned account list ends with Sign in/out, immediately after More.
-  const anchor = more?.parentElement?.nextElementSibling;
-  if (theme === null || !anchor?.parentElement) return () => {};
+  const anchor = menu.firstElementChild;
+  if (theme === null || !anchor) return () => {};
   const document = menu.ownerDocument;
   const zh = (document.documentElement.lang || document.defaultView?.navigator.language || '').toLowerCase().startsWith('zh');
   const row = document.createElement('div');
   row.setAttribute('data-ccd-account-theme', '');
-  const label = document.createElement('span');
-  label.textContent = zh ? '主题' : 'Theme';
   const group = document.createElement('span');
   group.setAttribute('role', 'group');
-  group.setAttribute('aria-label', label.textContent);
-  row.append(label, group);
+  group.setAttribute('aria-label', zh ? '主题' : 'Theme');
+  row.append(group);
 
   const options: readonly { id: ThemePreference; label: string; artwork: string }[] = [
     { id: 'system', label: zh ? '跟随系统' : 'System', artwork: '<rect x="2.3" y="3.1" width="11.4" height="7.9" rx="1.5"/><path d="M8 11v1.4M6.3 12.9h3.4"/>' },
@@ -63,7 +59,7 @@ export function mountAccountTheme(menu: HTMLElement, theme: ThemePreferencePort 
   });
   sync();
   const unsubscribe = theme.subscribe(sync);
-  anchor.parentElement.insertBefore(row, anchor);
+  menu.insertBefore(row, anchor);
   return () => {
     unsubscribe();
     row.remove();

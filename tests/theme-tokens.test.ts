@@ -119,6 +119,7 @@ test('the built-in dark palette agrees with the dark block it mirrors', () => {
     track: 'ccd-track',
     raised: 'ccd-raised',
     hover: 'ccd-hover',
+    hoverStrong: 'ccd-hover-strong',
     selected: 'ccd-selected',
     border: 'ccd-border',
     borderStrong: 'ccd-border-strong',
@@ -156,6 +157,10 @@ test('the dark palette keeps the light palette relationships', () => {
   /* The head rule is the stronger line in both schemes. */
   assert.ok(brightness(darkColour('ccd-table-head-line') ?? '#000') > brightness(darkColour('ccd-border') ?? '#fff'));
   assert.ok(brightness(declaredColour('ccd-table-head-line') ?? '#fff') < brightness(declaredColour('ccd-border') ?? '#000'));
+  /* A control's own hover step sits one step below the row fill it stands on:
+     darker than `selected` on the light canvas, brighter on the dark one. */
+  assert.ok(brightness(declaredColour('ccd-hover-strong') ?? '#fff') < brightness(declaredColour('ccd-selected') ?? '#000'));
+  assert.ok(brightness(darkColour('ccd-hover-strong') ?? '#000') > brightness(darkColour('ccd-selected') ?? '#fff'));
 });
 
 test('colour arithmetic is deterministic and stays in range', () => {
@@ -192,6 +197,7 @@ test('a configured canvas brings its own light steps and leaves the dark palette
     '--ccd-track': 'track',
     '--ccd-raised': 'raised',
     '--ccd-hover': 'hover',
+    '--ccd-hover-strong': 'hoverStrong',
     '--ccd-selected': 'selected',
     '--ccd-border': 'border',
     '--ccd-border-strong': 'borderStrong',
@@ -201,7 +207,7 @@ test('a configured canvas brings its own light steps and leaves the dark palette
   for (const [name, key] of Object.entries(darkNames)) {
     assert.deepEqual(tokens[name]?.dark, BUILT_IN_DARK[key], `${name} should carry the built-in dark value`);
   }
-  for (const name of ['--ccd-hover', '--ccd-selected', '--ccd-track', '--ccd-raised', '--ccd-border', '--ccd-border-strong', '--ccd-border-soft', '--ccd-table-head-line']) {
+  for (const name of ['--ccd-hover', '--ccd-hover-strong', '--ccd-selected', '--ccd-track', '--ccd-raised', '--ccd-border', '--ccd-border-strong', '--ccd-border-soft', '--ccd-table-head-line']) {
     const value = tokens[name]?.light;
     assert.ok(typeof value === 'string' && value.startsWith('#'), `${name} should be a colour`);
     assert.ok(brightness(value) < brightness(base), `${name} should step away from the base`);

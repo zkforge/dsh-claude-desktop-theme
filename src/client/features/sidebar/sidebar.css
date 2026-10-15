@@ -70,11 +70,35 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-sidebar-collapsed]
 html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-shell-leading] {
   top: 11px;
   left: var(--ccd-sidebar-toggle-left);
+  display: flex;
+  align-items: center;
+  height: 28px;
 }
 
+/* Collapsing exposes shell shortcuts beside the toggle. Their native button
+   sizes differ; keep every hit box centred at y=25, like the conversation
+   header, and give the larger shortcut artwork the same 16px icon seat. */
 html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-shell-leading] button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  min-width: 0;
+  min-height: 0;
+  margin-block: 0;
+  padding: 0;
   border-radius: 8px;
   color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-shell-leading] button svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-shell-leading] button:hover {
@@ -201,7 +225,7 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_n
    the row gap, which lifts the icon row and the list together by 9px and leaves
    the 28px hit areas, the header's 30px box and every row above untouched. The
    host's own `margin-top: 2px` on that header never applies: the plugin's
-   `margin: 0 0 2px` below outranks its `:not(rail)` rule. */
+   margin shorthand below outranks its `:not(rail)` rule. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelList {
   gap: var(--ccd-nav-gap);
   margin-bottom: var(--ccd-nav-gap);
@@ -276,92 +300,29 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_regionArea {
   padding-left: 0;
 }
 
-/* Browsing region: one header line over compact project groups, then the
-   Sessions. */
+/* Browsing region: a separate toolbar above compact project groups. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_root {
   --dsh-session-list-edge-inset: 0px;
   padding-right: 0;
 }
 
-/* The rail keeps the host's own insets: this header holds the "add workspace"
-   icon in the collapsed layout, and the expanded layout's 8px inset would push
-   that one icon off the rail's centre axis. */
+/* Align the heading with the project labels' 4px inset. Overlap the toolbar
+   and first project's empty vertical padding by 4px: their centres then sit
+   28px apart, close to the navigation rhythm above, without shrinking controls.
+   The collapsed rail keeps the host's own insets for its add-workspace icon. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader {
   position: relative;
   height: 30px;
-  margin: 0 0 2px;
-  padding-left: 8px;
+  margin: 0 0 -4px;
+  padding-left: 4px;
+  /* Runtime measures the tree edge, including the actual scrollbar gutter. */
+  padding-right: 0;
   color: var(--ccd-text-muted);
 }
 
-/* One header line (TODO 2).
- *
- * The reference's browsing region is a single line: the group's name at the
- * inline start and, at the trailing edge, the plus that starts a Session,
- * Search and the view options. DSH renders those controls on a section header
- * of its own, above a tree whose first row is the first Workspace's, so while
- * `compat/browser-header.ts` reports that the tree leads with such a row the
- * header leaves the flow and is parked on that row's line: the tree then starts
- * at the region's top and its first row lands under the parked header to the
- * pixel, because the band's height is the Workspace row's own height.
- *
- * Nothing moves in the DOM — React still owns every node — and the parked box
- * takes no pointer events of its own, only its two control groups do, so the row
- * underneath keeps its click, its hover and its own buttons.
- *
- * The band is locked to the tree's content, not to the region's top edge: it
- * sits on the first Workspace row's line, so it leaves with that row when the
- * tree scrolls, exactly as the host's own row did. The distance comes from
- * `compat/browser-header.ts` (`--ccd-header-scroll`, measured on the scroller —
- * a sibling of this header, which CSS cannot see) and the region clips it: the
- * band is not inside the scroller and cannot be carried into it, so the region
- * box is what a scrolled-away band leaves. Nothing else in the region paints
- * outside that box — the host's tooltip bubbles and hover cards are fixed and
- * its menus are portalled — and the clip is only declared while merged. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] {
-  position: relative;
-  overflow: hidden;
-}
-
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionHeader {
-  position: absolute;
-  top: calc(-1 * var(--ccd-header-scroll, 0px));
-  left: 0;
-  right: 0;
-  height: var(--ccd-workspace-row-height);
-  margin: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionHeader > :is(._7514NG_searchSlot, ._7514NG_headerActions) {
-  pointer-events: auto;
-}
-
-/* The merged band is named by the Workspace row it sits on, so the header's own
-   word stands down there. Where no group is on screen the header is the region's
-   title line instead and keeps a word: 最近会话 / Recents, written over the
-   host's own dictionary string by `compat/browser-header.ts`. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionLabel {
-  display: none;
-}
-
-/* A search replaces the band for the length of the query: the host expands its
-   field over the whole line and hides the label and the actions it owns, so the
-   band takes the sidebar's own fill — the Workspace row's name and its buttons
-   stay laid out underneath it and must not read through the field. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] ._7514NG_sectionHeader:has(._7514NG_searchExpanded) {
-  background: var(--ccd-sidebar);
-}
-
-/* The Workspace row under the band gives the parked controls their room. Search
-   and the view options are two 28px boxes on the header's own 4px gap, so the
-   row's trailing group ends 2px short of that 60px (its own 8px padding spends
-   the rest) and the plus's artwork keeps the reference's 10px to the Search
-   glyph. Every Workspace row takes the same offset, so the groups below the band
-   keep one trailing edge. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-header-merged] .jJkEga_projectRow .jJkEga_rowActions {
-  margin-right: calc(28px + 4px + 28px - 8px + 2px);
+/* Search and view options keep their own line above the project tree. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchSlot:not(._7514NG_searchSlotExpanded) {
+  max-width: 22px;
 }
 
 /* The reference gives a Workspace row one standing action — the plus that starts
@@ -386,24 +347,8 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > :first-c
   }
 }
 
-/* Add workspace is not drawn at all. The reference's line ends at the view
-   options, and the only plus that belongs on this line is the Workspace's own
-   new-session button one row below — two bare pluses a row apart read as one
-   control. The host's control therefore leaves with `display: none`, not the
-   hover fade this plugin shipped first: a faded box still holds a 28px cell on
-   the line, a tab stop and a tooltip for a control nobody can see, click or
-   read, and the fade was driven by a Workspace row's own hover, so it turned up
-   whenever the pointer crossed any group — a button standing on the line of a
-   row the reader was not aiming at.
-
-   Nothing else on the line moves when it goes: it sat outside the cluster's own
-   flow already — the fade parked it there — and a `display: none` child takes no
-   space either, so Search and the view options keep the trailing edge they had,
-   and the Workspace row's actions keep the 62px those two 28px boxes, their 4px
-   gap and 4px of air occupy. React still owns the node, so dropping this rule is
-   all it takes to put the host's own line back, and the rail — this region's
-   other layout, where the control is the region's only entry — keeps the host's
-   own geometry and its standing button. */
+/* Keep the toolbar limited to Search and view options. The collapsed rail
+   retains its native add-workspace entry. */
 html[data-dsh-ccd-style="true"] ._7514NG_root:not(._7514NG_rail) ._7514NG_headerActions > button:last-of-type {
   display: none;
 }
@@ -429,6 +374,8 @@ html[data-dsh-ccd-style="true"] ._7514NG_listArea {
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow {
   height: 34px;
   padding-inline-start: calc(4px + var(--dsh-workspace-indent, 0px));
+  /* Optical inset: the lower action group sits 4px inside the tree edge. */
+  padding-inline-end: 4px;
   color: var(--ccd-text-secondary);
 }
 
@@ -524,8 +471,8 @@ html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, 
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 0;
   border-radius: 6px;
@@ -542,8 +489,8 @@ html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, 
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button svg,
 html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) svg {
   flex: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 /* The create button is the container's last *button*, not its last child — the
@@ -562,10 +509,10 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:l
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions > button:last-of-type::before {
   content: "";
   flex: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   background-color: currentColor;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8 2V14M2 8H14' stroke='black' stroke-width='1.25' stroke-linecap='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8 2V14M2 8H14' stroke='black' stroke-width='1.25' stroke-linecap='round'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
 }
 
 html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_title {
@@ -591,6 +538,12 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow.jJkEga_menuOpen {
 
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow {
   height: 28px;
+}
+
+/* Hide the session hover card's surface, including its padding and shadow.
+   Status lines distinguish session cards from workspace path cards. */
+html[data-dsh-ccd-style="true"] :has(> .jJkEga_hoverContent > .jJkEga_hoverStatus) {
+  display: none;
 }
 
 /* The row's leading 16px cell is the reference's shape already — the label
@@ -650,8 +603,66 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow.jJkEga_selected {
   background: var(--ccd-selected);
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_time {
-  color: var(--ccd-text-muted);
+/* Relative timestamps stay out of the conversation list in every row state. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_time {
+  display: none;
+}
+
+/* A Session row's trailing side is one control: the ⋮ that opens its menu.
+ *
+ * The host hangs two hover buttons of its own there — archive and pin,
+ * registered into its `sidebar.workspaces.session.row.action` list — beside the
+ * ⋯ trigger, so a pointed-at row draws three marks where the reference draws
+ * one. Nothing is lost with them: the same two actions are rows of that ⋯ card
+ * (pin, rename, fork, archive — `ui-workspace`'s own registrations into
+ * `sidebar.workspaces.session.menu.item`), which is what the reference's menu
+ * holds. The list's outlet therefore leaves the line, and the seat with it: a
+ * row's trailing control is the menu trigger alone, so an entry a later plugin
+ * registers there is not drawn either. React keeps every node and the host
+ * keeps its own hover state — dropping this rule puts the two buttons back.
+ *
+ * The `!important` answers an inline style rather than a host rule: `renderSlot`
+ * renders its outlet as a `div[data-slot]` carrying the renderer's own anchor
+ * style, `display: contents`, which keeps the wrapper out of layout, and an
+ * author declaration only outranks an inline one with it. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions > div[data-slot="sidebar.workspaces.session.row.action"] {
+  display: none !important;
+}
+
+/* Match the toolbar and project menu's 22px button and 14px artwork, retaining
+   the vertical ellipsis and the stronger hover fill on a selected row. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions .jJkEga_iconButton {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions .jJkEga_iconButton:hover {
+  background: var(--ccd-hover-strong);
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions .jJkEga_iconButton svg {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions .jJkEga_iconButton::before {
+  content: "";
+  display: block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  mask: var(--ccd-icon-more) center / 14px 14px no-repeat;
 }
 
 /* Archived rows. The host fades an archived title with its own caption ink, but
@@ -822,4 +833,105 @@ html[data-dsh-ccd-style="true"] .ccd-sidebar-empty button:focus-visible {
 
 html[data-dsh-ccd-style="true"] [data-ccd-list-empty] [data-row-key="empty"] {
   display: none;
+}
+
+/* Claude's conversation overflow is one trailing cell. Keep its right inset
+   independent of the title length and of the host's hidden quick actions. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions {
+  flex: none;
+  margin-left: auto;
+  gap: 0;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(.jJkEga_rowActions) {
+  padding-inline-end: 0;
+}
+
+/* The reference keeps the trigger highlighted while its popup is open. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow.jJkEga_menuOpen .jJkEga_rowActions button[aria-expanded="true"] {
+  background: var(--ccd-hover-strong);
+  color: var(--ccd-text);
+}
+
+/* Scope through the host's outlet: this also reaches a portalled popup, with
+   no dependency on translated labels or the number of registered actions.
+   Keep DSH's pin/unpin, rename, fork and archive/restore artwork and behavior;
+   unlike the other compact menus, this reference has a leading icon column. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:has([data-slot="sidebar.workspaces.session.menu.item"]) {
+  min-width: 144px;
+  padding: 4px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-slot="sidebar.workspaces.session.menu.item"] [role="menuitem"] {
+  min-height: 24px;
+  padding: 2px 8px;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-slot="sidebar.workspaces.session.menu.item"] [role="menuitem"] > ._itemIcon_4ub78_148 {
+  display: inline-flex;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-slot="sidebar.workspaces.session.menu.item"] ._itemIcon_4ub78_148 svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-sidebar-session-icon="pin"] > ._itemIcon_4ub78_148 {
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M9.5 2.5 13.5 6.5 11 8l-.5 3.5-1 1-3-3-3-3 1-1L8 5l1.5-2.5ZM6.5 9.5 3 13' stroke='black' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-sidebar-session-icon="rename"] > ._itemIcon_4ub78_148 {
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3 10.5 2.5 14l3.5-.5L14 5.5 10.5 2 3 10.5ZM9 3.5l3.5 3.5' stroke='black' stroke-width='1.15' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-sidebar-session-icon] > ._itemIcon_4ub78_148 svg {
+  display: none;
+}
+
+/* Workspace overflow already supplies native edit/trash art; reveal only this
+   popup's seats, preserving the host's destructive ink and click handlers. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-sidebar-workspace-menu] [role="menuitem"] {
+  gap: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-sidebar-workspace-menu] [role="menuitem"] > ._itemIcon_4ub78_148 {
+  display: inline-flex;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-sidebar-workspace-menu] ._itemIcon_4ub78_148 svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Claude-style single-letter hints replace the host's multi-key artwork only
+   in the sidebar conversation popup. Native shortcut bindings stay with DSH. */
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-sidebar-session-shortcut] > :not(._itemIcon_4ub78_148):not(._itemLabel_4ub78_190) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-sidebar-session-shortcut]::after {
+  content: attr(data-ccd-sidebar-session-shortcut);
+  flex: none;
+  margin-left: auto;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+  line-height: 20px;
 }

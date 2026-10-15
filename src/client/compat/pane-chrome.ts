@@ -1,5 +1,6 @@
 import { mountBrowserMenus, type BrowserPopupLayout } from './browser-menu.ts';
 import { paneIcon, type PaneIcon } from './pane-icons.ts';
+import { paneLabels, paneLanguage } from './pane-labels.ts';
 import { relativeFilePath } from './relative-file-path.ts';
 
 export interface PaneChromeOptions {
@@ -31,9 +32,16 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   if (!grip || !title || !close) return null;
   let options: PaneChromeOptions;
   let signature = '';
+  /** This pane's own words, in the document's language (`pane-labels.ts`). */
+  let labels = paneLabels(paneLanguage(document));
   let menu: HTMLElement | null = null;
   let form: HTMLFormElement | null = null;
   let wait: HTMLElement | null = null;
+  /** The wait layer's own line, and the placeholder this module last wrote:
+   *  both outlive `update()`'s rebuild, so a language change rewrites them
+   *  where they stand rather than waiting for the node to be replaced. */
+  let waitText: HTMLElement | null = null;
+  let fallbackPlaceholder = '';
   let menuAnchor: HTMLElement | null = null;
   let addressSlot: HTMLElement | null = null;
   const paths = new Map<HTMLElement, HTMLElement>();
@@ -61,7 +69,20 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     if (!options.filesRoot && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
     event.preventDefault(); event.stopImmediatePropagation();
     const { closeTabs, onClose } = options;
-    for (const id of closeTabs) onClose(id);
+    /* One tab per task, re-read from the document before each step. Every close
+       commits a host layout change that React has not painted yet, so a
+       synchronous loop handed the host a second click on a node a commit had
+       already replaced — the tab set and this module's own preview bookkeeping
+       then drifted apart. A tab an earlier step already removed takes its node
+       with it, and its id is dropped instead of clicked again. */
+    const pending = [...closeTabs];
+    const step = () => {
+      const id = pending.shift();
+      if (id === undefined) return;
+      if (document.querySelector(`[data-dockkit-content="${id}"]`) !== null) onClose(id);
+      window.setTimeout(step, 0);
+    };
+    window.setTimeout(step, 0);
   };
   close.addEventListener('click', closeGroup, true);
 
@@ -117,16 +138,16 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     };
     const files = options.filesRoot;
     if (files) {
-      item(files.hasAttribute('data-ccd-files-tree') ? 'Show file tree' : 'Hide file tree', () => files.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
-      item('Refresh files', () => files.querySelector<HTMLButtonElement>('[data-files-reload]')?.click());
+      item(files.hasAttribute('data-ccd-files-tree') ? labels.files.show : labels.files.hide, () => files.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
+      item(labels.chrome.refresh, () => files.querySelector<HTMLButtonElement>('[data-files-reload]')?.click());
       const open = files.querySelector<HTMLButtonElement>('[data-slot="sidebar.right.tab.files.actions"] button');
-      if (open) item(open.getAttribute('aria-label') ?? 'Open folder in app', () => open.click());
+      if (open) item(open.getAttribute('aria-label') ?? labels.chrome.openFolder, () => open.click());
     }
     for (const file of options.files) item(`${file.selected ? '✓ ' : ''}${file.title}`, () => options.onSelect(file.id));
-    item(options.zoomed ? 'Restore pane' : 'Expand pane', options.onZoom);
+    item(options.zoomed ? labels.chrome.restore : labels.chrome.expand, options.onZoom);
     const collapse = options.panel.querySelector<HTMLButtonElement>('[data-sidebar-right-toggle]');
-    if (collapse) item('Hide sidebar', () => collapse.click());
-    item('Close', () => close.click());
+    if (collapse) item(labels.chrome.hideSidebar, () => collapse.click());
+    item(labels.chrome.close, () => close.click());
     popup(anchor, content);
     content.querySelector('button')?.focus();
   };
@@ -192,7 +213,13 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       if (form) {
         form.setAttribute('data-ccd-browser-toolbar', '');
         const input = form.querySelector('input');
-        if (input && !input.placeholder) input.placeholder = 'Enter server address';
+        /* The host's own field usually carries its own localised placeholder;
+           this one is the fallback for a field that has none, and it follows
+           the document's language like every other word here. */
+        if (input !== null && (input.placeholder === '' || input.placeholder === fallbackPlaceholder)) {
+          input.placeholder = labels.browser.enterAddress;
+          fallbackPlaceholder = labels.browser.enterAddress;
+        }
       }
     }
     syncAddress();
@@ -203,7 +230,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     }
     const area = node.querySelector<HTMLElement>('[aria-busy]');
     const loaded = area?.querySelector('iframe, webview') !== null;
-    if (!area || loaded) { wait?.remove(); wait = null; return; }
+    if (!area || loaded) { wait?.remove(); wait = null; waitText = null; return; }
     if (wait?.parentElement !== area) {
       wait?.remove();
       wait = document.createElement('div');
@@ -211,49 +238,52 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       const mark = document.createElement('span');
       mark.setAttribute('data-ccd-browser-wait-mark', '');
       mark.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M12 17v4m-4 0h8" stroke="currentColor" stroke-width="1.4"/></svg>';
-      const text = document.createElement('span'); text.textContent = 'Awaiting server…';
-      wait.append(mark, text); area.append(wait);
+      const text = document.createElement('span');
+      waitText = text; wait.append(mark, text); area.append(wait);
     }
+    if (waitText !== null && waitText.textContent !== labels.browser.awaitingServer) waitText.textContent = labels.browser.awaitingServer;
     wait.setAttribute('data-ccd-browser-wait', area.getAttribute('aria-busy') === 'true' ? 'loading' : 'idle');
   };
   const observer = new MutationObserver(refreshNative);
   observer.observe(node, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'aria-busy', 'title'] });
 
   const terminalText = (element: HTMLElement, text: string) => {
-    const match = /^(Terminal(?: \d+)?)(?: (.*))?$/u.exec(text);
-    element.textContent = match?.[1] ?? text;
-    if (match?.[2]) { const workspace = document.createElement('span'); workspace.setAttribute('data-ccd-terminal-workspace', ''); workspace.textContent = ` ${match[2]}`; element.append(workspace); }
+    /* The prefix is this panel's own word in either language, so a title
+       renamed under the other one still splits into name plus workspace. */
+    const match = /^(Terminal|终端)((?: \d+)?)(?: (.*))?$/u.exec(text);
+    element.textContent = match === null ? text : `${match[1]}${match[2] ?? ''}`;
+    if (match?.[3]) { const workspace = document.createElement('span'); workspace.setAttribute('data-ccd-terminal-workspace', ''); workspace.textContent = ` ${match[3]}`; element.append(workspace); }
   };
   const update = (next: PaneChromeOptions) => {
     options = next;
+    labels = paneLabels(paneLanguage(document));
     const hidden = next.filesRoot?.hasAttribute('data-ccd-files-tree') ?? false;
-    const value = `${next.kind}|${next.title}|${next.zoomed}|${hidden}|${next.files.map(file => `${file.id}:${file.selected}`).join(',')}|${next.terminals.map(tab => `${tab.id}:${tab.title}:${tab.selected}`).join(',')}`;
+    const value = `${paneLanguage(document)}|${next.kind}|${next.title}|${next.zoomed}|${hidden}|${next.files.map(file => `${file.id}:${file.selected}`).join(',')}|${next.terminals.map(tab => `${tab.id}:${tab.title}:${tab.selected}`).join(',')}`;
     if (value === signature) { refreshNative(); return; }
     signature = value;
     dismiss(); addressResize?.disconnect(); addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
     node.setAttribute('data-ccd-pane-kind', next.kind);
     if (next.kind === 'browser') {
-      const globe = button(caption, '编辑地址', 'data-ccd-browser-address', 'Globe', address);
-      globe.title = '编辑地址';
+      const globe = button(caption, labels.chrome.address, 'data-ccd-browser-address', 'Globe', address);
       globe.addEventListener('contextmenu', event => { event.preventDefault(); dismiss(); address(); });
       addressSlot = document.createElement('span');
       addressSlot.setAttribute('data-ccd-browser-address-slot', '');
       caption.append(addressSlot);
       addressResize?.observe(addressSlot);
-      button(controls, 'Back', 'data-ccd-browser-back', 'CaretLeft', () => nativeNavigation(0)?.click());
-      button(controls, 'Forward', 'data-ccd-browser-forward', 'CaretRight', () => nativeNavigation(1)?.click());
-      const pick = button(controls, 'Select element — DSH does not support page picking', 'data-ccd-browser-pick', 'Cursor', anchor => notice(anchor, 'DSH 暂不支持选取浏览器页面元素。'));
+      button(controls, labels.chrome.back, 'data-ccd-browser-back', 'CaretLeft', () => nativeNavigation(0)?.click());
+      button(controls, labels.chrome.forward, 'data-ccd-browser-forward', 'CaretRight', () => nativeNavigation(1)?.click());
+      const pick = button(controls, labels.chrome.pick, 'data-ccd-browser-pick', 'Cursor', anchor => notice(anchor, labels.chrome.pickNotice));
       pick.setAttribute('aria-disabled', 'true');
-      button(controls, 'Reload', 'data-ccd-browser-reload', 'ArrowClockwise', () => nativeNavigation(2)?.click());
+      button(controls, labels.chrome.reload, 'data-ccd-browser-reload', 'ArrowClockwise', () => nativeNavigation(2)?.click());
     } else {
       if (next.filesRoot) {
-        const toggle = button(caption, hidden ? 'Show file tree' : 'Hide file tree', 'data-ccd-files-switch', 'Files', () => next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
+        const toggle = button(caption, hidden ? labels.files.show : labels.files.hide, 'data-ccd-files-switch', 'Files', () => next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
         toggle.setAttribute('data-ccd-files-mark', '');
         toggle.setAttribute('aria-expanded', String(!hidden));
       }
       if (next.kind === 'terminal' && next.terminals.length > 1) {
         const tabs = document.createElement('span'); tabs.setAttribute('data-ccd-terminal-tabs', '');
-        tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Terminals'); caption.append(tabs);
+        tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', labels.chrome.terminals); caption.append(tabs);
         for (const tab of next.terminals) {
           const cell = document.createElement('span'); cell.setAttribute('data-ccd-terminal-tab', '');
           if (tab.selected) cell.setAttribute('data-selected', '');
@@ -270,28 +300,29 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
             document.querySelector<HTMLButtonElement>(`[data-dockkit-content="${next.terminals[target]!.id}"] [role="tab"][aria-selected="true"]`)?.focus();
           });
           cell.append(select);
-          const remove = button(cell, `Close ${tab.title}`, 'data-ccd-terminal-close', 'X', () => next.onClose(tab.id));
+          const remove = button(cell, `${labels.chrome.closeTab} ${tab.title}`, 'data-ccd-terminal-close', 'X', () => next.onClose(tab.id));
           remove.tabIndex = -1; tabs.append(cell);
         }
       } else {
         const name = document.createElement('span'); if (next.kind === 'terminal') terminalText(name, next.title); else name.textContent = next.title; caption.append(name);
       }
-      if (next.kind === 'terminal') button(caption, 'New terminal', 'data-ccd-terminal-add', 'Add', next.onNew);
-      else if (next.filesRoot || next.kind === 'text') button(controls, 'Search files', 'data-ccd-pane-search', 'Search', () => {
+      if (next.kind === 'terminal') button(caption, labels.chrome.newTerminal, 'data-ccd-terminal-add', 'Add', next.onNew);
+      else if (next.filesRoot || next.kind === 'text') button(controls, labels.chrome.search, 'data-ccd-pane-search', 'Search', () => {
         const toggle = next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]');
         if (hidden) toggle?.click();
         next.filesRoot?.querySelector<HTMLInputElement>('[data-ccd-files-filter] input')?.focus();
       });
-      if (next.kind === 'text') button(controls, 'Reload', 'data-ccd-preview-reload', 'ArrowClockwise', () => node.querySelector<HTMLButtonElement>('[data-textpreview-tool="reload"]')?.click());
+      if (next.kind === 'text') button(controls, labels.chrome.reload, 'data-ccd-preview-reload', 'ArrowClockwise', () => node.querySelector<HTMLButtonElement>('[data-textpreview-tool="reload"]')?.click());
     }
-    const more = button(controls, 'More', 'data-ccd-pane-more', 'DotsVertical', next.kind === 'browser' ? browserMenus.more : openMenu);
+    const more = button(controls, labels.chrome.more, 'data-ccd-pane-more', 'DotsVertical', next.kind === 'browser' ? browserMenus.more : openMenu);
     more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false');
-    button(controls, next.zoomed ? 'Restore pane' : 'Expand pane', 'data-ccd-pane-zoom', next.zoomed ? 'Collapse' : 'Expand', next.onZoom);
+    button(controls, next.zoomed ? labels.chrome.restore : labels.chrome.expand, 'data-ccd-pane-zoom', next.zoomed ? 'Collapse' : 'Expand', next.onZoom);
     refreshNative();
   };
   return { update, release() {
     close.removeEventListener('click', closeGroup, true);
     observer.disconnect(); addressResize?.disconnect(); browserMenus.release(); dismiss(); wait?.remove(); caption.remove(); controls.remove(); closeIcon.remove();
+    waitText = null; fallbackPlaceholder = '';
     for (const attribute of ['data-ccd-pane-chrome', 'data-ccd-pane-kind']) node.removeAttribute(attribute);
     clearAddress(form);
     for (const [source, label] of paths) { source.removeAttribute('data-ccd-preview-path-source'); label.remove(); }

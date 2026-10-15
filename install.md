@@ -47,7 +47,7 @@ $ccdApp = if ($env:DSH_CCD_APP) { $env:DSH_CCD_APP } else { Join-Path $env:LOCAL
    dsh plugin --profile desktop add dsh-claude-desktop-theme
    ```
 
-3. 重载应用，在「插件 → dsh-claude-desktop-theme → ui-skin-ccd-style」核对并重新设置自定义项。不要同时启用旧包和新包。
+3. 重载应用，在「设置 → Claude 主题」核对并重新设置自定义项。不要同时启用旧包和新包。
 
 包名迁移不会自动复制旧包的自定义配置。手动维护用户层覆盖配置时，将插件 `name: dsh-ccd-style` 改为 `name: dsh-claude-desktop-theme`；条目 id 仍为 `ui-skin-ccd-style`，请勿添加重复 id。未注册 `dsh` 时，使用上面的应用内置 CLI 路径。
 
@@ -61,6 +61,16 @@ cd dsh-claude-desktop-theme
 已有仓库时，在当前 checkout 执行对应平台的命令。
 
 ### macOS
+
+本地快速预览：双击仓库根目录的 `安装本地预览.command`，或执行：
+
+```sh
+npm run preview:install
+```
+
+此入口会构建并安装**当前工作区的全部改动**，缺少依赖时先运行 `npm ci`，跳过发布打包的全量检查。安装完成后在 DSH 按 **⌘R**，打开会话三点菜单查看效果。沿用 `DSH_HOME` 和已有插件配置；可用 `DSH_CCD_APP` 指定应用路径。安装包保存在 `artifacts/install-preview.*`，请勿删除，profile 的本地依赖会引用它。仅检查路径可执行 `npm run preview:install -- --dry-run`。
+
+需要完整发布检查时，继续使用以下流程：
 
 ```sh
 set -e
@@ -111,7 +121,7 @@ $ccdCli = Join-Path $ccdApp 'resources\runtime\cli\bin\dsh.cmd'
 
 安装后重载 DSH：macOS 按 **⌘R**；Windows 从托盘菜单退出后重新打开应用。首次加载自动显示风格。升级保留此前的开关和配置。
 
-在「插件 → dsh-claude-desktop-theme → ui-skin-ccd-style」调整：
+在「设置 → Claude 主题」调整：
 
 - 总开关与各模块开关。
 - 跟随系统、浅色或深色主题。
@@ -136,7 +146,7 @@ dsh plugin --profile desktop update dsh-claude-desktop-theme
 
 未注册 `dsh` 时，替换为上面的应用内置 CLI 路径。源码安装则更新源码，重新执行对应平台的安装命令。升级后重载 DSH，保留已有开关和配置。
 
-临时恢复原生界面，在插件配置页关闭「启用 CCD 风格界面」。卸载使用同一应用、`DSH_HOME` 和 profile。
+临时恢复原生界面，在插件配置页关闭「启用 Claude 主题界面」。卸载使用同一应用、`DSH_HOME` 和 profile。
 
 macOS：
 

@@ -1,6 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { paneIcon } from './pane-icons.ts';
 import { hostSelectors } from './host-dom.ts';
+import { paneLabels, paneLanguage, type FilesPaneLabels, type PaneLanguage } from './pane-labels.ts';
 
 /**
  * The Files pane's own three controls, and the empty column beside it
@@ -81,23 +82,6 @@ export const EMPTY_BODY_ATTRIBUTE = 'data-ccd-files-empty-body';
 /** The line a query that matched nothing leaves under the list. */
 export const NOMATCH_ATTRIBUTE = 'data-ccd-files-nomatch';
 
-/**
- * The copy this pane writes. The host's own words are kept everywhere else — a
- * control that already has a label keeps it — but a field, a toggle and an
- * empty state it does not have need their own, and this interface's own words
- * are Chinese (`features/context-panel`, `features/view-options`).
- */
-const COPY = Object.freeze({
-  filter: 'Filter, or ? to search in files',
-  filterLabel: '过滤文件',
-  clear: '清除过滤',
-  hide: '收起文件树',
-  show: '展开文件树',
-  noMatch: '没有匹配的文件',
-  emptyTitle: 'Open files appear here',
-  emptyBody: 'Pick a file in the tree, or click a file path in the conversation.',
-});
-
 /** One Files pane and everything this module put in it. */
 interface Pane {
   readonly root: HTMLElement;
@@ -110,6 +94,10 @@ interface Pane {
   readonly noMatch: HTMLElement;
   readonly landing: HTMLElement;
   readonly key: string;
+  /** The language the pane's own words are written in (see `pane-labels.ts`). */
+  language: PaneLanguage;
+  /** Those words; rewritten when the document's language changes. */
+  labels: FilesPaneLabels;
   query: string;
 }
 
@@ -137,12 +125,10 @@ function headerOf(root: HTMLElement): HTMLElement | null {
 }
 
 /** One small button carrying a mask, the shape the pane's sheet expects. */
-function iconButton(document: Document, attribute: string, label: string): HTMLButtonElement {
+function iconButton(document: Document, attribute: string): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.setAttribute(attribute, '');
-  button.setAttribute('aria-label', label);
-  button.title = label;
   return button;
 }
 
@@ -154,9 +140,7 @@ function buildField(document: Document): { field: HTMLElement; input: HTMLInputE
   input.type = 'text';
   input.spellcheck = false;
   input.autocomplete = 'off';
-  input.placeholder = COPY.filter;
-  input.setAttribute('aria-label', COPY.filterLabel);
-  const clear = iconButton(document, CLEAR_ATTRIBUTE, COPY.clear);
+  const clear = iconButton(document, CLEAR_ATTRIBUTE);
   clear.hidden = true;
   const search = document.createElement('span');
   search.setAttribute('data-ccd-files-search-icon', '');
@@ -166,7 +150,7 @@ function buildField(document: Document): { field: HTMLElement; input: HTMLInputE
   return { field, input, clear };
 }
 
-/** The landing state one empty dock column draws. */
+/** The landing state one empty dock column draws; its two lines come from {@link writeEmpty}. */
 function buildEmpty(document: Document): HTMLElement {
   const block = document.createElement('div');
   block.setAttribute(EMPTY_ATTRIBUTE, '');
@@ -175,10 +159,8 @@ function buildEmpty(document: Document): HTMLElement {
   mark.innerHTML = paneIcon('Folder');
   const title = document.createElement('p');
   title.setAttribute(EMPTY_TITLE_ATTRIBUTE, '');
-  title.textContent = COPY.emptyTitle;
   const body = document.createElement('p');
   body.setAttribute(EMPTY_BODY_ATTRIBUTE, '');
-  body.textContent = COPY.emptyBody;
   block.append(mark, title, body);
   return block;
 }
@@ -200,13 +182,55 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
   /** Our tab mark per panel tab, and the tab it belongs to. */
   const marks = new Map<HTMLElement, HTMLElement>();
 
+  /** One control's two names, for the copy written by {@link applyCopy}. */
+  const name = (element: HTMLElement, label: string) => {
+    if (element.getAttribute('aria-label') !== label) element.setAttribute('aria-label', label);
+    if (element.title !== label) element.title = label;
+  };
+
+  /** One line of this module's own copy, rewritten only when the word changes:
+   *  the pass runs from a mutation observer, so an unchanged write would feed
+   *  the observer its own notifications. */
+  const text = (element: Element | null, value: string) => {
+    if (element !== null && element.textContent !== value) element.textContent = value;
+  };
+
+  /** The landing state's two lines, for one block {@link buildEmpty} drew. */
+  const writeEmpty = (block: HTMLElement, labels: FilesPaneLabels) => {
+    text(block.querySelector(`[${EMPTY_TITLE_ATTRIBUTE}]`), labels.emptyTitle);
+    text(block.querySelector(`[${EMPTY_BODY_ATTRIBUTE}]`), labels.emptyBody);
+  };
+
+  /** The tree control's words follow the tree's state, never the other way. */
+  const labelToggle = (pane: Pane) => {
+    const hidden = pane.root.hasAttribute(TREE_ATTRIBUTE);
+    pane.toggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+    name(pane.toggle, hidden ? pane.labels.show : pane.labels.hide);
+  };
+
+  /**
+   * Write the pane's copy in the document's language onto its own nodes. The
+   * host's words are elsewhere; only this module's field, controls and landing
+   * state are written, and a language switch rewrites them in place.
+   */
+  const applyCopy = (pane: Pane) => {
+    pane.language = paneLanguage(document);
+    pane.labels = paneLabels(pane.language).files;
+    if (pane.input.placeholder !== pane.labels.filter) pane.input.placeholder = pane.labels.filter;
+    name(pane.input, pane.labels.filterLabel);
+    name(pane.clear, pane.labels.clear);
+    name(pane.expand, pane.labels.show);
+    text(pane.expand, pane.labels.show);
+    labelToggle(pane);
+    text(pane.noMatch, pane.labels.noMatch);
+    writeEmpty(pane.landing, pane.labels);
+  };
+
   /** Show or hide the tree, and keep its two controls in step with the state. */
   const setTree = (pane: Pane, hidden: boolean) => {
     if (hidden) pane.root.setAttribute(TREE_ATTRIBUTE, 'hidden');
     else pane.root.removeAttribute(TREE_ATTRIBUTE);
-    pane.toggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
-    pane.toggle.setAttribute('aria-label', hidden ? COPY.show : COPY.hide);
-    pane.toggle.title = hidden ? COPY.show : COPY.hide;
+    labelToggle(pane);
     preferences.set(pane.key, { query: pane.query, hidden });
     /* The floating scroll pill follows a surface's box, and this one has just
        stopped being laid out; a resize is the signal that module already
@@ -255,13 +279,11 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
   const adopt = (root: HTMLElement, body: HTMLElement) => {
     const header = headerOf(root);
     if (header === null) return;
-    const toggle = iconButton(document, TOGGLE_ATTRIBUTE, COPY.hide);
+    const toggle = iconButton(document, TOGGLE_ATTRIBUTE);
     const { field, input, clear } = buildField(document);
-    const expand = iconButton(document, EXPAND_ATTRIBUTE, COPY.show);
-    expand.append(COPY.show);
+    const expand = iconButton(document, EXPAND_ATTRIBUTE);
     const noMatch = document.createElement('p');
     noMatch.setAttribute(NOMATCH_ATTRIBUTE, '');
-    noMatch.textContent = COPY.noMatch;
     noMatch.hidden = true;
     /* The host lays the header out left to right and the reference leads with
        them, so both controls go in front of the path label's seat. */
@@ -275,6 +297,7 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
     root.append(landing);
     const key = `${root.closest('[data-sidebar-right-session]')?.getAttribute('data-sidebar-right-session')}:${root.closest('[data-dockkit-content]')?.getAttribute('data-dockkit-content')}`;
     const saved = preferences.get(key);
+    const language = paneLanguage(document);
     const pane: Pane = {
       root,
       body,
@@ -286,9 +309,12 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
       noMatch,
       landing,
       key,
+      language,
+      labels: paneLabels(language).files,
       query: saved?.query ?? '',
     };
     panes.set(root, pane);
+    applyCopy(pane);
     input.addEventListener('input', () => setQuery(pane, input.value));
     input.addEventListener('keydown', event => {
       if (event.key !== 'Escape' || input.value === '') return;
@@ -355,6 +381,7 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
       empties.set(line, block);
     }
     if (block.parentElement !== body) body.append(block);
+    writeEmpty(block, paneLabels(paneLanguage(document)).files);
   };
 
   const sync = () => {
@@ -362,6 +389,11 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
       if (!pane.root.isConnected || pane.body !== pane.root.querySelector(host.filesBody)
         || pane.field.parentElement !== headerOf(pane.root)) release(pane);
     }
+    /* The host points `<html lang>` at the locale and re-points it on a locale
+       change, so a pane already on screen takes its copy from the language it
+       now finds there rather than the one it was mounted in. */
+    const language = paneLanguage(document);
+    for (const pane of panes.values()) if (pane.language !== language) applyCopy(pane);
     for (const root of document.querySelectorAll<HTMLElement>(host.filesRoot)) {
       const body = root.querySelector<HTMLElement>(host.filesBody);
       if (body === null) continue;
@@ -402,6 +434,9 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
   try {
     observer = new MutationObserver(sync);
     observer.observe(document.body, { childList: true, subtree: true });
+    /* `<html lang>` is the one attribute this pass reads that body mutations
+       cannot report; it sits outside the body, so it gets its own observation. */
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     sync();
   } catch (error) {
     observer?.disconnect();

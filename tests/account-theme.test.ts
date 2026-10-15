@@ -9,6 +9,7 @@ function fixture(language = 'zh-CN') {
     readonly listeners = new Map<string, (event: Event) => void>();
     children: Element[] = [];
     parentElement: Element | null = null;
+    get firstElementChild(): Element | null { return this.children[0] ?? null; }
     get nextElementSibling(): Element | null {
       const siblings = this.parentElement?.children;
       return siblings?.[siblings.indexOf(this) + 1] ?? null;
@@ -60,10 +61,10 @@ function fixture(language = 'zh-CN') {
 test('account theme follows settings changes, writes the shared preference, and releases its row', () => {
   const f = fixture();
   const dispose = mountAccountTheme(f.menu as unknown as HTMLElement, f.theme);
-  const row = f.menu.children[2];
+  const row = f.menu.children[0];
   assert.ok(row);
-  assert.deepEqual(f.menu.children, [f.settings, f.moreWrapper, row, f.anchor]);
-  const group = row.children[1];
+  assert.deepEqual(f.menu.children, [row, f.settings, f.moreWrapper, f.anchor]);
+  const group = row.children[0];
   assert.ok(group);
   const [system, light, dark] = group.children;
   assert.ok(system && light && dark);
@@ -86,7 +87,7 @@ test('account theme follows settings changes, writes the shared preference, and 
 test('left and right wrap within the theme row and select the focused option', () => {
   const f = fixture('en');
   const dispose = mountAccountTheme(f.menu as unknown as HTMLElement, f.theme);
-  const group = f.menu.children[2]?.children[1];
+  const group = f.menu.children[0]?.children[0];
   assert.ok(group);
   group.children[0]?.focus();
   const key = (name: string) => {

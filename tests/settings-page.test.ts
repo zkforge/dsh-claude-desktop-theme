@@ -47,21 +47,22 @@ test('operations carry the nested path the transport expects', () => {
 });
 
 interface FakeChild {
-  readonly locale: { register(ns: string, dicts: Record<string, unknown>): () => void };
+  readonly locale: { bind(ns: string): (key: string) => string; register(ns: string, dicts: Record<string, unknown>): () => void };
   effect(callback: () => unknown, label?: string): () => void;
   readonly slots: {
     inject(name: string, register: () => () => void): () => void;
-    register(options: { name: string; key: string; locale?: string }, component: unknown): () => void;
+    register(options: { name: string; id: string; order: number; label: () => string; locale?: string }, component: unknown): () => void;
   };
 }
 
 function fakeContext() {
   const events: string[] = [];
-  const registrations: Array<{ name: string; key: string; locale?: string }> = [];
+  const registrations: Array<{ name: string; id: string; order: number; label: () => string; locale?: string }> = [];
   const dictionaries: string[] = [];
   const injected: string[] = [];
   const child: FakeChild = {
     locale: {
+      bind: () => key => key === 'nav' ? 'Claude 主题' : key,
       register(ns, dicts) {
         dictionaries.push(`${ns}:${Object.keys(dicts).sort().join(',')}`);
         events.push('dictionary');
@@ -94,22 +95,24 @@ function fakeContext() {
   return { ctx, events, registrations, dictionaries, injected };
 }
 
-test('the page registers for this plugin row under the panel slot', () => {
+test('the page registers as a localized main settings section', () => {
   const fake = fakeContext();
-  registerSettingsPage(fake.ctx, 'dsh-ccd-style#ui-skin-ccd-style', () => null);
+  registerSettingsPage(fake.ctx, 'ui-skin-ccd-style', () => null);
   assert.deepEqual(fake.injected, ['slots,locale']);
   assert.deepEqual(fake.dictionaries, [`${SETTINGS_NAMESPACE}:en,zh`]);
-  assert.deepEqual(fake.registrations, [{
-    name: 'plugins.row.config',
-    key: 'dsh-ccd-style#ui-skin-ccd-style',
+  assert.equal(fake.registrations[0]?.label(), 'Claude 主题');
+  assert.deepEqual(fake.registrations.map(({ label, ...options }) => options), [{
+    name: 'settings.section',
+    order: 20,
+    id: 'ui-skin-ccd-style',
     locale: SETTINGS_NAMESPACE,
   }]);
-  assert.deepEqual(fake.events, ['dictionary', 'inject:plugins.row.config', 'page registered']);
+  assert.deepEqual(fake.events, ['dictionary', 'inject:settings.section', 'page registered']);
 });
 
 test('releasing the registration disposes the injected scope', () => {
   const fake = fakeContext();
-  const registration = registerSettingsPage(fake.ctx, 'dsh-ccd-style#ui-skin-ccd-style', () => null);
+  const registration = registerSettingsPage(fake.ctx, 'ui-skin-ccd-style', () => null);
   registration.dispose();
   assert.ok(fake.events.includes('injection released'));
 });

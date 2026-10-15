@@ -188,13 +188,15 @@ const slots = {
       'conversation.session.header.utilities',
       'conversation.session.header.corner',
       'shell.overlay',
-      'plugins.row.config',
+      'settings.section',
     ].includes(name), `unexpected slot: ${name}`);
     return register();
   },
   register(options) {
-    if (options.name === 'plugins.row.config') {
-      assert.equal(options.key, `${PLUGIN_ID}#ui-skin-ccd-style`);
+    if (options.name === 'settings.section') {
+      assert.equal(options.id, 'ui-skin-ccd-style');
+      assert.equal(options.order, 20);
+      assert.equal(options.label(), 'Claude 主题');
       assert.equal(options.locale, 'ccdSettings');
       rowConfigPages.add(options);
       return () => rowConfigPages.delete(options);
@@ -249,6 +251,10 @@ const sessions = {
 const disabled = { enabled: false, features: Object.fromEntries(FEATURE_IDS.map(id => [id, false])) };
 /** Locale face the configuration page's copy registers into. */
 const locale = {
+  bind(namespace) {
+    assert.equal(namespace, 'ccdSettings');
+    return key => key === 'nav' ? 'Claude 主题' : key;
+  },
   register(namespace, dicts) {
     assert.equal(namespace, 'ccdSettings');
     assert.deepEqual(Object.keys(dicts).sort(), ['en', 'zh']);

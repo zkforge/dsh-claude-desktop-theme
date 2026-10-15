@@ -1,5 +1,5 @@
 /**
- * Copy for the row configuration page.
+ * Copy for the CCD settings section.
  *
  * The page is the plugin's only owned surface with its own words: everything
  * else mirrors a host label. The dictionary is registered through the locale
@@ -10,6 +10,7 @@ export const SETTINGS_NAMESPACE = 'ccdSettings';
 
 /** Simplified Chinese dictionary; the key set is the source of truth. */
 export const zh = {
+  'nav': 'Claude 主题',
   'summary': 'CCD 风格界面 · 外观 · 字体',
   'section.general': '通用',
   'section.features': '模块',
@@ -63,6 +64,7 @@ export type SettingsKey = keyof typeof zh;
 
 /** English dictionary; every Chinese key has a counterpart. */
 export const en: Record<SettingsKey, string> = {
+  'nav': 'Claude Theme',
   'summary': 'CCD interface · appearance · typefaces',
   'section.general': 'General',
   'section.features': 'Modules',

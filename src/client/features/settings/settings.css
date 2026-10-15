@@ -393,3 +393,18 @@
     min-width: 0;
   }
 }
+
+/* Hand-drawn Claude-like burst. Preserve the host SVG's layout and React ownership. */
+[data-ccd-settings-icon] > svg:first-child {
+  display: none;
+}
+
+[data-ccd-settings-icon]::before {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 12 1-10m-1 10 6-8m-6 8 10-4m-10 4 10 2m-10-2 7 7m-7-7 2 10m-2-10-4 10m4-10-8 6m8-6L2 11m10 1L4 5m8 7L8 2' fill='none' stroke='black' stroke-width='2.3' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}

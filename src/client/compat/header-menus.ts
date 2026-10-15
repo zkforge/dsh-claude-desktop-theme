@@ -5,6 +5,20 @@ import { hostSelectors } from './host-dom.ts';
 const CHEVRON = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>';
 const LAPTOP = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="8.5" rx="1"/><path d="M1 11h14v2H1z"/></svg>';
 
+/** Static artwork shared by the title and project menus' existing actions. */
+const HEADER_MENU_ICONS: Readonly<Record<string, string>> = {
+  '在访达中显示': '<path d="M1.5 5V3.5h5l1.5 2h6.5v8h-13V5Z"/>',
+  '复制': '<rect x="5.5" y="1.5" width="8" height="10" rx="1"/><path d="M10.5 11.5v3h-8v-10h3"/>',
+  '在终端中打开': '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="m4 6 2 2-2 2M8.5 10h3"/>',
+  '文件夹路径': '<path d="m6.5 5 1-1a3 3 0 0 1 4.25 4.25l-1 1M9.5 11l-1 1A3 3 0 0 1 4.25 7.75l1-1M6 10l4-4"/>',
+  '文件夹名称': '<path d="M2 4.5V3h4l1.5 2H14v8H2V4.5ZM5 8h6M5 10.5h4"/>',
+  '打开方式': '<rect x="5" y="2" width="9" height="9" rx="1"/><path d="M11 11v3H2V5h3"/>',
+  '重命名': '<path d="M3 10.5 2.5 14l3.5-.5L14 5.5 10.5 2 3 10.5ZM9 3.5l3.5 3.5"/>',
+  '创建分支': '<circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="13" r="1.5"/><path d="M5 4.5v7M11 5.5V7a3 3 0 0 1-3 3H5"/>',
+  '归档': '<rect x="1.5" y="2.5" width="13" height="3" rx=".75"/><path d="M2.5 5.5v8h11v-8M6 8h4"/>',
+  '删除': '<path d="M2 4.5h12M6 4.5V2h4v2.5M3.5 4.5l1 9h7l1-9"/>',
+};
+
 /** Add reference menus beside the native title without moving React-owned nodes. */
 export function mountHeaderMenus(document: Document, actions: HeaderMenuActions, report: (error: unknown) => void): Disposer {
   const host = hostSelectors(document);
@@ -79,7 +93,15 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   };
   const row = (menu: HTMLElement, label: string, act: () => void, mark = '', unavailable = '') => {
     const node = button(''); node.setAttribute('role', 'menuitem');
-    const text = document.createElement('span'); text.textContent = label; node.append(text);
+    const artwork = HEADER_MENU_ICONS[label];
+    if (artwork !== undefined) {
+        const icon = document.createElement('span');
+        icon.setAttribute('data-ccd-header-row-icon', '');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">${artwork}</svg>`;
+        node.append(icon);
+    }
+    const text = document.createElement('span'); text.setAttribute('data-ccd-header-row-label', ''); text.textContent = label; node.append(text);
     if (mark !== '') {
       const end = document.createElement('span'); end.setAttribute('data-ccd-menu-mark', '');
       if (mark === '›') end.innerHTML = CHEVRON;

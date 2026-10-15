@@ -192,21 +192,33 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] > [role="separator"
   background: var(--ccd-border-soft);
 }
 
+/* With theme controls available, the name and controls share one header. */
+html[data-dsh-ccd-style="true"] [data-ccd-account-menu]:has([data-ccd-account-theme])::before {
+  display: none;
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-account-theme] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 36px;
-  margin-top: 4px;
-  padding: 6px 10px 2px;
-  border-top: 0.5px solid var(--ccd-border-soft);
-  color: var(--ccd-text);
+  gap: 12px;
+  padding: 4px 10px 8px;
+  color: var(--ccd-text-muted);
   font-size: var(--ccd-font-size-muted);
-  line-height: 20px;
+  line-height: 18px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-theme]::before {
+  content: var(--ccd-account-name, "");
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-theme] > [role="group"] {
   display: inline-flex;
+  flex: none;
   gap: 1px;
   padding: 2px;
   border-radius: var(--ccd-radius-row);

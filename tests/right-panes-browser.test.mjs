@@ -87,13 +87,17 @@ window.mount=()=>{
   return { sheet, script:bundle.outputFiles[0].text };
 }
 
-async function withFixture(callback) {
+async function withFixture(callback, seed) {
   const {sheet,script}=await bundleAndSheet();
   const profile=await mkdtemp(join(tmpdir(),'ccd-right-panes-'));
   try {
     await withPage({url:'about:blank',width:1200,height:830,scale:1,profile},async page=>{
       await page.evaluate(`document.documentElement.dataset.dshCcdStyle='true';document.documentElement.lang='zh';document.body.innerHTML=${JSON.stringify('<main class="_6Qf49G_frame"><aside class="_6Qf49G_sidebarCol"></aside>'+fixture('s1')+'</main>')};const style=document.createElement('style');style.textContent=${JSON.stringify(NATIVE+'\n'+sheet)};document.head.append(style);`);
-      await page.evaluate(script);await page.evaluate('window.mount()');await wait(page);
+      await page.evaluate(script);
+      /* Tabs a fixture holds before the mount are a *restored* layout: the host
+         draws them from its own store, the reader opened nothing. */
+      if (seed !== undefined) await page.evaluate(seed);
+      await page.evaluate('window.mount()');await wait(page);
       await callback(page);
       assert.deepEqual(await page.evaluate('window.errors'),[]);
       await page.evaluate('window.release();window.filesRelease()');
@@ -135,7 +139,7 @@ test('recording: independent columns, close-in-place, zoom, collapse and teardow
   await page.evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}))");await wait(page);
   assert.equal(Object.keys(await boxes(page)).length,3);
   await click(page,'[data-ccd-pane-more]');await wait(page);
-  await page.evaluate("[...document.querySelectorAll('[data-ccd-pane-menu] button')].find(node=>node.textContent==='Hide sidebar').click()");await wait(page);
+  await page.evaluate("[...document.querySelectorAll('[data-ccd-pane-menu] button')].find(node=>node.textContent==='收起侧边栏').click()");await wait(page);
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-pane]')).display"),'none');
   await page.evaluate("document.querySelector('.panel').setAttribute('data-sidebar-right-open','')");await wait(page);
   await page.evaluate("window.release();window.filesRelease()");
@@ -236,6 +240,22 @@ test('a conversation file link opens Files once and joins its preview',options,a
   await writeFile('/tmp/ccd-sidebar-files-preview.png',Buffer.from(shot.data,'base64'));
 }));
 
+test('a restored layout never auto-opens the Files tree; a preview the reader opens still pairs with it',options,async()=>withFixture(async page=>{
+  /* Seeded before the mount, so the plugin's first pass reads them as restored
+     records rather than as something the reader just opened. Asking for the
+     tree here is what used to race the host's own reconciliation and kill the
+     `rightbar.session` seat for the rest of the session. */
+  assert.deepEqual(await page.evaluate('window.calls.open'),[],'a restored layout opens nothing');
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=doc][data-dockkit-float]')!==null"),true,'the restored preview is drawn on its own card meanwhile');
+  await page.evaluate("window.add('app','text','s1','dsh-resource://file/session/s1/repo/app.ts')");await wait(page);
+  assert.deepEqual(await page.evaluate('window.calls.open'),['files'],'a freshly opened preview still gets the tree');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-pane-preview]').getAttribute('data-dockkit-content')"),'app');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-pane-tree]').getAttribute('data-dockkit-content')"),'auto-files');
+  /* And it stays asked: a later sync of the same tab set must not stack another. */
+  await page.evaluate("window.closeTab('app');window.add('app','text','s1','dsh-resource://file/session/s1/repo/app.ts')");await wait(page);
+  assert.deepEqual(await page.evaluate('window.calls.open'),['files'],'the tree is requested once per mount');
+}, "window.add('doc','text','s1','dsh-resource://file/session/s1/repo/README.md')"));
+
 
 test('reference chrome preserves button order and native browser navigation; unavailable actions retain their icons',options,async()=>withFixture(async page=>{
   await page.evaluate("window.add('t','terminal');window.add('f','files');window.add('w','browser')");await wait(page);
@@ -246,13 +266,13 @@ test('reference chrome preserves button order and native browser navigation; una
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-pane-zoom]')).borderTopWidth"),'0px');
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-pane-zoom] svg')).width"),'16px');
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-browser-toolbar]')).display"),'flex','address form is visible in the header');
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'Awaiting server…');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'等待服务器响应…');
   await page.evaluate("const original=document.querySelector('[data-ccd-browser-toolbar]>button');original.disabled=false;original.onclick=()=>window.backSeen=true");await wait(page);
   await click(page,'[data-ccd-browser-back]');assert.equal(await page.evaluate('window.backSeen'),true);
   await click(page,'[data-ccd-browser-address]');await wait(page);
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-dockkit-tab-title]').textContent='renamed'");await wait(page);
-  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),'Terminal renamed','native rename is reflected by the reference caption');
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),'终端 renamed','native rename is reflected by the reference caption');
   await click(page,'[data-dockkit-content=w] [data-ccd-browser-pick]');await wait(page);
   assert.match(await page.evaluate("document.querySelector('[data-ccd-pane-menu]').textContent"),/页面元素/);
   await page.evaluate("document.querySelector('[data-ccd-pane-menu]').hidePopover()");
@@ -272,6 +292,10 @@ test('plain titles, Files header tree switch, full conversation expansion and te
   await click(page,'[data-dockkit-content=f] [data-ccd-files-switch]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-files-root]').getAttribute('data-ccd-files-tree')"),'hidden');
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-files-switch]').getAttribute('aria-expanded')"),'false');
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-caption]').textContent"),'文件','the Files card is titled in the document’s language');
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-files-switch]').getAttribute('aria-label')"),'展开文件树','and its tree control says what it does, in the same language');
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-search]').getAttribute('aria-label')"),'搜索文件');
+  assert.match(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),/^终端/,'a terminal’s title leads with the same language’s word');
   await click(page,'[data-dockkit-content=f] [data-ccd-files-switch]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-files-root]').hasAttribute('data-ccd-files-tree')"),false);
   await page.evaluate("document.querySelectorAll('[data-dockkit-float-grip]').forEach(node=>node.addEventListener('pointerdown',()=>window.headerDrags=(window.headerDrags??0)+1));document.querySelector('[data-ccd-terminal-add]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0}));document.querySelector('[data-dockkit-content=f] [data-ccd-files-switch]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0}));document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]>span').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,button:0}))");
@@ -333,7 +357,7 @@ test('browser globe edits the address without a dropdown; capture delegates to t
   assert.equal(await page.evaluate("document.querySelectorAll('[data-ccd-browser-address] svg').length"),1,'dropdown caret is removed');
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await click(page,'[data-ccd-pane-more]');await wait(page);
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').textContent"),'Save screenshot');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').textContent"),'保存截图');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-save-screenshot]').disabled"),true);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').getBoundingClientRect().width"),130);
   const shot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-browser-capture-menu.png',Buffer.from(shot.data,'base64'));
@@ -355,4 +379,33 @@ test('browser globe edits the address without a dropdown; capture delegates to t
   await click(page,'[data-ccd-browser-save-screenshot]');await wait(page);
   await page.evaluate("window.closeTab('browser');window.finishCapture()");await wait(page);
   assert.equal(await page.evaluate('window.downloads.length'),1,'closing the browser while capture is pending cannot download stale content');
+}));
+
+test('the whole right panel writes its own words in the document’s language',options,async()=>withFixture(async page=>{
+  await page.evaluate("window.add('t','terminal');window.add('f','files');window.add('w','browser')");await wait(page);
+  /* The fixture is a Chinese document: every word this plugin adds is Chinese,
+     and the host's own words (the root path, the reload button) keep theirs. */
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-caption]').textContent"),'文件');
+  assert.match(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),/^终端/);
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-search]').getAttribute('aria-label')"),'搜索文件');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'过滤文件，或按 ? 在文件内容中搜索');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'等待服务器响应…');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').placeholder"),'输入服务地址');
+  await click(page,'[data-dockkit-content=f] [data-ccd-pane-more]');await wait(page);
+  const rows=await page.evaluate("[...document.querySelectorAll('[data-ccd-pane-menu] button')].map(node=>node.textContent)");
+  assert.deepEqual(rows,['收起文件树','刷新文件','Open folder in app','放大面板','收起侧边栏','关闭']);
+  await page.evaluate("document.querySelector('[data-ccd-pane-menu]').hidePopover()");await wait(page);
+  /* DSH re-points `<html lang>` when the reader switches language, and the
+     panel follows it — including the menus that are built when opened. */
+  await page.evaluate("document.documentElement.lang='en'");await wait(page);
+  assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-caption]').textContent"),'Files');
+  assert.match(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),/^Terminal/);
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'Filter, or ? to search in files');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'Awaiting server…');
+  await click(page,'[data-dockkit-content=f] [data-ccd-pane-more]');await wait(page);
+  assert.deepEqual(await page.evaluate("[...document.querySelectorAll('[data-ccd-pane-menu] button')].map(node=>node.textContent)"),
+    ['Hide file tree','Refresh files','Open folder in app','Expand pane','Hide sidebar','Close']);
+  await page.evaluate("document.querySelector('[data-ccd-pane-menu]').hidePopover()");
+  await click(page,'[data-dockkit-content=w] [data-ccd-pane-more]');await wait(page);
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').textContent"),'Save screenshot');
 }));

@@ -39,3 +39,29 @@
    已按 2026-10-12 的 mp4 补齐：两列独立上下拖动、关闭同列补位、移除顶部空行、按视频复刻标题栏按钮与图标、面板放大／还原、Files 内部预览与树宽拖动、会话隔离及最后一块关闭自动收起。
 
    涉及文件：`src/client/compat/right-panes.ts`、`src/client/compat/host-dom.ts`、`src/client/contracts/ports.ts`（`SidebarRightPort` 补 `float`）、`src/client/features/shell/right-panel.css`。
+
+6. ✅ 侧栏会话条目的尾部只留一枚 ⋮，点开菜单里是置顶、重命名、分叉、归档；宿主自己挂在同一行的归档／置顶两个悬停按钮不再画。
+
+   现状：指到一条会话上会并排出现三个图形（⋯ 加宿主自己的归档、置顶）。参考图的那一行只有一枚 ⋮，这四件事都在它开出来的卡片里（宿主 `ui-workspace` 注册进 `sidebar.workspaces.session.menu.item` 的四项）。
+
+   ![参考：会话行尾部一枚 ⋮，菜单里是置顶／重命名／分叉／归档](docs/issues/img/todo-session-row-menu.png)
+
+   涉及文件：`src/client/features/sidebar/sidebar.css`、`src/client/theme/tokens.css`、`src/client/theme/palette.ts`。
+
+7. ✅ 正文里的文件路径点开后右栏没反应、「打开侧边栏」也救不回来（只有重启应用才好）。
+
+   实测根因：插件每次同步看到「有文件预览、没有 Files 树」就自己 `sidebar.openTab('files')`。**恢复自 localStorage 的布局**也是这个形状，而宿主此时正在逐个丢弃它复活不了的标签，于是插件新开的那个标签在宿主 `rightbar.session` 这个 slot entry 渲染时还没有对应的 occurrence，宿主抛
+
+   ```
+   Error: sidebarRight: tab "<id>" has no committed occurrence in session "<id>"
+       at TabDomain.occurrence (…)
+   slot entry crashed in 'rightbar.session': …
+   ```
+
+   侧栏面板随即被卸载，之后 `openResource`/`openTab` 全是空操作（正文文件链接、顶栏文件夹／终端／浏览器、会话菜单里的「打开侧边栏」都一样），只能重启应用。复现与抓取见 `scripts/watch-sidebar.mjs`（连 app 的 DevTools 端口，记录每条报错与右栏状态变化）。
+
+   改法：树的请求只跟随**读者刚打开的那个预览**（本次挂载从未见过的预览 id），恢复布局的第一次同步只做记录、不算打开；标签集合在变小时（宿主对账）不请求；写入延后到另一个任务，并在写前重新读宿主记录。关闭组卡片也改成每个标签一个任务、每次按当前 DOM 复核。
+
+   涉及文件：`src/client/compat/right-panes.ts`、`src/client/compat/pane-chrome.ts`、`tests/right-panes-browser.test.mjs`、`scripts/watch-sidebar.mjs`。
+
+   宿主侧仍是 bug：desync 不该拆掉整列（文档见 `docs/research/` 与本次结论，未提交上游）。

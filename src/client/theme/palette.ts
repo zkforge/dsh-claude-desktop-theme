@@ -26,6 +26,7 @@ export interface Palette {
   readonly track: string;
   readonly raised: string;
   readonly hover: string;
+  readonly hoverStrong: string;
   readonly selected: string;
   readonly border: string;
   readonly borderStrong: string;
@@ -58,6 +59,7 @@ export const BUILT_IN_DARK: Palette = Object.freeze({
   track: '#1f1e1d',
   raised: '#2f2f2d',
   hover: '#313130',
+  hoverStrong: '#474743',
   selected: '#3a3a37',
   border: '#3e3e3b',
   borderStrong: '#474743',
@@ -71,6 +73,12 @@ const BLACK: Rgb = Object.freeze({ r: 0, g: 0, b: 0 });
 /* Ratios measured against the CCD reference screenshots; each is the share of
    ink (toward black) or light (toward white) mixed into the configured base. */
 const HOVER_INK = 0.05;
+/* The step a control takes while it is *on* a row that is already hovered, or
+   on the selected row: one recessed step below `selected`, measured at 12/255
+   from the reference's own pair (the row's #edece9 under the ⋮'s #e1e0dd). It
+   is stated as its own share of the base so it stays below `selected` for any
+   configured canvas, which is the only relation the two have. */
+const HOVER_STRONG_INK = 0.105;
 const SELECTED_INK = 0.06;
 const TRACK_INK = 0.04;
 const RAISED_INK = 0.05;
@@ -146,6 +154,7 @@ export function derivePalette(canvas: string, sidebar: string): Palette {
     track: formatColour(mixColour(base, BLACK, TRACK_INK)),
     raised: formatColour(mixColour(base, BLACK, RAISED_INK)),
     hover: formatColour(mixColour(base, BLACK, HOVER_INK)),
+    hoverStrong: formatColour(mixColour(base, BLACK, HOVER_STRONG_INK)),
     selected: formatColour(mixColour(base, BLACK, SELECTED_INK)),
     border: formatColour(mixColour(base, BLACK, BORDER_INK)),
     borderStrong: formatColour(mixColour(base, BLACK, BORDER_STRONG_INK)),

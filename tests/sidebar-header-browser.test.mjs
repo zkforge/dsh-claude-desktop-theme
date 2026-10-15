@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFile, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,21 +8,7 @@ import { build } from 'esbuild';
 import { findChrome, withPage } from '../scripts/lib/headless-chrome.mjs';
 import { aliasHostClasses, PINNED_BUILD, WINDOWS_BUILD } from '../src/client/compat/host-builds.ts';
 
-/*
- * The browsing region's one header line.
- *
- * DSH renders its own section header (Search, view options, add workspace) on a
- * line of its own, above a tree whose first row is the first Workspace's. The
- * reference has one line there: the group's name at the inline start and the
- * new-session plus, Search and the view options at the trailing edge. These
- * checks lay the host's real geometry out in a real browser and hold the parked
- * header to it: the band is the Workspace row's own box, the row's actions clear
- * the parked controls, the row underneath keeps its gestures, the host's add
- * workspace leaves the line altogether (the reference draws no such control, so
- * it is not drawn, not focusable and not clickable), and every state that has no
- * group on screen (no history, a flat list, a search) falls back to the header's
- * own line.
- */
+/* The browsing toolbar stays above the tree; project actions share its right edge. */
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 let chrome;
@@ -166,12 +152,8 @@ function region({ label = '工作区', header: heading, tree, empty = false }) {
   </div>`;
 }
 
-const oneWorkspace = region({ tree: group('first', 'dsh-ccd-style', sessionRow('a', '你好')) });
 const several = region({
   tree: [group('first', 'dsh-ccd-style', sessionRow('a', '你好')), group('second', 'other-project', sessionRow('b', 'Second'))].join(''),
-});
-const archivedOnly = region({
-  tree: group('archived', 'old-project', sessionRow('a', '与你', true)),
 });
 const noHistory = region({ tree: group('first', 'dsh-ccd-style', '', true), empty: true });
 const flatList = region({
@@ -181,14 +163,6 @@ const flatList = region({
 const searching = region({ tree: group('first', 'dsh-ccd-style', sessionRow('a', '你好')), header: header('工作区', true) });
 
 /* One Workspace with more Sessions than the column holds, so the tree scrolls. */
-const scrollingSessions = sessionRow('a', '你好')
-  + Array.from({ length: 24 }, (_, index) => sessionRow(`s${index}`, `会话 ${index + 1}`)).join('');
-const scrolling = region({ tree: group('first', 'dsh-ccd-style', scrollingSessions) });
-const scrollingSearch = region({
-  tree: group('first', 'dsh-ccd-style', scrollingSessions),
-  header: header('工作区', true),
-});
-
 /* The collapsed rail: no title and no in-header Search, only the add-workspace
    control, above the rail's own Search button. */
 const rail = `<div class="_3WPZCG_root" style="width:36px;height:420px;display:flex;flex-direction:column">
@@ -221,284 +195,10 @@ const boxes = `(() => {
   };
 })()`;
 
-/** Whether two boxes share any pixel of area. */
-function overlaps(a, b) {
-  return a !== null && b !== null
-    && a.x < b.right - 0.5 && b.x < a.right - 0.5 && a.y < b.bottom - 0.5 && b.y < a.bottom - 0.5;
-}
-
 const styles = (await Promise.all(['src/client/theme/tokens.css', 'src/client/features/sidebar/sidebar.css']
   .map(path => readFile(join(root, path), 'utf8')))).join('\n');
 
-test('the browsing header merges with the first workspace row and falls back without one', {
-  skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 30000,
-}, async () => {
-  const bundle = await build({
-    stdin: { resolveDir: root, contents: `
-      import {mountBrowserHeader} from './src/client/compat/browser-header.ts';
-      window.errors=[];
-      window.mountHeader=()=>window.releaseHeader=mountBrowserHeader(document,error=>window.errors.push(String(error)));
-    ` }, bundle: true, write: false, format: 'iife',
-  });
-  /** Lay one state out with the host's geometry and the plugin's stylesheets. */
-  const page = (devtools, body) => devtools.evaluate(`(() => { window.releaseHeader?.(); document.documentElement.lang='zh'; document.documentElement.dataset.dshCcdStyle='true'; document.body.innerHTML=${JSON.stringify(aliasHostClasses(body, PINNED_BUILD))}; const sheet=document.createElement('style'); sheet.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, PINNED_BUILD))}; document.head.append(sheet); window.mountHeader(); })()`);
-  const settle = devtools => devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
-  /* Both hover-only controls fade, and a machine under load can still be read
-     half way through the host's own transition (measured 0.77 where the case
-     expects 1). The transition is finished rather than waited out, then the
-     value is read — the same `getAnimations().finish()` this file already uses
-     to settle the View switcher. */
-  const settled = (devtools, selector, parent = false) => devtools.evaluate(`(() => {
-    document.getAnimations().forEach(animation => animation.finish());
-    const box = document.querySelector(${JSON.stringify(selector)});
-    return getComputedStyle(${parent ? 'box.parentElement' : 'box'}).opacity;
-  })()`);
-  const profile = await mkdtemp(join(tmpdir(), 'ccd-sidebar-header-test-'));
-  try {
-    await withPage({ url: 'about:blank', width: 264, height: 420, scale: 2, profile }, async devtools => {
-      await devtools.evaluate(bundle.outputFiles[0].text);
-      await devtools.evaluate(`window.clicks=[];document.body.addEventListener('click',event=>{const target=event.target.closest?.('button, [data-row-key]');if(target)window.clicks.push(target.getAttribute('data-row-key')??target.id);},true)`);
-
-      /* One Workspace with one Session: the header shares the row's line. */
-      await page(devtools, oneWorkspace);
-      await settle(devtools);
-      let geometry = await devtools.evaluate(boxes);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), true, 'the region reports its merged header');
-      assert(Math.abs(geometry.header.y - geometry.row.y) < 1, `the header shares the row's line (${geometry.header.y} vs ${geometry.row.y})`);
-      assert(Math.abs(geometry.header.height - geometry.row.height) < 1, 'the band is the Workspace row height');
-      assert(Math.abs(geometry.header.bottom - geometry.row.bottom) < 1, 'the band ends on the row');
-      assert.equal(geometry.label.width, 0, 'the header draws no label of its own while merged');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionLabel')).display`), 'none');
-      assert(geometry.session.y >= geometry.header.bottom - 0.5, 'the first Session starts below the band');
-      assert(!overlaps(geometry.search, geometry.session) && !overlaps(geometry.options, geometry.session), 'the parked controls cover no Session');
-      assert(geometry.search.y >= geometry.header.y - 0.5 && geometry.search.bottom <= geometry.header.bottom + 0.5, 'Search sits inside the band');
-      assert(geometry.options.right <= geometry.region.right && geometry.options.right > geometry.search.right, 'Search leads the view options at the trailing edge');
-      assert(geometry.plus.right <= geometry.search.x + 0.5, 'the new-session plus clears the Search box');
-      assert(geometry.search.x - geometry.plus.right <= 6, `the plus keeps the reference's distance to Search (${geometry.search.x - geometry.plus.right})`);
-      assert(!overlaps(geometry.plus, geometry.search) && !overlaps(geometry.plus, geometry.options), 'the row actions overlap nothing parked');
-      assert(!overlaps(geometry.title, geometry.search) && !overlaps(geometry.title, geometry.options), 'the name runs clear of the parked controls');
-
-      /* The pointer on the band: the row's menu trigger comes back and the row
-         keeps its own gestures, while the add-workspace control — which the
-         reference's line does not draw — is absent in this state too. */
-      const band = await devtools.evaluate(`(()=>{const r=document.querySelector('#row-first').getBoundingClientRect();return{x:r.x+40,y:r.y+r.height/2}})()`);
-      await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...band });
-      await devtools.evaluate('document.getAnimations().forEach(animation=>animation.finish())');
-      assert.equal(await settled(devtools, '#menu-first', true), '1', 'the row menu returns on hover');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'add workspace is out of the line while the pointer is on it');
-      geometry = await devtools.evaluate(boxes);
-      assert.equal(geometry.add.width, 0, 'the control takes no box on the line');
-      /* The cell it used to be parked in — 4px ahead of the row's own actions —
-         belongs to the Workspace row now: there is nothing of the control left to
-         click there, and the row underneath takes the gesture. */
-      const cell = await devtools.evaluate(`(() => {
-        const menu = document.querySelector('#menu-first').getBoundingClientRect();
-        const row = document.querySelector('#row-first').getBoundingClientRect();
-        const x = Math.round(menu.x - 20);
-        const y = Math.round(row.y + row.height / 2);
-        const found = document.elementFromPoint(x, y);
-        return { x, y, button: found?.closest('button')?.id ?? '', row: found?.closest('#row-first') !== null };
-      })()`);
-      assert.equal(cell.button, '', 'the add-workspace cell holds no button');
-      assert.equal(cell.row, true, 'the Workspace row owns that cell');
-
-      /* Clicks: the parked box takes none of the row's, and its own controls work. */
-      await devtools.evaluate('window.clicks=[]');
-      const click = async point => {
-        await devtools.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 });
-        await devtools.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 });
-      };
-      await click({ x: Math.round(band.x), y: Math.round(band.y) });
-      assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first'], 'the row keeps its own click through the parked band');
-      await click({ x: Math.round(geometry.searchButton.x + geometry.searchButton.width / 2), y: Math.round(geometry.searchButton.y + geometry.searchButton.height / 2) });
-      assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button'], 'Search stays clickable');
-      await click({ x: Math.round(geometry.options.x + geometry.options.width / 2), y: Math.round(geometry.options.y + geometry.options.height / 2) });
-      assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button', 'view-options'], 'the view options stay clickable');
-      await click({ x: cell.x, y: cell.y });
-      assert.deepEqual(await devtools.evaluate('window.clicks'), ['workspace:first', 'search-button', 'view-options', 'workspace:first'], 'the cell the control used to hold clicks through to the row');
-
-      /* Resting state: the row's hover-only trigger stands down, and the
-         add-workspace control is missing in this state as well. The click above
-         left the menu trigger focused, which is a state of its own — focus holds
-         that control up — so the pointer-away state is read after the focus is
-         given up, as it is when the reader moves on. */
-      await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 2, y: 418 });
-      await devtools.evaluate(`document.activeElement?.blur();new Promise(resolve=>setTimeout(resolve,150))`);
-      /* The host wraps the menu trigger in the primitive's own span, which is
-         the box the plugin fades; the trigger inside it takes the 28px button
-         treatment that Search and View options share. */
-      assert.equal(await devtools.evaluate(`document.querySelector('#menu-first').parentElement.getBoundingClientRect().width`), 28);
-      assert.equal(await settled(devtools, '#menu-first', true), '0', 'the row menu stands down');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'add workspace stays out at rest');
-
-      /* Keyboard: the control is out of the tab order — a `display: none` node
-         takes no focus — while the host's node stays whole in the DOM, so the
-         plugin's one rule is the only thing holding it off the line and dropping
-         that rule hands the host's own header back. */
-      assert.equal(await devtools.evaluate(`(() => { const button = document.querySelector('#add-workspace'); button.focus(); return document.activeElement === button; })()`), false, 'the control is out of the keyboard’s reach');
-      assert.equal(await devtools.evaluate(`document.querySelector('#add-workspace').getAttribute('aria-label')`), 'Add workspace', 'the host’s node is left untouched in the DOM');
-
-      /* Several Workspaces: only the first row shares the band, the rest keep
-         their own line, and every row keeps one trailing edge. */
-      await page(devtools, several);
-      await settle(devtools);
-      const rows = await devtools.evaluate(`Array.from(document.querySelectorAll('.jJkEga_projectRow')).map(row=>({key:row.getAttribute('data-row-key'),top:row.getBoundingClientRect().top,plus:row.querySelector('button:last-of-type').getBoundingClientRect().right}))`);
-      const header2 = await devtools.evaluate(`document.querySelector('._7514NG_sectionHeader').getBoundingClientRect().top`);
-      assert.equal(rows.length, 2);
-      assert(Math.abs(rows[0].top - header2) < 1, 'the first group shares the band');
-      assert(rows[1].top > rows[0].top + 34, 'the second group keeps its own line');
-      assert(Math.abs(rows[0].plus - rows[1].plus) < 1, 'both groups share one trailing edge');
-
-      /* Archived-only: the same line, with the archived row below it. */
-      await page(devtools, archivedOnly);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), true);
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionLabel')).display`), 'none');
-      assert.equal(await devtools.evaluate(`document.querySelector('.jJkEga_sessionRow.jJkEga_archived') !== null`), true);
-
-      /* A search takes the band over: the field spans the line and the band is
-         opaque, because the Workspace row stays laid out underneath it. */
-      await page(devtools, searching);
-      await settle(devtools);
-      geometry = await devtools.evaluate(boxes);
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionHeader')).backgroundColor`), 'rgb(251, 251, 249)', 'the band covers the row while the field is up');
-      assert.equal(await settled(devtools, '._7514NG_searchInput'), '1');
-      assert(geometry.search.width >= geometry.header.width - 16, `the field spans the band (${geometry.search.width} of ${geometry.header.width})`);
-      assert(Math.abs(geometry.header.y - geometry.row.y) < 1, 'the band still shares the row line');
-      assert.equal(overlaps(geometry.search, geometry.title), true, 'the field covers the name rather than sitting beside it');
-
-      /* No history: every group is off screen, so the header is the region's own
-         title line and takes the reference's word. */
-      await page(devtools, noHistory);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false);
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_sectionHeader')).position`), 'relative', 'the header returns to the flow');
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_sectionLabel').textContent`), '最近会话');
-      geometry = await devtools.evaluate(boxes);
-      assert(geometry.header.bottom <= geometry.empty.y + 0.5, 'the prompt starts below the header line');
-      assert.equal(await devtools.evaluate(`document.querySelector('[data-ccd-empty-state]') !== null`), true);
-      await mkdir(join(root, 'artifacts'), { recursive: true });
-      const emptyShot = await devtools.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 264, height: 420, scale: 2 } });
-      await writeFile(join(root, 'artifacts/sidebar-header-empty.png'), Buffer.from(emptyShot.data, 'base64'));
-
-      /* A flat list is the same title line, with the host's own word rewritten. */
-      await page(devtools, flatList);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_sectionLabel').textContent`), '最近会话');
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'the region’s own title line carries no add workspace either');
-      geometry = await devtools.evaluate(boxes);
-      assert(geometry.search.x >= geometry.header.x, 'Search keeps its place on the title line');
-      assert(geometry.options.right <= geometry.header.right + 0.5, 'the view options still end the line');
-
-      /* The host re-renders the tree: the merge and the word are re-read. */
-      await page(devtools, oneWorkspace);
-      await settle(devtools);
-      await devtools.evaluate(`document.querySelector('._7514NG_list').innerHTML=${JSON.stringify(aliasHostClasses(group('first', 'dsh-ccd-style', sessionRow('a', '你好')), PINNED_BUILD))}`);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), true, 'a re-rendered tree re-parks the header');
-      await devtools.evaluate(`document.querySelector('._7514NG_list').innerHTML=''`);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false, 'an empty tree hands the line back');
-
-      /* Scrolling: the band is locked to the tree's content, so it leaves with
-         the Workspace row it is parked on rather than hanging over the rows
-         that scrolled up — and it leaves nothing behind: what has scrolled past
-         the region's top edge is clipped, out of both the paint and the
-         hit-test, and comes back on the way up. */
-      await page(devtools, scrolling);
-      await settle(devtools);
-      const bandTop = `document.querySelector('._7514NG_sectionHeader').getBoundingClientRect().top`;
-      const rowTop = `document.querySelector('#row-first').getBoundingClientRect().top`;
-      const parked = await devtools.evaluate(`({band:${bandTop},row:${rowTop}})`);
-      assert(Math.abs(parked.band - parked.row) < 1, 'the band starts on the row');
-      /* The cell the parked cluster occupies while the tree is at its top. */
-      const searchCell = `document.querySelector('#search-button').getBoundingClientRect().x + 14`;
-      const searchCellHit = `(() => { const found = document.elementFromPoint(${searchCell}, document.querySelector('._7514NG_root').getBoundingClientRect().top + 17); return found?.closest('#search-button') !== null; })()`;
-      assert.equal(await devtools.evaluate(searchCellHit), true, 'at rest the parked Search owns its cell');
-      await devtools.evaluate(`document.querySelector('._7514NG_list').scrollTop = 120`);
-      await settle(devtools);
-      const scrolled = await devtools.evaluate(`({band:${bandTop},row:${rowTop},scroll:document.querySelector('._7514NG_list').scrollTop})`);
-      assert.equal(scrolled.scroll, 120, 'the tree really scrolled');
-      assert(Math.abs(scrolled.band - scrolled.row) < 1, 'the band keeps the row’s line once scrolled');
-      assert(scrolled.band < parked.band - 100, `the band leaves with the content (${parked.band} → ${scrolled.band})`);
-      assert.equal(await devtools.evaluate(`(() => { const band = document.querySelector('._7514NG_sectionHeader').getBoundingClientRect(); const region = document.querySelector('._7514NG_root').getBoundingClientRect(); return band.bottom <= region.top + 0.5; })()`), true, 'nothing parked is left inside the region');
-      const hit = await devtools.evaluate(`(() => { const region = document.querySelector('._7514NG_root').getBoundingClientRect(); const found = document.elementFromPoint(region.left + region.width / 2, region.top + 10); return found?.closest('[data-row-key]')?.getAttribute('data-row-key') ?? found?.id ?? ''; })()`);
-      assert.match(hit, /^session:|^workspace:/, `the rows own the region’s top, not the parked controls (${hit})`);
-      assert.equal(await devtools.evaluate(`getComputedStyle(document.querySelector('._7514NG_root')).overflow`), 'hidden', 'the region clips what has scrolled out');
-      /* The controls are hit-tested where they are drawn, not where they were:
-         the cell the parked cluster used to occupy belongs to a row again. */
-      assert.equal(await devtools.evaluate(searchCellHit), false, 'the parked Search takes no click at the cell it no longer occupies');
-      assert.equal(await devtools.evaluate(`(() => { const search = document.querySelector('#search-button').getBoundingClientRect(); const region = document.querySelector('._7514NG_root').getBoundingClientRect(); return search.bottom <= region.top; })()`), true, 'the parked controls are out of the region');
-      await devtools.evaluate(`document.querySelector('._7514NG_list').scrollTop = 0`);
-      await settle(devtools);
-      const back = await devtools.evaluate(`({band:${bandTop},row:${rowTop},scroll:document.querySelector('._7514NG_list').scrollTop})`);
-      assert.equal(back.scroll, 0);
-      assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_root').style.getPropertyValue('--ccd-header-scroll')`, PINNED_BUILD)), '0px', 'the distance is published back at the top');
-      assert(Math.abs(back.band - parked.band) < 1, 'the band comes back to the region’s top');
-      assert.equal(await devtools.evaluate(`(() => { const region = document.querySelector('._7514NG_root').getBoundingClientRect(); const found = document.elementFromPoint(region.left + region.width / 2, region.top + 10); return found?.closest('#row-first') !== null; })()`), true, 'the row and its band are hittable again at the top');
-
-      /* A search opened over a scrolled tree: the field is part of the band, so
-         it leaves with it and takes no clicks in the region it no longer
-         covers. */
-      await page(devtools, scrollingSearch);
-      await settle(devtools);
-      await devtools.evaluate(`document.querySelector('._7514NG_list').scrollTop = 120`);
-      await settle(devtools);
-      assert(Math.abs(await devtools.evaluate(`document.querySelector('._7514NG_sectionHeader').getBoundingClientRect().top - document.querySelector('#row-first').getBoundingClientRect().top`)) < 1, 'the field keeps the row’s line once scrolled');
-      assert.equal(await devtools.evaluate(`(() => { const region = document.querySelector('._7514NG_root').getBoundingClientRect(); const found = document.elementFromPoint(region.left + 40, region.top + 17); return found?.closest('._7514NG_searchSlot') !== null || found?.closest('._7514NG_search') !== null; })()`), false, 'the scrolled-out field takes no click inside the region');
-
-      /* A replaced scroller starts a scroll away from the top, and the band
-         follows the new element rather than the old distance. */
-      await devtools.evaluate(`document.querySelector('._7514NG_list').scrollTop = 120`);
-      await settle(devtools);
-      await devtools.evaluate(`document.querySelector('._7514NG_treeBody').innerHTML='<div class="_7514NG_list">' + document.querySelector('._7514NG_list').innerHTML + '</div>'`);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_root').style.getPropertyValue('--ccd-header-scroll')`, PINNED_BUILD)), '0px', 'a fresh scroller hands the band back to the top');
-
-      /* The collapsed rail is this region's other layout and keeps the host's own
-         add-workspace control: it is the only entry there, and the plugin's rule
-         is scoped to the expanded root, so the rail's own line is untouched. */
-      await page(devtools, rail);
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false, 'a rail tree has no group to merge with');
-      assert.equal(await settled(devtools, '#add-workspace'), '1');
-      assert.notEqual(await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`), 'none', 'the rail keeps the host’s own button');
-
-      /* Release: the marker goes and the host's own word returns. */
-      await page(devtools, noHistory);
-      await settle(devtools);
-      await devtools.evaluate('window.releaseHeader()');
-      await settle(devtools);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`), false);
-      assert.equal(await devtools.evaluate(`document.querySelector('._7514NG_sectionLabel').textContent`), '工作区');
-      assert.deepEqual(await devtools.evaluate('window.errors'), []);
-
-      /* The proof shots: two Workspaces, resting and with the pointer on the
-         first group's line — the second state is where the row's own menu is back
-         and the reference's line reads name, row actions, Search, view options,
-         with no add-workspace control anywhere on it. */
-      await page(devtools, several);
-      await settle(devtools);
-      await mkdir(join(root, 'artifacts'), { recursive: true });
-      const capture = async name => {
-        const shot = await devtools.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 264, height: 140, scale: 2 } });
-        await writeFile(join(root, 'artifacts', name), Buffer.from(shot.data, 'base64'));
-      };
-      await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 2, y: 418 });
-      await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,150))');
-      await capture('sidebar-header-merged.png');
-      const hover = await devtools.evaluate(`(()=>{const r=document.querySelector('#row-first').getBoundingClientRect();return{x:r.x+40,y:r.y+r.height/2}})()`);
-      await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.round(hover.x), y: Math.round(hover.y) });
-      await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,150))');
-      await capture('sidebar-header-hover.png');
-    });
-  } finally {
-    await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
-  }
-});
-
-test('the browsing header speaks both shipped builds', {
+test('the separate browsing toolbar and compact project actions support both builds', {
   skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 20000,
 }, async () => {
   const bundle = await build({
@@ -511,13 +211,34 @@ test('the browsing header speaks both shipped builds', {
     const profile = await mkdtemp(join(tmpdir(), `ccd-sidebar-header-${hostBuild.id}-`));
     try {
       await withPage({ url: 'about:blank', width: 300, height: 420, scale: 1, profile }, async devtools => {
-        await devtools.evaluate(`document.documentElement.lang='en';document.documentElement.dataset.dshCcdStyle='true';document.documentElement.dataset.platform=${JSON.stringify(hostBuild === WINDOWS_BUILD ? 'win32' : 'darwin')};document.body.innerHTML=${JSON.stringify(aliasHostClasses(oneWorkspace, hostBuild))};const style=document.createElement('style');style.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, hostBuild))};document.head.append(style);`);
-        await devtools.evaluate(bundle.outputFiles[0].text);
-        await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
-        assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_root').hasAttribute('data-ccd-header-merged')`, hostBuild)), true, `${hostBuild.id}: the region reports its merged header`);
-        const geometry = await devtools.evaluate(aliasHostClasses(`(()=>{const header=document.querySelector('._7514NG_sectionHeader').getBoundingClientRect();const row=document.querySelector('.jJkEga_projectRow').getBoundingClientRect();const plus=document.querySelector('.jJkEga_rowActions button:last-of-type').getBoundingClientRect();const search=document.querySelector('._7514NG_searchButton').getBoundingClientRect();return{headerTop:header.top,rowTop:row.top,plusRight:plus.right,searchLeft:search.left}})()`, hostBuild));
-        assert(Math.abs(geometry.headerTop - geometry.rowTop) < 1, `${hostBuild.id}: the band shares the row line`);
-        assert(geometry.plusRight <= geometry.searchLeft + 0.5, `${hostBuild.id}: the plus clears Search`);
+        for (const fixture of [several, searching, flatList, noHistory, rail]) {
+          await devtools.evaluate(`{document.documentElement.lang='en';document.documentElement.dataset.dshCcdStyle='true';document.documentElement.dataset.platform=${JSON.stringify(hostBuild === WINDOWS_BUILD ? 'win32' : 'darwin')};document.body.innerHTML=${JSON.stringify(aliasHostClasses(fixture, hostBuild))};document.head.querySelector('style')?.remove();const style=document.createElement('style');style.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, hostBuild))};document.head.append(style);}`);
+          await devtools.evaluate(bundle.outputFiles[0].text);
+          await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
+          const geometry = await devtools.evaluate(aliasHostClasses(boxes, hostBuild));
+          if (fixture === several) {
+            assert(Math.abs(geometry.header.bottom - geometry.row.y - 4) < 0.5, 'toolbar overlaps only the project row’s 4px padding');
+            assert.equal(geometry.plus.width, 22);
+            assert.equal(geometry.plus.height, 22);
+            assert.equal(geometry.searchButton.width, 22);
+            assert.equal(geometry.options.width, 22);
+            const trailing = await devtools.evaluate(aliasHostClasses(`({
+              first:document.querySelector('#plus-first').getBoundingClientRect().right,
+              second:document.querySelector('#plus-second').getBoundingClientRect().right,
+              row:document.querySelector('#row-first').getBoundingClientRect().right
+            })`, hostBuild));
+            assert(Math.abs(trailing.first - trailing.second) < 0.5, 'project actions align across groups');
+            assert(Math.abs(trailing.row - trailing.first - 4) < 0.5, 'actions use the row trailing inset');
+          }
+          if (fixture === searching) assert(geometry.header.bottom - geometry.row.y <= 4.5, 'expanded search overlaps only the project row’s empty padding');
+          if (fixture === flatList || fixture === noHistory) {
+            assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_sectionLabel').textContent`, hostBuild)), '最近会话');
+          }
+          const addDisplay = await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`);
+          if (fixture === rail) assert.notEqual(addDisplay, 'none');
+          else assert.equal(addDisplay, 'none');
+          await devtools.evaluate('window.releaseHeader()');
+        }
       });
     } finally {
       await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });

@@ -201,6 +201,13 @@ html[data-dsh-ccd-style="true"] {
   --ccd-view-menu-accent: #2a78d6;
   --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 8px 20px rgba(0, 0, 0, .12), 0 16px 32px rgba(0, 0, 0, .06);
   --ccd-selected: #ecebe8;
+  /* The fill a control takes while it sits on a row that is already filled:
+     a Session row paints `--ccd-selected` under the pointer, so its ⋮ takes
+     this one to stay a step below what it stands on. Sampled from the supplied
+     reference at @2x, where that row measures #edece9 under the control's own
+     #e1e0dd — the same 12/255 step, and the relationship `theme/palette.ts`
+     derives for a configured canvas. */
+  --ccd-hover-strong: #e1e0dd;
   /* The right panel's tab mark: the reference's own blue-tinted square,
      sampled at #d3e2f9 with the accent for its glyph. It is the one tinted seat
      in this plugin's surfaces, so it is stated rather than derived. */
@@ -572,6 +579,11 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-view-menu-accent: var(--ccd-accent);
   --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .3), 0 16px 32px rgba(0, 0, 0, .2);
   --ccd-selected: #3a3a37;
+  /* The same step as the light side, in the direction this canvas recesses:
+     the fill goes one step up from `selected` here — which happens to land on
+     the strong-outline step below, a coincidence of the two ramps rather than
+     the reason for the value. */
+  --ccd-hover-strong: #474743;
   /* The tab mark's tint, dark side: the accent's own hue over this card, which
      is the #d3e2f9 relationship the light side measures, not its value. */
   --ccd-right-panel-glyph-bg: #2b3a55;

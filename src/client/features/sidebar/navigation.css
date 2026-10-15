@@ -38,11 +38,11 @@ html[data-dsh-ccd-style="true"] .ccd-nav-glyph .icon-disc {
   transition: opacity 180ms ease;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible, [aria-current="page"]) .customize-case {
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .customize-case {
   transform: rotate(-6deg);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible, [aria-current="page"]) .routine-long-hand {
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .routine-long-hand {
   transform: rotate(45deg);
 }
 

@@ -67,6 +67,7 @@ function surfaceTokens(config: StyleConfig): Record<string, TokenModes> {
     tokens['--ccd-track'] = pair(palette.track, dark.track);
     tokens['--ccd-raised'] = pair(palette.raised, dark.raised);
     tokens['--ccd-hover'] = pair(palette.hover, dark.hover);
+    tokens['--ccd-hover-strong'] = pair(palette.hoverStrong, dark.hoverStrong);
     tokens['--ccd-selected'] = pair(palette.selected, dark.selected);
     tokens['--ccd-border'] = pair(palette.border, dark.border);
     tokens['--ccd-border-strong'] = pair(palette.borderStrong, dark.borderStrong);

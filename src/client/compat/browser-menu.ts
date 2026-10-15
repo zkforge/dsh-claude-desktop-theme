@@ -1,4 +1,6 @@
 /** Browser capture menu backed by the native webview. */
+import { paneLabels, paneLanguage } from './pane-labels.ts';
+
 export interface BrowserPopupLayout {
   readonly width: number;
   readonly align: 'start' | 'end';
@@ -74,7 +76,8 @@ export function mountBrowserMenus(node: HTMLElement, actions: BrowserMenuActions
   };
   const more = (anchor: HTMLElement) => {
     const content = menu('capture');
-    const save = row(content, 'Save screenshot', () => { void capture(anchor); }, 'data-ccd-browser-save-screenshot');
+    const labels = paneLabels(paneLanguage(document));
+    const save = row(content, labels.browser.saveScreenshot, () => { void capture(anchor); }, 'data-ccd-browser-save-screenshot');
     save.disabled = !canCapture();
     actions.popup(anchor, content, { width: 130, align: 'end' });
   };

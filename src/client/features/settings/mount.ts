@@ -2,13 +2,15 @@ import type { Context } from '@deepseek-ai/cordis';
 import { createElement } from 'react';
 import type { ConfigFormPort, DomPort, ThemePreferencePort } from '../../contracts/ports.ts';
 import type { CleanupScope } from '../../core/cleanup.ts';
-import { ENTRY_ID, PLUGIN_ID } from '../../../shared/identity.ts';
+import { ENTRY_ID } from '../../../shared/identity.ts';
 import { ConfigPage } from './ConfigPage.tsx';
 import { registerSettingsPage } from './register.ts';
 import css from './settings.css';
+import { mountSettingsSectionIcon } from '../../compat/settings-section.ts';
+import { zh, en } from './locales.ts';
 
 /**
- * Register the configuration page for this plugin's own loader row.
+ * Register this plugin in the main settings navigation.
  *
  * The page lives outside the activation scope on purpose: switching the
  * interface off releases every style resource, and the page has to survive that
@@ -28,9 +30,10 @@ export function mountSettingsPage(
   scope: CleanupScope,
 ): void {
   scope.add(dom.mountStyles(css));
+  scope.add(mountSettingsSectionIcon(document, [zh.nav, en.nav]));
   const registration = registerSettingsPage(
     ctx,
-    `${PLUGIN_ID}#${ENTRY_ID}`,
+    ENTRY_ID,
     props => createElement(ConfigPage, { ...props, form, themePreference }),
   );
   scope.add(() => { void registration.dispose(); });

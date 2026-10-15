@@ -128,7 +128,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-menu] {
   -webkit-app-region: no-drag;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu="session"] { width: 136px; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu="session"] { width: 160px; }
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu="project"] { width: 192px; }
 
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button {
@@ -149,7 +149,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button {
   cursor: pointer;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button > span:first-child { flex: 1; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button > [data-ccd-header-row-label] { flex: 1; }
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button:hover,
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button:focus-visible,
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button[aria-expanded="true"] {
@@ -220,4 +220,25 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-dialog] button {
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+/* Only the decorative seat gets icon geometry; labels retain the flexible cell. */
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button {
+  gap: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-header-row-icon] {
+  display: inline-flex;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-row-icon] svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
 }

@@ -52,7 +52,8 @@
 | 侧栏 | 264px 宽，内边距 10px | 参考图侧栏 |
 | 侧栏导航行 | 26px 行高、1px 行距（26.5px 节距） | 参考图三行 26px/26.5px 节距，对照宿主 36px/7px |
 | 会话行 | 28px | `--ccd-row-height` |
-| 工作区行／浏览区表头带 | 34px（同一行） | 宿主工作区行高度；合并后的表头带与它同高，两行合成一行 |
+| 会话行尾控件（⋮） | 20px 盒、圆角 6px、贴行的 8px 内缩 | 参考图 @2x 40 设备 px 的盒，圆角按圆弧拟合约 12 设备 px（本规范的 chip 一档）；行仍是 28px，⋮ 在其中居中 |
+| 工作区行／浏览区工具栏 | 34px／30px（各占一行） | 项目动作靠右，搜索与视图选项位于独立工具栏 |
 | Composer 宽 / 最小高 / 圆角 | 770px / 42px / 10px | 输入面 770×42、1px 边、圆角 10 |
 | Composer 内边距 / 控制行间距 / 底部留白 | 8px 14px / 4px / 5px | 输入面 8/14，控制行在其下 4px，根节点再留 5px |
 | 输入文本行 | 24px 行高，14px 字号 | `--ccd-composer-min-height` 的组成 |
@@ -84,6 +85,7 @@
 | 卡片／输入面 | #ffffff | #30302e |
 | 分段轨道 | #f3f3f2 | #1f1e1d（这一层两个主题都往下走） |
 | hover | #f0f0ee | #313130 |
+| 已填色行上控件的 hover | #e1e0dd | #474743 |
 | selected | #ecebe8 | #3a3a37 |
 | 轮廓线 | #e3e3e1 | #3e3e3b |
 | 强轮廓线 | #e0e0df | #474743 |
@@ -94,7 +96,7 @@
 | 滚动条拇指（浮层胶囊同值） | #333331（悬停 #171716） | #5c5b57（悬停 #75746f） |
 | 强调蓝 | #4b76ce | #789be3 |
 
-规则：**填充一律是"底色 + N% 黑"的等价不透明值**（浅色 5%／10%），不用半透明去叠，免得同一块底色在不同层上深浅不一；深色主题不是把浅色反相，而是保持同样的"关系"。
+规则：**填充一律是"底色 + N% 黑"的等价不透明值**（浅色 5%／10%），不用半透明去叠，免得同一块底色在不同层上深浅不一；深色主题不是把浅色反相，而是保持同样的"关系"。**控件自己踩在已经填色的一行上时取再低一档**：侧栏会话行的 ⋮ 出现时，它脚下那行已经是 `--ccd-selected`，所以 ⋮ 自己的 hover 取 `--ccd-hover-strong`（浅色再深 12/255，深色再亮一档）——取同一层就会和脚下的行一样浅，读不出指针在哪。
 
 ## 五、字体
 
@@ -151,9 +153,10 @@
 
 - 264px 宽、10px 内边距、28px 会话行；导航行 26px 高、1px 行距，连成一片而不是被大间距切开。
 - **视图切换 pill 停在侧栏右上角**，与交通灯、收起侧栏按钮同一行（中心线一致），距侧栏列右缘（那条分隔线）8px、距窗口上沿 12px，即 66×26 的浅色轨道。两个段各 33px 宽、16px 图形（墨迹约 12.5×11px）：**对话**是两只叠放的对话气泡，**轨迹**是 `</>`；选中段是抬起的白拇指（`--ccd-card`、1px `--ccd-border-soft` 轮廓、`--ccd-shadow-segment`），上下各内缩 1px、5px 圆角，滑动由 `--ccd-view-x/w/duration` 驱动。选中图形取正文墨，未选中降一档（`--ccd-text-muted`）；轨道仍是 `--ccd-track`（采样值比这层 token 深约一档，按本规范的分段轨道取值）。落点在 [conversation.css](src/client/features/conversation/conversation.css) 与 [view-switch.ts](src/client/compat/view-switch.ts)：宿主节点留在顶栏 DOM 原位，只由 `position: fixed` 与量测坐标停过去，侧栏收起或窄到放不下时回顶栏原位；Windows 构建没有这一行，也留在顶栏。
-- **浏览区只有一行表头**：工作区名在左，新建会话的加号、搜索（宿主原按钮）与视图选项（宿主原按钮）在右，会话行紧随其下；表头带锁在内容上（树滚动时跟着第一行一起移出区域，距离由 `compat/browser-header.ts` 从树的滚动容器发布为 `--ccd-header-scroll`，区域裁剪掉滚出的部分），不是钉在区域顶端。宿主自己的分区表头（搜索／视图选项／添加工作区）被 `position: absolute` 停在树第一行工作区行上，带高就是工作区行的 34px（`--ccd-workspace-row-height`），所以两行合成一行、树下面不留空行；停下的盒子只让自己的两个控件组接收指针事件，工作区行的展开与悬停照旧。行内右侧动作从区域右缘退到搜索盒左侧：搜索与视图选项是两个 28px 盒加 4px 间距（60px），加号的 14px 图形与搜索图形之间留 10px。参考图的工作区行只有一个常驻动作（新建会话加号），行 ⋯ 菜单悬停或键盘聚焦时出现；宿主表头里的「添加工作区」整个不画——参考图这一行以视图选项收尾，`display: none` 之后它不占盒子、不进 Tab 序、也吃不到点击（节点、回调与原 tooltip 都留在 React 手里，撤掉这条规则就是宿主自己的行）；折叠成轨道时表头保持宿主原样，添加工作区始终可见。搜索展开时输入框铺满这一行，表头取侧栏底色盖住下面的行。没有分组可合并时（单列表模式、无历史、搜索中）表头回到文档流，作为区域标题行显示「最近会话 / Recents」。落点在 [sidebar.css](src/client/features/sidebar/sidebar.css) 与 [browser-header.ts](src/client/compat/browser-header.ts)。
+浏览区的搜索与视图选项保留独立工具栏，位于项目树上方。项目动作通过 `margin-left: auto` 统一靠右，不再为工具栏预留横向空间；按钮为 22px，图标为 14px。项目加号常驻，⋯ 在悬停、键盘聚焦或菜单打开时显示。展开侧栏隐藏工具栏中的「添加工作区」，折叠轨道保留宿主入口。`compat/browser-header.ts` 仅负责最近会话标题的本地化改写与释放还原，不再合并表头或监听树滚动。
 - **空分组**默认不显示：在当前筛选下没有可见会话的工作区整块不画。展开分组读宿主会话行及 overflow 行；折叠分组读宿主会话目录与工作区成员（含未分组），结合当前归档筛选判断，树模式保留有历史的祖先目录。被隐藏的临时新会话不算数，源尚未就绪时保留未知分组。没有任何历史会话时隐藏全部分组标题（包括开启显示空分组时），在导航和账号之间的列表区域居中显示「你发起的会话会显示在这里」及 88×80px 淡色像素花枝；文案字号 12px、行高 20px，装饰距文案 16px，颜色跟随主题的 muted token。仅筛选为空时显示「没有符合当前筛选条件的会话」及「显示所有会话」入口，行间距 6px。入口选择全部会话，保留空分组开关的原值。落点在 [empty-groups.ts](src/client/compat/empty-groups.ts) 与 [sidebar.css](src/client/features/sidebar/sidebar.css)。
 - 当前行给满墨色，邻行降一档（`--ccd-text-nav`）；归档行再降一档，hover 时抬回一档。层级全在墨色里。
+- **会话行的尾部只有一枚 ⋮**：它开的是宿主自己的那张卡片，卡片里就是**置顶、重命名、分叉、归档**四行（宿主 `ui-workspace` 自己注册进 `sidebar.workspaces.session.menu.item` 的四项，order 100/200/300/400）。宿主在同一行上还挂了两个自己的 hover 按钮——归档与置顶（`sidebar.workspaces.session.row.action`）——它们整条「座位」不画：一个常被指到的行上不该并排三枚图形，而这两件事已经在 ⋮ 的卡片里。按钮节点、回调与 hover 状态仍归 React，撤掉规则就是宿主自己的行。⋮ 自身按参考图给 20px 盒与 6px 圆角，图形是顶栏那枚竖排 ⋮（用宿主 `IconEllipsisOutlineRegular` 的同一几何 `--ccd-icon-more`，不是侧栏另画一个省略号），指针落在它上面时取 `--ccd-hover-strong`。落点在 [sidebar.css](src/client/features/sidebar/sidebar.css)，规则与几何钉在 [session-row-actions.test.ts](tests/session-row-actions.test.ts) 与 [session-row-actions-browser.test.mjs](tests/session-row-actions-browser.test.mjs)。
 - 状态槽（运行中／空闲）用同一几何：运行中是宿主自己的转圈环，空闲是插件画的同一圆环，两者共用单元格的 `currentColor`。
 
 ### 6.6 转录（Markdown）
@@ -215,14 +218,15 @@
 - **展开／收起即时切换**：不做向右滑出或列宽过渡；框架列轨、分隔拖柄和停靠内容同时到达最终状态，隐藏内容立即退出命中与焦点序。
 - **以 2026-10-12 的 mp4 为外观基准**：每块独立白卡，四边沿用面板的 8px 内缩，块间距 12px、圆角 12px、1px `#d7d7d6` 轮廓及两层浅阴影。面板的 surface 只提供区域，不再在各块外面套一张卡。
 - **布局保留成员位置**：前两块上下排，第三块开右列，第四块拆开右列；两列的上下比例独立。关闭只由同列邻居补位，整列消失才让另一列铺满。比例和成员按会话保存在本次挂载的内存中。接缝支持指针捕获和键盘调整，关闭、切换会话或失焦结束拖动；最后一块关闭时收起右栏。
-- **标题栏**：32px 高，标题 14px、`#52514f` 墨；操作是相贴的 26px 席位，图标来自与视频同形的静态 SVG（16px 字形盒，`pane-icons.ts`）。终端依次是加号、⋮、展开、关闭；Files 是搜索、⋮、展开、关闭。放大／收起同时提供于 ⋮，不另占标题行。终端无前置图标，标题为 `Terminal + 工作区名`；Files 与文件预览带 24px 蓝底清单标记。单个视图的标题为无交互文本，没有悬停或点击背景。终端加号紧跟标题，在同一面板中新增终端标签页；多标签支持切换及逐个关闭。放大覆盖聊天区域并保留左侧导航，再次点击或 Escape 恢复分栏。
-- **浏览器**：球形图标与下拉入口、后退、前进、元素选取、刷新、⋮、展开、关闭都在同一行。球形下拉入口为 48×24px，地球与箭头作为一组水平／垂直居中；右侧同一行直接显示 24px 高的原生服务地址输入框，回车导航。地球菜单按 2026-10-12 的新截图分为 Servers（dev／Run）、Files（Open file）与 Settings（三个设置条目）：卡片宽 204px、圆角 10px、分组标题 12px、条目 13px／24px 行高。三点菜单仅显示 `Save screenshot`，宽 130px；空页或没有截图接口时禁用。点击 dev 或右键地球会聚焦并选中地址框；后退、前进和刷新转发宿主按钮。空闲时正文为纯白（深色随主题），实际等待时显示点阵、48px 图标底、24px 屏幕及 `Awaiting server…`。实际网页仍由宿主加载。
+- **标题栏**：32px 高，标题 14px、`#52514f` 墨；操作是相贴的 26px 席位，图标来自与视频同形的静态 SVG（16px 字形盒，`pane-icons.ts`）。终端依次是加号、⋮、展开、关闭；Files 是搜索、⋮、展开、关闭。放大／收起同时提供于 ⋮，不另占标题行。终端无前置图标，标题为「终端 + 工作区名」（英文界面写参照图的 `Terminal + 工作区名`，桌面把宿主自己的 `终端`／`Terminal` 当无名而不重复）；Files 的标题写「文件」，文件预览写文件名。Files 与文件预览带 24px 蓝底清单标记。单个视图的标题为无交互文本，没有悬停或点击背景。终端加号紧跟标题，在同一面板中新增终端标签页；多标签支持切换及逐个关闭。放大覆盖聊天区域并保留左侧导航，再次点击或 Escape 恢复分栏。
+- **浏览器**：球形图标与下拉入口、后退、前进、元素选取、刷新、⋮、展开、关闭都在同一行。球形下拉入口为 48×24px，地球与箭头作为一组水平／垂直居中；右侧同一行直接显示 24px 高的原生服务地址输入框，回车导航（空占位时写「输入服务地址」）。地球菜单按 2026-10-12 的新截图分为 Servers（dev／Run）、Files（Open file）与 Settings（三个设置条目）：卡片宽 204px、圆角 10px、分组标题 12px、条目 13px／24px 行高。三点菜单仅显示截图一项（英文界面写参照图的 `Save screenshot`，中文界面写「保存截图」），宽 130px；空页或没有截图接口时禁用。点击 dev 或右键地球会聚焦并选中地址框；后退、前进和刷新转发宿主按钮。空闲时正文为纯白（深色随主题），实际等待时显示点阵、48px 图标底、24px 屏幕及等待提示（中文界面写「等待服务器响应…」）。实际网页仍由宿主加载。
 - **浏览器功能范围**：桌面 webview 的 `capturePage()` 接入 PNG 下载；截图过程中禁用重复操作，面板关闭或网页替换后不下载过期结果。启动开发服务器、本地文件直接浏览、跨重启保留 Cookie、自动验证与 VS Code 浏览器配置目前没有对应的宿主接口，保留参考菜单外观，点击说明限制；不伪造运行中或已切换的设置状态。
 - **Files 内部分栏**：文件树和文件预览共用一张卡，树默认约占 40% 宽，可独立拖动；标题左侧的蓝色清单按钮切换目录树；收起后预览占据整个正文，再点击同一按钮展开。没有文件时，宽卡显示树与空预览，宽度小于 420px 的卡优先显示完整树。多个文件从 ⋮ 选择，点击已打开的旧文件同样切换当前预览。宿主节点保持原父节点。
-- **过滤框与树**：过滤框为 26px 高、8px 圆角、13px 文本，提示语与视频一致为 `Filter, or ? to search in files`。框所在行高 32px，只画过滤字段，目录动作收进 ⋮。树体上内边距 8px，行距 24px，标记与名字间距 5px、名字从卡片左缘 33px 起。目录用 chevron，文件用纸页／代码两种标记。查询只筛已加载行，保留命中行及祖先，Esc 清除。
-- **空预览**：28px 文件夹、12px 间距、13px/19px 常规字重标题 `Open files appear here`、4px 间距、12px/15px 指引 `Pick a file in the tree, or click a file path in the conversation.`，在预览半区居中。
+- **过滤框与树**：过滤框为 26px 高、8px 圆角、13px 文本，提示语与视频一致——英文界面写参照图的 `Filter, or ? to search in files`，中文界面写「过滤文件，或按 ? 在文件内容中搜索」。框所在行高 32px，只画过滤字段，目录动作收进 ⋮。树体上内边距 8px，行距 24px，标记与名字间距 5px、名字从卡片左缘 33px 起。目录用 chevron，文件用纸页／代码两种标记。查询只筛已加载行，保留命中行及祖先，Esc 清除。
+- **空预览**：28px 文件夹、12px 间距、13px/19px 常规字重标题（`Open files appear here`／「打开的文件会显示在这里」）、4px 间距、12px/15px 指引（`Pick a file in the tree, or click a file path in the conversation.`／「在文件树中选择一个文件，或点击对话中的文件路径。」），在预览半区居中。
 - **功能限制仍保留外观**：独立窗口缺少宿主接口，按用户要求隐藏所有面板的新窗口按钮且不保留占位。浏览器元素选取图标保留，点击显示明确说明；`?` 的全目录搜索也未接入，过滤只作用于已加载文件。其余参考控件继续保留。
-- 落点：几何在 [pane-tiles.ts](src/client/compat/pane-tiles.ts) 与 [right-panes.ts](src/client/compat/right-panes.ts)，标题栏与菜单在 [pane-chrome.ts](src/client/compat/pane-chrome.ts)，浏览器分组菜单与截图在 [browser-menu.ts](src/client/compat/browser-menu.ts)，图形在 [pane-icons.ts](src/client/compat/pane-icons.ts)，过滤／空预览在 [files-pane.ts](src/client/compat/files-pane.ts)，样式与色阶在 [right-panel.css](src/client/features/shell/right-panel.css) 和 [tokens.css](src/client/theme/tokens.css)。Chrome 测试验证布局、真实命中、按钮顺序、宿主导航、功能限制提示及清理。
+- **卡片里的词随语言**：标题、按钮名、⋮ 菜单、过滤框、空态与等待提示都是插件自己写的（宿主没有这些字符串），放在 [pane-labels.ts](src/client/compat/pane-labels.ts)：文档语言是中文时写中文，其余语言沿用参照图的英文原文（`Files`／`Filter, or ? to search in files`／`Open files appear here`／`Save screenshot`／`Awaiting server…`）。宿主自己的词（根路径、重新加载、在应用中打开、页面正文）两种语言下都不动，`<html lang>` 变化时已挂载的卡片按新语言重写。
+- 落点：几何在 [pane-tiles.ts](src/client/compat/pane-tiles.ts) 与 [right-panes.ts](src/client/compat/right-panes.ts)，标题栏与菜单在 [pane-chrome.ts](src/client/compat/pane-chrome.ts)，浏览器分组菜单与截图在 [browser-menu.ts](src/client/compat/browser-menu.ts)，图形在 [pane-icons.ts](src/client/compat/pane-icons.ts)，过滤／空预览在 [files-pane.ts](src/client/compat/files-pane.ts)，插件自己写的那一套词在 [pane-labels.ts](src/client/compat/pane-labels.ts)，样式与色阶在 [right-panel.css](src/client/features/shell/right-panel.css) 和 [tokens.css](src/client/theme/tokens.css)。Chrome 测试验证布局、真实命中、按钮顺序、宿主导航、功能限制提示及清理。
 
 ## 七、状态、动效与可达性
 
@@ -255,7 +259,7 @@
 | 文件树 | `--ccd-files-row-height` / `--ccd-files-field-height` / `--ccd-files-glyph-size` |
 | 右侧栏与文件树的墨 | `--ccd-files-ink` / `--ccd-right-panel-tab-ink` / `--ccd-files-chip-ink` |
 | 圆角阶梯 | `--ccd-radius-row` / `--ccd-radius-panel` / `--ccd-table-radius` / `--ccd-code-radius` |
-| 表面与状态 | `--ccd-canvas` / `--ccd-sidebar` / `--ccd-card` / `--ccd-track` / `--ccd-hover` / `--ccd-selected` |
+| 表面与状态 | `--ccd-canvas` / `--ccd-sidebar` / `--ccd-card` / `--ccd-track` / `--ccd-hover` / `--ccd-hover-strong` / `--ccd-selected` |
 | 线 | `--ccd-border` / `--ccd-border-strong` / `--ccd-border-soft` / `--ccd-table-head-line` |
 | 滚动条与浮层胶囊 | `--ccd-scrollbar-thumb` / `--ccd-scrollbar-thumb-hover`（轨道几何仍是宿主的 `--dsh-scrollbar-*`） |
 | 墨色 | `--ccd-text` / `--ccd-text-secondary` / `--ccd-text-muted` / `--ccd-text-strong` |

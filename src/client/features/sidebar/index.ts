@@ -1,7 +1,9 @@
+import { mountSidebarActionAlignment } from '../../compat/sidebar-action-alignment.ts';
 import type { ImplementedFeature } from '../../contracts/feature.ts';
 import { mountAccountMenu } from '../../compat/account-menu.ts';
 import { mountBlankSessionRows } from '../../compat/blank-session-rows.ts';
 import { mountSidebarNavigation } from '../../compat/sidebar-navigation.ts';
+import { mountSidebarSessionIcons } from '../../compat/sidebar-session-icons.ts';
 import { probeHost } from '../../compat/host-dom.ts';
 import accountMenuCss from './account-menu.css';
 import sidebarCss from './sidebar.css';
@@ -33,6 +35,8 @@ export const sidebarFeature: ImplementedFeature = {
     scope.add(environment.dom.mountStyles(sidebarCss));
     scope.add(environment.dom.mountStyles(accountMenuCss));
     scope.add(environment.dom.mountStyles(navigationCss));
+    scope.add(mountSidebarSessionIcons(document));
+    scope.add(mountSidebarActionAlignment(document));
     scope.add(mountSidebarNavigation(
       document, SIDEBAR_NAVIGATION_ICONS,
       error => environment.logger.error('sidebar: navigation observer failed', error),

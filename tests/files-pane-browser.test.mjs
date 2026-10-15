@@ -230,6 +230,7 @@ test('the Files pane carries the reference’s filter, tree control, marks and l
       await page.evaluate(`
         document.documentElement.dataset.dshCcdStyle='true';
         document.documentElement.dataset.platform='darwin';
+        document.documentElement.lang='zh-CN';
         document.body.innerHTML=${JSON.stringify(fixture)};
         const native=document.createElement('style');
         native.textContent=${JSON.stringify(nativeStyles)};
@@ -248,6 +249,10 @@ test('the Files pane carries the reference’s filter, tree control, marks and l
       assert.equal(field.radius, '8px', 'and its 8px corner');
       assert.equal(field.borderColor, BORDER, 'a hairline outline');
       assert.equal(field.background, CARD_SURFACE, 'on the card’s own surface');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-filter] > input').placeholder`),
+        '过滤文件，或按 ? 在文件内容中搜索', 'the field leads with this plugin’s own copy, in the document’s language');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-toggle]').getAttribute('aria-label')`),
+        '收起文件树', 'and the tree control is named the same way');
       assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-files-path]')).display`), 'none',
         'the host’s root path gives its seat to the filter');
 
@@ -390,9 +395,25 @@ test('the Files pane carries the reference’s filter, tree control, marks and l
       assert.equal(emptyBody.color, MUTED, 'the line under it is the muted one');
       assert.equal(Math.round(emptyBody.top - emptyTitle.bottom), 4, '4px under the title');
       assert.equal(await page.evaluate(`document.querySelector('[data-dockkit-empty] [data-ccd-files-empty-title]').textContent`),
-        'Open files appear here');
+        '打开的文件会显示在这里');
       assert.equal(await page.evaluate(`document.querySelector('[data-dockkit-empty] [data-ccd-files-empty-body]').textContent`),
-        'Pick a file in the tree, or click a file path in the conversation.');
+        '在文件树中选择一个文件，或点击对话中的文件路径。');
+
+      /* --- the copy follows the document’s language ------------------------ */
+      /* DSH points `<html lang>` at the locale, and re-points it when the
+         reader switches language, so the nodes already on screen follow. */
+      await page.evaluate(`document.documentElement.lang='en'`);
+      await pause();
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-filter] > input').placeholder`),
+        'Filter, or ? to search in files', 'a language change rewrites the field in place');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-toggle]').getAttribute('aria-label')`),
+        'Hide file tree');
+      assert.equal(await page.evaluate(`document.querySelector('[data-dockkit-empty] [data-ccd-files-empty-title]').textContent`),
+        'Open files appear here', 'and the landing state with it');
+      await page.evaluate(`document.documentElement.lang='zh-CN'`);
+      await pause();
+      assert.equal(await page.evaluate(`document.querySelector('[data-dockkit-empty] [data-ccd-files-empty-title]').textContent`),
+        '打开的文件会显示在这里', 'and back again');
 
       await capture(page, 'files-pane.png');
 
