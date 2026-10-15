@@ -79,3 +79,12 @@ test('the README states both supported desktop platforms', () => {
   assert.match(readme, /macOS（Apple 芯片）/u);
   assert.match(readme, /Windows 10/u);
 });
+
+
+test('the conversation header is a window drag surface only on macOS', () => {
+  const conversation = rules(read('../src/client/features/conversation/conversation.css'));
+  const headers = conversation.filter(rule => rule.selector.endsWith('.ST7X_W_header')
+    && /-webkit-app-region:\s*drag\s*;/u.test(rule.body));
+  assert.equal(headers.length, 1);
+  assert.ok(headers[0]?.selector.includes('[data-platform="darwin"]'));
+});

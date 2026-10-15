@@ -48,10 +48,6 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root [data-width-handle] {
 html[data-dsh-ccd-style="true"] .ST7X_W_header {
   background: var(--ccd-canvas);
   color: var(--ccd-text);
-  /* The host marks this header as its window-drag surface. The compact flex
-     row replaces the host's two-row grid, so keep that surface explicit on
-     macOS; the host's header controls remain no-drag children. */
-  -webkit-app-region: drag;
   /*
    * The reference has no rule between the header and the transcript — the two
    * read as one page. The host draws a hairline here (`border-bottom: .5px
@@ -110,6 +106,13 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerSessionless {
  * Windows has no such row, so its header keeps the base rule, and the
  * sessionless header already centres on 25 with its own 10px bottom padding.
  */
+/* Only macOS shares the conversation header with the window drag surface.
+   The host excludes its controls from dragging only on darwin; Windows has a
+   separate caption strip, so making this row draggable swallows button clicks. */
+html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header {
+  -webkit-app-region: drag;
+}
+
 html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header:not(.ST7X_W_headerSessionless) {
   min-height: 40px;
   padding-bottom: 0;
