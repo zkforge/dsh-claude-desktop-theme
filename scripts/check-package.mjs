@@ -63,6 +63,13 @@ sandbox.MutationObserver = FakeObserver;
 sandbox.ResizeObserver = FakeObserver;
 sandbox.requestAnimationFrame = callback => setTimeout(callback, 0);
 sandbox.cancelAnimationFrame = handle => clearTimeout(handle);
+sandbox.window.requestAnimationFrame = sandbox.requestAnimationFrame;
+sandbox.window.cancelAnimationFrame = sandbox.cancelAnimationFrame;
+sandbox.window.matchMedia = () => ({
+  matches: false,
+  addEventListener() {},
+  removeEventListener() {},
+});
 sandbox.getComputedStyle = () => ({ position: 'static', gridTemplateColumns: '' });
 /* The blank-session Composer card the whale is measured from; a plain box, so
    the anchor's read-and-publish path runs against something shaped like the
@@ -113,6 +120,7 @@ function fakeElement(tag) {
   return element;
 }
 sandbox.document = {
+  defaultView: sandbox.window,
   documentElement: {
     getAttribute: key => attributes.get(key) ?? null,
     setAttribute: (key, value) => attributes.set(key, value),
@@ -185,6 +193,7 @@ const slots = {
   inject(name, register) {
     assert.ok([
       'conversation.input.model',
+      'conversation.session.header.actions',
       'conversation.session.header.utilities',
       'conversation.session.header.corner',
       'shell.overlay',
@@ -193,6 +202,11 @@ const slots = {
     return register();
   },
   register(options) {
+    if (options.name === 'conversation.session.header.actions') {
+      assert.ok(['subagent-catalog', 'agent-team'].includes(options.id));
+      assert.equal(options.priority, -10);
+      return () => {};
+    }
     if (options.name === 'settings.section') {
       assert.equal(options.id, 'ui-skin-ccd-style');
       assert.equal(options.order, 20);
@@ -452,7 +466,7 @@ assert.equal(styles.size, 9);
 assert.equal(viewOptionsSeats.size, 1, 'the sidebar draws the view-options card');
 assert.deepEqual(
   Object.keys([...viewOptionsSeats][0].inject()).sort(),
-  ['port', 'setShowEmptyGroups', 'showEmptyGroups'],
+  ['groupByStatus', 'port', 'setGroupByStatus', 'setShowEmptyGroups', 'showEmptyGroups'],
   'the seat injects the driver, the switch and its writer',
 );
 assert.equal([...viewOptionsSeats][0].inject().showEmptyGroups, false, 'the switch defaults off');
