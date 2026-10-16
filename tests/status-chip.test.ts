@@ -9,7 +9,7 @@ import { STATS_ATTRIBUTE } from '../src/client/compat/stats-values.ts';
  *
  * The tool row's controls are the reference's chips, not boxes stretched to the
  * row: the model and effort chips draw their fill as one label line (40 device
- * px at @2x, so a 20px box around the same 12px label), and the command plus,
+ * px at @2x, so a 20px box around the same 12px label), and
  * the permission control, the voice control, the statistics readouts and the
  * context ring now carry that same box, so a pointer crossing the row finds one
  * fill height instead of three. The row itself keeps its 28px —
@@ -90,12 +90,15 @@ test('the fill is the one flat hover step, on hover and while a panel is open', 
   assert.ok(!/gradient|box-shadow/u.test(fills[0]?.body ?? ''), fills[0]?.body ?? '');
 });
 
-test('every control in the row takes the one chip box', () => {
+test('row controls keep the chip box while the inset plus shares send geometry', () => {
   const add = ruleFor(composer, '.yhfFVG_add').body;
-  assert.match(add, /height:\s*var\(--ccd-chip-height\)/u);
+  assert.match(add, /height:\s*var\(--ccd-send-size\)/u);
+  assert.match(add, /position:\s*absolute/u);
   assert.match(add, /border-radius:\s*var\(--ccd-chip-radius\)/u);
-  /* A glyph button is the row's 14px artwork plus one chip padding a side. */
-  assert.match(add, /width:\s*calc\(var\(--ccd-row-icon-size\) \+ 2 \* var\(--ccd-chip-padding-inline\)\)/u);
+  /* The plus is in the input, so its box and last-line anchor match send. */
+  assert.match(add, /width:\s*var\(--ccd-send-size\)/u);
+  const send = ruleFor(composer, '.yhfFVG_primary').body;
+  assert.equal(add.match(/bottom:\s*([^;]+)/u)?.[1], send.match(/bottom:\s*([^;]+)/u)?.[1]);
 
   const permission = ruleFor(composer, '.wXeviG_trigger').body;
   assert.match(permission, /height:\s*var\(--ccd-chip-height\)/u);

@@ -17,8 +17,8 @@ const VIEW_OPTIONS_ORDER = 30;
  *
  * The card is this plugin's own surface, so it is registered like one: a React
  * entry in `shell.overlay`, holding the driver that watches the host's trigger
- * and drives the host's own menu (`compat/view-options.ts`). The one value the
- * card writes is `view.showEmptyGroups`, and it goes through the settings
+ * and drives the host's own menu (`compat/view-options.ts`). Its own values,
+ * `view.showEmptyGroups` and `view.groupByStatus`, go through the settings
  * transport the same way the configuration page writes its fields — a write
  * re-mounts the plugin, which is why the card closes behind the switch.
  *
@@ -48,6 +48,15 @@ export function mountViewOptions(
       inject: () => ({
         port: driver.port,
         showEmptyGroups: environment.config.view.showEmptyGroups,
+        groupByStatus: environment.config.view.groupByStatus,
+        setGroupByStatus: (value: boolean) => {
+          void form.mutate(
+            [{ op: 'set', path: ['view', 'groupByStatus'], value }],
+            form.getSnapshot().revision,
+          ).then(accepted => {
+            if (!accepted) environment.logger.error('view options: status grouping write was refused');
+          }, error => environment.logger.error('view options: status grouping write failed', error));
+        },
         setShowEmptyGroups: (value: boolean) => {
           void form.mutate(
             [{ op: 'set', path: ['view', 'showEmptyGroups'], value }],
@@ -63,6 +72,22 @@ export function mountViewOptions(
     }, ViewOptionsCard),
   ));
   cleanup.add(() => { void registration.dispose(); });
+  // A settings patch or a native view change while the theme was disabled can
+  // enable status grouping without first selecting the native flat body.
+  if (environment.config.view.groupByStatus) {
+    let off = () => {};
+    const ensureFlat = () => {
+      const value = driver.settings.getSnapshot();
+      if (!value) return;
+      off();
+      if (value.groups[0]?.selected !== 2) {
+        void driver.port.choose(0, 2).catch(error =>
+          environment.logger.error('view options: flat status body could not be selected', error));
+      }
+    };
+    off = driver.settings.subscribe(ensureFlat);
+    cleanup.add(() => off());
+  }
   void driver.inspect().catch(error => environment.logger.error('view options: preferences could not be read', error));
   return {
     settings: driver.settings,

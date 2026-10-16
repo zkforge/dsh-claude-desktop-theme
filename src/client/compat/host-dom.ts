@@ -163,6 +163,8 @@ export const HOST = Object.freeze({
   /** WorkspaceBrowser.module.css: the tree's own scroller — the one element
       whose scroll distance the parked header band follows. */
   browserList: '._7514NG_list',
+  /** FlatList is the only native body the status presentation reorders. */
+  browserFlatList: '._7514NG_flatList',
   /** Rows.module.css: one Workspace's row, the line the merged header shares,
       and its trailing action group (`sidebar.css` parks both). */
   workspaceRow: '.jJkEga_projectRow',

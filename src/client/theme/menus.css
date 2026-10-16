@@ -85,6 +85,25 @@ html[data-dsh-ccd-style="true"] [data-menu-material] {
   --dsw-menu-backdrop-filter: none;
 }
 
+/* Input-trigger menus keep their native anchor and keyboard selection. The
+ * description is a separate span in MenuView; labels and aliases stay intact. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] {
+  width: min(280px, 100%);
+  right: auto;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="option"] > [class$="_itemDescription"] {
+  display: none;
+}
+
+/* A compact menu gives the name and alias the space descriptions used to own. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="option"] > [class$="_itemName"],
+html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="option"] > [class$="_itemAlias"] {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: none;
+}
+
 /* One row, one cell.
  *
  * The host's cell is 34px — a 13px label on a 20px line under a 34px minimum
@@ -138,6 +157,23 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"] > ._itemIcon_4ub78_148,
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"] > span[aria-hidden="true"]:first-child {
   display: none;
+}
+
+/* The add/command menu uses the host's semantic outline icons. Keep their
+ * compact 14px seats and let the ink follow the row in both themes. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="option"] > span[aria-hidden="true"]:first-child {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="option"] > span[aria-hidden="true"]:first-child svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* One fill for the row's states.

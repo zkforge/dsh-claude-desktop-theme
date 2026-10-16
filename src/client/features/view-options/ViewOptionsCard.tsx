@@ -6,6 +6,7 @@ import type { ViewOptionsGroup, ViewOptionsGroupRead, ViewOptionsPort } from '..
 interface Copy {
   readonly viewOptions: string;
   readonly status: string;
+  readonly groupByStatus: string;
   readonly showEmptyGroups: string;
   readonly clearFilters: string;
   /** The 筛选会话 values in the host's row order (`hide-archived`,
@@ -18,6 +19,7 @@ const COPY: { readonly zh: Copy; readonly en: Copy } = {
   zh: {
     viewOptions: '视图选项',
     status: '状态',
+    groupByStatus: '按状态',
     showEmptyGroups: '显示空分组',
     clearFilters: '清除筛选',
     filters: ['活跃', '全部', '已归档'],
@@ -25,6 +27,7 @@ const COPY: { readonly zh: Copy; readonly en: Copy } = {
   en: {
     viewOptions: 'View options',
     status: 'Status',
+    groupByStatus: 'By status',
     showEmptyGroups: 'Show empty groups',
     clearFilters: 'Clear filters',
     filters: ['Active', 'All', 'Archived'],
@@ -93,6 +96,8 @@ function Check(): ReactElement {
 
 export interface ViewOptionsCardProps {
   readonly port: ViewOptionsPort;
+  readonly groupByStatus?: boolean;
+  readonly setGroupByStatus?: (value: boolean) => void;
   /** `view.showEmptyGroups`: whether empty Workspaces are kept on screen. */
   readonly showEmptyGroups: boolean;
   /** Write the switch back through the settings transport. */
@@ -113,14 +118,15 @@ export interface ViewOptionsCardProps {
  * out of the host's card and renames only the archived-visibility triple, which
  * is the one set the reference names differently (活跃 / 已归档 / 全部).
  *
- * Only `显示空分组` is this plugin's own state: it writes
- * `view.showEmptyGroups` through the settings transport, and a write re-mounts
+ * The empty-group switch and status grouping mode are this plugin's own state:
+ * they write `view.showEmptyGroups` / `view.groupByStatus` through the settings
+ * transport, and a write re-mounts
  * the plugin, so the card closes behind it. `清除筛选` puts the filter rows back
  * to their defaults and exists only while one of them is off its default, which
  * is what the reference does with `Clear filters`.
  */
 export function ViewOptionsCard({
-  port, showEmptyGroups, setShowEmptyGroups,
+  port, showEmptyGroups, setShowEmptyGroups, groupByStatus = false, setGroupByStatus,
 }: ViewOptionsCardProps): ReactElement | null {
   const state = useSyncExternalStore(port.subscribe, port.getSnapshot);
   const panel = useRef<HTMLDivElement>(null);
@@ -235,7 +241,11 @@ export function ViewOptionsCard({
   /** Choose one option: the host writes the value, then the card steps aside. */
   const choose = (group: ViewOptionsGroup, host: number) => {
     setOpenRow(null);
-    void port.choose(group, host).then(applied => { if (applied) port.close(); });
+    void port.choose(group, host).then(applied => {
+      if (!applied) return;
+      if (group === 0 && groupByStatus) setGroupByStatus?.(false);
+      port.close();
+    });
   };
 
   /** The card's rows in DOM order — what the keyboard walks, flyout included. */
@@ -295,7 +305,9 @@ export function ViewOptionsCard({
       onPointerLeave={() => { setOpenRow(null); }}
     >
       {ROW_ORDER.map((index, position) => {
-        const group = groups[index];
+        const nativeGroup = groups[index];
+        const group = index === 0 && groupByStatus && nativeGroup
+          ? { ...nativeGroup, selected: -1 } : nativeGroup;
         if (group === undefined) return null;
         const options = optionsOf(group, index, copy);
         return (
@@ -331,7 +343,7 @@ export function ViewOptionsCard({
                 }}
               >
                 <span className="ccd-view-row-label">{index === FILTER_GROUP ? copy.status : group.label}</span>
-                <span className="ccd-view-row-value">{valueOf(group, index, copy)}</span>
+                <span className="ccd-view-row-value">{index === 0 && groupByStatus ? copy.groupByStatus : valueOf(group, index, copy)}</span>
                 <Chevron />
               </button>
               {openRow === index && (
@@ -344,6 +356,21 @@ export function ViewOptionsCard({
                   ref={submenu}
                   onPointerLeave={() => { setOpenRow(null); }}
                 >
+                  {index === 0 && setGroupByStatus && (
+                    <button type="button" role="menuitemradio" aria-checked={groupByStatus}
+                      className="ccd-view-row ccd-view-option" data-ccd-view-option="status"
+                      onClick={() => {
+                        void port.choose(0, 2).then(applied => {
+                          if (applied) { setGroupByStatus(true); port.close(); }
+                        });
+                      }}
+                      onKeyDown={event => {
+                        if (event.key === 'ArrowLeft') { event.preventDefault(); closeFlyout(index); }
+                      }}>
+                      <span className="ccd-view-row-label">{copy.groupByStatus}</span>
+                      {groupByStatus && <Check />}
+                    </button>
+                  )}
                   {options.map(option => (
                     <button
                       type="button"

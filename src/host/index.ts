@@ -61,6 +61,12 @@ export const Config = z.object({
       .pattern(FONT_NAME),
   }).default({ ...DEFAULT_FONTS }).description('字体').volatile(),
   view: z.object({
+    showHeaderSubagents: z.boolean().default(DEFAULT_VIEW.showHeaderSubagents)
+      .description('显示顶栏子代理入口（仅控制入口显示）'),
+    showHeaderTeam: z.boolean().default(DEFAULT_VIEW.showHeaderTeam)
+      .description('显示顶栏团队入口（仅控制入口显示）'),
+    groupByStatus: z.boolean().default(DEFAULT_VIEW.groupByStatus)
+      .description('按会话状态分组（保留原生项目视图选项）'),
     showEmptyGroups: z.boolean().default(DEFAULT_VIEW.showEmptyGroups)
       .description('显示空分组（关掉时没有会话的工作区不再显示）'),
   }).default({ ...DEFAULT_VIEW }).description('视图选项').volatile(),

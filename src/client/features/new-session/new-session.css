@@ -1,6 +1,6 @@
 /*
  * Blank-session page: the reference keeps the Composer at the bottom edge with
- * the workspace row directly above it, and DSH renders the greeting, that row
+ * the workspace row below it, and DSH renders the greeting, that row
  * and the input bar as one block inside the Composer seat. This module moves
  * the block to the bottom and lifts the greeting out of it into the middle of
  * the page — the Composer element, its editor and every control stay exactly
@@ -66,4 +66,19 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .bocITq_previewB
    stack's own bottom padding supplies it, the seat adds none. */
 html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_composerSeat {
   padding-bottom: 0;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] {
+  isolation: isolate;
+}
+html[data-dsh-ccd-style="true"] .ccd-hero-ripples {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .ccd-hero-ripples { display: none; }
 }

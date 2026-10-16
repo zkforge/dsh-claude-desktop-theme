@@ -287,12 +287,23 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
         <p className="ccd-settings-note">{translate('note.coloursApplyToLight')}</p>
       </section>
 
-      {/* The one view setting this plugin owns. The sidebar's view-options card
-          writes the same field through the same transport, so the two surfaces
-          cannot disagree; the menu carries the reference's wording, this page
-          the configuration's. */}
+      {/* View settings share the Host transport with the sidebar's menu. */}
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.view')}</h4>
+        <SwitchRow
+          id="ccd-settings-show-header-subagents"
+          label={translate('field.showHeaderSubagents')}
+          hint={translate('hint.showHeaderSubagents')}
+          checked={served.view.showHeaderSubagents}
+          onChange={value => void write([setOperation(['view', 'showHeaderSubagents'], value)])}
+        />
+        <SwitchRow
+          id="ccd-settings-show-header-team"
+          label={translate('field.showHeaderTeam')}
+          hint={translate('hint.showHeaderTeam')}
+          checked={served.view.showHeaderTeam}
+          onChange={value => void write([setOperation(['view', 'showHeaderTeam'], value)])}
+        />
         <SwitchRow
           id="ccd-settings-show-empty-groups"
           label={translate('field.showEmptyGroups')}

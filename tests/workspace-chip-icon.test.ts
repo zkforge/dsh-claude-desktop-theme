@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 /*
- * Workspace row mark contract: the two chips above the Composer.
+ * Workspace row mark contract: the two chips below the Composer.
  *
  * The row holds the workspace picker's chip and, when developer tools are on,
  * the agent-preset ("mode") chip beside it. Both are host controls, and both
@@ -134,10 +134,12 @@ test('both cards end on their label: the row keeps no disclosure mark', () => {
   assert.equal((rule?.body ?? '').trim(), 'display: none;');
 });
 
-test('the chips’ labels and the mode chip stay the host’s', () => {
-  /* No label is restyled, and no seat class is written down: `m0vb0q_` is the
-     macOS build's prefix for `AgentPresetSeat.module.css`, which this plugin
-     deliberately does not pin. */
-  const touched = composer.filter(rule => /bocITq_workspaceLabel|m0vb0q_/u.test(rule.selector));
-  assert.deepEqual(touched, []);
+test('long workspace names ellipsize without pinning the mode chip’s module', () => {
+  const label = composer.find(rule => rule.selector === `${CHIP}Label`);
+  assert.ok(label);
+  assert.match(label.body, /min-width:\s*0/);
+  assert.match(label.body, /overflow:\s*hidden/);
+  assert.match(label.body, /white-space:\s*nowrap/);
+  assert.match(label.body, /text-overflow:\s*ellipsis/);
+  assert.deepEqual(composer.filter(rule => /m0vb0q_/u.test(rule.selector)), []);
 });

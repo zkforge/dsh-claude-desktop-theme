@@ -24,6 +24,7 @@ import { CleanupScope } from './core/cleanup.ts';
 import { mountFeatures } from './core/mount-features.ts';
 import { mountTheme } from './theme/mount.ts';
 import { mountModelControls } from './features/model-controls/mount.ts';
+import { mountStatusGroups } from './compat/status-groups.ts';
 import { mountViewOptions } from './features/view-options/mount.ts';
 import { mountContextPanel } from './features/context-panel/mount.ts';
 import { mountHeaderActions } from './features/conversation/header-actions/mount.ts';
@@ -51,7 +52,7 @@ const FEATURES = [
  * a service that is not declared here, so the dependency is named rather than
  * discovered at the point of use.
  */
-export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions', 'workspaces'];
+export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession'];
 
 /**
  * The only assembly point allowed to import multiple feature domains.
@@ -192,6 +193,10 @@ export function apply(ctx: Context): void {
            plugin owns; both follow the sidebar switch that draws the trigger. */
         if (next.features.sidebar) {
           const view = mountViewOptions(ctx, environment, scope);
+          if (next.view.groupByStatus) {
+            scope.add(mountStatusGroups(document, ctx, next.view.showEmptyGroups,
+              error => logger.error('sidebar: status grouping failed', error)));
+          }
           /* The browsing region's one header line: the state its stylesheet
              parks on, and the word its title line draws. */
           scope.add(mountBrowserHeader(

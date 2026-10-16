@@ -9,6 +9,13 @@ html[data-dsh-ccd-style="true"] .ccd-pet-blank-seat {
   pointer-events: none;
 }
 
+/* The native hero creates a z-index: 1 stacking context, below shell.overlay
+ * (20), where the pet lives. Lift the open menu's context above that layer;
+ * raising the menu alone cannot escape its hero ancestor. */
+html[data-dsh-ccd-style="true"] .ST7X_W_composerHero:has([data-trigger-menu]) {
+  z-index: 21;
+}
+
 /* Hide when a row precedes Composer, except hero greeting and workspace chips.
  * The frame-wide seat uses a root :has() query to observe the Composer stack.
  * Selector sources: compat/host-dom.ts, composerStack/heroRoot/heroWorkspaceRow/composerRoot.

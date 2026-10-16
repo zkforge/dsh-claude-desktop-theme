@@ -4,6 +4,7 @@ import { probeHost } from '../../compat/host-dom.ts';
 import { mountViewSwitch } from '../../compat/view-switch.ts';
 import conversationCss from './conversation.css';
 import { VIEW_SWITCH_ICONS } from './view-switch-icons.ts';
+import { mountHeaderVisibility } from './header-actions/visibility.ts';
 
 /**
  * Conversation page presentation. The transcript, its scroll behaviour, tool
@@ -29,6 +30,7 @@ export const conversationFeature: ImplementedFeature = {
     const probe = probeHost(document);
     if (!probe.conversation) environment.logger.debug('conversation: body not mounted yet');
     scope.add(environment.dom.mountStyles(conversationCss));
+    mountHeaderVisibility(environment.host.slots, environment.config.view, scope);
     scope.add(mountViewSwitch(
       document, VIEW_SWITCH_ICONS,
       error => environment.logger.error('conversation: view switcher observer failed', error),

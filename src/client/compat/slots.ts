@@ -7,6 +7,8 @@ export const DSH_SLOTS = Object.freeze({
   conversation: 'main.conversation',
   header: 'conversation.header',
   sessionHeader: 'conversation.session.header',
+  /** Native subagent-catalog and agent-team entries occupy this list. */
+  sessionHeaderActions: 'conversation.session.header.actions',
   /** Trailing header seats: `utilities` is a list the native actions occupy too. */
   sessionHeaderUtilities: 'conversation.session.header.utilities',
   sessionHeaderCorner: 'conversation.session.header.corner',

@@ -24,12 +24,19 @@ html[data-dsh-ccd-style="true"] .ST7X_W_body {
 
 /* The card becomes a transparent column: the input surface draws the border. */
 html[data-dsh-ccd-style="true"] .yhfFVG_card {
+  --ccd-composer-add-reserve: calc(var(--ccd-send-size) + var(--ccd-cluster-gap));
   gap: 0;
   padding-top: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+
+/* Capture mode hides the native tools group, including the plus. Let its text
+   reclaim the leading inset without changing the voice seat or its layout. */
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_tools[hidden]) {
+  --ccd-composer-add-reserve: 0px;
 }
 
 /* Without a workspace the host makes the whole card a workspace picker and
@@ -104,7 +111,7 @@ html[data-dsh-ccd-style="true"] .yhfFVG_hero .yhfFVG_input {
   box-sizing: border-box;
   min-height: 24px;
   /* Keep text clear of the controls, including when the editor scrolls. */
-  padding: 0 var(--ccd-send-reserve) 0 0;
+  padding: 0 var(--ccd-send-reserve) 0 var(--ccd-composer-add-reserve);
   font-family: var(--ccd-font-ui);
   font-size: var(--dsh-content-font-size, 14px);
   line-height: 24px;
@@ -117,6 +124,7 @@ html[data-dsh-ccd-style="true"] .yhfFVG_placeholder {
   inset: 0 0 auto 0;
   box-sizing: border-box;
   padding-right: var(--ccd-send-reserve);
+  padding-left: var(--ccd-composer-add-reserve);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -250,13 +258,19 @@ html[data-dsh-ccd-style="true"] .cl2Rlq_triggerEffort {
   flex-shrink: 0;
 }
 
-/* The command button is a bare glyph in the reference, not a filled circle —
-   and it is a chip like every other control in the row: 20px tall, its 14px
-   glyph plus one chip padding on each side, so the box is the same 28px the
-   host drew and only its height and corner move. */
+/* Move only the native command button's painted box into the input surface.
+   Like send/stop, it follows the last visible text line from the row's top, so
+   multiline growth, editor scrolling and attachment caps cannot displace it.
+   It remains inside the tools group: the host's hidden attribute still removes
+   it during voice capture, and its focus/selection-aware launcher stays intact. */
 html[data-dsh-ccd-style="true"] .yhfFVG_add {
-  width: calc(var(--ccd-row-icon-size) + 2 * var(--ccd-chip-padding-inline));
-  height: var(--ccd-chip-height);
+  box-sizing: border-box;
+  position: absolute;
+  bottom: calc(100% + var(--ccd-composer-row-gap) + var(--ccd-composer-padding-block) + 1px);
+  left: var(--ccd-composer-padding-inline);
+  width: var(--ccd-send-size);
+  height: var(--ccd-send-size);
+  padding: 0;
   border-radius: var(--ccd-chip-radius);
   background: transparent;
   color: var(--ccd-text-secondary);
@@ -607,10 +621,18 @@ html[data-dsh-ccd-style="true"] .y0jqnG_trigger {
   white-space: nowrap;
 }
 
-/* Hero keeps the workspace row above the composer, as the reference does. */
+/* The native workspace row is conditional on the hero phase: React removes it
+   when a conversation starts. Reorder the paired workspace/preset row with CSS
+   instead of moving its DOM node out of the parent React will remove it from.
+   Overlay its native row on the status line and reserve its width in tools.
+   Keep this stack unpositioned: positioning it changes the containing block
+   of the absolute hero greeting and can place that content over the editor.
+   The workspace row anchors to the host's positioned composer seat instead. */
 html[data-dsh-ccd-style="true"] .ST7X_W_composerHero {
-  gap: 6px;
+  --ccd-workspace-seat: clamp(140px, 25vw, 260px);
+  gap: 0;
   padding-bottom: 0;
+  reading-flow: flex-visual;
 }
 
 /* Bottom inset: row → window edge. */
@@ -625,26 +647,59 @@ html[data-dsh-ccd-style="true"] .yhfFVG_hero {
    of the input's border, so a chip that sat any further right would read as a
    second, misaligned column. */
 html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow {
+  position: absolute;
+  /* The later, positioned InputBar spans this row, including the empty tools
+     padding reserved for these chips. Keep native buttons above that hit box. */
+  z-index: 2;
+  bottom: var(--ccd-composer-bottom-gap);
+  left: calc((100% - min(100%, calc(var(--ccd-composer-width) + 32px))) / 2
+    + var(--dsh-composer-side-clearance, 16px) + var(--ccd-composer-row-inset));
+  box-sizing: border-box;
+  width: var(--ccd-workspace-seat);
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: var(--ccd-cluster-gap);
   justify-content: flex-start;
-  height: 26px;
-  padding: 0 var(--dsh-composer-side-clearance, 16px);
+  height: var(--ccd-control-row-height);
+  margin-top: 0;
+  padding: 0;
 }
 
-/* Both chips in that row are menu controls — the workspace picker and the
-   agent-preset picker — and the reference draws each of them as a bordered
-   card on the page rather than as a bare label: 1px `--ccd-border`, the row
-   radius, a hairline shadow, and no fill until hover. The input surface below
-   keeps the stronger border, because it is the editable surface. */
+html[data-dsh-ccd-style="true"] .ST7X_W_composerHero:has(.ST7X_W_heroWorkspaceRow) .yhfFVG_tools {
+  padding-left: calc(var(--ccd-workspace-seat) + var(--ccd-cluster-gap));
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow .bocITq_workspace {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+html[data-dsh-ccd-style="true"] .bocITq_workspaceLabel {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"]:not(.bocITq_workspace) {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Keep the workspace picker and the existing preset seat as the same native
+   menu controls, with the lightweight chip geometry of the lower tool row. */
 html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"],
 html[data-dsh-ccd-style="true"] .bocITq_workspace {
   box-sizing: border-box;
-  height: 26px;
-  min-height: 26px;
-  padding: 0 8px;
-  border: 1px solid var(--ccd-border);
-  border-radius: var(--ccd-radius-row);
+  height: var(--ccd-chip-height);
+  min-height: var(--ccd-chip-height);
+  padding: 0 var(--ccd-chip-padding-inline);
+  border: 0;
+  border-radius: var(--ccd-chip-radius);
   background: transparent;
-  box-shadow: var(--ccd-shadow-card);
+  box-shadow: none;
   color: var(--ccd-text-secondary);
   font-size: var(--ccd-font-size-muted);
 }
@@ -667,9 +722,9 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace[aria-expanded="true"] {
    chip already steps up on hover, so the mark follows both for free.
 
    `::before` on the button is the first flex item of its own `inline-flex`
-   line, exactly where the host's svg sat: the button's 4px gap and its 8px
-   leading padding keep measuring from a 16px box, so the label's x does not
-   move. `flex: none` is the host's own declaration on that svg, restated
+   line, exactly where the host's svg sat: the button's 4px gap and its chip
+   padding keep measuring from a 16px box. `flex: none` is the host's own
+   declaration on that svg, restated
    because the seat is now a pseudo-element: left shrinkable, a long workspace
    name would take its width out of the mark's 16px box as well as its own. */
 html[data-dsh-ccd-style="true"] .bocITq_workspace .bocITq_folder {
@@ -686,7 +741,7 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace::before {
 }
 
 /* Neither chip in the row closes on a disclosure mark. The reference draws the
-   two cards as a mark, a label and nothing else, where both host controls end
+   two controls as a mark, a label and nothing else, where both host controls end
    their line with `IconChevronDownOutlineRegular`: the workspace chip through
    `HeroShell.module.css`, the mode chip through `AgentPresetSeat.module.css`.
    The first selector names the workspace chip's own mark; the second is what

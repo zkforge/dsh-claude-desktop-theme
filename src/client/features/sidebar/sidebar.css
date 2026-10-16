@@ -935,3 +935,105 @@ html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-sidebar-session-s
   font-size: 12px;
   line-height: 20px;
 }
+
+/* Status view reuses the flat list's native rows and all their actions. */
+html[data-dsh-ccd-style="true"] [data-ccd-status-list] {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  reading-flow: flex-visual;
+}
+/* The host's sibling margins follow DOM order, while these rows use visual
+   order. Keep the row rhythm independent of where React mounted a wrapper. */
+html[data-dsh-ccd-style="true"] [data-ccd-status-list] > * {
+  margin-block: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-status-wrapper] {
+  display: contents;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-status-order] {
+  order: var(--ccd-status-order);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  margin-block: 0;
+  padding-inline-start: 8px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
+  min-width: 0;
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Reserve the native overflow button's seat so hovering a long title does not
+   change its measure. Focusing the row also exposes its real menu control. */
+html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_rowActions {
+  display: inline-flex;
+  visibility: hidden;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions {
+  visibility: visible;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading {
+  flex: none;
+  /* Native titles start after the 8px inset, 16px status seat and 4px gap. */
+  padding: 18px 8px 6px 28px;
+  color: var(--ccd-text);
+  font-size: var(--ccd-font-size-muted);
+  font-weight: 500;
+  line-height: 20px;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-children {
+  flex: none;
+  min-width: 0;
+  /* Leave the stem inside the button's rounded clipping edge, at title x=28. */
+  margin: 0 0 6px 22px;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-children > button {
+  position: relative;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 8px 4px 22px;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  font: inherit;
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+/* A continuous stem ends at the last label's row-centred elbow. Keeping
+   each segment on its row also handles a single child without extra markers. */
+html[data-dsh-ccd-style="true"] .ccd-status-children > button::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 6px;
+  border-inline-start: 1px solid var(--ccd-border);
+  pointer-events: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-children > button:last-child::before {
+  bottom: auto;
+  width: 9px;
+  height: 14px;
+  border-bottom: 1px solid var(--ccd-border);
+  border-end-start-radius: 3px;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-children button:hover {
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+}
+html[data-dsh-ccd-style="true"] :is(.ccd-status-children button, [data-ccd-status-order]):focus-visible {
+  outline: 1px solid var(--ccd-accent);
+  outline-offset: -1px;
+}
