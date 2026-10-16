@@ -3,6 +3,8 @@ import type { HeroRippleImpulse } from '../../contracts/hero-canvas.ts';
 
 const GLYPHS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const TAU = Math.PI * 2;
+const GLYPH_WIDTH = 8;
+const GLYPH_HEIGHT = 15;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (from: number, to: number, value: number) => {
   const t = clamp((value - from) / (to - from));
@@ -34,19 +36,15 @@ interface WaveFrame {
   readonly strength: number;
 }
 function frameAt(elapsed: number, width: number, height: number): WaveFrame {
-  // A quiet lead-in, a broad swell, then a long decay like the recording.
-  // Each swell enters another region of the noise field; the dark interval
-  // masks that transition, so repeated passes do not replay identical shapes.
-  const period = 12800;
-  const cycle = Math.floor(elapsed / period);
-  const age = (elapsed % period) / 1000;
+  // Keep the field moving continuously: no dark interval or cycle reset.
+  const time = elapsed / 1000;
   return {
-    time: age,
+    time,
     scale: Math.max(320, Math.min(width, height, 900)),
-    offsetX: hash(cycle, 17) * 13,
-    offsetY: hash(cycle, 43) * 13,
-    phase: hash(cycle, 71) * TAU,
-    strength: smooth(1.8, 3.8, age) * (1 - smooth(6.4, 10.6, age)),
+    offsetX: hash(0, 17) * 13,
+    offsetY: hash(0, 43) * 13,
+    phase: hash(0, 71) * TAU,
+    strength: .9 + .1 * Math.sin(time * TAU / 12.8),
   };
 }
 
@@ -106,10 +104,10 @@ function clickFieldAt(x: number, y: number, elapsed: number, width: number, heig
 
 function characterAt(x: number, y: number, illumination: number,
   textureFade = 1): { alpha: number; glyph: string } {
-  const grain = hash(Math.floor(x / 6), Math.floor(y / 11));
+  const grain = hash(Math.floor(x / GLYPH_WIDTH), Math.floor(y / GLYPH_HEIGHT));
   return {
     // Lift the moving light while keeping the quiet character texture subdued.
-    alpha: Math.min(.62, (.012 + grain * .013) * textureFade + illumination * 1.35 * (.45 + .55 * grain)),
+    alpha: Math.min(.72, (.012 + grain * .013) * textureFade + illumination * 1.65 * (.45 + .55 * grain)),
     glyph: GLYPHS[Math.floor(grain * GLYPHS.length)]!,
   };
 }
@@ -132,7 +130,7 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
   context.clearRect(0, 0, width, height);
   if (!width || !height) return;
   context.fillStyle = getComputedStyle(canvas).getPropertyValue('--ccd-hero-ripple-ink').trim();
-  context.font = '8px monospace'; context.textBaseline = 'top';
+  context.font = '12px monospace'; context.textBaseline = 'top';
   const frame = frameAt(elapsed, width, height);
   const fadeIn = smooth(0, 1.4, elapsed / 1000);
   // Sample only the smoothly varying light on a coarse mesh. Bilinear
@@ -144,16 +142,16 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
     light[row * columns + col] = fieldAt(col * step, row * step, frame) * fadeIn
       + clickFieldAt(col * step, row * step, elapsed, width, height, impulses);
   }
-  for (let y = 0; y < height; y += 11) {
+  for (let y = 0; y < height; y += GLYPH_HEIGHT) {
     const row = Math.floor(y / step), fy = y / step - row;
-    for (let x = 0; x < width; x += 6) {
+    for (let x = 0; x < width; x += GLYPH_WIDTH) {
       const col = Math.floor(x / step), fx = x / step - col;
       const index = row * columns + col;
       const illumination = mix(mix(light[index]!, light[index + 1]!, fx),
         mix(light[index + columns]!, light[index + columns + 1]!, fx), fy);
       const cell = characterAt(x, y, illumination, fadeIn);
       const edge = Math.min(smooth(0, 55, x), smooth(0, 55, width - x),
-        smooth(0, 45, y), smooth(0, 100, height - y));
+        smooth(0, 16, y), smooth(0, 100, height - y));
       context.globalAlpha = cell.alpha * edge;
       if (context.globalAlpha > .006) context.fillText(cell.glyph, x, y);
     }

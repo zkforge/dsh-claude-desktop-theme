@@ -33,7 +33,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   let dialog: HTMLDialogElement | null = null;
   let editing: { seat: Seat; input: HTMLInputElement; finish: (restoreFocus?: boolean) => void } | null = null;
   const seats = new Map<HTMLElement, Seat>();
-  interface Seat { header: HTMLElement; nav: HTMLElement; icon: HTMLElement; trigger: HTMLButtonElement; project: HTMLButtonElement; id: string }
+  interface Seat { header: HTMLElement; nav: HTMLElement; icon: HTMLElement; trigger: HTMLButtonElement; project: HTMLButtonElement; id: string; releaseTitle: () => void }
 
   const button = (label: string) => {
     const node = document.createElement('button');
@@ -205,7 +205,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
     for (const item of menu.querySelectorAll<HTMLButtonElement>('button:not([aria-haspopup])')) item.addEventListener('pointerenter', clearSubmenu);
     position(); if (keyboard) menu.querySelector<HTMLButtonElement>('button')?.focus();
   };
-  const releaseSeat = (seat: Seat) => { if (editing?.seat === seat) editing.finish(); if (owner === seat) close(); seat.icon.remove(); seat.trigger.remove(); seat.project.remove(); seat.nav.removeAttribute('data-ccd-session-title'); };
+  const releaseSeat = (seat: Seat) => { if (editing?.seat === seat) editing.finish(); if (owner === seat) close(); seat.releaseTitle(); seat.icon.remove(); seat.trigger.remove(); seat.project.remove(); seat.nav.removeAttribute('data-ccd-session-title'); };
   const sync = () => {
     for (const [header, seat] of seats) if (!header.isConnected || !seat.nav.isConnected) { releaseSeat(seat); seats.delete(header); }
     for (const header of document.querySelectorAll<HTMLElement>(host.conversationHeader)) {
@@ -219,7 +219,26 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
         const icon = document.createElement('span'); icon.setAttribute('data-ccd-session-icon', ''); icon.innerHTML = LAPTOP;
         const trigger = button(''); trigger.innerHTML = CHEVRON; trigger.setAttribute('data-ccd-session-trigger', ''); trigger.setAttribute('aria-label', '会话操作'); trigger.setAttribute('aria-haspopup', 'menu'); trigger.setAttribute('aria-expanded', 'false');
         const project = button(''); project.setAttribute('data-ccd-project-trigger', ''); project.setAttribute('aria-haspopup', 'menu'); project.setAttribute('aria-expanded', 'false');
-        seat = { header, nav, icon, trigger, project, id }; const current = seat;
+        seat = { header, nav, icon, trigger, project, id, releaseTitle: () => {} }; const current = seat;
+        const title = [...nav.querySelectorAll<HTMLElement>(host.conversationCrumb)].at(-1);
+        if (title) {
+          const attributes = ['role', 'tabindex', 'title'] as const;
+          const original = attributes.map(name => title.getAttribute(name));
+          title.setAttribute('role', 'button'); title.setAttribute('tabindex', '0'); title.setAttribute('title', '重命名会话');
+          const activate = (event: Event) => {
+            event.preventDefault(); event.stopPropagation();
+            if (editing?.seat !== current) rename(current, current.id);
+          };
+          const key = (event: KeyboardEvent) => {
+            if (event.key === 'Enter' || event.key === ' ') activate(event);
+          };
+          title.addEventListener('click', activate, true);
+          title.addEventListener('keydown', key, true);
+          current.releaseTitle = () => {
+            title.removeEventListener('click', activate, true); title.removeEventListener('keydown', key, true);
+            attributes.forEach((name, index) => { const value = original[index]; if (value == null) title.removeAttribute(name); else title.setAttribute(name, value); });
+          };
+        }
         trigger.addEventListener('click', event => show(current, trigger, 'session', event.detail === 0));
         project.addEventListener('click', event => show(current, project, 'project', event.detail === 0));
         nav.setAttribute('data-ccd-session-title', ''); nav.prepend(icon); nav.append(trigger); nav.after(project); seats.set(header, seat);

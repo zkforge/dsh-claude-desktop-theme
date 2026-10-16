@@ -82,3 +82,16 @@ html[data-dsh-ccd-style="true"] .ccd-hero-ripples {
 @media (prefers-reduced-motion: reduce) {
   html[data-dsh-ccd-style="true"] .ccd-hero-ripples { display: none; }
 }
+
+/* Let the background show through the conversation's own header. */
+html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_header {
+  background: transparent;
+}
+
+/* The caption strip is outside the hero; this decorative layer never receives
+   pointer events, so native caption buttons and window dragging stay native. */
+html[data-dsh-ccd-style="true"] .ccd-hero-ripples-titlebar {
+  position: fixed;
+  inset: 0 auto auto;
+  z-index: 1;
+}

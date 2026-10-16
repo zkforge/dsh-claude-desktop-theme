@@ -29,7 +29,7 @@ const GROUPS = ['input', 'working', 'ended'] as const;
 export function mountStatusGroups(document: Document, ctx: Context, showEmpty: boolean,
   report: (error: unknown) => void): Disposer {
   const status = (ctx as Context & { uiSession?: { sessionStatus?: StatusStore } }).uiSession?.sessionStatus;
-  if (!status || !ctx.sessions?.list) return () => {};
+  if (!ctx.sessions?.list) return () => {};
   const host = hostSelectors(document);
   const win = document.defaultView!;
   const motion = win.matchMedia('(prefers-reduced-motion: reduce)');
@@ -71,7 +71,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
   const observer = new MutationObserver(() => schedule());
   const observe = () => observer.observe(document.documentElement, {
     childList: true, subtree: true, attributes: true,
-    attributeFilter: ['class', 'lang', 'data-row-key', 'data-ccd-blank-session'],
+    attributeFilter: ['class', 'lang', 'data-row-key', 'data-state', 'data-ccd-blank-session'],
   });
   const sync = () => {
     queued = false;
@@ -84,7 +84,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       if (!next) return;
       list = next;
       const catalog = ctx.sessions.list.getSnapshot();
-      const statuses = status.getSnapshot();
+      const statuses = status?.getSnapshot();
       const childrenByParent = new Map<string, (typeof catalog.byId)[keyof typeof catalog.byId][]>();
       for (const child of Object.values(catalog.byId)) {
         if (child.origin !== 'subagent' || !child.parentId) continue;
@@ -105,8 +105,15 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
         const id = row.dataset.rowKey!.slice(8);
         const summary = catalog.byId[id as keyof typeof catalog.byId];
         const children = childrenByParent.get(id) ?? [];
-        const runningChild = children.some(child => statuses.get(child.id)?.running ?? child.running);
-        const ownStatus = statuses.get(id);
+        const runningChild = children.some(child => statuses?.get(child.id)?.running ?? child.running);
+        // Builds without the root sessionStatus source still render StateDot.
+        // Read the native row's StateDot in that case; it already combines
+        // pending input and running subagents without activating a Session.
+        const ownStatus = statuses ? statuses.get(id) : {
+          ...(row.querySelector(host.sessionNeedsInput)
+            ? { pendingInteraction: { kind: 'native' } } : {}),
+          running: !!row.querySelector(host.sessionWorking) || summary?.running,
+        };
         const group = sessionGroup({ ...ownStatus,
           running: (ownStatus?.running ?? summary?.running ?? false) || runningChild,
         }, false);
@@ -215,7 +222,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
   const drag = (event: DragEvent) => {
     if (list?.contains(event.target as Node)) { event.preventDefault(); event.stopPropagation(); }
   };
-  const offStatus = status.subscribe(schedule);
+  const offStatus = status?.subscribe(schedule);
   const offList = ctx.sessions.list.subscribe(schedule);
   document.addEventListener('keydown', keydown);
   document.addEventListener('dragstart', drag, true);
@@ -223,7 +230,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
   motion.addEventListener?.('change', stopAnimations);
   observe(); sync();
   return () => {
-    disposed = true; observer.disconnect(); offList(); offStatus();
+    disposed = true; observer.disconnect(); offList(); offStatus?.();
     document.removeEventListener('keydown', keydown);
     document.removeEventListener('dragstart', drag, true);
     document.removeEventListener('visibilitychange', stopAnimations);

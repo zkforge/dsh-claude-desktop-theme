@@ -8,14 +8,14 @@ test('the ASCII field is deterministic, finite and bounded while its wave travel
   for (let y = 0; y < 500; y += 11) for (let x = 0; x < 800; x += 7) {
     const cell = rippleCell(x, y, 4200, 800, 500);
     assert.deepEqual(cell, rippleCell(x, y, 4200, 800, 500));
-    assert.ok(Number.isFinite(cell.alpha) && cell.alpha >= 0 && cell.alpha <= .62);
+    assert.ok(Number.isFinite(cell.alpha) && cell.alpha >= 0 && cell.alpha <= .72);
     assert.match(cell.glyph, /^[\da-zA-Z]$/);
     if (cell.alpha !== rippleCell(x, y, 6000, 800, 500).alpha) changed++;
   }
   assert.ok(changed > 1000);
 });
 
-test('light swells and decays over stable glyphs, with different shapes on the next pass', () => {
+test('light stays visible over stable glyphs and moves continuously across former cycle boundaries', () => {
   const times = [0, 1600, 4800, 11000, 12800, 17600];
   const energy = times.map(time => {
     let total = 0;
@@ -26,10 +26,16 @@ test('light swells and decays over stable glyphs, with different shapes on the n
     }
     return total;
   });
-  assert.ok(energy[2]! > energy[0]! * 2, 'the active wave stands above the quiet texture');
-  assert.equal(energy[0], energy[1]);
-  assert.equal(energy[0], energy[3]);
-  assert.equal(energy[0], energy[4], 'a new cycle starts without a brightness cut');
+  for (const total of energy) {
+    assert.ok(total > 960 / 18 * Math.ceil(600 / 22) * .04,
+      'the moving field remains visible even during former quiet intervals');
+  }
+  let boundaryDifference = 0;
+  for (let y = 0; y < 600; y += 22) for (let x = 0; x < 960; x += 18) {
+    boundaryDifference += Math.abs(rippleCell(x, y, 12799, 960, 600).alpha
+      - rippleCell(x, y, 12800, 960, 600).alpha);
+  }
+  assert.ok(boundaryDifference < 1, 'the field does not jump at the former cycle boundary');
   let difference = 0;
   for (let y = 0; y < 600; y += 22) for (let x = 0; x < 960; x += 18) {
     difference += Math.abs(rippleCell(x, y, 4800, 960, 600).alpha
@@ -120,31 +126,39 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
   const canvas = { width: 300, height: 150, hidden: false, className: '', setAttribute() {},
     getBoundingClientRect: () => ({ left: 50, top: 40, right: 850, bottom: 540, width: 800, height: 500 }),
     remove: () => { removed++; } };
-  const hero = { prepend() {}, contains: (target: unknown) => target === background || target === control, getBoundingClientRect: () => ({ width: 800, height: 500 }),
+  const titleCanvas = { ...canvas, style: {} as Record<string, string>, remove() {} };
+  const hero = { prepend() {}, contains: (target: unknown) => target === background || target === control, getBoundingClientRect: () => ({ left: 200, top: 40, width: 800, height: 500 }),
     getClientRects: () => [{}] };
   let present = true;
   const doc = {
-    body: {}, documentElement: {}, hidden: false,
+    body: { prepend() {} }, documentElement: {}, hidden: false,
     defaultView: { devicePixelRatio: 3, matchMedia: () => media,
       requestAnimationFrame: (callback: FrameRequestCallback) => { frames.set(++id, callback); return id; },
       cancelAnimationFrame: (frame: number) => { frames.delete(frame); },
       addEventListener: (key: string) => windowEvents.add(key), removeEventListener: (key: string) => windowEvents.delete(key),
     },
     querySelector: (selector: string) => selector.includes('data-phase') && present ? hero : null,
-    createElement: () => canvas,
+    createElement: (() => {
+      let created = 0;
+      return () => created++ === 0 ? canvas : titleCanvas;
+    })(),
     addEventListener: (key: string, callback: (event?: unknown) => void) => events.set(key, callback),
     removeEventListener: (key: string) => events.delete(key),
   };
   const errors: unknown[] = [];
   try {
-    const dispose = mountHeroCanvas(doc as unknown as Document, (_canvas, _elapsed, impulses) => { calls++; active = impulses; }, error => errors.push(error));
+    const dispose = mountHeroCanvas(doc as unknown as Document, (_canvas, _elapsed, impulses) => { calls++; if (_canvas === canvas as unknown as HTMLCanvasElement) active = impulses; }, error => errors.push(error));
     assert.equal(events.has('pointermove'), false);
     assert.equal(events.has('pointerleave'), false);
     resized();
     assert.equal(canvas.width, 1600); assert.equal(canvas.height, 1000);
+    assert.equal(titleCanvas.width, 1600); assert.equal(titleCanvas.height, 80);
+    assert.equal(titleCanvas.style.left, '200px');
+    assert.equal(titleCanvas.style.width, '800px');
+    assert.equal(titleCanvas.style.height, '40px');
     assert.equal(frames.size, 1);
     const [frameId, draw] = [...frames][0]!; frames.delete(frameId); draw(100);
-    assert.equal(calls, 1); assert.equal(frames.size, 1);
+    assert.equal(calls, 2); assert.equal(frames.size, 1);
     const click = (extra: object = {}) => events.get('click')!({
       target: background, clientX: 450, clientY: 290, button: 0, detail: 1, defaultPrevented: false, ...extra,
     });
@@ -164,12 +178,12 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     click({ clientX: 130, clientY: 140 }); tick(3500);
     assert.deepEqual(active, [{ x: .1, y: .2, startedAt: 3300 }], 'a new click is accepted after completion');
     doc.hidden = true; events.get('visibilitychange')!();
-    assert.equal(frames.size, 0); assert.equal(canvas.hidden, true);
+    assert.equal(frames.size, 0); assert.equal(canvas.hidden, true); assert.equal(titleCanvas.hidden, true);
     doc.hidden = false; events.get('visibilitychange')!();
     assert.equal(frames.size, 1);
     tick(3600); assert.equal(active.length, 0, 'hidden pages discard click waves');
     media.matches = true; mediaChange();
-    assert.equal(frames.size, 0); assert.equal(canvas.hidden, true);
+    assert.equal(frames.size, 0); assert.equal(canvas.hidden, true); assert.equal(titleCanvas.hidden, true);
     click();
     media.matches = false; mediaChange(); assert.equal(frames.size, 1);
     tick(3700); assert.equal(active.length, 0, 'reduced motion ignores clicks');

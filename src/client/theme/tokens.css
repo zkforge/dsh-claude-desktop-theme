@@ -347,7 +347,7 @@ html[data-dsh-ccd-style="true"] {
      the token takes the darker mode) and shares the stats heat ramp's hue
      family (hsl(217 …)), which keeps every blue in the interface one voice. */
   --ccd-accent: #4b76ce;
-  --ccd-hero-ripple-ink: #2477ac;
+  --ccd-hero-ripple-ink: #60bdeb;
 
   /* State colours that DSH already owns semantics for. */
   --ccd-diff-added: #508c48;
@@ -555,7 +555,7 @@ html[data-dsh-ccd-style="true"] body {
  * separate; text keeps the light palette's descending tone order.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
-  --ccd-hero-ripple-ink: #4aabdb;
+  --ccd-hero-ripple-ink: #60bdeb;
   /* The same flat frame uses gray-850 for the dark page and mixes it with
      20% black for the sidebar. The control track stays below its raised thumb
      while both sit above the darker page. */

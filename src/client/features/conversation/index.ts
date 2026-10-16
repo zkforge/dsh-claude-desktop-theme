@@ -1,5 +1,7 @@
 import type { ImplementedFeature } from '../../contracts/feature.ts';
 import { mountConversationFade } from '../../compat/conversation-fade.ts';
+import { mountConversationProcess } from '../../compat/conversation-process.ts';
+import { mountReplySignature } from '../../compat/reply-signature.ts';
 import { probeHost } from '../../compat/host-dom.ts';
 import { mountViewSwitch } from '../../compat/view-switch.ts';
 import conversationCss from './conversation.css';
@@ -30,6 +32,14 @@ export const conversationFeature: ImplementedFeature = {
     const probe = probeHost(document);
     if (!probe.conversation) environment.logger.debug('conversation: body not mounted yet');
     scope.add(environment.dom.mountStyles(conversationCss));
+    scope.add(mountReplySignature(
+      document,
+      error => environment.logger.error('conversation: reply signature failed', error),
+    ));
+    scope.add(mountConversationProcess(
+      document,
+      error => environment.logger.error('conversation: process expansion failed', error),
+    ));
     mountHeaderVisibility(environment.host.slots, environment.config.view, scope);
     scope.add(mountViewSwitch(
       document, VIEW_SWITCH_ICONS,

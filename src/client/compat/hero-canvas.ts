@@ -12,6 +12,7 @@ export function mountHeroCanvas(document: Document,
   const reduced = win.matchMedia('(prefers-reduced-motion: reduce)');
   let root: HTMLElement | null = null;
   let canvas: HTMLCanvasElement | null = null;
+  let titleCanvas: HTMLCanvasElement | null = null;
   let frame = 0;
   let last = 0;
   let elapsed = 0;
@@ -24,6 +25,13 @@ export function mountHeroCanvas(document: Document,
     const rect = root.getBoundingClientRect();
     canvas.width = Math.round(rect.width * ratio);
     canvas.height = Math.round(rect.height * ratio);
+    if (titleCanvas) {
+      titleCanvas.style.left = `${rect.left}px`;
+      titleCanvas.style.width = `${rect.width}px`;
+      titleCanvas.style.height = `${Math.max(0, rect.top)}px`;
+      titleCanvas.width = canvas.width;
+      titleCanvas.height = Math.round(Math.max(0, rect.top) * ratio);
+    }
     sync();
   });
   const tick = (time: number) => {
@@ -34,7 +42,10 @@ export function mountHeroCanvas(document: Document,
       if (last) elapsed += time - last;
       last = time;
       impulses = impulses.filter(impulse => elapsed - impulse.startedAt < HERO_RIPPLE_DURATION);
-      try { draw(canvas, elapsed, impulses); }
+      try {
+        draw(canvas, elapsed, impulses);
+        if (titleCanvas && titleCanvas.height) draw(titleCanvas, elapsed, []);
+      }
       catch (error) { stop(); report(error); return; }
     }
     frame = win.requestAnimationFrame(tick);
@@ -43,12 +54,18 @@ export function mountHeroCanvas(document: Document,
     if (disposed) return;
     const next = document.querySelector<HTMLElement>(`${host.conversationRoot}[data-phase="hero"]`);
     if (next !== root) {
-      stop(); resize.disconnect(); canvas?.remove();
-      root = next; canvas = null; elapsed = 0; impulses = [];
+      stop(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
+      root = next; canvas = null; titleCanvas = null; elapsed = 0; impulses = [];
       if (root) {
         canvas = document.createElement('canvas');
         canvas.className = 'ccd-hero-ripples'; canvas.setAttribute('aria-hidden', 'true');
-        root.prepend(canvas); resize.observe(root);
+        root.prepend(canvas);
+        // The native caption strip sits outside the conversation root.
+        titleCanvas = document.createElement('canvas');
+        titleCanvas.className = 'ccd-hero-ripples ccd-hero-ripples-titlebar';
+        titleCanvas.setAttribute('aria-hidden', 'true');
+        document.body.prepend(titleCanvas);
+        resize.observe(root);
       }
     }
     if (!canvas || !root || !canvas.width || !canvas.height || document.hidden
@@ -56,9 +73,11 @@ export function mountHeroCanvas(document: Document,
       stop();
       impulses = [];
       if (canvas) canvas.hidden = true;
+      if (titleCanvas) titleCanvas.hidden = true;
       return;
     }
     canvas.hidden = false;
+    if (titleCanvas) titleCanvas.hidden = false;
     if (!frame) { last = 0; frame = win.requestAnimationFrame(tick); }
   }
   const click = (event: MouseEvent) => {
@@ -92,10 +111,10 @@ export function mountHeroCanvas(document: Document,
   win.addEventListener('resize', sync);
   sync();
   return () => {
-    disposed = true; stop(); observer.disconnect(); resize.disconnect(); canvas?.remove();
+    disposed = true; stop(); observer.disconnect(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
     document.removeEventListener('visibilitychange', sync);
     document.removeEventListener('click', click);
     reduced.removeEventListener('change', sync); win.removeEventListener('resize', sync);
-    root = null; canvas = null; impulses = [];
+    root = null; canvas = null; titleCanvas = null; impulses = [];
   };
 }

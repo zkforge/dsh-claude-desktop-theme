@@ -9,6 +9,169 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root {
   container: ccd-conversation / inline-size;
 }
 
+/* ChangedFiles is the host's completed-turn summary, separate from explicitly
+   delivered files and the tool calls that performed the edits. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] {
+  display: none;
+}
+
+/* MessageIconActions exposes data-clock="end" on assistant action strips.
+   Keep the native actions and feedback slot, with Claude-sized icon seats. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] {
+  height: 24px;
+  gap: 0;
+  margin-top: 4px;
+  margin-left: -4px;
+}
+
+/* compat/reply-signature.ts seats this button only at the latest settled reply.
+   The mask is DSH's RunningWhaleTail REST_PATH (16 × 16). */
+html[data-dsh-ccd-style="true"] .ccd-reply-signature {
+  display: block;
+  flex: none;
+  align-self: flex-start;
+  width: 32px;
+  height: 32px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transform-origin: 45% 85%;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-reply-signature:focus-visible {
+  outline: 2px solid var(--ccd-accent);
+  outline-offset: 4px;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-reply-signature::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ccd-pet-blue);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8.844 13.742C8.967 12.328 8.45 10.4 8.45 9.65C8.45 8.94 8.88 8.43 9.6 8.43C11.285 8.43 12.106 8.281 12.685 8.104C13.71 7.791 14.585 6.768 15.055 5.945C15.137 5.803 14.99 5.641 14.829 5.671C13.829 5.86 12.828 5.376 11.827 4.978C10.659 4.514 9.491 4.707 8.935 4.876C8.805 4.915 8.658 4.819 8.636 4.686C8.468 3.643 7.405 2.615 5.498 2.238C4.54 2.048 3.748 1.574 3.347 1.202C3.252 1.113 3.088 1.125 3.03 1.242C2.628 2.059 2.168 3.82 5.248 6.115C5.82 6.494 6.31 6.785 6.574 7.637C6.72 8.104 6.157 9.168 6.061 9.368C5.157 11.27 5.089 12.19 4.926 13.742' stroke='black' stroke-width='1'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] button:has(> svg:only-child) {
+  box-sizing: border-box;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 4px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] button:has(> svg:only-child) > svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* MessageIconActions' final span groups token usage and the completion time. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] > span:last-child {
+  gap: 6px;
+  margin-left: 6px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] button[aria-haspopup="dialog"] {
+  box-sizing: border-box;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  justify-content: center;
+  gap: 0;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] button[aria-haspopup="dialog"] > svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Preserve the localized usage label as the button's accessible name. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] button[aria-haspopup="dialog"] > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* TurnUsagePanel portals to body. Its details hook identifies this dialog
+   without touching session statistics or the host's anchored positioning. */
+html[data-dsh-ccd-style="true"] [role="dialog"]:has(> [data-turn-usage-details]) {
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 24px));
+  min-width: 0;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 14px 16px;
+  border: .5px solid var(--ccd-view-menu-border);
+  border-radius: 12px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-view-menu-shadow);
+  backdrop-filter: none;
+  color: var(--ccd-text-secondary);
+  font: 400 12px/18px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [role="dialog"]:has(> [data-turn-usage-details]) > div:first-child {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--ccd-text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [role="dialog"]:has(> [data-turn-usage-details]) > div[aria-hidden="true"] {
+  margin-bottom: 12px;
+  border-top-color: var(--ccd-border);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-usage-details] {
+  grid-template-columns: minmax(76px, auto) minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-usage-details] > dd {
+  color: var(--ccd-text);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-usage-details] > dd > span {
+  display: block;
+  color: var(--ccd-text-muted);
+  font-size: 11px;
+  white-space: normal;
+}
+
+/* Process containers stay open via compat/conversation-process.ts. Only hide
+   their controls after expansion, so a failed adaptation stays operable. */
+html[data-dsh-ccd-style="true"] button[data-turn-process]:not([aria-expanded="false"]),
+html[data-dsh-ccd-style="true"] [data-step-process] > div:has(> button[data-process-activity][aria-expanded="true"]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-step-process-body]:not([hidden]) {
+  max-height: none;
+  overflow: visible;
+  scrollbar-gutter: auto;
+  mask-image: none;
+}
+
 /*
  * Transcript width handles: hidden here, because this interface removed what
  * they control (17).

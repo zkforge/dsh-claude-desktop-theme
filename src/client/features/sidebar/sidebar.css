@@ -546,14 +546,32 @@ html[data-dsh-ccd-style="true"] :has(> .jJkEga_hoverContent > .jJkEga_hoverStatu
   display: none;
 }
 
-/* The row's leading 16px cell is the reference's shape already — the label
-   lands on the same 38px edge as a navigation label. What arrives there is
-   either a 6px solid state dot or the 14px activity ring; the ring is scaled to
-   8px so its 1.5px stroke reads as the reference's 6px mark instead of a
-   full-size spinner. */
+/* Keep the leading cell and use a compact 6px mark; replace the host spinner with a
+   breathing circle whose centre fades between hollow and solid. */
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot > svg[data-state="ongoing"] {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
+  box-sizing: border-box;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: var(--ccd-session-activity-animation, ccd-session-breathe 2s ease-in-out infinite);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot > [data-state="ongoing"] > * {
+  display: none;
+  animation: none;
+}
+
+@keyframes ccd-session-breathe {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: currentColor; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .jJkEga_sessionRow {
+    --ccd-session-activity-animation: none;
+  }
 }
 
 /* An idle Session keeps that cell empty. The host gives the leading mark only
@@ -565,9 +583,8 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot > svg[data-sta
 
    The seat is filled with the ring's own geometry, not a second mark: the same
    circle the activity ring draws (`--ccd-icon-session-ring`, read from
-   `ui-primitives`' StateDot spinner) at the same 8px scale the rule above
-   already puts the spinner at, so an idle row and a running row carry one mark
-   that differs only by motion. `currentColor` is the cell's own
+   `ui-primitives`' StateDot spinner) at the same 6px scale as the running mark above,
+   which breathes between hollow and solid. `currentColor` is the cell's own
    `--dsw-alias-label-tertiary` — the ink the spinner paints with — so the still
    ring needs no colour of its own and follows the host theme.
 
@@ -581,10 +598,10 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot > svg[data-sta
    down rather than left to the host's current shape. */
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:not(.jJkEga_archived) > .jJkEga_slot:has(> div[data-slot="sidebar.session.row.leading"]:empty)::before {
   content: "";
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background-color: currentColor;
-  mask: var(--ccd-icon-session-ring) center / 8px 8px no-repeat;
+  mask: var(--ccd-icon-session-ring) center / 6px 6px no-repeat;
 }
 
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_title {
@@ -790,6 +807,9 @@ html[data-dsh-ccd-style="true"] [data-ccd-list-empty] {
 
 html[data-dsh-ccd-style="true"] .ccd-sidebar-empty {
   position: absolute;
+  /* The native scrolling tree is a positioned sibling painted after this
+     prepended prompt. Keep recovery controls above its empty hit surface. */
+  z-index: 1;
   inset: 0;
   display: flex;
   flex-direction: column;
@@ -841,10 +861,21 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions {
   flex: none;
   margin-left: auto;
   gap: 0;
+  height: 22px;
+  align-items: center;
+}
+
+/* Menu's inline wrapper must not add a text-baseline descent below the button. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions > span {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
 }
 
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(.jJkEga_rowActions) {
-  padding-inline-end: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  padding-inline-end: 3px;
 }
 
 /* The reference keeps the trigger highlighted while its popup is open. */
@@ -979,12 +1010,17 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading {
   flex: none;
-  /* Native titles start after the 8px inset, 16px status seat and 4px gap. */
-  padding: 18px 8px 6px 28px;
+  /* Section labels share the Recents toolbar's 4px inset; only session
+     titles are indented past the native status icon. */
+  padding: 12px 8px 4px 4px;
   color: var(--ccd-text);
   font-size: var(--ccd-font-size-muted);
   font-weight: 500;
   line-height: 20px;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading:nth-child(1 of .ccd-status-heading) {
+  /* The toolbar already provides separation above the first visible group. */
+  padding-top: 4px;
 }
 html[data-dsh-ccd-style="true"] .ccd-status-children {
   flex: none;

@@ -201,15 +201,18 @@ test('a Session row ends at one ⋮, and the seat it replaces takes no box', {
       })()`), true, 'the trailing of the row belongs to the row again');
 
       /* The control itself: a 22px box with a 6px corner, flush with the row's
-         own 8px padding and centred on its line. */
+         own 3px inset and centred on its line. */
       const more = view.more;
       assert.equal(more.width, 22);
       assert.equal(more.height, 22);
       assert.equal(more.radius, '6px');
-      assert.ok(Math.abs(more.right - view.row.right) < 0.5,
+      assert.ok(Math.abs(more.right - (view.row.right - 3)) < 0.5,
         `the ⋮ ends on the row's padding edge (${more.right} vs ${view.row.right})`);
       assert.ok(Math.abs((more.y + more.height / 2) - (view.row.y + view.row.height / 2)) < 0.5,
         'the ⋮ is centred on the row');
+
+      assert.ok(more.y >= view.row.y + 3 && more.bottom <= view.row.bottom - 3,
+        'the button stays inside the row with 3px above and below');
 
       /* Its mark: the host's horizontal ellipsis steps aside for the stacked ⋮,
          painted at the compact 14px size from the one artwork token. */

@@ -20,6 +20,16 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb {
   line-height: 24px;
 }
 
+html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb[role="button"] {
+  cursor: text;
+  border-radius: 4px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb[role="button"]:focus-visible {
+  outline: 2px solid Highlight;
+  outline-offset: 1px;
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-session-editing] > :not([data-ccd-session-icon], [data-ccd-session-trigger], [data-ccd-session-rename]) {
   display: none;
 }
@@ -129,7 +139,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-menu] {
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu="session"] { width: 160px; }
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu="project"] { width: 192px; }
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu="project"] { width: 176px; }
 
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button {
   box-sizing: border-box;

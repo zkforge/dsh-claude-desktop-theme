@@ -629,7 +629,10 @@ html[data-dsh-ccd-style="true"] .y0jqnG_trigger {
    of the absolute hero greeting and can place that content over the editor.
    The workspace row anchors to the host's positioned composer seat instead. */
 html[data-dsh-ccd-style="true"] .ST7X_W_composerHero {
-  --ccd-workspace-seat: clamp(140px, 25vw, 260px);
+  /* The row is measured as a whole; each chip keeps its own content width. */
+  --ccd-workspace-seat: 280px;
+  --ccd-hero-control-gap: 2px;
+  --ccd-hero-control-padding: 6px;
   gap: 0;
   padding-bottom: 0;
   reading-flow: flex-visual;
@@ -655,10 +658,10 @@ html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow {
   left: calc((100% - min(100%, calc(var(--ccd-composer-width) + 32px))) / 2
     + var(--dsh-composer-side-clearance, 16px) + var(--ccd-composer-row-inset));
   box-sizing: border-box;
-  width: var(--ccd-workspace-seat);
+  width: max-content;
   min-width: 0;
   flex-wrap: nowrap;
-  gap: var(--ccd-cluster-gap);
+  gap: var(--ccd-hero-control-gap);
   justify-content: flex-start;
   height: var(--ccd-control-row-height);
   margin-top: 0;
@@ -666,11 +669,42 @@ html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow {
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_composerHero:has(.ST7X_W_heroWorkspaceRow) .yhfFVG_tools {
-  padding-left: calc(var(--ccd-workspace-seat) + var(--ccd-cluster-gap));
+  padding-left: calc(var(--ccd-workspace-seat) + var(--ccd-hero-control-gap));
 }
 
+/* Equal visible spacing: 6px button padding + 2px gap + 6px padding.
+   The permission control belongs to another native container, so apply the
+   same geometry across that boundary rather than stacking group spacing. */
+html[data-dsh-ccd-style="true"] .ST7X_W_composerHero .yhfFVG_tools,
+html[data-dsh-ccd-style="true"] .ST7X_W_composerHero .yhfFVG_modes {
+  gap: var(--ccd-hero-control-gap);
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"],
+html[data-dsh-ccd-style="true"] .ST7X_W_composerHero .wXeviG_trigger {
+  padding-inline: var(--ccd-hero-control-padding);
+  border: 0;
+  font-family: var(--ccd-font-ui);
+  font-weight: 400;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"] > svg {
+  color: inherit;
+}
+
+/* Permission is a separate control group. Give it a visible 8px boundary
+   after the preset (the row reserve contributes 2px, this adds 6px). */
+html[data-dsh-ccd-style="true"] .ST7X_W_composerHero .wXeviG_trigger {
+  margin-inline-start: 6px;
+}
+
+/* Allow useful project names before truncating. Cap only long names, keeping
+   room for the preset, permission and model controls on narrower columns. */
 html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow .bocITq_workspace {
-  flex: 0 1 auto;
+  flex: none;
+  width: max-content;
+  max-width: clamp(100px, 24cqw, 240px);
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -683,6 +717,16 @@ html[data-dsh-ccd-style="true"] .bocITq_workspaceLabel {
   text-overflow: ellipsis;
 }
 
+/* Nothing in the mode chip gives way. The row's flex item is the `Menu` anchor
+   the seat draws around its button, not the button itself: left shrinkable, that
+   anchor took its share of the row's overflow and cut the mode's label, which is
+   the reading this row exists to show whole — and with the anchor held, the
+   button inside has to be held as well, or its host `max-width: 100%` hands the
+   row's overflow straight back to the label. The renderer seats the seat in a
+   `display: contents` outlet, so the anchor is that outlet's element child: the
+   stable name for a seat whose module class prefix is not a pinned one, and the
+   row is measured by `compat/hero-chips.ts`. */
+html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow [data-slot="conversation.hero.agentPreset"] > :first-child,
 html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"]:not(.bocITq_workspace) {
   flex: none;
   white-space: nowrap;
@@ -695,7 +739,7 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace {
   box-sizing: border-box;
   height: var(--ccd-chip-height);
   min-height: var(--ccd-chip-height);
-  padding: 0 var(--ccd-chip-padding-inline);
+  padding: 0 var(--ccd-hero-control-padding, var(--ccd-chip-padding-inline));
   border: 0;
   border-radius: var(--ccd-chip-radius);
   background: transparent;

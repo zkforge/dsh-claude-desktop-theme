@@ -63,7 +63,7 @@
 | 状态栏控件间距 | 6px（行、前导组、模式组、尾部组、统计 dock 同一值） | 宿主前导 12px 与插件尾部 6px 的混用已统一 |
 | 状态栏图标 | 14px 图形，落在 20px 命中盒里居中 | 语音、统计读数、上下文环；权限控件没有图形 |
 | 上下文环 | 14px 图形、2px 描边、圆环半径 5.5（14 盒） | 宿主 `ContextMeter` 原几何 |
-| 空会话页工作区行 | 28px 行高、20px chip、圆角 6px、无边框与阴影 | 位于输入面和原有工具行下方，保留宿主工作区与已有模式选择 |
+| 空会话页工作区行 | 28px 行高、20px chip、圆角 6px、无边框与阴影；两枚 chip 同长 | 位于输入面和原有工具行下方；模式座自身的宽度是这一行的尺子，工作区名超出即按宿主的省略号截断 |
 | 会话头按钮 | 28px（紧凑 24px）、16px 图形、2px 间距、右侧内缩 12px | 参考图 30px 中心节距、25.75px 尾距 |
 | 视图切换 pill | 66×26（两段各 33×26）、圆角 6、拇指上下内缩 1px、圆角 5 | 参考图 @2x 131×52 设备 px，停在侧栏右上角、距列右缘 8px |
 | 回到最新 | 22px 盒 | 参考图 40×44 设备 px，对照宿主 34px 圆钮 |
@@ -121,6 +121,7 @@
 - **统计读数是行里唯一可选的控件**（`features.composer-stats`，默认关）：宿主那一族读数（输出速度、缓存命中率，点开是会话统计）默认不画，打开后每枚只显示一个从宿主文案镜像来的短值。它和上下文环同住宿主 dock 且 dock 右对齐，所以关掉时环的位置不动，模型按钮的宽度预算由同一模块按 dock 实测重算。
 - **量与算**：参考图里 chip 是 40 设备 px 高（20px），12px 标签上下各空 5.5px；同样 12px 的标签放到整行 28px 的盒子里会空 10px——这就是"看起来被撑胖"的来源。填充深浅两边一致，**差别只在盒高与圆角**，不在颜色深浅。圆角：参考图约 12 设备 px ≈ 6px，同一个 8px 半径放在 20px 盒子上已经接近半高，填充会读成胶囊。
 - **实现**：token 在 [tokens.css](src/client/theme/tokens.css)；模型与 effort 两个 chip 在 [controls.css](src/client/features/model-controls/controls.css)，其余控件（加号、权限、语音、读数、上下文环、行与各组的间距）在 [composer.css](src/client/theme/composer.css)。上下文环的座位仍是 28px 的行盒，20px 的环 chip 在其中居中——座位声明了高度，`align-items: stretch` 不会拉伸它，只会把它贴在顶边。
+- **空会话页工作区与模式按内容宽度排列**：只对过长工作区名设响应式上限；整行宽度由 `compat/hero-chips.ts` 量测，工具行为它预留同样宽度及一个间距。
 - 语音的采集形态（`.yhfFVG_trailingActive`）不套这条规则：那一行是宿主自己的圆钮与自己的几何。
 
 ### 6.2 Composer 输入面
@@ -135,7 +136,9 @@
 ### 6.3 空会话页
 
 - 问候语距页头 16px，下方是统计卡与 Composer；空会话页与聊天页共用同一套 Composer 几何。
-- 工作区 chip 与宿主原有的模式 chip 位于输入面和工具行下方的独立紧凑行，行高 28px、chip 高 20px、圆角 6px，无边框、无阴影，hover 才填色。整行通过 CSS `order` 下移，不改变 React 节点归属；模式选择只在宿主原本提供时保留，不增加环境选择或中央项目卡片。
+- 工作区 chip 与宿主原有的模式 chip 位于输入面和工具行下方的独立紧凑行，行高 28px、chip 高 20px、圆角 6px，无边框、无阴影，hover 才填色。宿主这一行只在 hero 阶段出现，插件只改它的盒子：整行绝对定位停在工具行那一行上，工具行按同一行宽（`--ccd-workspace-seat`）为它预留，React 节点归属不动；模式选择只在宿主原本提供时保留，不增加环境选择或中央项目卡片。
+- 工作区与模式按钮按内容自然宽度排列；按钮各取 6px 内边距；工作区与模式间隔 2px，权限作为独立控件组额外留出 6px，模式与权限可见内容间距为 20px；工作区上限为 `clamp(100px, 24cqw, 240px)`，只在超出可用宽度时省略名称。模式标签保持完整。
+- `compat/hero-chips.ts` 量测整行宽度，发布成 `--ccd-workspace-seat`；工具行预留整行加一个间距，权限按钮跟在其后。ResizeObserver 跟踪工作区名、模式名、字体与窗口宽度的变化，卸载时清理。
 - 工作区 chip 的前导图形是**一个闭合文件夹**：宿主的 16px 盒与 1px 描边，取 `ui-primitives` 的 `FolderCloseArtwork` 外形、去掉体内那条横线（`--ccd-icon-folder`）。参考图里有无标题两种状态都是这同一个闭合文件夹，宿主却按有无标题在"开口文件夹／闭合文件夹"之间切换；墨色走 chip 自己的 `currentColor`，与标签同色、同 hover 步骤。
 - 这一行两个 chip（工作区选单、模式）都**不带下拉箭头**：参考图是"图形 + 文字"就结束，宿主的两个控件都以 12px `IconChevronDownOutlineRegular` 收尾。工作区 chip 的箭头按它自己的类名去掉，模式 chip 的类名前缀不在 `host-builds.ts` 里、按图形本体的 path 匹配；两个按钮的 `aria-haspopup`／`aria-expanded` 都保留，菜单语义不受影响。
 - 小鲸鱼停在输入卡右上，只在空会话页出现；输入卡上方有内容或发送回显时收起。模型与 effort 选单在鲸鱼上方显示，打开选单不隐藏鲸鱼。
@@ -252,6 +255,7 @@
 | --- | --- |
 | 状态栏行高 | `--ccd-control-row-height` |
 | **状态栏 chip 盒** | **`--ccd-chip-height` / `--ccd-chip-radius` / `--ccd-chip-padding-inline`** |
+| 空会话页工作区行 | `--ccd-workspace-seat` |
 | 状态栏控件间距（整行） | `--ccd-cluster-gap` |
 | 状态栏图标 | `--ccd-row-icon-size` |
 | 上下文环 | `--ccd-context-ring-size` / `--ccd-context-ring-trigger` / `--ccd-context-ring-seat` / `--ccd-context-ring-fill` |

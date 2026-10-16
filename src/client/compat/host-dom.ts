@@ -165,6 +165,9 @@ export const HOST = Object.freeze({
   browserList: '._7514NG_list',
   /** FlatList is the only native body the status presentation reorders. */
   browserFlatList: '._7514NG_flatList',
+  /** StateDot's stable state attributes, used when root sessionStatus is absent. */
+  sessionNeedsInput: '[aria-hidden="true"][data-state="warning"]',
+  sessionWorking: '[aria-hidden="true"][data-state="ongoing"]',
   /** Rows.module.css: one Workspace's row, the line the merged header shares,
       and its trailing action group (`sidebar.css` parks both). */
   workspaceRow: '.jJkEga_projectRow',
@@ -350,6 +353,9 @@ export const HOST = Object.freeze({
  * means the frame is not the pinned one and the feature must stay off.
  */
 export const ANCHOR = Object.freeze({
+  /** ui-chat TurnProcessNodeView / ChatGroupSeat: process containers, not leaf details. */
+  turnProcess: 'button[data-turn-process]',
+  stepProcessToggle: '[data-step-process] > div > button[data-process-activity]',
   frame: '[data-slot="root"] > div',
   sidebar: '[data-slot="sidebar"]',
   workspaces: '[data-slot="sidebar.workspaces"]',

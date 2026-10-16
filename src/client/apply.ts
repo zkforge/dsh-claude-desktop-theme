@@ -9,6 +9,7 @@ import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
 import { mountEmptyGroups } from './compat/empty-groups.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
+import { mountHeroChips } from './compat/hero-chips.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
 import { mountPermissionMenu } from './compat/permission-menu.ts';
@@ -119,6 +120,15 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: statistics readout observer failed', error),
           next.features['composer-stats'],
+        ));
+        /* The hero row's two chips are one family: the workspace picker's chip
+           takes the preset seat's own width, so both read the same length and
+           the mode's label is never the one that gets cut. Unconditional like
+           the other Composer compat modules — the row belongs to the host's
+           hero phase, not to a switch of ours. */
+        scope.add(mountHeroChips(
+          document,
+          error => logger.error('composer: hero chip width observer failed', error),
         ));
         /* The voice seat sits in a different flex container from the permission
            seat, so its place in the status bar is arranged from the compatibility

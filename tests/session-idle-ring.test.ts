@@ -57,15 +57,15 @@ test('an idle Session paints the still ring in its empty leading seat', () => {
     selector.includes('> .jJkEga_slot:has(> div[data-slot="sidebar.session.row.leading"]:empty)'),
     selector,
   );
-  assert.match(rule?.body ?? '', /width:\s*8px/u);
-  assert.match(rule?.body ?? '', /height:\s*8px/u);
+  assert.match(rule?.body ?? '', /width:\s*6px/u);
+  assert.match(rule?.body ?? '', /height:\s*6px/u);
   /* The mark is the cell's own ink, so it follows the host theme instead of an
      authored colour. */
   assert.match(rule?.body ?? '', /background-color:\s*currentColor/u);
-  assert.match(rule?.body ?? '', /mask:\s*var\(--ccd-icon-session-ring\)\s+center\s*\/\s*8px 8px no-repeat/u);
+  assert.match(rule?.body ?? '', /mask:\s*var\(--ccd-icon-session-ring\)\s+center\s*\/\s*6px 6px no-repeat/u);
 });
 
-test('the still ring is the activity ring geometry at the spinner’s scale', () => {
+test('the idle ring and breathing mark share a compact size', () => {
   const declared = /--ccd-icon-session-ring:\s*url\("([^"]+)"\)/u.exec(tokensSheet);
   assert.ok(declared !== null, 'tokens.css should declare --ccd-icon-session-ring');
   const artwork = decodeURIComponent(declared[1] ?? '');
@@ -75,10 +75,9 @@ test('the still ring is the activity ring geometry at the spinner’s scale', ()
   assert.match(artwork, /viewBox='0 0 24 24'/u);
   assert.match(artwork, /cx='12' cy='12' r='9\.5'/u);
   assert.match(artwork, /stroke-width='2'/u);
-  /* One scale for both: the running mark is scaled to 8px by the rule next to
-     this one, and the ring is painted at the same 8px. */
+  /* Both idle and running marks use a compact 6px box. */
   const spinner = sidebar.filter(rule => rule.selector.includes('svg[data-state="ongoing"]'));
   assert.equal(spinner.length, 1);
-  assert.match(spinner[0]?.body ?? '', /width:\s*8px/u);
-  assert.match(spinner[0]?.body ?? '', /height:\s*8px/u);
+  assert.match(spinner[0]?.body ?? '', /width:\s*6px/u);
+  assert.match(spinner[0]?.body ?? '', /height:\s*6px/u);
 });

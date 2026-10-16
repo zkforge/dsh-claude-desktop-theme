@@ -80,7 +80,8 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         assert.deepEqual(await page.evaluate('calls'), [['rename', 's1', 'Changed']]);
         assert.equal(await page.evaluate(`document.querySelector('[data-ccd-session-rename]')`), null);
         assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('nav > span:not([data-ccd-session-icon])')).display`), 'flex');
-        await click('[data-ccd-session-trigger]'); await choose(menu, '重命名');
+        await click('[data-ccd-session-title] [role="button"]');
+        assert.equal(await page.evaluate(`document.activeElement.hasAttribute('data-ccd-session-rename')`), true);
         await page.evaluate(`document.querySelector('[data-ccd-session-rename]').value='Cancelled'`); await editKey('Escape');
         assert.equal(await page.evaluate('calls.length'), 1, 'Escape leaves the title unchanged');
         await click('[data-ccd-session-trigger]'); await choose(menu, '重命名');
@@ -107,7 +108,7 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         await page.evaluate(`document.querySelector('dialog').close()`);
         await click('[data-ccd-project-trigger]');
         assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['在访达中显示', '复制', '在终端中打开']);
-        const folder = await geometry(project); assert.equal(folder.w, 192); assert.equal(folder.h, 100);
+        const folder = await geometry(project); assert.equal(folder.w, 176); assert.equal(folder.h, 100);
         assert.equal(folder.x, (await geometry('[data-ccd-project-trigger]')).x);
         await choose(project, '在终端中打开'); assert.equal(await page.evaluate('calls.at(-1)'), 'terminal');
         await click('[data-ccd-project-trigger]'); await key('Home'); await key('ArrowDown'); await key('ArrowRight');

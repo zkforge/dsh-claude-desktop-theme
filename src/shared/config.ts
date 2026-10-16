@@ -83,7 +83,7 @@ export const DEFAULT_FONTS: FontsConfig = Object.freeze({
  */
 export const DEFAULT_VIEW: ViewConfig = Object.freeze({
   showEmptyGroups: false,
-  groupByStatus: false,
+  groupByStatus: true,
   showHeaderSubagents: false,
   showHeaderTeam: false,
 });

@@ -45,7 +45,7 @@ test('an entirely empty tree shows a recoverable prompt and reconciles live cata
   const profile = await mkdtemp(join(tmpdir(), 'ccd-empty-groups-test-'));
   try {
     await withPage({ url: 'about:blank', width: 600, height: 650, scale: 2, profile }, async page => {
-      await page.evaluate(`document.documentElement.lang='en';document.documentElement.setAttribute('data-dsh-ccd-style','true');document.body.innerHTML='<div class="_7514NG_listArea" style="width:270px;height:500px"><div class="_7514NG_treeBody"><div class="_7514NG_groupSection"><div data-row-key="workspace:first" aria-expanded="false">First project</div></div><div class="_7514NG_groupSection"><div data-row-key="workspace:second" aria-expanded="true">Second project</div></div></div></div>';const style=document.createElement('style');style.textContent=${JSON.stringify(styles)};document.head.append(style);`);
+      await page.evaluate(`document.documentElement.lang='en';document.documentElement.setAttribute('data-dsh-ccd-style','true');document.body.innerHTML='<div class="_7514NG_listArea" style="width:270px;height:500px"><div class="_7514NG_treeBody" style="position:absolute;inset:0;overflow:auto"><div class="_7514NG_groupSection"><div data-row-key="workspace:first" aria-expanded="false">First project</div></div><div class="_7514NG_groupSection"><div data-row-key="workspace:second" aria-expanded="true">Second project</div></div></div></div>';const style=document.createElement('style');style.textContent=${JSON.stringify(styles)};document.head.append(style);`);
       await page.evaluate(bundle.outputFiles[0].text);
       const pause = () => page.evaluate('new Promise(resolve=>setTimeout(resolve,70))');
       await pause();
