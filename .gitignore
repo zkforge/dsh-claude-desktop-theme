@@ -8,3 +8,7 @@ coverage/
 
 # Local design references.
 docs/reference/
+
+# Local preview installers.
+/安装本地预览.command
+/scripts/install-local.mjs

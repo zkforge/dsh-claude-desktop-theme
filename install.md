@@ -62,16 +62,6 @@ cd dsh-claude-desktop-theme
 
 ### macOS
 
-本地快速预览：双击仓库根目录的 `安装本地预览.command`，或执行：
-
-```sh
-npm run preview:install
-```
-
-此入口会构建并安装**当前工作区的全部改动**，缺少依赖时先运行 `npm ci`，跳过发布打包的全量检查。安装完成后在 DSH 按 **⌘R**，打开会话三点菜单查看效果。沿用 `DSH_HOME` 和已有插件配置；可用 `DSH_CCD_APP` 指定应用路径。安装包保存在 `artifacts/install-preview.*`，请勿删除，profile 的本地依赖会引用它。仅检查路径可执行 `npm run preview:install -- --dry-run`。
-
-需要完整发布检查时，继续使用以下流程：
-
 ```sh
 set -e
 npm ci --cache .cache/npm

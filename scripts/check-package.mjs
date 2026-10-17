@@ -55,9 +55,13 @@ client.apply(new Proxy({}, { get() { throw new Error('Disabled plugin accessed a
 const attributes = new Map();
 const styles = new Set();
 class FakeObserver {
-  constructor() { observersOpened += 1; }
-  observe() {}
-  disconnect() { observersClosed += 1; }
+  constructor() { this.active = true; observersOpened += 1; }
+  observe() {
+    if (!this.active) { this.active = true; observersOpened += 1; }
+  }
+  disconnect() {
+    if (this.active) { this.active = false; observersClosed += 1; }
+  }
 }
 sandbox.MutationObserver = FakeObserver;
 sandbox.ResizeObserver = FakeObserver;
@@ -300,6 +304,12 @@ const rootServices = {
   slots,
   theme: { overrideTokens() { paletteLayers++; return () => { paletteLayers--; }; } },
   uiWorkspace: { startSession() {} },
+  uiSession: {
+    sessionStatus: {
+      getSnapshot: () => new Map(),
+      subscribe: () => () => {},
+    },
+  },
   configForms,
   sessions,
   workspaces: {
