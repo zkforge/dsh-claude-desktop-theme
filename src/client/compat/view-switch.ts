@@ -88,7 +88,9 @@ export function mountViewSwitch(
   let column: HTMLElement | null = null;
   let observer: MutationObserver | undefined;
   let size: ResizeObserver | undefined;
-  const glyphs = new Set<HTMLElement>();
+  /* Glyphs are collected on release/prune by node identity, so the set only
+     needs what `remove()` and `isConnected` require of an element. */
+  const glyphs = new Set<Element>();
   const attributes = new Map<Element, Map<string, { original: string | null; drawn: string }>>();
 
   /** Write one attribute, recording the host's original value the first time. */
@@ -104,6 +106,35 @@ export function mountViewSwitch(
     const original = previous?.drawn === current ? previous.original : current;
     entries.set(name, { original, drawn: value });
     element.setAttribute(name, value);
+  };
+
+  /**
+   * Hand back one replaced tab and forget it.
+   *
+   * The map keys on the node, so a tablist React swapped out would otherwise
+   * stay reachable — with the rest of its detached subtree — for the rest of
+   * this mount. Restoring only the values this module still owns keeps a later
+   * host write intact, the same rule `restore` applies at teardown.
+   */
+  const release = (element: Element) => {
+    const entries = attributes.get(element);
+    if (entries !== undefined) {
+      for (const [name, record] of entries) {
+        if (element.getAttribute(name) !== record.drawn) continue;
+        if (record.original === null) element.removeAttribute(name);
+        else element.setAttribute(name, record.original);
+      }
+      attributes.delete(element);
+    }
+    for (const glyph of element.querySelectorAll(`[${VIEW_GLYPH_ATTRIBUTE}]`)) glyphs.delete(glyph);
+  };
+
+  /** Release every record whose node the host has replaced or removed. */
+  const prune = () => {
+    for (const glyph of glyphs) if (!glyph.isConnected) glyphs.delete(glyph);
+    for (const element of [...attributes.keys()]) {
+      if (!element.isConnected) release(element);
+    }
   };
 
   /** Prepend the bundled glyph to each shipped tab, once per React node. */
@@ -126,7 +157,7 @@ export function mountViewSwitch(
       tab.prepend(glyph);
       glyphs.add(glyph);
     }
-    for (const glyph of glyphs) if (!glyph.isConnected) glyphs.delete(glyph);
+    prune();
   };
 
   /** Park the tablist in the sidebar's top-right corner, or hand it back. */
@@ -177,10 +208,14 @@ export function mountViewSwitch(
     const next = document.querySelector<HTMLElement>(selectors.conversationTabs);
     if (next !== tabs) {
       /* A replaced tablist is a fresh React node: its decoration and every
-         published property are written again from nothing. */
+         published property are written again from nothing. The old node is
+         released here rather than at teardown, so a long run does not keep one
+         detached tablist per Session switch. */
+      if (tabs !== null) release(tabs);
       tabs = next;
       selected = null;
     }
+    prune();
     if (tabs === null || !tabs.isConnected) return;
     decorate(tabs);
     dock(tabs);

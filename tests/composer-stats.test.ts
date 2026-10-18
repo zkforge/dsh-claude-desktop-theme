@@ -3,8 +3,42 @@ import { test } from 'node:test';
 import { mountComposerStats, STATS_ATTRIBUTE, TRAILING_WIDTH_PROPERTY, MODEL_MAX_WIDTH_PROPERTY, STAT_VALUE_PROPERTY, CLUSTER_GAP_PROPERTY } from '../src/client/compat/stats-values.ts';
 import { HOST } from '../src/client/compat/host-dom.ts';
 
+/** The page's own timers, kept so each fixture starts from them rather than
+    from the previous fixture's stand-in. */
+const REAL_TIMERS = { setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout };
+
+/**
+ * Run the scheduler's coalesced pass.
+ *
+ * The fixture's window has no animation frames, so the scheduler falls back to
+ * a timeout; the fake keeps the callback so a test can paint on demand. A test
+ * that never paints is asserting that a batch queued no work.
+ */
+function installFrames(): () => void {
+  const queued = new Map<ReturnType<typeof setTimeout>, () => void>();
+  const { setTimeout: schedule, clearTimeout: clear } = REAL_TIMERS;
+  globalThis.setTimeout = ((fn: () => void) => {
+    const handle = schedule(() => {}, 0);
+    queued.set(handle, fn);
+    return handle;
+  }) as unknown as typeof globalThis.setTimeout;
+  globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+    queued.delete(handle);
+    clear(handle);
+  }) as unknown as typeof globalThis.clearTimeout;
+  return () => {
+    for (const [handle, fn] of [...queued]) {
+      queued.delete(handle);
+      clear(handle);
+      fn();
+    }
+  };
+}
+
 /** DOM double for frame-style invalidation, not a browser geometry assertion. */
 function fixture(readouts = true) {
+  const frames = installFrames();
+  let passes = 0;
   let width = 96;
   let writes = 0;
   let rowWidth = 500;
@@ -60,17 +94,29 @@ function fixture(readouts = true) {
     }, configurable: true,
   });
   Object.defineProperty(globalThis, 'getComputedStyle', {
-    value: () => ({ paddingLeft: '4px', paddingRight: '4px', columnGap: '12px', getPropertyValue: (key: string) => key === CLUSTER_GAP_PROPERTY ? '6px' : '' }),
+    value: () => ({
+      paddingLeft: '4px', paddingRight: '4px', columnGap: '12px',
+      /* One gap read per pass, so this counts passes. */
+      getPropertyValue: (key: string) => {
+        if (key !== CLUSTER_GAP_PROPERTY) return '';
+        passes += 1;
+        return '6px';
+      },
+    }),
     configurable: true,
   });
   const errors: unknown[] = [];
   const dispose = mountComposerStats(doc as unknown as Document, error => errors.push(error), readouts);
   return {
     properties, statProperties, statAttributes, errors, listeners, dispose,
-    changeStat: (next: string) => { statText = next; callback(); },
-    resizePanel: (next: number) => { width = next; callback(); },
-    resizeRow: (next: number) => { rowWidth = next; callback(); },
-    syncOwnStyle: () => callback(),
+    changeStat: (next: string) => { statText = next; callback(); frames(); },
+    resizePanel: (next: number) => { width = next; callback(); frames(); },
+    resizeRow: (next: number) => { rowWidth = next; callback(); frames(); },
+    syncOwnStyle: () => { callback(); frames(); },
+    /** Deliver one batch without painting. */
+    mutate: () => callback(),
+    frames,
+    get passes() { return passes; },
     get writes() { return writes; },
     get options() { return options; },
     get disconnected() { return disconnected; },
@@ -88,6 +134,19 @@ test('panel track and native model changes refresh the offset without a window r
   f.resizeRow(360);
   assert.equal(f.properties.get(MODEL_MAX_WIDTH_PROPERTY), '150px');
   assert.deepEqual(f.errors, []);
+  f.dispose();
+});
+
+test('a stream of batches settles in one pass per paint', () => {
+  const f = fixture();
+  /* The mount's own pass has run; each later pass reads the row's computed
+     gap, so the count is the post-mount pass count. */
+  const mount = f.passes;
+  f.mutate();
+  for (let index = 0; index < 20; index += 1) f.mutate();
+  assert.equal(f.passes, mount, 'queued batches do no work on delivery');
+  f.frames();
+  assert.equal(f.passes, mount + 1, 'twenty batches, one paint, one pass');
   f.dispose();
 });
 

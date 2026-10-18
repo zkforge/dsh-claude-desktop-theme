@@ -6,6 +6,7 @@
 import type { StatsRangeId, StatsSnapshot } from '../../../shared/stats.ts';
 import type { CleanupScope } from '../../core/cleanup.ts';
 import type { Logger } from '../../contracts/ports.ts';
+import { frameScheduler } from '../../compat/frame.ts';
 import { hostSelectors } from '../../compat/host-dom.ts';
 import { createStatsCard, type StatsCard } from './card.ts';
 import type { StatsSource } from './source.ts';
@@ -110,13 +111,17 @@ export function mountStatisticsCard(
   };
 
   let observer: MutationObserver | undefined;
+  /* One pass per paint: the transcript streams many batches between frames and
+     the card only has to be connected when a frame is drawn. */
+  const frames = frameScheduler(() => sync(), document.defaultView);
   try {
-    observer = new MutationObserver(() => sync());
+    observer = new MutationObserver(() => frames.schedule());
     /* The phase swap replaces the whole conversation body, so the card has to
        follow it; a guarded insert keeps our own write from feeding the loop. */
     observer.observe(document.body, { childList: true, subtree: true });
     sync();
   } catch (error) {
+    frames.cancel();
     observer?.disconnect();
     remove();
     logger.error('statistics: card mount failed', error);
@@ -130,6 +135,7 @@ export function mountStatisticsCard(
   });
 
   scope.add(() => {
+    frames.cancel();
     window.removeEventListener('resize', relayout);
     observer?.disconnect();
     unsubscribe();

@@ -19,7 +19,38 @@ test('each edge fades only while it still hides content', () => {
   assert.deepEqual(edgeFadeState(640, 1000, 400), { top: true, bottom: false });
 });
 
+/** The page's own timers, kept so each fixture starts from them rather than
+    from the previous fixture's stand-in. */
+const REAL_TIMERS = { setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout };
+
+/** Capture the scheduler's timeout fallback so a test can run a paint on demand. */
+function installFrames(): () => void {
+  const queued = new Map<ReturnType<typeof setTimeout>, () => void>();
+  const { setTimeout: schedule, clearTimeout: clear } = REAL_TIMERS;
+  globalThis.setTimeout = ((fn: () => void) => {
+    const handle = schedule(() => {}, 0);
+    queued.set(handle, fn);
+    return handle;
+  }) as unknown as typeof globalThis.setTimeout;
+  globalThis.clearTimeout = ((handle: ReturnType<typeof setTimeout>) => {
+    queued.delete(handle);
+    clear(handle);
+  }) as unknown as typeof globalThis.clearTimeout;
+  return () => {
+    for (const [handle, fn] of [...queued]) {
+      queued.delete(handle);
+      clear(handle);
+      fn();
+    }
+  };
+}
+
 function fixture() {
+  /* The fade coalesces its passes into one paint. This fixture is a window
+     without animation frames, so the scheduler's timeout fallback runs them;
+     frames() drains what is queued, exactly one pass per batch of batches. */
+  const frames = installFrames();
+
   const makeElement = () => {
     const attributes = new Set<string>();
     const listeners = new Map<string, () => void>();
@@ -82,16 +113,21 @@ function fixture() {
     get scroller() { return scroller; },
     get options() { return options; },
     get disconnected() { return disconnected; },
-    scrollTo(offset: number) { scroller.scrollTop = offset; scroller.listeners.get('scroll')?.(); },
-    shrink() { scroller.scrollHeight = 400; callback(); },
-    seat(top: number) { seatTop = top; scroller.listeners.get('scroll')?.(); },
+    /* A scroll is a paint-time signal too: the listener only queues the pass. */
+    scrollTo(offset: number) { scroller.scrollTop = offset; scroller.listeners.get('scroll')?.(); frames(); },
+    shrink() { scroller.scrollHeight = 400; callback(); frames(); },
+    seat(top: number) { seatTop = top; scroller.listeners.get('scroll')?.(); frames(); },
     swap() {
       const previous = scroller;
       scroller = makeElement();
       callback();
+      frames();
       return previous;
     },
-    resize() { windowListeners.get('resize')?.(); },
+    resize() { windowListeners.get('resize')?.(); frames(); },
+    /** Deliver a batch without painting: what the coalescing is for. */
+    mutate() { callback(); },
+    frames,
   };
 }
 
@@ -139,6 +175,28 @@ test('a rebuilt Session moves the listener and clears the previous scroller', ()
   f.dispose();
 });
 
+test('a stream of batches settles in one pass per paint', () => {
+  const f = fixture();
+  let content = 1000;
+  let reads = 0;
+  Object.defineProperty(f.scroller, 'scrollHeight', {
+    get() { reads += 1; return content; },
+    configurable: true,
+  });
+  /* Every batch queues the same pass; none of them measures on delivery. */
+  for (let index = 0; index < 20; index += 1) f.mutate();
+  assert.equal(reads, 0, 'an observer batch must not measure the transcript');
+  f.frames();
+  assert.equal(reads, 1, 'twenty batches, one paint, one measurement');
+  /* The next paint's batch is a new pass. */
+  content = 400;
+  f.mutate();
+  f.frames();
+  assert.equal(reads, 2);
+  assert.equal(f.scroller.attributes.has(FADE_BOTTOM_ATTRIBUTE), false);
+  f.dispose();
+});
+
 test('dispose releases every observer, listener and attribute', () => {
   const f = fixture();
   f.dispose();
@@ -148,6 +206,15 @@ test('dispose releases every observer, listener and attribute', () => {
   assert.equal(f.scroller.attributes.has(FADE_TOP_ATTRIBUTE), false);
   assert.equal(f.scroller.attributes.has(FADE_BOTTOM_ATTRIBUTE), false);
   assert.equal(f.properties.has(FADE_BOTTOM_INSET_PROPERTY), false);
+});
+
+test('a pass queued when the mount is released never runs', () => {
+  const f = fixture();
+  f.mutate();
+  f.dispose();
+  assert.equal(f.errors.length, 0);
+  /* Nothing threw after teardown: the queued pass was dropped, not run. */
+  f.frames();
 });
 
 test('an unavailable observer reports once and leaves the transcript alone', () => {

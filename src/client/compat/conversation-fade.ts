@@ -1,4 +1,5 @@
 import type { Disposer } from '../contracts/ports.ts';
+import { frameScheduler } from './frame.ts';
 import { ANCHOR, hostSelectors } from './host-dom.ts';
 
 /** Marks that the transcript still has content above the scroll viewport. */
@@ -56,7 +57,6 @@ export function mountConversationFade(document: Document, report: (error: unknow
   const host = hostSelectors(document);
   let scroller: HTMLElement | null = null;
   let page: HTMLElement | null = null;
-  let scheduled = 0;
 
   const paint = () => {
     if (scroller === null || !scroller.isConnected) return;
@@ -75,7 +75,6 @@ export function mountConversationFade(document: Document, report: (error: unknow
   };
 
   const sync = () => {
-    scheduled = 0;
     const next = document.querySelector<HTMLElement>(ANCHOR.conversationScroll);
     if (next !== scroller) {
       if (scroller !== null) {
@@ -88,15 +87,11 @@ export function mountConversationFade(document: Document, report: (error: unknow
     paint();
   };
 
-  const schedule = () => {
-    if (scheduled !== 0) return;
-    scheduled = 1;
-    try {
-      sync();
-    } finally {
-      scheduled = 0;
-    }
-  };
+  /* The transcript streams many mutation batches between two paints; the fade
+     is a paint-time fact, so one pass per frame is all it can show. A throttled
+     window falls back to a timeout inside the scheduler. */
+  const frames = frameScheduler(sync, document.defaultView);
+  const schedule = () => frames.schedule();
 
   let observer: MutationObserver | undefined;
   try {
@@ -113,6 +108,7 @@ export function mountConversationFade(document: Document, report: (error: unknow
     window.addEventListener('resize', schedule);
     sync();
   } catch (error) {
+    frames.cancel();
     observer?.disconnect();
     window.removeEventListener('resize', schedule);
     report(error);
@@ -120,7 +116,7 @@ export function mountConversationFade(document: Document, report: (error: unknow
   }
 
   return () => {
-    scheduled = 0;
+    frames.cancel();
     observer?.disconnect();
     window.removeEventListener('resize', schedule);
     if (scroller !== null) {

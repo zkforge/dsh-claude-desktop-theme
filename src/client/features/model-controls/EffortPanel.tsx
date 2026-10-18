@@ -51,15 +51,25 @@ export function EffortPanel({ anchor, choices, selected, disabled, busy, error, 
     const element = canvas.current;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     let animation = 0, last = 0, started = performance.now();
-    const draw = (time: number) => {
+    /* The canvas box only changes when it is resized (the panel opens, the
+       window moves), so geometry is read there rather than on every display
+       frame — a 120 Hz screen would otherwise measure layout twice as often as
+       the 30 fps field it is drawing. */
+    let width = 0, height = 0;
+    const size = () => {
       const rect = element.getBoundingClientRect(), ratio = Math.min(devicePixelRatio || 1, 2);
-      const width = Math.round(rect.width * ratio), height = Math.round(rect.height * ratio);
+      width = Math.round(rect.width * ratio); height = Math.round(rect.height * ratio);
       if (element.width !== width || element.height !== height) { element.width = width; element.height = height; }
+    };
+    const draw = (time: number) => {
+      if (element.width === 0 || element.height === 0) size();
       if (time - last >= 33 || reduced.matches) { last = time; drawPixelField(element, time - started, reduced.matches); }
       if (!reduced.matches) animation = requestAnimationFrame(draw);
     };
-    const restart = () => { cancelAnimationFrame(animation); started = performance.now(); draw(started); };
-    const resize = new ResizeObserver(restart);
+    /* Keep the backing store in step with the element's box without reading
+       geometry on every frame. */
+    const resize = new ResizeObserver(() => size());
+    const restart = () => { cancelAnimationFrame(animation); started = performance.now(); size(); draw(started); };
     resize.observe(element); reduced.addEventListener('change', restart); restart();
     return () => { cancelAnimationFrame(animation); resize.disconnect(); reduced.removeEventListener('change', restart); };
   }, [ultra]);

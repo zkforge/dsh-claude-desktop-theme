@@ -1,5 +1,5 @@
 import type {
-  ContextPanelPort, ContextPanelSnapshot, ContextProjectionPort, Disposer,
+  ContextPanelPort, ContextPanelSnapshot, ContextProjectionPort, ContextProjectionRead, Disposer,
 } from '../contracts/ports.ts';
 import {
   contextBreakdown, mcpServer, type ContextBreakdown, type ContextEntry,
@@ -55,6 +55,42 @@ function sessionOf(document: Document, trigger: HTMLElement | null): string | nu
   return id === '' ? null : id;
 }
 
+/**
+ * Whether two readings carry the same numbers and the same drill-down rows.
+ *
+ * The host re-sends the whole projection set on every frame, so reference
+ * equality says nothing about whether this session changed. Comparing the
+ * handful of scalars plus the four row lists (each a short, ordered tuple
+ * list) is far cheaper than rebuilding the breakdown and re-rendering the card.
+ */
+function sameReading(left: ContextProjectionRead, right: ContextProjectionRead): boolean {
+  if (left === right) return true;
+  if (left.window !== right.window || left.used !== right.used
+    || left.systemTokens !== right.systemTokens || left.toolsTokens !== right.toolsTokens
+    || left.messageTokens !== right.messageTokens) return false;
+  const a = left.breakdown, b = right.breakdown;
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  return a.skillTokens === b.skillTokens && a.fileTokens === b.fileTokens
+    && a.compaction === b.compaction
+    && sameEntries(a.tools, b.tools) && sameEntries(a.files, b.files)
+    && sameEntries(a.skills, b.skills);
+}
+
+/** One entry list, compared by name and tokens in order. */
+function sameEntries(
+  left: readonly ContextEntry[] | undefined,
+  right: readonly ContextEntry[] | undefined,
+): boolean {
+  if (left === right) return true;
+  if (left === undefined || right === undefined || left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    const a = left[index]!, b = right[index]!;
+    if (a[0] !== b[0] || a[1] !== b[1]) return false;
+  }
+  return true;
+}
+
 /** Split this plugin's tool rows into the two groups the panel draws. */
 function splitTools(tools: readonly ContextEntry[]): {
   readonly mcp: readonly ContextEntry[];
@@ -97,17 +133,34 @@ export function createContextPanelDriver(
   let attributes: MutationObserver | undefined;
   let projectionsOff: Disposer | null = null;
 
-  /** The reading for the session on screen, or null while the ring has none. */
-  const reading = (): {
+  /**
+   * The reading for the session on screen, or null while the ring has none.
+   *
+   * The session list notifies for every session it carries, and each frame
+   * carries the same wire values again. Rebuilding the breakdown (and the card
+   * with it) for a frame that did not move this session's numbers would put
+   * React and the popover's layout effects through a full cycle per frame, so
+   * the raw reading is compared first and the last answer reused when it is
+   * unchanged.
+   */
+  let cached: {
+    readonly raw: ContextProjectionRead;
+    readonly value: ReturnType<typeof buildReading>;
+  } | null = null;
+  /** The raw reading the currently published snapshot was built from. */
+  let publishedRaw: ContextProjectionRead | null = null;
+
+  /** This session's wire reading, without building anything from it. */
+  const rawReading = (): ContextProjectionRead | null =>
+    sessionId === null ? null : projections.read(sessionId);
+
+  function buildReading(values: ContextProjectionRead): {
     readonly breakdown: ContextBreakdown;
     readonly mcp: readonly ContextEntry[];
     readonly tools: readonly ContextEntry[];
     readonly files: readonly ContextEntry[];
     readonly skills: readonly ContextEntry[];
-  } | null => {
-    const id = sessionId;
-    const values = id === null ? null : projections.read(id);
-    if (values === null) return null;
+  } {
     const rows = values.breakdown;
     const tools = rows?.tools ?? [];
     const split = splitTools(tools);
@@ -128,6 +181,13 @@ export function createContextPanelDriver(
       files: rows?.files ?? [],
       skills: rows?.skills ?? [],
     };
+  }
+
+  const reading = (values: ContextProjectionRead): ReturnType<typeof buildReading> => {
+    if (cached !== null && sameReading(cached.raw, values)) return cached.value;
+    const value = buildReading(values);
+    cached = { raw: values, value };
+    return value;
   };
 
   /** Reflect this plugin's own state on the trigger and the document element. */
@@ -160,7 +220,9 @@ export function createContextPanelDriver(
    * replaced here — on every state change — and nowhere else.
    */
   const refresh = () => {
-    const found = open ? reading() : null;
+    const raw = open ? rawReading() : null;
+    const found = raw === null ? null : reading(raw);
+    publishedRaw = raw;
     snapshot = {
       open,
       anchor: trigger,
@@ -175,10 +237,17 @@ export function createContextPanelDriver(
     listener?.();
   };
 
+  /** Forget everything derived from one session's reading. */
+  const forget = () => {
+    cached = null;
+    publishedRaw = null;
+  };
+
   const close = () => {
     if (!open) return;
     open = false;
     expanded = false;
+    forget();
     refresh();
   };
 
@@ -206,6 +275,7 @@ export function createContextPanelDriver(
       const current = sessionOf(document, found);
       if (open && current !== sessionId) {
         sessionId = current;
+        forget();
         close();
         return;
       }
@@ -228,6 +298,7 @@ export function createContextPanelDriver(
       open = false;
       expanded = false;
     }
+    forget();
     sessionId = sessionOf(document, found);
     refresh();
   };
@@ -245,7 +316,17 @@ export function createContextPanelDriver(
   try {
     tree = new MutationObserver(schedule);
     tree.observe(document.body, { childList: true, subtree: true });
-    projectionsOff = projections.subscribe(() => { if (open) refresh(); });
+    /* Only a frame that actually moved this session's reading wakes the card;
+       the list notifies for every session it carries. A session with no
+       capacity publishes no reading either, and an unchanged absence is as
+       uninteresting as an unchanged number. */
+    projectionsOff = projections.subscribe(() => {
+      if (!open) return;
+      const raw = rawReading();
+      if (raw === publishedRaw) return;
+      if (raw !== null && publishedRaw !== null && sameReading(publishedRaw, raw)) return;
+      refresh();
+    });
     sync();
   } catch (error) {
     tree?.disconnect();
@@ -288,6 +369,7 @@ export function createContextPanelDriver(
       open = false;
       expanded = false;
       sessionId = null;
+      forget();
     },
   };
 }

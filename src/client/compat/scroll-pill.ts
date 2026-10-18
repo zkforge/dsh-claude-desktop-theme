@@ -79,6 +79,8 @@ const OVERFLOW_SLACK = 1;
 interface Pill {
   readonly surface: HTMLElement;
   readonly element: HTMLElement;
+  /** The surface's own listener, kept so release can remove exactly this one. */
+  readonly onScroll: () => void;
   timer: number;
 }
 
@@ -195,18 +197,23 @@ export function mountScrollPills(document: Document, report: (error: unknown) =>
     const pill: Pill = {
       surface,
       element,
+      onScroll: () => {
+        place(pill);
+        awaken(pill);
+      },
       timer: 0,
     };
     surface.setAttribute(PILL_SURFACE_ATTRIBUTE, '');
-    surface.addEventListener('scroll', () => {
-      place(pill);
-      awaken(pill);
-    }, { passive: true });
+    surface.addEventListener('scroll', pill.onScroll, { passive: true });
     pills.set(surface, pill);
     place(pill);
   };
 
   const release = (pill: Pill) => {
+    /* The listener is the surface's, not this closure's: a mount that is
+       released and then adopted again would otherwise leave the old handler
+       running against a removed pill, once per past mount. */
+    pill.surface.removeEventListener('scroll', pill.onScroll);
     if (pill.timer !== 0) window.clearTimeout(pill.timer);
     pill.surface.removeAttribute(PILL_SURFACE_ATTRIBUTE);
     pill.element.remove();

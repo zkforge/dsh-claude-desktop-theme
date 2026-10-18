@@ -68,7 +68,10 @@ function element(rect: Rect, text: string): FakeElement {
     },
     getBoundingClientRect: () => rect,
     querySelector: () => null,
-    querySelectorAll: () => [],
+    /* Descendants by attribute, which is how the module finds its glyphs. */
+    querySelectorAll: selector => el.children.filter(child => selector.includes(`[${VIEW_GLYPH_ATTRIBUTE}]`)
+      ? child.getAttribute(VIEW_GLYPH_ATTRIBUTE) !== null
+      : false),
   };
   return el;
 }
@@ -137,8 +140,26 @@ function fixture(options: FixtureOptions = {}) {
   const dispose = mountViewSwitch(
     document as unknown as Document, ICONS, error => errors.push(error),
   );
+  /** A whole new tablist, the way a Session switch rebuilds the header. */
+  const rebuild = () => {
+    const same = (text: string) => {
+      const tab = element(box(100, 33), text);
+      tab.querySelector = selector => selector.includes(VIEW_GLYPH_ATTRIBUTE)
+        ? tab.children.find(child => child.getAttribute(VIEW_GLYPH_ATTRIBUTE) !== null) ?? null
+        : null;
+      return tab;
+    };
+    const nextChat = same('对话');
+    const nextTrajectory = same('轨迹');
+    const list = element(box(100, 66), '');
+    list.querySelectorAll = () => [nextChat, nextTrajectory];
+    list.querySelector = selector => (selector.includes('tabActive') ? nextChat : null);
+    lookups.set('.ST7X_W_tabs', list);
+    return { list, nextChat, nextTrajectory };
+  };
+
   return {
-    chat, trajectory, third, tabs, column, dispose, errors, listeners,
+    chat, trajectory, third, tabs, column, dispose, errors, listeners, rebuild,
     get observed() { return observed; },
     get sizeDisconnected() { return sizeDisconnected; },
     get filter() { return filter; },
@@ -210,6 +231,56 @@ test('the switcher parks on the sidebar column while that column has the corner 
   f.dispose();
   assert.equal(f.tabs.getAttribute(VIEW_DOCK_ATTRIBUTE), null);
   assert.equal(f.tabs.style.getPropertyValue(VIEW_DOCK_RIGHT_PROPERTY), '');
+});
+
+test('a rebuilt tablist is handed back and forgotten instead of retained', () => {
+  const f = fixture();
+  try {
+    assert.equal(f.chat.getAttribute(VIEW_TAB_ATTRIBUTE), 'chat');
+    assert.equal(f.tabs.getAttribute(VIEW_DOCK_ATTRIBUTE), 'sidebar');
+
+    /* The header React node is replaced; the old list and its tabs leave the
+       document. Its decoration is restored as it was drawn, and the map drops
+       its records rather than keeping the detached subtree alive. */
+    f.tabs.isConnected = false;
+    f.chat.isConnected = false;
+    f.trajectory.isConnected = false;
+    const next = f.rebuild();
+    f.redock();
+
+    assert.equal(f.chat.getAttribute(VIEW_TAB_ATTRIBUTE), null, 'the detached tab is restored');
+    assert.equal(f.chat.getAttribute('aria-label'), null);
+    assert.equal(next.list.getAttribute(VIEW_DOCK_ATTRIBUTE), 'sidebar', 'the new list is docked');
+    assert.equal(next.nextChat.getAttribute(VIEW_TAB_ATTRIBUTE), 'chat', 'and decorated');
+    assert.equal(next.nextChat.children[0]?.innerHTML, ICONS.chat);
+
+    /* Teardown touches only what is still live: the glyph on the detached tab
+       was already forgotten with its record, so it is left where it is. */
+    f.dispose();
+    assert.equal(f.chat.children.length, 1);
+    assert.equal(next.nextChat.getAttribute(VIEW_TAB_ATTRIBUTE), null);
+    assert.equal(next.nextChat.children.length, 0);
+  } finally {
+    f.dispose();
+  }
+});
+
+test('a long run of Session switches leaves no record per past tablist', () => {
+  const f = fixture();
+  try {
+    let live = f.tabs;
+    for (let cycle = 0; cycle < 5; cycle += 1) {
+      live.isConnected = false;
+      const next = f.rebuild();
+      f.redock();
+      assert.equal(next.nextChat.getAttribute(VIEW_TAB_ATTRIBUTE), 'chat', `cycle ${cycle + 1} is decorated`);
+      live = next.list;
+    }
+    f.dispose();
+    assert.equal(f.disconnected, true);
+  } finally {
+    f.dispose();
+  }
 });
 
 test('other platforms, a collapsed sidebar and a rail-sized column all leave the switcher in the header', () => {

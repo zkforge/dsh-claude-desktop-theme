@@ -165,6 +165,11 @@ export function ContextPanel({ port }: ContextPanelProps): ReactElement | null {
     place();
     const observer = new MutationObserver(place);
     observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] });
+    /* The card's own box is the signal for every content change — the rows, the
+       drill-down groups and the reading all resize it — so the effect is bound
+       to the opening rather than to every frame that republishes the numbers.
+       Rebuilding the observer on each frame would also drop any notification
+       the previous one had queued. */
     const resize = new ResizeObserver(place);
     resize.observe(surface);
     window.addEventListener('resize', place);
@@ -174,11 +179,12 @@ export function ContextPanel({ port }: ContextPanelProps): ReactElement | null {
       window.removeEventListener('resize', place);
       if (surface.matches(':popover-open')) surface.hidePopover();
     };
-  }, [open, anchor, breakdown, expanded]);
+  }, [open, anchor]);
 
   /* The bar's own width decides which slivers the reference would drop, so it
      is measured rather than assumed: the panel is a fixed 360px, but a narrow
-     window is allowed to shrink it. */
+     window is allowed to shrink it. The bar keeps its width across the card's
+     own state changes, and the observer reports the ones that do move it. */
   useLayoutEffect(() => {
     const surface = bar.current;
     if (!open || surface === null) return;
@@ -190,7 +196,7 @@ export function ContextPanel({ port }: ContextPanelProps): ReactElement | null {
     const resize = new ResizeObserver(measure);
     resize.observe(surface);
     return () => { resize.disconnect(); };
-  }, [open, expanded, breakdown]);
+  }, [open]);
 
   /* Dismissal, in the family's own terms: a pointer outside, focus leaving, or
      Escape. The trigger is exempt because a second click on it closes the panel

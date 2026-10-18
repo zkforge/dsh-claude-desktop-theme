@@ -1,4 +1,5 @@
 import type { Disposer } from '../contracts/ports.ts';
+import { frameScheduler } from './frame.ts';
 import { hostSelectors } from './host-dom.ts';
 
 /** Short readout mirrored from native text for wide columns only. */
@@ -47,12 +48,10 @@ export function mountComposerStats(
   readouts: boolean,
 ): Disposer {
   const host = hostSelectors(document);
-  let scheduled = 0;
   let trailing: HTMLElement | null = null;
   let root: HTMLElement | null = null;
 
   const sync = () => {
-    scheduled = 0;
     if (readouts) {
       for (const pill of document.querySelectorAll<HTMLElement>(host.statsPill)) {
         const parts = (pill.querySelector(host.statsLabel)?.textContent ?? '')
@@ -103,17 +102,12 @@ export function mountComposerStats(
     }
   };
 
-  /* Straight from the observer: an occluded window throttles animation frames,
-     and these values have to be right when the frame is finally painted. */
-  const schedule = () => {
-    if (scheduled !== 0) return;
-    scheduled = 1;
-    try {
-      sync();
-    } finally {
-      scheduled = 0;
-    }
-  };
+  /* One pass per paint: a panel drag writes many inline styles between two
+     frames, and each batch would otherwise re-read the whole Composer row.
+     `frameScheduler` falls back to a timeout when frames are throttled, so an
+     occluded window still settles. */
+  const frames = frameScheduler(sync, document.defaultView);
+  const schedule = () => frames.schedule();
 
   let observer: MutationObserver | undefined;
   /* The readout state is a document-wide fact — the host renders the cluster on
@@ -138,6 +132,7 @@ export function mountComposerStats(
     html.setAttribute(STATS_ATTRIBUTE, state);
     sync();
   } catch (error) {
+    frames.cancel();
     observer?.disconnect();
     window.removeEventListener('resize', schedule);
     report(error);
@@ -145,7 +140,7 @@ export function mountComposerStats(
   }
 
   return () => {
-    scheduled = 0;
+    frames.cancel();
     observer?.disconnect();
     window.removeEventListener('resize', schedule);
     root?.style.removeProperty(TRAILING_WIDTH_PROPERTY);

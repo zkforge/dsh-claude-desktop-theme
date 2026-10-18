@@ -355,6 +355,79 @@ test('a live projection frame reaches the open panel and nothing else', () => {
   } finally { driver.dispose(); }
 });
 
+test('a frame that did not move this session’s numbers rebuilds nothing', () => {
+  const readings = new Map([['session-a', READING]]);
+  const { trigger, document } = page();
+  const { port: projections, wake } = projectionsFor(readings);
+  const driver = mount(document, projections);
+  try {
+    trigger.click();
+    const before = driver.port.getSnapshot();
+    /* The list re-sends every projection set on every frame, so the wire
+       object is new even when the numbers are the same. Rebuilding the
+       breakdown would drag React and both layout effects through a cycle. */
+    readings.set('session-a', {
+      ...READING,
+      breakdown: {
+        ...READING.breakdown!,
+        tools: READING.breakdown!.tools.map(entry => [...entry] as typeof entry),
+        files: READING.breakdown!.files.map(entry => [...entry] as typeof entry),
+        skills: READING.breakdown!.skills.map(entry => [...entry] as typeof entry),
+      },
+    });
+    wake();
+    assert.strictEqual(driver.port.getSnapshot(), before, 'an unchanged reading keeps the snapshot');
+    assert.strictEqual(driver.port.getSnapshot().breakdown, before.breakdown, 'and the built breakdown');
+
+    /* One number moving is a real change. */
+    readings.set('session-a', { ...READING, used: 250000 });
+    wake();
+    const after = driver.port.getSnapshot();
+    assert.notEqual(after, before);
+    assert.notEqual(after.breakdown, before.breakdown);
+    assert.equal(after.breakdown?.used, 250000);
+
+    /* A frame where the list has no reading for the session still publishes:
+       the ring has lost its capacity, and the card must say so. */
+    readings.delete('session-a');
+    wake();
+    assert.equal(driver.port.getSnapshot().breakdown, null);
+    assert.deepEqual(driver.port.getSnapshot().mcp, []);
+  } finally { driver.dispose(); }
+});
+
+test('a session with no capacity does not wake the card on every frame either', () => {
+  const { trigger, document } = page('session-cold');
+  const { port: projections, wake } = projectionsFor(new Map());
+  const driver = mount(document, projections);
+  try {
+    trigger.click();
+    const before = driver.port.getSnapshot();
+    wake();
+    assert.strictEqual(driver.port.getSnapshot(), before, 'an unchanged absence is not a change');
+    assert.deepEqual(before.mcp, []);
+  } finally { driver.dispose(); }
+});
+
+test('a closed panel costs the dedupe nothing, and reopening reads the session again', () => {
+  const readings = new Map([['session-a', READING]]);
+  const { trigger, document } = page();
+  const { port: projections, wake, reads } = projectionsFor(readings);
+  const driver = mount(document, projections);
+  try {
+    trigger.click();
+    driver.port.close();
+    const closed = reads.length;
+    wake();
+    assert.equal(reads.length, closed, 'a closed panel does not read the list');
+    assert.equal(driver.port.getSnapshot().open, false);
+
+    readings.set('session-a', { ...READING, used: 900000 });
+    trigger.click();
+    assert.equal(driver.port.getSnapshot().breakdown?.used, 900000, 'the reopened card is current');
+  } finally { driver.dispose(); }
+});
+
 test('a Session change or a trigger that goes away closes the panel', () => {
   const { trigger, document, detach } = page();
   const { port: projections } = projectionsFor();

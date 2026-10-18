@@ -22,6 +22,17 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
         ? previous : { left, top, visibility: 'visible' });
     };
     place();
+    /* The panel's own slider writes its inline style on every pointer move, and
+       this observer sees all body `style` writes: coalescing to one placement
+       per paint is what keeps a drag from measuring the panel per event. */
+    let placed = 0;
+    let placementTimer: ReturnType<typeof setTimeout> | undefined;
+    const schedulePlace = () => {
+      if (placed !== 0 || placementTimer !== undefined) return;
+      const run = () => { placed = 0; placementTimer = undefined; place(); };
+      if (typeof requestAnimationFrame === 'function') placed = requestAnimationFrame(run);
+      else placementTimer = setTimeout(run, 16);
+    };
     const onPointer = (event: PointerEvent) => {
       if (!surface.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
     };
@@ -37,19 +48,21 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
-    const observer = new MutationObserver(place);
+    const observer = new MutationObserver(schedulePlace);
     observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] });
-    const resize = new ResizeObserver(place);
+    const resize = new ResizeObserver(schedulePlace);
     resize.observe(surface);
-    window.addEventListener('resize', place);
+    window.addEventListener('resize', schedulePlace);
     document.addEventListener('pointerdown', onPointer, true);
     document.addEventListener('focusin', onFocus);
     surface.addEventListener('keydown', onKey);
     const autofocus = requestAnimationFrame(() => surface.querySelector<HTMLElement>('[data-autofocus]')?.focus());
     return () => {
       cancelAnimationFrame(autofocus);
+      if (placed !== 0) cancelAnimationFrame(placed);
+      if (placementTimer !== undefined) clearTimeout(placementTimer);
       observer.disconnect(); resize.disconnect();
-      window.removeEventListener('resize', place);
+      window.removeEventListener('resize', schedulePlace);
       document.removeEventListener('pointerdown', onPointer, true);
       document.removeEventListener('focusin', onFocus);
       surface.removeEventListener('keydown', onKey);

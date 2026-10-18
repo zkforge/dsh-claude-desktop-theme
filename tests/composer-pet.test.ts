@@ -42,21 +42,43 @@ function fixture(options: {
 } = {}) {
   let rect = options.rect ?? { right: 800, top: 500, width: 770, height: 120 };
   let present = options.card ?? true;
-  let pass = () => {};
   let observersDisconnected = 0;
   let observed = 0;
+  let measured = 0;
+  /* Two mutation observers exist: the hero's own watcher (`style`/`class`/
+     `data-phase`, attached only while the hero page is up) and the cheap phase
+     gate (`data-phase` only). The fixture keeps them apart and delivers each
+     the records a browser would. */
+  interface Watch {
+    readonly callback: (records: MutationRecord[]) => void;
+    filter: readonly string[];
+    active: boolean;
+  }
+  const watchers: Watch[] = [];
 
-  class FakeObserver {
-    constructor(callback: () => void) { pass = callback; }
+  class FakeMutationObserver {
+    private readonly watch: Watch;
+    constructor(callback: (records: MutationRecord[]) => void) {
+      this.watch = { callback, filter: [], active: false };
+      watchers.push(this.watch);
+    }
+    observe(_node: unknown, init: MutationObserverInit) {
+      observed += 1;
+      this.watch.filter = init.attributeFilter ?? [];
+      this.watch.active = true;
+    }
+    disconnect() { this.watch.active = false; observersDisconnected += 1; }
+  }
+
+  class FakeResizeObserver {
+    constructor(_callback: () => void) {}
     observe() { observed += 1; }
     disconnect() { observersDisconnected += 1; }
   }
-  Object.defineProperty(globalThis, 'MutationObserver', { configurable: true, value: FakeObserver });
-  if (options.resizeObserver === false) {
-    Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: undefined });
-  } else {
-    Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: FakeObserver });
-  }
+  Object.defineProperty(globalThis, 'MutationObserver', { configurable: true, value: FakeMutationObserver });
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    configurable: true, value: options.resizeObserver === false ? undefined : FakeResizeObserver,
+  });
 
   const windowListeners = new Set<string>();
   Object.defineProperty(globalThis, 'window', { configurable: true, value: {
@@ -66,7 +88,7 @@ function fixture(options: {
 
   const documentListeners = new Set<string>();
   const card = {
-    getBoundingClientRect: () => rect,
+    getBoundingClientRect: () => { measured += 1; return rect; },
   };
   const document = {
     hidden: options.hidden ?? false,
@@ -75,6 +97,27 @@ function fixture(options: {
     addEventListener: (type: string) => { documentListeners.add(type); },
     removeEventListener: (type: string) => { documentListeners.delete(type); },
   } as unknown as Document;
+
+  /** One record as a browser would hand it to the matching watcher. */
+  const attributes = (name: string): MutationRecord =>
+    ({ type: 'attributes', attributeName: name, addedNodes: [] }) as unknown as MutationRecord;
+  const inserted = (...nodes: unknown[]): MutationRecord =>
+    ({ type: 'childList', attributeName: null, addedNodes: nodes }) as unknown as MutationRecord;
+  /* The conversation root that replaces the hero card. */
+  const phaseRoot = {
+    nodeType: 1,
+    matches: (selector: string) => selector === '[data-phase]',
+    querySelector: () => null,
+  };
+  /* An ordinary transcript node: structure, but no phase. */
+  const transcriptNode = {
+    nodeType: 1,
+    matches: () => false,
+    querySelector: () => null,
+  };
+  const deliver = (...records: MutationRecord[]) => {
+    for (const watch of watchers) if (watch.active) watch.callback(records);
+  };
 
   const reported: unknown[] = [];
   const anchor = createPetAnchor(document, error => { reported.push(error); });
@@ -85,17 +128,20 @@ function fixture(options: {
     reported,
     get notifications() { return notifications; },
     get observed() { return observed; },
+    get measured() { return measured; },
     get observersDisconnected() { return observersDisconnected; },
     get windowListeners() { return windowListeners; },
     get documentListeners() { return documentListeners; },
     /** Move the card (column drag, card growth) and run the observer's pass. */
-    move(next: Rect) { rect = next; pass(); },
+    move(next: Rect) { rect = next; deliver(attributes('class')); },
     /** Replace the card with nothing, the way a phase change does. */
-    drop() { present = false; pass(); },
+    drop() { present = false; deliver(inserted(phaseRoot)); },
     /** The next phase renders a card again. */
-    restore() { present = true; pass(); },
+    restore() { present = true; deliver(inserted(phaseRoot)); },
+    /** Transcript streaming while a conversation is up: no phase arrives. */
+    stream() { deliver(inserted(transcriptNode)); },
     /** Force a pass without changing anything. */
-    pass() { pass(); },
+    pass() { deliver(attributes('class')); },
   };
 }
 
@@ -186,8 +232,8 @@ test('dispose releases every observer and listener and stops publishing', () => 
     f.anchor.dispose();
     assert.equal(f.windowListeners.size, 0);
     assert.equal(f.documentListeners.size, 0);
-    /* The mutation observer and the card observer are both released. */
-    assert.equal(f.observersDisconnected, 2);
+    /* The hero watcher, the phase gate and the card's size observer. */
+    assert.equal(f.observersDisconnected, 3);
     assert.equal(f.anchor.getSnapshot(), null);
 
     const notifications = f.notifications;
@@ -196,6 +242,49 @@ test('dispose releases every observer and listener and stops publishing', () => 
     assert.equal(f.anchor.getSnapshot(), null);
   } finally {
     f.anchor.dispose();
+    restoreGlobals();
+  }
+});
+
+test('the position watchers exist only while the hero page does', () => {
+  const f = fixture();
+  try {
+    assert.deepEqual(f.windowListeners.size, 1, 'the hero attaches the window watchers');
+    assert.deepEqual([...f.documentListeners].sort(), ['scroll', 'visibilitychange']);
+
+    /* A conversation takes the card away: nothing on that page can move a seat
+       that is not drawn, so its listeners and size observer go with it. */
+    f.drop();
+    assert.equal(f.anchor.getSnapshot(), null);
+    assert.equal(f.windowListeners.size, 0);
+    assert.equal(f.documentListeners.size, 0);
+
+    /* Transcript growth cannot pay for a measurement while no card exists. */
+    const measured = f.measured;
+    f.stream();
+    assert.equal(f.measured, measured, 'a conversation stream measures nothing');
+    assert.equal(f.anchor.getSnapshot(), null);
+
+    /* The next new-session page reattaches them. */
+    f.restore();
+    assert.deepEqual(f.anchor.getSnapshot(), seatOf({ right: 800, top: 500, width: 770, height: 120 }));
+    assert.equal(f.windowListeners.size, 1);
+    assert.deepEqual([...f.documentListeners].sort(), ['scroll', 'visibilitychange']);
+  } finally {
+    f.anchor.dispose();
+    restoreGlobals();
+  }
+});
+
+test('a seat that never saw a card releases the size observer it was built with', () => {
+  const f = fixture({ card: false });
+  try {
+    assert.equal(f.anchor.getSnapshot(), null);
+    f.anchor.dispose();
+    /* The size observer and the phase gate; the hero watcher never attached. */
+    assert.equal(f.observersDisconnected, 2);
+    assert.equal(f.windowListeners.size, 0);
+  } finally {
     restoreGlobals();
   }
 });
