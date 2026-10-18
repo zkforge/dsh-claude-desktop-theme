@@ -162,6 +162,31 @@ test('a batch of already-expanded disclosures clicks none of them', async () => 
   }
 });
 
+test('mixed menu and transcript mutations only click actual process disclosures', async () => {
+  const menu = makeButton();
+  menu.matches = () => false;
+  const turn = makeButton();
+  const f = fixture([]);
+  try {
+    // Closing one view-options row and inserting the next flyout arrive in
+    // the same batch. The insertion must not make that menu row clickable.
+    f.deliver(attributeRecord(menu), insertionRecord(makePlain()));
+    await f.settle();
+    assert.equal(menu.clicks, 0);
+
+    // A real disclosure also makes a batch relevant. Unrelated attribute
+    // records still need their own selector check in the direct pending path.
+    f.deliver(insertionRecord(makePlain()));
+    f.deliver(attributeRecord(menu), attributeRecord(turn));
+    assert.equal(menu.clicks, 0);
+    assert.equal(turn.clicks, 1);
+    await f.settle();
+    assert.deepEqual(f.errors, []);
+  } finally {
+    f.dispose();
+  }
+});
+
 test('a frame that cannot observe reports once and touches no disclosure', () => {
   const previous = globalThis.MutationObserver;
   globalThis.MutationObserver = class {

@@ -22,8 +22,10 @@ test('view-options flyouts support pointer crossing, clicks and one-step keyboar
       import React from 'react';
       import {createRoot} from 'react-dom/client';
       import {ViewOptionsCard} from './src/client/features/view-options/ViewOptionsCard.tsx';
+      import {mountConversationProcess} from './src/client/compat/conversation-process.ts';
+      mountConversationProcess(document, error => { throw error; });
       let root, state, listeners;
-      window.openCard = (left = 300, top = 80, selected = 0) => {
+      window.openCard = (left = 300, top = 80, selected = 0, groupByStatus = false) => {
         root?.unmount();
         const anchor = document.getElementById('trigger');
         anchor.style.left = left + 'px'; anchor.style.top = top + 'px';
@@ -41,7 +43,7 @@ test('view-options flyouts support pointer crossing, clicks and one-step keyboar
           choose:async(group,index)=>{window.choices.push([group,index]);return true;},
         };
         root = createRoot(document.getElementById('overlay'));
-        root.render(React.createElement(ViewOptionsCard,{port,showEmptyGroups:false,setShowEmptyGroups(){}}));
+        root.render(React.createElement(ViewOptionsCard,{port,showEmptyGroups:groupByStatus,setShowEmptyGroups(){},groupByStatus,setGroupByStatus(){}}));
       };
     ` },
     bundle: true, write: false, format: 'iife', jsx: 'automatic',
@@ -78,6 +80,8 @@ test('view-options flyouts support pointer crossing, clicks and one-step keyboar
       assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('[data-ccd-view-row]'),row=>row.getAttribute('data-ccd-view-row'))`), ['2', '0', '1'], 'status precedes the grouping/sorting section');
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-view-row="2"]').textContent`), '状态活跃');
       assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-view-options] > [role="separator"]').length`), 2);
+      await move(await point('[data-ccd-view-row="2"]'));
+      assert.equal(await page.evaluate(`document.querySelector('.ccd-view-submenu').getAttribute('aria-label')`), '状态');
       await move(await point('[data-ccd-view-row="0"]'));
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-view-row="0"]').getAttribute('aria-expanded')`), 'true');
       const option = await point('[data-ccd-view-option="0-1"]');
@@ -98,6 +102,16 @@ test('view-options flyouts support pointer crossing, clicks and one-step keyboar
       await click(option);
       assert.deepEqual(await page.evaluate('window.choices'), [[0, 1]]);
       assert.equal(await page.evaluate(`!!document.querySelector('[data-ccd-view-options]')`), false);
+
+      // The reported gesture with status grouping and empty sections enabled.
+      await move({x:5,y:5});
+      await page.evaluate('window.openCard(300,80,0,true)'); await pause();
+      for (let pass = 0; pass < 3; pass += 1) {
+        await move(await point('[data-ccd-view-row="2"]'));
+        await move(await point('[data-ccd-view-row="0"]'));
+        assert.equal(await page.evaluate(`document.querySelector('.ccd-view-submenu').getAttribute('aria-label')`), '分组方式');
+        assert.equal(await page.evaluate(`document.querySelector('[data-ccd-view-option="status"]').getAttribute('aria-checked')`), 'true');
+      }
 
       // Hover happens before a physical click: clicking that row must not undo
       // the open caused by pointerenter.

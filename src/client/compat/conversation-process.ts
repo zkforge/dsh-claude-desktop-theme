@@ -57,6 +57,9 @@ export function mountConversationProcess(document: Document, report: (error: unk
   const act = (records: readonly MutationRecord[]) => {
     if (!records.some(relevant)) return;
     for (const record of records) {
+      // A newly inserted subtree makes the batch relevant, but unrelated
+      // aria-expanded records in that batch still belong to their own menus.
+      if (!relevant(record)) continue;
       if (record.type === 'attributes') {
         const target = record.target as Element;
         if (typeof (target as HTMLElement).click === 'function'
