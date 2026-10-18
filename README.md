@@ -15,9 +15,9 @@
 
 </div>
 
-<!-- 截图占位 · hero
-     新会话页，浅色，1600px WebP：assets/screenshots/new-session-light.webp
-     替换本段注释为一行居中 img，宽 1200，alt「新会话页」 -->
+<p align="center">
+  <img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.webp" width="1200" alt="新会话页：浅色主题、用量统计与字符水波纹">
+</p>
 
 ## 快速安装
 
@@ -76,11 +76,11 @@
 
 截图为 macOS、默认配色与 Geist 字体，统计卡片开启，状态栏统计读数保持默认关闭。小鲸鱼的点击回应与 Effort 拉到底的动效见下一节。
 
-<!-- 截图占位 · 三行两列（浅色 / 深色），1600px WebP
-     新会话页  assets/screenshots/new-session-light.webp  assets/screenshots/new-session-dark.webp
-     会话页    assets/screenshots/chat-light.webp          assets/screenshots/chat-dark.webp
-     插件设置  assets/screenshots/settings-light.webp      assets/screenshots/settings-dark.webp
-     替换本段注释为同名图片表格，行标题依次为：新会话页、会话页（含右侧栏）、插件设置 -->
+| 界面 | 浅色 | 深色 |
+| --- | --- | --- |
+| 新会话页 | ![新会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.webp) | ![新会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-dark.webp) |
+| 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
+| 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
 
 <!-- 截图占位 · 补充两张单图
      上下文分解面板：assets/screenshots/context-panel-light.webp
