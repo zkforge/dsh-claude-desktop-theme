@@ -17,8 +17,8 @@ try { chrome = findChrome(); } catch { /* Local Chrome enables browser coverage.
  * The host package draws a root path, a reload button, the open-in-app actions
  * and a tree of rows — and nothing else: no filter, no tree control, no landing
  * state. `compat/files-pane.ts` supplies those, and `right-panel.css` dresses
- * them; this test holds both to the reference (`docs/issues/img/
- * todo-rightbar-files.png`, at @2x): the 26px field in a 32px header row with
+ * them; this test holds both to the reference (DESIGN.md §6.9, measured at
+ * @2x): the 26px field in a 32px header row with
  * no rule under it, the page and angle-bracket marks on the rows, the tab's
  * three-row list on its tinted square, the empty column's folder over two lines
  * of copy, and the strip's 26px control pitch in the pane's own near-black.

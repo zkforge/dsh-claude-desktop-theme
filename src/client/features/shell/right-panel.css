@@ -6,9 +6,9 @@
  * which owns the frame's columns; this sheet dresses what the panel draws
  * inside it. Everything here speaks the DockKit and Files packages' own stable
  * data hooks rather than their hashed class names (`compat/host-dom.ts` pins
- * each one), and every number is measured off the reference at @2x:
- * docs/issues/img/todo-rightbar-files.png, with -terminal and -browser for the
- * shared header row.
+ * each one), and every number is measured off the reference at @2x: its Files
+ * crop, with its terminal and browser crops for the shared header row (DESIGN.md
+ * §6.9).
  *
  * The host keeps the structure, the controls, the handlers and their copy. This
  * sheet changes what a box looks like: the strip's line, the tab's own mark,

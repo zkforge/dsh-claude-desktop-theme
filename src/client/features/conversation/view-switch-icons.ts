@@ -1,8 +1,8 @@
 /**
  * The two View switcher glyphs, bundled as trusted static markup.
  *
- * Drawn to the reference's own segments (docs/issues/img/todo-sidebar-sessions-target.webp,
- * @2x): a pair of speech bubbles for the chat View and the `</>` pair for the
+ * Drawn to the reference's own segments (DESIGN.md §6.5, @2x): a pair of
+ * speech bubbles for the chat View and the `</>` pair for the
  * trajectory View, both on the CCD 16 grid — 1–1.2px stroke (each glyph's own
  * weight read off the reference), round caps and joins, `currentColor` ink,
  * ink box ≈ 12.5 × 11px inside the 16px artwork.

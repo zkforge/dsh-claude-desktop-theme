@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
  * its own `See detailed breakdown` control is taken away.
  *
  * The geometry is the reference's, measured at @2x and recorded in
- * `docs/plan-context-breakdown-panel.md` §2, and it lives in two places: the
+ * DESIGN.md §6.8, and it lives in two places: the
  * numbers in `theme/tokens.css` (the only file allowed to carry a literal
  * colour) and the rules in `features/context-panel/context-panel.css`. The
  * words and the two states come from `ContextPanel.tsx`. All three are pinned
@@ -126,15 +126,14 @@ test('the header line is the whole affordance, and there is no button under it',
   assert.match(sheet, /\.ccd-context-chevron\[data-ccd-context-chevron='open'\]\s*\{[^}]*transform: rotate\(90deg\)/u);
   /* The reference's own bottom control is deliberately absent. The card has
      exactly two controls — the header line and a group head per drill-down —
-     and the decision itself is recorded in the plan, which is where a reader
-     who wonders why the reference has a button and this panel does not will
-     look. */
+     and the decision itself is recorded in DESIGN.md §6.8, which is where a
+     reader who wonders why the reference has a button and this panel does not
+     will look. */
   const markup = card.replace(/\/\*[\s\S]*?\*\//gu, '');
   assert.equal([...markup.matchAll(/<button/gu)].length, 2, 'the header line and the group heads');
   assert.doesNotMatch(markup, /See detailed breakdown/u);
   assert.doesNotMatch(markup, /ccd-context-action/u);
   assert.doesNotMatch(sheet, /ccd-context-action/u);
-  assert.match(read('../docs/plan-context-breakdown-panel.md'), /不做底部按钮/u);
 });
 
 test('the panel opens collapsed and the expansion never outlives it', () => {

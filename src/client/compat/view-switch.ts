@@ -30,7 +30,7 @@ export const VIEW_GLYPH_ATTRIBUTE = 'data-ccd-view-glyph';
 /**
  * The parked pill's inset from the sidebar column's right edge, in px. Measured
  * at @2x on the reference: the column's divider sits 16 device px right of the
- * pill's right edge (docs/issues/img/todo-sidebar-sessions-target.webp).
+ * pill's right edge (DESIGN.md §6.5).
  */
 export const VIEW_DOCK_INSET = 8;
 

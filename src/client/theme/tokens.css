@@ -314,8 +314,8 @@ html[data-dsh-ccd-style="true"] {
      tertiary label grey as the percentage beside it, so the reading carries no
      weight. The accent blue is this plugin's one emphasis colour: taking it
      through `var()` lets the ring follow `--ccd-accent` the moment that token
-     exists, and the fallback is the blue measured off the target arc
-     (docs/issues/img/12-2.png), so the ring is never left grey meanwhile. The
+     exists, and the fallback is the blue measured off the target arc in the
+     reference at @2x, so the ring is never left grey meanwhile. The
      track underneath stays the host's `--dsw-alias-border-l3`, which
      theme/tokens.ts already overrides. */
   --ccd-context-ring-fill: var(--ccd-accent, #4b76ce);
@@ -342,9 +342,9 @@ html[data-dsh-ccd-style="true"] {
 
   /* The plugin's one emphasis blue: the selected check in every Menu surface,
      the context ring, and whatever else has to read as "this one is chosen".
-     It is the blue measured off the reference check mark
-     (docs/issues/img/01-3.png: the stroke's own pixels are #4b76d0/#507ad2, so
-     the token takes the darker mode) and shares the stats heat ramp's hue
+     It is the blue measured off the reference's check mark at @2x: the
+     stroke's own pixels are #4b76d0/#507ad2, so the token takes the darker
+     mode, and it shares the stats heat ramp's hue
      family (hsl(217 …)), which keeps every blue in the interface one voice. */
   --ccd-accent: #4b76ce;
   --ccd-hero-ripple-ink: #60bdeb;

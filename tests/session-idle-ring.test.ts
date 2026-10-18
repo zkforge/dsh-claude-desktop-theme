@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
  * `renderSlot('sidebar.session.row.leading')` — the plugin seat, which is empty
  * until something registers into it. The stylesheet fills that seat with the
  * activity ring's own circle, still, so an idle row keeps the column's left
- * edge instead of starting 16px early (docs/issues/14-idle-session-ring.md).
+ * edge instead of starting 16px early.
  *
  * These tests pin the two halves that must stay in step: the ring rule reads
  * the seat's *empty* outlet, and the mask it paints is the spinner's own

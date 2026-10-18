@@ -3,7 +3,7 @@
  *
  * This is the plugin's own popup, drawn where DSH's 264px three-row panel used
  * to be. The geometry is the supplied reference's, measured at @2x and recorded
- * in `docs/plan-context-breakdown-panel.md` §2: a 360px card with a 12px corner
+ * in DESIGN.md §6.8: a 360px card with a 12px corner
  * and a hairline outline, 8px top and 12px inline padding, a 13px/20px header
  * line, a 4px segmented bar 5px under it, 19px value rows, 17px detail rows,
  * 10px swatches, and a 40px percentage column whose right edge is the content

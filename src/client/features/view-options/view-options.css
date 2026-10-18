@@ -5,7 +5,7 @@
  * be: three value rows — the dimension on the left, the current choice on the
  * right, a disclosure mark at the end — one switch row, and one action row,
  * with the options of a value row one level down in a card of their own. The
- * numbers are the reference's, measured in §3.5 of docs/plan-sidebar-view-options.md:
+ * numbers are the reference's, measured at @2x and recorded in DESIGN.md §6.7:
  * a 24px row (13px/20px label, 2px above and below, 8px inline), a 6px row
  * corner, the value column at 12px in the muted ink, 12px between the columns,
  * a 16px disclosure mark pulled 4px toward the edge, and 1px separators inset

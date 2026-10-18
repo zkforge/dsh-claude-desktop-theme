@@ -219,9 +219,9 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_n
    and 30px is also what the host's expanded search pill measures — so the only
    whitespace the stack can give up is the margin that used to sit here: 10px on
    top of the header's own 2px bottom margin left the three icons floating in a
-   band about twice the stack's own pitch. Measured at @2x on
-   docs/issues/img/06.png the last navigation row's ink ended 26px above the icon
-   glyphs, against the 14.5px between two navigation rows. The margin drops to
+   band about twice the stack's own pitch. Measured at @2x on the reference,
+   the last navigation row's ink ended 26px above the icon glyphs, against the
+   14.5px between two navigation rows. The margin drops to
    the row gap, which lifts the icon row and the list together by 9px and leaves
    the 28px hit areas, the header's 30px box and every row above untouched. The
    host's own `margin-top: 2px` on that header never applies: the plugin's

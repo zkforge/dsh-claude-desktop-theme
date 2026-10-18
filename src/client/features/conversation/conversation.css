@@ -340,8 +340,8 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
  * `compat/view-switch.ts`; the buttons keep their roles, labels and handlers,
  * and the host's own underline is dropped.
  *
- * Geometry is the reference's own pill (docs/issues/img/todo-sidebar-sessions-target.webp,
- * @2x): a 66 × 26 track — 131 × 52 device px, so two 33px segments — 6px
+ * Geometry is the reference's own pill (DESIGN.md §6.5, @2x): a 66 × 26 track
+ * — 131 × 52 device px, so two 33px segments — 6px
  * corner, with the raised thumb inset 1px top and bottom and carrying a 5px
  * corner, a 1px outline and the segment shadow. The two segments are the icon
  * buttons below, not text: `compat/view-switch.ts` swaps each shipped View's
