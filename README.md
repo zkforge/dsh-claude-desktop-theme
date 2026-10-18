@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-0078D4?style=for-the-badge" alt="Platform"/>
 </p>
 
-[安装](#快速安装) · [功能](#功能) · [界面预览](#界面预览) · [配置](#配置) · [开发](#开发) · [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
+[安装](#快速安装) · [功能](#功能) · [界面预览](#界面预览) · [配置](#配置) · [架构](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [设计规范](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/DESIGN.md) · [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
 
 </div>
 
@@ -127,14 +127,14 @@
 
 ## 配置
 
-打开「插件 → dsh-claude-desktop-theme」，改动即时生效：
+打开「设置 → Claude 主题」，改动即时生效：
 
 | 分组 | 可调项 |
 | --- | --- |
 | 模块 | 窗口与分栏骨架、侧栏、新建页、聊天页、输入框小鲸鱼、统计卡片、状态栏统计读数、上下文分解面板 |
 | 外观 | 主题（浅色 / 深色 / 跟随系统）、会话背景色、侧栏背景色 |
 | 视图 | 顶栏子代理入口、顶栏团队入口（默认关闭）、显示空分组（默认关闭） |
-| 字体 | 界面字体、界面中文字体、代码与等宽字体 |
+| 字体 | 界面字体、代码与等宽字体；界面中文字体在设置页不列，需写进 profile 的 `cordis.patch.yml` |
 
 > [!NOTE]
 > 自定义背景色只作用于浅色模式，深色模式使用内置深色调色板。界面默认使用 Geist，未安装时回退系统字体；仓库的 `assets/fonts/` 提供本机安装用字体与 OFL 许可，字体不包含在 npm 包中。
@@ -151,36 +151,6 @@
 ## 环境要求
 
 DSH `0.2.0-rc.2`；macOS（Apple 芯片）或 Windows 10 及以上（64 位）。源码构建另需 Node.js ≥ 22.18.0。
-
-## 开发
-
-```sh
-npm ci --cache .cache/npm
-npm run check
-npm run pack:local --cache .cache/npm
-```
-
-`npm run check` 依次执行类型检查、模块边界与文档链接检查、测试、构建和包内容校验。本机有 Chrome 时，测试还会在真实浏览器中验证视图选项二级菜单的鼠标命中、跨菜单间隙与键盘操作，以及上下文分解面板的两态、锚定几何、分段间隙与浅深配色；没有 Chrome 时跳过这一项，可用 `CHROME` 指定浏览器路径。
-
-<details>
-<summary><b>全部脚本</b></summary>
-
-| 脚本 | 作用 |
-| --- | --- |
-| `npm run typecheck` | TypeScript 类型检查 |
-| `npm run check:architecture` | 模块边界、颜色归属与本地文档链接 |
-| `npm test` | 配置、生命周期、布局适配与统计行为测试 |
-| `npm run build` | 构建 Host 与 Client 产物 |
-| `npm run check:package` | 校验 npm 安装包内容 |
-| `npm run check` | 依次执行以上全部 |
-| `npm run dev` | 客户端增量构建 |
-| `npm run pack:local` | 生成用于本地安装的 tarball |
-| `npm run pet:gifs` | 重新渲染小鲸鱼的三个动图（需 Chrome 与 ffmpeg） |
-| `npm run effort:gifs` | 重新渲染 Effort 的深浅两个动图（同上） |
-
-</details>
-
-代码结构见 [ARCHITECTURE.md](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md)，设计口径见 [DESIGN.md](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/DESIGN.md)。
 
 ## 反馈与许可
 
