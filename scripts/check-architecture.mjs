@@ -108,6 +108,11 @@ for (const file of await list(resolve(root, 'src'))) {
   }
 }
 
+/* README is rendered on npm as well as GitHub, where a relative link to a repo
+   file only resolves on GitHub; those stay absolute. The absolute form can still
+   rot when an asset is renamed or removed, so its path is checked here. */
+const RAW_PREFIX = 'https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/';
+
 const rootEntries = await readdir(root, { withFileTypes: true });
 const rootDocs = rootEntries
   .filter(item => item.isFile() && item.name.endsWith('.md'))
@@ -119,11 +124,19 @@ const nestedDocs = docFiles
 for (const doc of [...rootDocs, ...nestedDocs]) {
   const source = await readFile(resolve(root, doc), 'utf8');
   if (/[ \t]+$/m.test(source)) problems.push(`${doc}: trailing whitespace`);
-  for (const match of source.matchAll(/\]\(([^)]+)\)/g)) {
-    const target = match[1].split('#')[0];
-    if (!target || /^(https?:|codex:)/.test(target)) continue;
-    try { await readFile(resolve(dirname(resolve(root, doc)), target)); }
-    catch { problems.push(`${doc}: missing local link ${target}`); }
+  const targets = [...source.matchAll(/\]\(([^)]+)\)/g)].map(match => match[1]);
+  for (const [, raw] of source.matchAll(/\bsrc="([^"]+)"/g)) targets.push(raw);
+  for (const target of targets) {
+    const path = target.split('#')[0];
+    if (!path) continue;
+    if (path.startsWith(RAW_PREFIX)) {
+      try { await readFile(resolve(root, path.slice(RAW_PREFIX.length))); }
+      catch { problems.push(`${doc}: missing repository file ${path.slice(RAW_PREFIX.length)}`); }
+      continue;
+    }
+    if (/^(https?:|codex:)/.test(path)) continue;
+    try { await readFile(resolve(dirname(resolve(root, doc)), path)); }
+    catch { problems.push(`${doc}: missing local link ${path}`); }
   }
 }
 if (problems.length) throw new Error(problems.join('\n'));

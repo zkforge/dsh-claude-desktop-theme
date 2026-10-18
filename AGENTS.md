@@ -34,4 +34,6 @@ Effort 面板拉到底时的像素流光同理：`scripts/effort-gif.mjs` 直接
 npm run effort:gifs
 ```
 
+README 的界面截图是人工拍摄的，没有脚本：改到侧栏、会话页、右栏、设置页这类会被拍到的界面后，按同一口径重拍受影响的图。口径是 macOS、窗口 1392×932 逻辑 px、@2x、默认配色与 Geist、统计卡片开启、状态栏统计读数关闭、演示数据不含真实账号信息；导出 1600px 宽 WebP（`cwebp -resize 1600 0 -q 82`），文件名见 README 里的截图占位注释。`check:architecture` 会校验 README 里绝对路径的图片是否还在仓库中。
+
 两个脚本共用 `scripts/lib/headless-chrome.mjs` 里的 Chrome 与 DevTools 连接。
