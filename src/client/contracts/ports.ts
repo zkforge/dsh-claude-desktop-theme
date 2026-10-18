@@ -86,6 +86,8 @@ export interface SidebarRightPort {
   openTab(kind: string, options?: { readonly params?: Record<string, string> }): void;
   /** Focus a tab and the pane holding it; a missing tab is left alone. */
   focus(tabId: string): void;
+  /** Close a tab in the on-screen Session through the host's cleanup path. */
+  close?(tabId: string): void;
   /**
    * Open tab metadata across adopted Sessions — and, in the shipped face, the
    * snapshot store behind it: the plugin's pane layer re-reads the layout

@@ -217,7 +217,7 @@ test('the separate browsing toolbar and compact project actions support both bui
           await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
           const geometry = await devtools.evaluate(aliasHostClasses(boxes, hostBuild));
           if (fixture === several) {
-            assert(Math.abs(geometry.header.bottom - geometry.row.y - 4) < 0.5, 'toolbar overlaps only the project row’s 4px padding');
+            assert(Math.abs(geometry.row.y - geometry.header.bottom - 4) < 0.5, 'the search toolbar leaves a 4px gap above the project row');
             assert.equal(geometry.plus.width, 22);
             assert.equal(geometry.plus.height, 22);
             assert.equal(geometry.searchButton.width, 22);
@@ -230,7 +230,22 @@ test('the separate browsing toolbar and compact project actions support both bui
             assert(Math.abs(trailing.first - trailing.second) < 0.5, 'project actions align across groups');
             assert(Math.abs(trailing.row - trailing.first - 4) < 0.5, 'actions use the row trailing inset');
           }
-          if (fixture === searching) assert(geometry.header.bottom - geometry.row.y <= 4.5, 'expanded search overlaps only the project row’s empty padding');
+          if (fixture === searching) {
+            assert(Math.abs(geometry.row.y - geometry.header.bottom - 4) < .5,
+              'expanded search keeps the same gap above the project row');
+          }
+          if (fixture !== rail) {
+            const field = await devtools.evaluate(aliasHostClasses(`(() => {
+              const input = document.querySelector('._7514NG_searchInput');
+              const options = document.querySelector('#view-options');
+              return { inputWidth: input.getBoundingClientRect().width,
+                inputOpacity: getComputedStyle(input).opacity,
+                optionsVisibility: getComputedStyle(options.parentElement).visibility };
+            })()`, hostBuild));
+            assert(field.inputWidth > 40, 'the permanent search field has room to type');
+            assert.equal(field.inputOpacity, '1');
+            assert.equal(field.optionsVisibility, 'visible', 'view options remain available while searching');
+          }
           if (fixture === flatList || fixture === noHistory) {
             assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_sectionLabel').textContent`, hostBuild)), '最近会话');
           }

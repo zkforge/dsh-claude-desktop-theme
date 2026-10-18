@@ -12,9 +12,10 @@ export interface PaneChromeOptions {
   readonly onNew: () => void;
   readonly onSelect: (id: string) => void;
   readonly onClose: (id: string) => void;
+  readonly onCloseGroup?: () => void;
   readonly closeTabs: readonly string[];
   readonly terminals: readonly { id: string; title: string; selected: boolean }[];
-  readonly files: readonly { id: string; title: string; selected: boolean }[];
+  readonly files: readonly { id: string; title: string; path: string; selected: boolean }[];
   readonly panel: HTMLElement;
 }
 export interface PaneChrome {
@@ -68,6 +69,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     // must remove the whole group, otherwise the previous file resurfaces.
     if (!options.filesRoot && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
     event.preventDefault(); event.stopImmediatePropagation();
+    if (options.onCloseGroup) { options.onCloseGroup(); return; }
     const { closeTabs, onClose } = options;
     /* One tab per task, re-read from the document before each step. Every close
        commits a host layout change that React has not painted yet, so a
@@ -200,6 +202,38 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
         if (label.textContent !== value) label.textContent = value;
         if (label.title !== value) label.title = value;
         if (label.previousElementSibling !== source) source.after(label);
+        const markdown = /\.(?:md|markdown)$/iu.test(path);
+        let toggle = source.parentElement?.querySelector<HTMLButtonElement>('[data-ccd-markdown-toggle]');
+        const viewer = node.querySelector<HTMLButtonElement>('[data-document-viewer-menu]');
+        if (!markdown || !viewer) { toggle?.remove(); continue; }
+        if (!toggle) {
+          toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.setAttribute('data-ccd-markdown-toggle', '');
+          toggle.addEventListener('click', () => {
+            const rendered = node.querySelector('[data-document-markdown]') !== null;
+            const before = new Set(document.querySelectorAll('[role="menu"]'));
+            node.querySelector<HTMLButtonElement>('[data-document-viewer-menu]')?.click();
+            // Let the host commit its portal before selecting its own renderer.
+            requestAnimationFrame(() => {
+              const menu = [...document.querySelectorAll('[role="menu"]')].find(item => !before.has(item));
+              const items = [...(menu?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])];
+              const target = items.find(item => rendered
+                ? /^(?:code|source|代码|源码)$/iu.test(item.textContent?.trim() ?? '')
+                : /^markdown$/iu.test(item.textContent?.trim() ?? ''));
+              target?.click();
+            });
+          });
+          source.parentElement?.append(toggle);
+        }
+        const rendered = node.querySelector('[data-document-markdown]') !== null;
+        const title = rendered ? 'Source' : 'Preview';
+        if (toggle.getAttribute('aria-label') === title) continue;
+        toggle.title = title;
+        toggle.setAttribute('aria-label', title);
+        toggle.innerHTML = rendered
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z"/><circle cx="12" cy="12" r="3.5"/></svg>';
       }
       const reload = controls.querySelector<HTMLButtonElement>('[data-ccd-preview-reload]');
       const original = node.querySelector<HTMLButtonElement>('[data-textpreview-tool="reload"]');
@@ -259,7 +293,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
      each, so one selection change rebuilt T×T cells. A cell is kept by tab id
      and only its own state is rewritten; a cell whose tab left the group is
      dropped with it. */
-  type TerminalTab = PaneChromeOptions['terminals'][number];
+  type PaneTab = PaneChromeOptions['terminals'][number] & { readonly path?: string };
   interface TabCell {
     readonly cell: HTMLElement;
     readonly select: HTMLButtonElement;
@@ -271,28 +305,33 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   /** The card's own name, when it holds one rather than a tab list. */
   let nameSpan: HTMLElement | null = null;
   let nameText = '';
-  const writeTab = (held: TabCell, tab: TerminalTab) => {
+  const writeTab = (held: TabCell, tab: PaneTab) => {
     if (held.title !== tab.title) {
-      terminalText(held.select, tab.title);
+      if (options.kind === 'terminal') terminalText(held.select, tab.title);
+      else held.select.textContent = tab.title;
       held.title = tab.title;
-      const closeLabel = `${labels.chrome.closeTab} ${tab.title}`;
-      if (held.remove.getAttribute('aria-label') !== closeLabel) {
-        held.remove.setAttribute('aria-label', closeLabel);
-        held.remove.title = closeLabel;
-      }
+    }
+    if (held.select.title !== (tab.path ?? tab.title)) held.select.title = tab.path ?? tab.title;
+    const closeLabel = `${labels.chrome.closeTab} ${tab.title}`;
+    if (held.remove.getAttribute('aria-label') !== closeLabel) {
+      held.remove.setAttribute('aria-label', closeLabel);
+      held.remove.title = closeLabel;
     }
     if (held.select.getAttribute('aria-selected') !== String(tab.selected)) {
       held.select.setAttribute('aria-selected', String(tab.selected));
       held.select.tabIndex = tab.selected ? 0 : -1;
+      if (tab.selected) requestAnimationFrame(() => {
+        if (held.cell.isConnected) held.cell.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
     }
     if (tab.selected) held.cell.setAttribute('data-selected', '');
     else held.cell.removeAttribute('data-selected');
   };
-  const tabCell = (tab: TerminalTab): TabCell => {
+  const tabCell = (tab: PaneTab): TabCell => {
     const kept = tabCells.get(tab.id);
     if (kept !== undefined) return kept;
     const cell = document.createElement('span');
-    cell.setAttribute('data-ccd-terminal-tab', '');
+    cell.setAttribute(options.kind === 'terminal' ? 'data-ccd-terminal-tab' : 'data-ccd-file-tab', '');
     const select = document.createElement('button');
     select.type = 'button';
     select.setAttribute('role', 'tab');
@@ -301,24 +340,27 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     select.addEventListener('keydown', event => {
       /* The group is read when the key arrives: a reused cell must answer for
          the tabs it is shown beside now, not the ones it was built beside. */
-      const live = options.terminals;
+      const live = options.kind === 'terminal' ? options.terminals : options.files;
       const index = live.findIndex(item => item.id === tab.id);
+      if (event.key === 'Delete') { event.preventDefault(); options.onClose(tab.id); return; }
       const target = event.key === 'ArrowRight' ? (index + 1) % live.length
         : event.key === 'ArrowLeft' ? (index + live.length - 1) % live.length
           : event.key === 'Home' ? 0 : event.key === 'End' ? live.length - 1 : -1;
       if (target < 0) return;
       event.preventDefault(); options.onSelect(live[target]!.id);
-      document.querySelector<HTMLButtonElement>(`[data-dockkit-content="${live[target]!.id}"] [role="tab"][aria-selected="true"]`)?.focus();
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLButtonElement>(`[data-dockkit-content="${live[target]!.id}"] [role="tab"][aria-selected="true"]`)?.focus();
+      });
     });
     cell.append(select);
-    const remove = button(cell, labels.chrome.closeTab, 'data-ccd-terminal-close', 'X', () => options.onClose(tab.id));
+    const remove = button(cell, labels.chrome.closeTab, options.kind === 'terminal' ? 'data-ccd-terminal-close' : 'data-ccd-file-close', 'X', () => options.onClose(tab.id));
     remove.tabIndex = -1;
     const created: TabCell = { cell, select, remove, title: '' };
     tabCells.set(tab.id, created);
     return created;
   };
   /** The live tab list, reconciled in place: same cells, current names and selection. */
-  const updateTabs = (terminals: readonly TerminalTab[]) => {
+  const updateTabs = (terminals: readonly PaneTab[]) => {
     const list = tabList;
     if (list === null) return;
     const live = new Set(terminals.map(tab => tab.id));
@@ -348,7 +390,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
        them, so a group of T cards does not rebuild T tabs each time one is
        selected. */
     const value = `${paneLanguage(document)}|${next.kind}|${next.zoomed}|${hidden}|${next.filesRoot === null}|${next.terminals.length > 1}|${next.terminals.map(tab => tab.id).join(',')}|${next.files.map(file => file.id).join(',')}`;
-    if (value === signature) { updateTabs(next.terminals); updateName(next); refreshNative(); return; }
+    if (value === signature) { updateTabs(next.kind === 'terminal' ? next.terminals : next.files); updateName(next); refreshNative(); return; }
     signature = value;
     dismiss(); addressResize?.disconnect(); addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
     tabCells.clear(); tabList = null; nameSpan = null; nameText = '';
@@ -371,11 +413,12 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
         toggle.setAttribute('data-ccd-files-mark', '');
         toggle.setAttribute('aria-expanded', String(!hidden));
       }
-      if (next.kind === 'terminal' && next.terminals.length > 1) {
-        const tabs = document.createElement('span'); tabs.setAttribute('data-ccd-terminal-tabs', '');
-        tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', labels.chrome.terminals); caption.append(tabs);
+      if ((next.kind === 'terminal' && next.terminals.length > 1) || next.files.length > 0) {
+        const terminal = next.kind === 'terminal';
+        const tabs = document.createElement('span'); tabs.setAttribute(terminal ? 'data-ccd-terminal-tabs' : 'data-ccd-file-tabs', '');
+        tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', terminal ? labels.chrome.terminals : labels.files.title); caption.append(tabs);
         tabList = tabs;
-        updateTabs(next.terminals);
+        updateTabs(terminal ? next.terminals : next.files);
       } else {
         const name = document.createElement('span'); caption.append(name);
         nameSpan = name;
@@ -400,7 +443,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     waitText = null; fallbackPlaceholder = '';
     for (const attribute of ['data-ccd-pane-chrome', 'data-ccd-pane-kind']) node.removeAttribute(attribute);
     clearAddress(form);
-    for (const [source, label] of paths) { source.removeAttribute('data-ccd-preview-path-source'); label.remove(); }
+    for (const [source, label] of paths) { source.parentElement?.querySelector('[data-ccd-markdown-toggle]')?.remove(); source.removeAttribute('data-ccd-preview-path-source'); label.remove(); }
     paths.clear();
     headerFill?.removeAttribute('data-ccd-browser-header-fill');
   } };

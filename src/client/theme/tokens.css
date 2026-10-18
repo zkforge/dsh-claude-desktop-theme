@@ -149,6 +149,7 @@ html[data-dsh-ccd-style="true"] {
   --ccd-menu-danger-ink: #ffffff;
   --ccd-header-trigger-hover: #f0f0ef;
   --ccd-header-project-fill: #e5e5e5;
+  --ccd-header-label-ink: #5a5a58;
   --ccd-header-project-active: #cfcfcf;
   /* Transcript edge fade. 24px is the band the host's own internal-request
      viewer uses for `fadeTop`／`fadeBottom`, so the whole interface softens its
@@ -221,6 +222,12 @@ html[data-dsh-ccd-style="true"] {
   --ccd-files-ink: #0b0b0b;
   --ccd-right-panel-tab-ink: #52514f;
   --ccd-files-chip-ink: #304e91;
+  /* File header chips use the reference's neutral greys, separate from the
+     warmer general-purpose hover surfaces. Geometry is in right-panel.css. */
+  --ccd-file-tab-selected: #e6e6e6;
+  --ccd-file-tab-hover: #f2f2f2;
+  --ccd-file-close-hover: #d9d9d9;
+  --ccd-file-close-pressed: #cecece;
 
   /* Lines */
   --ccd-border: #e3e3e1;
@@ -306,7 +313,7 @@ html[data-dsh-ccd-style="true"] {
   /* Assistant Markdown palette matched to the CCD transcript reference. */
   --ccd-link: #2b61b5;
   --ccd-link-underline: #a7badd;
-  --ccd-inline-code-text: #b63630;
+  --ccd-inline-code-text: #a8322d;
   --ccd-inline-code-fill: #f1f1f0;
   --ccd-inline-code-border: #e2e2e0;
 
@@ -569,6 +576,7 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-menu-danger-ink: #ffffff;
   --ccd-header-trigger-hover: var(--ccd-hover);
   --ccd-header-project-fill: var(--ccd-track);
+  --ccd-header-label-ink: var(--ccd-text-secondary);
   --ccd-header-project-active: var(--ccd-selected);
   --ccd-track: #1f1e1d;
   --ccd-raised: #2f2f2d;
@@ -596,6 +604,10 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-files-ink: var(--ccd-text);
   --ccd-right-panel-tab-ink: var(--ccd-text);
   --ccd-files-chip-ink: var(--ccd-accent);
+  --ccd-file-tab-selected: var(--ccd-selected);
+  --ccd-file-tab-hover: var(--ccd-hover);
+  --ccd-file-close-hover: var(--ccd-hover-strong);
+  --ccd-file-close-pressed: var(--ccd-border-strong);
 
   /* Lines */
   --ccd-border: #3e3e3b;

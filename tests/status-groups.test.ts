@@ -225,3 +225,59 @@ test('an unchanged pass writes nothing and reads no layout', async () => {
     dispose();
   } finally { globalThis.MutationObserver = original; }
 });
+
+for (const mode of ['reduced motion', 'hidden window']) test(`changed status skips animation geometry in a ${mode}`, async () => {
+  const original = globalThis.MutationObserver;
+  const f = fixture(true);
+  globalThis.MutationObserver = class {
+    constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  if (mode === 'hidden window') {
+    Object.assign(f.doc, { hidden: true });
+    Object.assign(f.doc.defaultView!, { matchMedia: () => ({ matches: false }) });
+  }
+  let reads = 0, unchangedWrites = 0;
+  for (const row of [f.a, f.b]) row.getBoundingClientRect = () => { reads++; return { top: 0, left: 0, height: 28 }; };
+  try {
+    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => { throw error; });
+    const set = f.a.style.setProperty.bind(f.a.style);
+    f.a.style.setProperty = (key, value) => { unchangedWrites++; set(key, value); };
+    f.statuses.set('b', { pendingInteraction: { kind: 'approval' } });
+    f.callbacks[0]!.forEach(notify => notify());
+    await Promise.resolve();
+    assert.equal(f.b.dataset.ccdStatusGroup, 'input');
+    assert.equal(reads, 0, 'no animation will play, so neither old nor new row boxes are needed');
+    assert.equal(unchangedWrites, 0, 'the other row keeps its existing order without a style mutation');
+    dispose();
+  } finally { globalThis.MutationObserver = original; }
+});
+
+test('unchanged groups release detached wrappers and restore removed headings', async () => {
+  const original = globalThis.MutationObserver;
+  const f = fixture(true);
+  globalThis.MutationObserver = class {
+    constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  try {
+    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => { throw error; });
+    f.wrapper.children = [];
+    f.wrapper.remove();
+    f.list.append(f.a);
+    f.mutation(batch('childList', f.list));
+    await Promise.resolve();
+    assert.equal(f.wrapper.hasAttribute('data-ccd-status-wrapper'), false, 'old wrapper is restored before the unchanged-plan return');
+    const nextWrapper = new Element();
+    f.a.remove(); f.a.isConnected = true;
+    nextWrapper.append(f.a); f.list.append(nextWrapper);
+    const heading = f.list.children.find(node => node.className === 'ccd-status-heading')!;
+    heading.remove();
+    f.mutation(batch('childList', f.list));
+    await Promise.resolve();
+    assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), true, 'replacement wrappers receive layout markers');
+    assert.equal(f.list.children.filter(node => node.className === 'ccd-status-heading').length, 2);
+    dispose();
+    assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), false);
+  } finally { globalThis.MutationObserver = original; }
+});

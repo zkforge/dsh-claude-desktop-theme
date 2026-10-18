@@ -1,17 +1,14 @@
 import type { Disposer } from '../contracts/ports.ts';
 import type { HeaderMenuActions } from './header-menu-actions.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 
 const CHEVRON = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>';
-const LAPTOP = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="8.5" rx="1"/><path d="M1 11h14v2H1z"/></svg>';
+// Reference: rounded screen above a wider, shallow base with rounded ends.
+const LAPTOP = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5v-6A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v6"/><rect x="1.5" y="10.5" width="13" height="2.5" rx=".65"/></svg>';
 
-/** Static artwork shared by the title and project menus' existing actions. */
+/** Static artwork for session menu actions; project menus use text only. */
 const HEADER_MENU_ICONS: Readonly<Record<string, string>> = {
-  '在访达中显示': '<path d="M1.5 5V3.5h5l1.5 2h6.5v8h-13V5Z"/>',
-  '复制': '<rect x="5.5" y="1.5" width="8" height="10" rx="1"/><path d="M10.5 11.5v3h-8v-10h3"/>',
-  '在终端中打开': '<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="m4 6 2 2-2 2M8.5 10h3"/>',
-  '文件夹路径': '<path d="m6.5 5 1-1a3 3 0 0 1 4.25 4.25l-1 1M9.5 11l-1 1A3 3 0 0 1 4.25 7.75l1-1M6 10l4-4"/>',
-  '文件夹名称': '<path d="M2 4.5V3h4l1.5 2H14v8H2V4.5ZM5 8h6M5 10.5h4"/>',
   '打开方式': '<rect x="5" y="2" width="9" height="9" rx="1"/><path d="M11 11v3H2V5h3"/>',
   '重命名': '<path d="M3 10.5 2.5 14l3.5-.5L14 5.5 10.5 2 3 10.5ZM9 3.5l3.5 3.5"/>',
   '创建分支': '<circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="13" r="1.5"/><path d="M5 4.5v7M11 5.5V7a3 3 0 0 1-3 3H5"/>',
@@ -33,6 +30,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   let dialog: HTMLDialogElement | null = null;
   let editing: { seat: Seat; input: HTMLInputElement; finish: (restoreFocus?: boolean) => void } | null = null;
   const seats = new Map<HTMLElement, Seat>();
+  let headers: HTMLElement[] = [];
   interface Seat { header: HTMLElement; nav: HTMLElement; icon: HTMLElement; trigger: HTMLButtonElement; project: HTMLButtonElement; id: string; releaseTitle: () => void }
 
   const button = (label: string) => {
@@ -187,18 +185,17 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
       const deletion = unavailable(menu, '删除', 'DSH 暂未提供删除会话的公开接口；可使用归档，此项仅还原外观。', 'D');
       deletion.setAttribute('data-ccd-menu-destructive', '');
     } else {
-      unavailable(menu, '在访达中显示', 'DSH 暂未提供在访达／资源管理器中显示目录的公开接口，此项仅还原外观。');
-      separator(menu);
       sub(menu, '复制', content => {
         const copy = (value: string) => run(() => window.navigator.clipboard.writeText(value));
         const current = actions.read(id);
         row(content, '文件夹路径', () => copy(current?.path ?? ''));
         row(content, '文件夹名称', () => copy(current?.folder ?? ''));
       });
-      separator(menu);
       const terminal = seat.header.querySelector<HTMLButtonElement>('[data-ccd-header-view="terminal"]');
-      if (terminal !== null) row(menu, '在终端中打开', () => run(() => terminal.click()));
-      else unavailable(menu, '在终端中打开', '当前 DSH 构建没有可用的终端入口。');
+      if (terminal !== null && !terminal.disabled) {
+        separator(menu);
+        row(menu, '在终端中打开', () => run(() => terminal.click()));
+      }
     }
     // Hovering an ordinary row withdraws the previous submenu; moving into a
     // submenu keeps it open because both cards occupy the native top layer.
@@ -208,7 +205,8 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   const releaseSeat = (seat: Seat) => { if (editing?.seat === seat) editing.finish(); if (owner === seat) close(); seat.releaseTitle(); seat.icon.remove(); seat.trigger.remove(); seat.project.remove(); seat.nav.removeAttribute('data-ccd-session-title'); };
   const sync = () => {
     for (const [header, seat] of seats) if (!header.isConnected || !seat.nav.isConnected) { releaseSeat(seat); seats.delete(header); }
-    for (const header of document.querySelectorAll<HTMLElement>(host.conversationHeader)) {
+    headers = [...document.querySelectorAll<HTMLElement>(host.conversationHeader)];
+    for (const header of headers) {
       const root = header.closest(host.conversationRoot);
       const id = root?.querySelector<HTMLElement>('[data-conversation-session]')?.getAttribute('data-conversation-session');
       const data = id ? actions.read(id) : null;
@@ -247,7 +245,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
       if (editing?.seat === seat && !editing.input.isConnected) editing.finish();
       if (seat.project.textContent !== data.folder) seat.project.textContent = data.folder;
       if (seat.project.title !== data.path) seat.project.title = data.path;
-      seat.project.hidden = data.path === '';
+      if (seat.project.hidden !== (data.path === '')) seat.project.hidden = data.path === '';
     }
   };
   const safelySync = () => { try { sync(); } catch (error) { report(error); } };
@@ -270,7 +268,11 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
     const shortcut = popup.querySelector<HTMLButtonElement>(`button[aria-keyshortcuts="${event.key.length === 1 && /^[a-z]$/iu.test(event.key) ? event.key.toUpperCase() : 'none'}"]`);
     if (shortcut) { event.preventDefault(); shortcut.click(); }
   };
-  const observer = new MutationObserver(safelySync);
+  const observer = new MutationObserver(records => {
+    if (records.some(record => record.type === 'attributes' && record.attributeName === 'data-conversation-session')
+      || headers.some(header => recordsTouch(records, header))
+      || recordsIntroduce(records, host.conversationHeader)) safelySync();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-conversation-session'] });
   const unsubscribe = actions.subscribe(safelySync);
   document.addEventListener('pointerdown', pointer, true); document.addEventListener('keydown', keydown, true);
@@ -279,6 +281,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   return () => {
     disposed = true; observer.disconnect(); unsubscribe(); close(); dialog?.remove(); dialog = null;
     for (const seat of seats.values()) releaseSeat(seat); seats.clear();
+    headers = [];
     document.removeEventListener('pointerdown', pointer, true); document.removeEventListener('keydown', keydown, true);
     window.removeEventListener('resize', position); window.removeEventListener('scroll', position, true);
   };

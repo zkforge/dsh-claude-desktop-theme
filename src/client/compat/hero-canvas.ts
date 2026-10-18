@@ -2,6 +2,7 @@ import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { HERO_RIPPLE_DURATION } from '../contracts/hero-canvas.ts';
 import type { HeroRippleImpulse } from '../contracts/hero-canvas.ts';
+import { recordsIntroduce } from './mutation-scope.ts';
 
 /** One decorative canvas per visible hero; no timers survive its phase change. */
 export function mountHeroCanvas(document: Document,
@@ -23,25 +24,23 @@ export function mountHeroCanvas(document: Document,
     if (!canvas || !root) return;
     const ratio = Math.min(win.devicePixelRatio || 1, 2);
     const rect = root.getBoundingClientRect();
-    canvas.width = Math.round(rect.width * ratio);
-    canvas.height = Math.round(rect.height * ratio);
+    // Assigning even the same canvas size clears its bitmap and reallocates
+    // the drawing buffer. Keep it intact across unchanged resize deliveries.
+    const width = Math.round(rect.width * ratio);
+    const height = Math.round(rect.height * ratio);
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
     if (titleCanvas) {
       titleCanvas.style.left = `${rect.left}px`;
       titleCanvas.style.width = `${rect.width}px`;
       titleCanvas.style.height = `${Math.max(0, rect.top)}px`;
-      titleCanvas.width = canvas.width;
-      titleCanvas.height = Math.round(Math.max(0, rect.top) * ratio);
+      if (titleCanvas.width !== width) titleCanvas.width = width;
+      const titleHeight = Math.round(Math.max(0, rect.top) * ratio);
+      if (titleCanvas.height !== titleHeight) titleCanvas.height = titleHeight;
     }
     sync();
   });
-  /**
-   * Whether the reader is doing something that needs the main thread.
-   *
-   * The field is decorative. While a pointer is held (a column drag, a
-   * selection), the window is moving, or the reader is typing, its next frame
-   * is the first thing to give up: the clock still advances, so the field picks
-   * up where it would have been rather than restarting.
-   */
+  // Yield decorative frames while typing; holding the mouse keeps waves moving.
   let busy = false;
   const tick = (time: number) => {
     frame = 0;
@@ -64,14 +63,10 @@ export function mountHeroCanvas(document: Document,
     }
     frame = win.requestAnimationFrame(tick);
   };
-  /* A key press that starts a line also means the reader is here; so does a
-     pointer going down. Neither stops the page, only this frame's paint. */
   const engage = (event: Event) => {
-    if (event.type === 'keydown') {
-      const { key, metaKey, ctrlKey } = event as KeyboardEvent;
-      /* Modifiers alone and the command shortcuts do not produce text. */
-      if (key === 'Shift' || key === 'Control' || key === 'Alt' || key === 'Meta' || metaKey || ctrlKey) return;
-    }
+    const { key, metaKey, ctrlKey } = event as KeyboardEvent;
+    // Modifiers alone and command shortcuts do not produce text.
+    if (key === 'Shift' || key === 'Control' || key === 'Alt' || key === 'Meta' || metaKey || ctrlKey) return;
     busy = true;
   };
   const release = () => {
@@ -125,25 +120,25 @@ export function mountHeroCanvas(document: Document,
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height || event.clientX < rect.left || event.clientX > rect.right
       || event.clientY < rect.top || event.clientY > rect.bottom) return;
-    // One gesture starts one uninterrupted wave. Further clicks cannot stack,
-    // restart its clock or drag its origin while that wave is still playing.
-    if (impulses.some(impulse => elapsed - impulse.startedAt < HERO_RIPPLE_DURATION)) return;
-    impulses = [{
+    impulses.push({
       x: (event.clientX - rect.left) / rect.width,
       y: (event.clientY - rect.top) / rect.height,
       startedAt: elapsed,
-    }];
+    });
   };
-  const observer = new MutationObserver(sync);
+  const observer = new MutationObserver(records => {
+    // Streaming text, menu portals and our own canvases cannot change which
+    // conversation is in its hero phase. Only discover a new root or phase.
+    if ((root !== null && !root.isConnected)
+      || records.some(record => record.type === 'attributes'
+        && (record.target === root || (record.target as Element).matches(host.conversationRoot)))
+      || recordsIntroduce(records, `${host.conversationRoot}[data-phase="hero"]`)) sync();
+  });
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-phase'] });
   document.addEventListener('visibilitychange', sync);
   document.addEventListener('click', click, { passive: true });
-  /* Capture, so a handler that stops propagation deep in the page cannot
-     leave the field painting through a drag or a keystroke. */
-  document.addEventListener('pointerdown', engage, { capture: true, passive: true });
+  // Capture typing even if an editor stops propagation.
   document.addEventListener('keydown', engage, { capture: true, passive: true });
-  document.addEventListener('pointerup', release, { capture: true, passive: true });
-  document.addEventListener('pointercancel', release, { capture: true, passive: true });
   document.addEventListener('keyup', release, { capture: true, passive: true });
   win.addEventListener('blur', release);
   reduced.addEventListener('change', sync);
@@ -153,10 +148,7 @@ export function mountHeroCanvas(document: Document,
     disposed = true; stop(); observer.disconnect(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
     document.removeEventListener('visibilitychange', sync);
     document.removeEventListener('click', click);
-    document.removeEventListener('pointerdown', engage, { capture: true });
     document.removeEventListener('keydown', engage, { capture: true });
-    document.removeEventListener('pointerup', release, { capture: true });
-    document.removeEventListener('pointercancel', release, { capture: true });
     document.removeEventListener('keyup', release, { capture: true });
     win.removeEventListener('blur', release);
     reduced.removeEventListener('change', sync); win.removeEventListener('resize', sync);

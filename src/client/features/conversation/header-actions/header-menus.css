@@ -7,22 +7,47 @@ html[data-dsh-ccd-style="true"] .ST7X_W_header:has([data-ccd-session-title]) {
   padding-left: 18px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-session-title] {
+html[data-dsh-ccd-style="true"] .ST7X_W_header [data-ccd-session-title] {
   flex: 0 1 auto;
+  /* Use the name's natural width. Only actual pressure from the remaining
+     header controls should truncate it, never a fixed or percentage cap. */
+  max-width: none;
+  min-width: 0;
   gap: 6px;
   overflow: hidden;
   -webkit-app-region: no-drag;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb {
+  max-width: none;
+  min-width: 0;
   padding: 0;
-  font-size: 14px;
+  color: var(--ccd-header-icon-color);
+  font-size: 13px;
+  font-weight: 500;
   line-height: 24px;
+}
+
+/* Keep the icon, title, chevron and chip on the traffic lights' y=25 axis. */
+html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header:has([data-ccd-session-title]) {
+  padding-top: 10px;
+  padding-bottom: 0;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumbSeg {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb[role="button"] {
   cursor: text;
-  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 -4px;
+  border-radius: 6px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb[role="button"]:hover {
+  background: var(--ccd-header-trigger-hover);
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb[role="button"]:focus-visible {
@@ -44,8 +69,8 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-rename] {
   border-radius: 4px;
   outline: none;
   background: transparent;
-  color: var(--ccd-text);
-  font: 500 14px/24px var(--ccd-font-ui);
+  color: var(--ccd-header-icon-color);
+  font: 500 13px/24px var(--ccd-font-ui);
   -webkit-app-region: no-drag;
 }
 
@@ -55,7 +80,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-title][data-ccd-session-editin
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-rename]:focus {
   outline: 2px solid Highlight;
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-icon] {
@@ -65,6 +90,12 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-icon] {
   width: 16px;
   height: 24px;
   color: var(--ccd-header-icon-color);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-session-icon] svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-session-trigger] {
@@ -78,7 +109,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-trigger] {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--ccd-text-secondary);
+  color: var(--ccd-header-label-ink);
   cursor: pointer;
 }
 
@@ -89,7 +120,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-trigger][aria-expanded="true"]
 
 html[data-dsh-ccd-style="true"] [data-ccd-project-trigger] {
   order: 0;
-  flex: 0 1 auto;
+  flex: 0 3 auto;
   min-width: 0;
   max-width: min(220px, 40%);
   height: 20px;
@@ -98,9 +129,10 @@ html[data-dsh-ccd-style="true"] [data-ccd-project-trigger] {
   border: 0;
   border-radius: 6px;
   background: var(--ccd-header-project-fill);
-  color: var(--ccd-text-secondary);
+  color: var(--ccd-header-label-ink);
   font: inherit;
   font-size: 13px;
+  font-weight: 400;
   line-height: 20px;
   white-space: nowrap;
   overflow: hidden;

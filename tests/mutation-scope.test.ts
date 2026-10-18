@@ -72,6 +72,17 @@ test('an unknown or detached region makes every batch relevant', () => {
   assert.equal(recordsTouch(batch, { isConnected: true } as unknown as Element), true);
 });
 
+test('removing a descendant remains relevant after it loses containment', () => {
+  const region = node();
+  const parent = node();
+  region.own(parent);
+  const removed = { nodeType: 3 };
+  const removal = { type: 'childList', target: parent, addedNodes: [], removedNodes: [removed] } as unknown as MutationRecord;
+  assert.equal(recordsTouch([removal], region as unknown as Element), true);
+  assert.equal(recordsTouch([insertion(region, [])], region as unknown as Element), true);
+  assert.equal(recordsTouch([insertion(node(), [])], region as unknown as Element), false);
+});
+
 test('a selector match is worth a pass wherever the batch inserted it', () => {
   const page = node();
   const wanted = node();

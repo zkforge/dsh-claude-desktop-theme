@@ -37,6 +37,7 @@ interface FakeElement {
   getBoundingClientRect(): Rect;
   querySelector(selector: string): FakeElement | null;
   querySelectorAll(selector: string): FakeElement[];
+  contains(node: unknown): boolean;
 }
 
 function element(rect: Rect, text: string): FakeElement {
@@ -49,6 +50,7 @@ function element(rect: Rect, text: string): FakeElement {
     className: '',
     parent: null,
     children: [],
+    contains: node => node === el || el.children.some(child => child.contains(node)),
     style: {
       getPropertyValue: key => properties.get(key) ?? '',
       setProperty: (key, value) => { properties.set(key, value); },
@@ -112,12 +114,13 @@ function fixture(options: FixtureOptions = {}) {
     },
   };
 
-  let callback = () => {};
+  let callback = (_records: MutationRecord[]) => {};
+  const notify = (records = [{ type: 'attributes', target: tabs, attributeName: 'style' } as unknown as MutationRecord]) => callback(records);
   let disconnected = false;
   let filter: string[] | undefined;
   Object.defineProperty(globalThis, 'MutationObserver', {
     configurable: true, value: class {
-      constructor(fn: () => void) { callback = fn; }
+      constructor(fn: (records: MutationRecord[]) => void) { callback = fn; }
       observe(_node: unknown, init: MutationObserverInit) { filter = init.attributeFilter as string[]; }
       disconnect() { disconnected = true; }
     },
@@ -159,23 +162,36 @@ function fixture(options: FixtureOptions = {}) {
   };
 
   return {
-    chat, trajectory, third, tabs, column, dispose, errors, listeners, rebuild,
+    chat, trajectory, third, tabs, column, dispose, errors, listeners, rebuild, notify,
     get observed() { return observed; },
     get sizeDisconnected() { return sizeDisconnected; },
     get filter() { return filter; },
     get disconnected() { return disconnected; },
     select: (next: FakeElement) => {
       tabs.querySelector = selector => (selector.includes('tabActive') ? next : null);
-      callback();
+      notify();
     },
-    redock: () => callback(),
+    redock: () => notify(),
     rects: (offset: number, width: number) => {
       chat.getBoundingClientRect = () => box(offset, width);
       tabs.querySelector = selector => (selector.includes('tabActive') ? chat : null);
-      callback();
+      notify();
     },
   };
 }
+
+test('unrelated transcript mutations do not measure the view switch', () => {
+  const f = fixture();
+  let reads = 0;
+  f.tabs.getBoundingClientRect = () => { reads++; return box(100, 66); };
+  f.column.getBoundingClientRect = () => { reads++; return box(0, 264); };
+  f.notify([{ type: 'characterData', target: {}, addedNodes: [], removedNodes: [] } as unknown as MutationRecord]);
+  f.notify([{ type: 'attributes', target: {}, attributeName: 'style', addedNodes: [], removedNodes: [] } as unknown as MutationRecord]);
+  assert.equal(reads, 0, 'streaming and right-pane styles cannot cause layout reads');
+  f.notify();
+  assert.ok(reads > 0, 'switch geometry still updates synchronously');
+  f.dispose();
+});
 
 test('a frame style change refreshes the selected thumb immediately while the window stays fixed', () => {
   const f = fixture();

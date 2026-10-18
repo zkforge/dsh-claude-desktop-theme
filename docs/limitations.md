@@ -6,13 +6,12 @@
 
 | 条目 | 限制 |
 | --- | --- |
-| Show in Finder / 在访达中显示 | DSH 未公开定位文件的接口 |
 | Open repository on GitHub | 宿主不提供仓库信息 |
 | Change folder | 会话目录由宿主管理，插件无写入接口 |
 | Output style | 宿主未开放输出风格切换 |
 | Delete | 宿主未公开删除会话的接口 |
 
-Open in、Rename、Fork、Transcript view、Archive、复制目录路径／名称与打开终端均接入真实操作。
+Open in、Rename、Fork、Transcript view、Archive、复制目录路径／名称与打开终端均接入真实操作。目录菜单不显示未提供接口的“在访达中显示”；没有可用终端入口时也不显示“在终端中打开”。
 
 ## 浏览器面板
 

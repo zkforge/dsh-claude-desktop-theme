@@ -10,7 +10,8 @@
  * are still being folded (`pending > 0`) the card is genuinely incomplete, so
  * it refreshes every couple of seconds; once the snapshot is complete it drops
  * to a slow poll. A missing route (the host half is off) hides the card rather
- * than failing the mount.
+ * than failing the mount. Hidden documents pause reads and resume immediately
+ * when visible, keeping background windows from repeatedly aggregating history.
  */
 import { STATS_PATH, readStatsSnapshot, type StatsSnapshot } from '../../../shared/stats.ts';
 import type { Logger } from '../../contracts/ports.ts';
@@ -64,6 +65,7 @@ function isUsable(snapshot: StatsSnapshot): boolean {
  */
 export function createStatsSource(options: { logger: Logger; url?: string }): StatsSource {
   const url = options.url ?? STATS_PATH;
+  const page = globalThis.document;
   const listeners = new Set<(snapshot: StatsSnapshot | null) => void>();
   let snapshot: StatsSnapshot | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -84,20 +86,22 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
   };
 
   const schedule = (delay: number) => {
-    if (disposed) return;
-    timer = setTimeout(() => { void poll(); }, delay);
+    if (disposed || page?.hidden) return;
+    timer = setTimeout(() => { timer = undefined; void poll(); }, delay);
   };
 
   const poll = async () => {
-    if (disposed) return;
-    controller = new AbortController();
+    if (disposed || page?.hidden || controller !== undefined) return;
+    const read = new AbortController();
+    controller = read;
     let delay = IDLE_INTERVAL_MS;
     try {
       const response = await fetch(url, {
         headers: { accept: 'application/json' },
         credentials: 'same-origin',
-        signal: controller.signal,
+        signal: read.signal,
       });
+      if (disposed || controller !== read) return;
       if (!response.ok) {
         /* The route is absent (host half off) or the session is not
            authorized: there is nothing to show, so the card stays hidden. */
@@ -109,6 +113,7 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
         delay = RETRY_INTERVAL_MS;
       } else {
         const body: unknown = await response.json();
+        if (disposed || controller !== read) return;
         const parsed = readStatsSnapshot(body);
         if (parsed === null) {
           if (!reported) {
@@ -126,17 +131,35 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
         }
       }
     } catch (error) {
-      if (disposed || controller?.signal.aborted === true) return;
+      if (disposed || controller !== read || read.signal.aborted) return;
       /* A transport failure is transient: keep the last snapshot on screen and
          try again, rather than blinking the card away. */
       options.logger.debug(`statistics: snapshot read failed (${String(error)})`);
       delay = RETRY_INTERVAL_MS;
     } finally {
-      controller = undefined;
-      schedule(delay);
+      // A cancelled read may settle after visibility has started a new one.
+      // Only its current owner can clear the controller and arm the next poll.
+      if (controller === read) {
+        controller = undefined;
+        schedule(delay);
+      }
     }
   };
 
+  const pause = () => {
+    if (timer !== undefined) { clearTimeout(timer); timer = undefined; }
+    const pending = controller;
+    controller = undefined;
+    pending?.abort();
+  };
+  const visibility = () => {
+    if (page.hidden) pause();
+    else {
+      if (timer !== undefined) { clearTimeout(timer); timer = undefined; }
+      void poll();
+    }
+  };
+  page?.addEventListener('visibilitychange', visibility);
   void poll();
 
   return {
@@ -144,14 +167,15 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
       return snapshot;
     },
     subscribe(listener) {
+      if (disposed) return () => {};
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
     dispose() {
       disposed = true;
+      page?.removeEventListener('visibilitychange', visibility);
       listeners.clear();
-      if (timer !== undefined) clearTimeout(timer);
-      controller?.abort();
+      pause();
     },
   };
 }

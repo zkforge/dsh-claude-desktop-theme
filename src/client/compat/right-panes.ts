@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type { Disposer, SidebarRightPort, SidebarTabRecord } from '../contracts/ports.ts';
 import { mountPaneChrome, type PaneChrome } from './pane-chrome.ts';
+import { relativeFilePath } from './relative-file-path.ts';
 import { paneLabels, paneLanguage } from './pane-labels.ts';
 import { hostSelectors } from './host-dom.ts';
 import { EMPTY_LAYOUT, reconcilePanes, resizePanes, tilePanes, type PaneLayout, type PaneRect, type PaneSeam } from './pane-tiles.ts';
@@ -30,6 +31,7 @@ const TREE_WIDTH = '--ccd-files-tree-width';
 const FILE_GROUP = 'files';
 const TERMINAL_GROUP = 'terminals';
 const EXPANDED = 'data-ccd-pane-expanded';
+const CLOSING = 'data-ccd-panes-closing';
 
 interface SessionState {
   layout: PaneLayout;
@@ -136,7 +138,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
    * `rightbar.session` entry. The whole right column then went dead: no
    * `openResource`/`openTab` did anything — conversation file links included —
    * and only an app restart brought the cards back. Measured in the running
-   * app with `artifacts/diagnostics/watch-sidebar.mjs`.
+   * app with `scripts/watch-sidebar.mjs`.
    *
    * So the request is bound to the reader's own action instead of to the shape
    * of the tab set: a preview id this mount has never seen, in a tab set that
@@ -240,6 +242,14 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     }
     const record = records.find(record => record.tabId === node.getAttribute('data-dockkit-content'));
     const filesRoot = group.tree === undefined ? null : root.querySelector<HTMLElement>(`[data-dockkit-content="${group.tree}"] [data-files-root]`);
+    const filepath = (id: string) => {
+      const source = root.querySelector<HTMLElement>(`[data-dockkit-content="${id}"] [data-textpreview-path]`);
+      let path = source?.title || records.find(record => record.tabId === id)?.contentId || id;
+      if (path.startsWith('dsh-resource://file/session/')) path = path.replace(/^dsh-resource:\/\/file\/session\/[^/]+/u, '');
+      try { path = decodeURIComponent(path); } catch { /* Retain malformed paths. */ }
+      const cwd = filesRoot?.getAttribute('data-files-root');
+      return cwd ? relativeFilePath(path, cwd) : path;
+    };
     const filename = (id: string) => {
       let value = records.find(record => record.tabId === id)?.contentId?.split('/').at(-1) ?? id;
       try { value = decodeURIComponent(value); } catch { /* Keep malformed paths readable. */ }
@@ -262,8 +272,21 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       },
       onNew: () => sidebar.openTab('terminal'),
       closeTabs: group.tabs,
+      ...(sidebar.close ? { onCloseGroup: () => {
+        // Use host ids rather than DOM close buttons: React can commit the
+        // final group in one turn, without painting or focusing each survivor.
+        state.requestedFiles = true;
+        for (const id of group.tabs) sidebar.close!(id);
+        schedule();
+      } } : {}),
       onSelect: id => { if (group.id === TERMINAL_GROUP) state.terminal = id; else state.preview = id; sidebar.focus(id); schedule(); },
       onClose: id => {
+        if (state.preview === id) {
+          const files = group.tabs.filter(tab => records.some(record => record.tabId === tab && isFile(record)));
+          const index = files.indexOf(id);
+          state.preview = files[index + 1] ?? files[index - 1] ?? null;
+          if (state.preview !== null) sidebar.focus(state.preview);
+        }
         // The group closes one tab at a time; hold the Files tree back while
         // previews remain, or the sync between two closes reopens it.
         state.requestedFiles = true;
@@ -272,7 +295,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       },
       terminals: group.id === TERMINAL_GROUP ? group.tabs.map((id, index) => ({ id, title: group.tabs.length > 1 ? `${labels.chrome.terminal} ${index + 1}${workspace ? ` ${workspace}` : ''}` : title, selected: id === group.terminal })) : [],
       files: group.tabs.filter(id => id !== group.tree && records.find(record => record.tabId === id)?.kind === 'text')
-        .map(id => ({ id, title: filename(id), selected: id === group.preview })),
+        .map(id => ({ id, title: filename(id), path: filepath(id), selected: id === group.preview })),
     });
   };
 
@@ -309,6 +332,16 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     const panel = panelOnScreen();
     const root = panel?.querySelector<HTMLElement>(host.dockSurface) ?? null;
     const session = panel === null ? null : sessionOf(panel);
+    const records = (sidebar.openTabs?.getSnapshot?.() ?? []).filter(record => record.sessionId === session);
+    for (const button of document.querySelectorAll<HTMLElement>('[data-ccd-header-view]')) {
+      const kind = button.getAttribute('data-ccd-header-view');
+      const headerSession = button.closest(host.conversationRoot)?.querySelector('[data-conversation-session]')?.getAttribute('data-conversation-session');
+      const shown = panel?.hasAttribute('data-sidebar-right-open') === true
+        && panel.closest('[data-rightbar-collapsed]') === null
+        && headerSession === session
+        && records.some(record => record.kind === kind);
+      setAttribute(button, 'aria-pressed', String(shown));
+    }
     if (root !== observed) {
       clear();
       resize?.disconnect();
@@ -323,8 +356,8 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       }
     }
     if (root === null || panel === null || session === null) return;
+    if (!panel.hasAttribute('data-sidebar-right-open')) panel.removeAttribute(CLOSING);
     const state = stateOf(session);
-    const records = (sidebar.openTabs?.getSnapshot?.() ?? []).filter(record => record.sessionId === session);
     const active = root.querySelector<HTMLElement>('[data-dockkit-float-active]')?.getAttribute('data-dockkit-content') ?? null;
     /* Read before `groupsOf` consumes it: what this pass holds that the last one
        did not is a tab the reader opened, while a smaller set is the host
@@ -356,6 +389,8 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
          write can neither land inside the host's commit sequence nor collapse a
          column a newer open has already filled. */
       if (state.hadViews && panel.hasAttribute('data-sidebar-right-open')) {
+        // Keep the native guide covered until the deferred collapse commits.
+        setAttribute(panel, CLOSING, '');
         window.setTimeout(() => {
           if (disposed || !panel.isConnected || !panel.hasAttribute('data-sidebar-right-open')) return;
           /* The host's own records are the authority on whether anything is left
@@ -370,6 +405,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       state.requestedFiles = false;
       return;
     }
+    panel.removeAttribute(CLOSING);
     state.hadViews = true;
     pairPreviewWithTree(session, panel, state, records, previews, opened);
     const box = root.getBoundingClientRect();
@@ -495,6 +531,20 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     moveBoundary(stateOf(held.placement.session), held.boundary, (coordinate - held.origin) / held.boundary.extent, held.layout, held.fileShare);
   };
   const finishPointer = (event: PointerEvent) => { if (dragging?.pointer === event.pointerId) endDrag(); };
+  const onHeaderClick = (event: MouseEvent) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-ccd-header-view][aria-pressed="true"]') : null;
+    if (button === null) return;
+    const panel = panelOnScreen();
+    const kind = button.getAttribute('data-ccd-header-view');
+    const nodes = panel?.querySelectorAll<HTMLElement>('[data-ccd-pane-chrome]:not([data-ccd-pane-inactive])') ?? [];
+    const pane = [...nodes].find(node => node.getAttribute('data-ccd-pane-kind') === kind
+      || (kind === 'files' && node.querySelector('[data-ccd-files-switch]') !== null));
+    const close = pane?.querySelector<HTMLButtonElement>('[data-dockkit-float-close]');
+    if (!close) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    close.click();
+  };
   const onPointerDown = (event: PointerEvent) => {
     if (event.button !== 0) return;
     if (event.target instanceof Element && event.target.closest('[data-ccd-files-switch]')) return;
@@ -545,11 +595,14 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     disposed = true;
     observer?.disconnect(); resize?.disconnect(); unsubscribe();
     document.removeEventListener('pointerdown', onPointerDown, true);
+    document.removeEventListener('click', onHeaderClick, true);
     document.removeEventListener('keydown', onKeyDown, true);
     window.removeEventListener('resize', schedule);
     const panel = panelOnScreen();
     const session = panel === null ? null : sessionOf(panel);
     clear();
+    for (const button of document.querySelectorAll('[data-ccd-header-view]')) button.removeAttribute('aria-pressed');
+    for (const node of document.querySelectorAll(`[${CLOSING}]`)) node.removeAttribute(CLOSING);
     // dock() addresses the on-screen session. Never send another session's ids.
     if (panel !== null && session !== null) {
       for (const tab of floated.get(session) ?? []) {
@@ -568,6 +621,10 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
           && mutation.target === document.documentElement) return true;
         const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
         if (target === null) return false;
+        if (mutation.type === 'attributes' && (mutation.attributeName === 'data-rightbar-collapsed'
+          || mutation.attributeName === 'data-conversation-session')) return true;
+        if (mutation.type === 'childList' && [...mutation.addedNodes].some(node => node instanceof Element
+          && (node.matches('[data-ccd-header-view]') || node.querySelector('[data-ccd-header-view]') !== null))) return true;
         if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') return target.matches(host.rightbarSession);
         if (target.closest(host.rightbarPanel) !== null) {
           if (target.closest(host.dockFloatGrip) !== null) return true;
@@ -581,12 +638,13 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       if (relevant) schedule();
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true,
-      attributeFilter: ['hidden', 'data-sidebar-right-open', 'data-sidebar-right-panel', 'data-sidebar-right-session',
+      attributeFilter: ['hidden', 'data-conversation-session', 'data-rightbar-collapsed', 'data-sidebar-right-open', 'data-sidebar-right-panel', 'data-sidebar-right-session',
         'data-dockkit-content', 'data-dockkit-float', 'data-dockkit-float-active', 'data-dockkit-pane', 'data-dockkit-host', 'data-ccd-files-tree'] });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     if (typeof ResizeObserver === 'function') resize = new ResizeObserver(schedule);
     unsubscribe = sidebar.openTabs?.subscribe?.(schedule) ?? (() => {});
     document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('click', onHeaderClick, true);
     document.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('resize', schedule);
     schedule();

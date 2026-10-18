@@ -54,12 +54,14 @@ class UsageAggregator {
   private readonly ctx: Context;
   private readonly warn: Warn;
   private readonly values = new Map<string, StatsSessionUsage>();
-  private readonly queued: Candidate[] = [];
+  private readonly queued = new Map<string, Candidate>();
   private readonly folding = new Set<string>();
   private readonly failures = new Map<string, number>();
   private running = 0;
   private refreshRun: Promise<StatsSnapshot> | null = null;
   private snapshot: StatsSnapshot | null = null;
+  private dirty = true;
+  private listed = new Set<string>();
   private disposed = false;
 
   constructor(ctx: Context, warn: Warn) {
@@ -69,7 +71,13 @@ class UsageAggregator {
 
   /** The most recent snapshot; an empty one before the first refresh. */
   get current(): StatsSnapshot {
-    return this.snapshot ?? aggregateUsage([], { now: Date.now(), pending: 0, missed: 0 });
+    if (this.snapshot === null || this.dirty) {
+      this.snapshot = aggregateUsage(this.values.values(), {
+        now: Date.now(), pending: this.queued.size + this.running, missed: this.failures.size,
+      });
+      this.dirty = false;
+    }
+    return this.snapshot;
   }
 
   /**
@@ -82,6 +90,7 @@ class UsageAggregator {
    * @returns the snapshot as of this pass.
    */
   refresh(): Promise<StatsSnapshot> {
+    if (this.disposed) return Promise.resolve(this.current);
     const running = this.refreshRun;
     if (running !== null) return running;
     const run = this.pass().finally(() => {
@@ -94,28 +103,38 @@ class UsageAggregator {
   /** Stop folding; in-flight reads settle but no longer publish. */
   dispose(): void {
     this.disposed = true;
-    this.queued.length = 0;
+    this.queued.clear();
+    this.values.clear();
+    this.failures.clear();
+    this.listed.clear();
+    this.snapshot = null;
   }
 
   private async pass(): Promise<StatsSnapshot> {
     try {
       const candidates = await this.list();
+      if (this.disposed) return this.current;
       /* A session that left the listing left the library: drop its numbers (and
          its failure mark) so the totals describe what is actually stored. A
          session that merely failed this pass keeps its last value. */
       const listed = new Set<string>(candidates.map(candidate => candidate.header.id));
+      this.listed = listed;
       for (const id of [...this.values.keys()]) if (!listed.has(id)) this.values.delete(id);
       for (const id of [...this.failures.keys()]) if (!listed.has(id)) this.failures.delete(id);
+      for (const id of this.queued.keys()) if (!listed.has(id)) this.queued.delete(id);
       for (const candidate of candidates) {
         if (this.disposed) break;
         const value = this.readSafely(candidate);
         if (value === undefined) this.enqueue(candidate);
-        else this.values.set(candidate.header.id, value);
+        else {
+          this.queued.delete(candidate.header.id);
+          this.values.set(candidate.header.id, value);
+        }
       }
     } catch (error) {
       this.warn('session listing failed; the card keeps the last snapshot', error);
     }
-    this.publish();
+    this.invalidate();
     return this.current;
   }
 
@@ -170,25 +189,26 @@ class UsageAggregator {
   /** Queue one cold fold unless it is already queued, running, or cooling down. */
   private enqueue(candidate: Candidate): void {
     const id = candidate.header.id;
-    if (this.folding.has(id) || this.queued.some(entry => entry.header.id === id)) return;
+    if (this.disposed || this.folding.has(id) || this.queued.has(id)) return;
     const failedAt = this.failures.get(id);
     if (failedAt !== undefined && Date.now() - failedAt < RETRY_COOLDOWN_MS) return;
-    this.queued.push(candidate);
+    this.queued.set(id, candidate);
     this.pump();
   }
 
   /** Keep at most {@link FOLD_CONCURRENCY} folds in flight. */
   private pump(): void {
     while (!this.disposed && this.running < FOLD_CONCURRENCY) {
-      const candidate = this.queued.shift();
+      const candidate = this.queued.values().next().value;
       if (candidate === undefined) return;
       const id = candidate.header.id;
+      this.queued.delete(id);
       this.folding.add(id);
       this.running += 1;
       void this.fold(candidate).finally(() => {
         this.folding.delete(id);
         this.running -= 1;
-        this.publish();
+        this.invalidate();
         this.pump();
       });
     }
@@ -202,7 +222,9 @@ class UsageAggregator {
     let handle: SessionHandle | undefined;
     try {
       handle = await persistence.open(candidate.header.id, 'read');
+      if (this.disposed || !this.listed.has(candidate.header.id)) return;
       const { events } = await handle.read(0);
+      if (this.disposed || !this.listed.has(candidate.header.id)) return;
       const block = cache.coldSnapshot(handle.header, handle.inheritedEventCount, events);
       const value = block.values[USAGE_KEY];
       if (this.disposed) return;
@@ -213,6 +235,7 @@ class UsageAggregator {
       this.values.set(candidate.header.id, value);
       this.failures.delete(candidate.header.id);
     } catch (error) {
+      if (this.disposed || !this.listed.has(candidate.header.id)) return;
       this.failures.set(candidate.header.id, Date.now());
       this.warn(`fold failed for session ${candidate.header.id}`, error);
     } finally {
@@ -226,14 +249,10 @@ class UsageAggregator {
     }
   }
 
-  /** Recompute the snapshot from the values read so far. */
-  private publish(): void {
+  /** Fold completions invalidate totals; only a route read pays for aggregation. */
+  private invalidate(): void {
     if (this.disposed) return;
-    this.snapshot = aggregateUsage(this.values.values(), {
-      now: Date.now(),
-      pending: this.queued.length + this.running,
-      missed: this.failures.size,
-    });
+    this.dirty = true;
   }
 }
 

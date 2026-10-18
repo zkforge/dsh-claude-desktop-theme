@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostAnchors, hostSelectors } from './host-dom.ts';
+import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 
 /** Custom property carrying the active View segment's offset inside the tablist. */
 export const VIEW_OFFSET_PROPERTY = '--ccd-view-x';
@@ -262,7 +263,13 @@ export function mountViewSwitch(
   };
 
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => {
+      // Transcript streaming and pane animations do not move these two boxes.
+      // Ancestor style/class changes still pass through for frame drags.
+      if ((tabs !== null && recordsTouch(records, tabs))
+        || (column !== null && recordsTouch(records, column))
+        || recordsIntroduce(records, `${selectors.conversationTabs}, ${selectors.sidebarColumn}`)) schedule();
+    });
     /* Selection changes classes/attributes; frame drag changes inline grid
        tracks; labels are text nodes; collapse flips the frame's flag. Observe
        all four geometry signals. */

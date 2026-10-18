@@ -23,22 +23,18 @@ export const FILES_KIND = 'files';
 /**
  * List orders inside `conversation.session.header.utilities`.
  *
- * The project folder leads the row, so it carries the lowest order of every
- * entry there is — below the retired open-in-app control (-10) and the native
- * scheduled-tasks entry (-5), not only below this plugin's own views: the
- * reference draws the folder as the cluster's first control, whatever a Session
- * happens to carry. The two views then land directly before the native session
- * menu at 0 and keep it as the cluster's closing entry.
+ * Terminal, browser and project folder sit directly before the native session
+ * menu at 0, in that order.
  */
-export const FOLDER_ORDER = -11;
-export const TERMINAL_ORDER = -2;
-export const BROWSER_ORDER = -1;
+export const TERMINAL_ORDER = -3;
+export const BROWSER_ORDER = -2;
+export const FOLDER_ORDER = -1;
 
 /** The views this plugin exposes in the utilities group, in cluster order. */
 export const VIEWS = [
-  { id: 'ccd-folder', kind: FILES_KIND, order: FOLDER_ORDER },
   { id: 'ccd-terminal', kind: 'terminal', order: TERMINAL_ORDER },
   { id: 'ccd-browser', kind: 'browser', order: BROWSER_ORDER },
+  { id: 'ccd-folder', kind: FILES_KIND, order: FOLDER_ORDER },
 ] as const;
 
 /**

@@ -413,11 +413,11 @@ assert.equal(styles.size, 10); // page + theme + Composer + menus + scrollbars +
 /* The whale has its own switch, so the conversation feature alone mounts none. */
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);
-/* The project folder is the cluster's first entry, and the three added views
+/* The project folder follows terminal and browser; all three added views
    open their right-panel kind — focusing the Session's existing tab of that
    kind instead of stacking a second one. */
-assert.deepEqual([...headerViews].map(view => view.id), ['ccd-folder', 'ccd-terminal', 'ccd-browser']);
-const folderView = [...headerViews][0];
+assert.deepEqual([...headerViews].map(view => view.id), ['ccd-terminal', 'ccd-browser', 'ccd-folder']);
+const folderView = [...headerViews].find(view => view.id === 'ccd-folder');
 assert.equal(folderView.inject('session-1').kind, 'files');
 folderView.inject('session-1').open();
 assert.deepEqual(openedKinds, ['files']);

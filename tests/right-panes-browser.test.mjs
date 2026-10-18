@@ -64,7 +64,7 @@ window.add=(id,kind,session=window.session(),contentId)=>{
 window.closeTab=id=>{
  window.tabs=window.tabs.filter(tab=>tab.tabId!==id);const node=document.querySelector('[data-dockkit-content="'+id+'"]');node?.parentElement.remove();window.notify();
 };
-const sidebar={openTabs:{getSnapshot:()=>window.tabs,subscribe:fn=>{window.listeners.push(fn);return()=>{window.listeners=window.listeners.filter(item=>item!==fn)}}},
+const sidebar={close:id=>window.closeTab(id),openTabs:{getSnapshot:()=>window.tabs,subscribe:fn=>{window.listeners.push(fn);return()=>{window.listeners=window.listeners.filter(item=>item!==fn)}}},
  float:(id,rect)=>{
   window.calls.float.push({id,rect});const node=document.querySelector('[data-dockkit-content="'+id+'"]');
   if(!node||node.hasAttribute('data-dockkit-float'))return;
@@ -183,6 +183,27 @@ test('file previews stay inside Files, tree collapse preserves preview, tabs can
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-surface]').hasAttribute('data-ccd-panes')"),false);
 }));
 
+test('file header tabs switch, show paths and close independently while retaining the tree',options,async()=>withFixture(async page=>{
+  await page.evaluate("window.add('files','files');window.add('readme','text','s1','dsh-resource://file/session/s1/repo/README.md');window.add('nested','text','s1','dsh-resource://file/session/s1/repo/docs/README.md');window.add('app','text','s1','dsh-resource://file/session/s1/repo/app.ts')");await wait(page);
+  const tabs = '[data-ccd-pane-preview] [data-ccd-file-tabs]';
+  assert.deepEqual(await page.evaluate(`[...document.querySelectorAll('${tabs} [role="tab"]')].map(tab=>[tab.textContent,tab.title,tab.getAttribute('aria-selected')])`),[
+    ['README.md','README.md','false'],['README.md','docs/README.md','false'],['app.ts','app.ts','true'],
+  ]);
+  await click(page,`${tabs} [role="tab"][title="README.md"]`);await wait(page);
+  assert.equal(await page.evaluate('window.focused'),'readme');
+  await page.evaluate(`document.querySelector('${tabs} [role="tab"][aria-selected="true"]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))`);await wait(page);
+  assert.equal(await page.evaluate('window.focused'),'nested');
+  await click(page,`${tabs} [data-ccd-file-tab]:first-child [data-ccd-file-close]`);await wait(page);
+  assert.ok((await boxes(page)).nested,'closing an inactive file preserves the current preview');
+  await click(page,`${tabs} [data-ccd-file-tab][data-selected] [data-ccd-file-close]`);await wait(page);
+  assert.ok((await boxes(page)).app,'closing the active file selects its neighbour');
+  assert.equal(await page.evaluate(`document.querySelectorAll('${tabs} [role="tab"]').length`),1,'a single file still has a closable tab');
+  await click(page,`${tabs} [data-ccd-file-close]`);await wait(page);
+  assert.deepEqual(await page.evaluate('window.tabs.map(tab=>tab.tabId)'),['files']);
+  assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-files-landing]')).display"),'flex');
+  assert.equal(await page.evaluate('window.calls.toggle'),0,'closing the last file keeps the Files card open');
+}));
+
 test('closing the Files card removes all previews and the tree, preserving other panes',options,async()=>withFixture(async page=>{
   await page.evaluate("window.add('terminal','terminal');window.add('files','files');window.add('readme','text','s1','dsh-resource://file/session/s1/repo/README.md');window.add('app','text','s1','dsh-resource://file/session/s1/repo/app.ts')");await wait(page);
   await click(page,'[data-ccd-pane-preview] [data-dockkit-float-close]');await wait(page);
@@ -192,6 +213,18 @@ test('closing the Files card removes all previews and the tree, preserving other
   await page.evaluate("window.add('files2','files')");await wait(page);
   await click(page,'[data-dockkit-content="files2"] [data-dockkit-float-close]');await wait(page);
   assert.deepEqual(await page.evaluate('window.tabs.map(tab=>tab.tabId)'),['terminal'],'a Files card without previews also closes');
+}));
+
+test('closing the only Files card removes all files in the click turn without selecting survivors',options,async()=>withFixture(async page=>{
+  await page.evaluate("window.add('files','files');window.add('readme','text','s1','dsh-resource://file/session/s1/repo/README.md');window.add('app','text','s1','dsh-resource://file/session/s1/repo/app.ts')");await wait(page);
+  const result = await page.evaluate(`(()=>{
+    const focused=window.focused;
+    document.querySelector('[data-ccd-pane-preview] [data-dockkit-float-close]').click();
+    return {tabs:window.tabs.map(tab=>tab.tabId),sameFocus:window.focused===focused};
+  })()`);
+  assert.deepEqual(result,{tabs:[],sameFocus:true},'the click completes every close without intermediate file selection');
+  await wait(page);
+  assert.equal(await page.evaluate('window.calls.toggle'),1,'the empty sidebar collapses once');
 }));
 
 test('session switch and panel replacement keep independent proportions; dragging aborts safely',options,async()=>withFixture(async page=>{
@@ -413,3 +446,18 @@ test('the whole right panel writes its own words in the document’s language',o
   await click(page,'[data-dockkit-content=w] [data-ccd-pane-more]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').textContent"),'Save screenshot');
 }));
+
+for (const kind of ['files', 'terminal', 'browser']) {
+  test(`closing the last ${kind} keeps the native guide hidden before collapse`,options,async()=>withFixture(async page=>{
+    await page.evaluate(`window.add('last', '${kind}')`);await wait(page);
+    assert.equal(await page.evaluate(`(()=>{
+      window.closeTab('last');
+      return getComputedStyle(document.querySelector('[data-dockkit-pane]')).display;
+    })()`),'none','the synchronous close cannot expose the guide before the deferred toggle');
+    await wait(page);
+    assert.equal(await page.evaluate('window.calls.toggle'),1);
+    assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-dockkit-pane]')).display"),'none','collapsed transition keeps the guide hidden');
+    await page.evaluate("document.querySelector('[data-sidebar-right-panel]').setAttribute('data-sidebar-right-open','')");await wait(page);
+    assert.notEqual(await page.evaluate("getComputedStyle(document.querySelector('[data-dockkit-pane]')).display"),'none','explicitly reopening an empty sidebar restores the guide');
+  }));
+}

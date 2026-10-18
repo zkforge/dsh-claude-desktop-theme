@@ -30,8 +30,8 @@ html[data-dsh-ccd-style="true"] .ccd-reply-signature {
   display: block;
   flex: none;
   align-self: flex-start;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   margin-top: 8px;
   padding: 0;
   border: 0;
@@ -814,7 +814,7 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
 html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(a, ._fileMention_1ypvv_85) {
   max-width: 100%;
   color: var(--ccd-link);
-  font-weight: inherit;
+  font-weight: 500;
   text-decoration-line: underline;
   text-decoration-style: solid;
   text-decoration-color: var(--ccd-link-underline);
@@ -827,15 +827,11 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
 }
 
 /*
- * The host prefixes a URL link with a category glyph — `MarkdownText.module.css`
- * seats a `.linkIcon` globe inside the anchor (1.1em, -0.25em of optical
- * offset) — so "外链" draws as "⊕ 外链" where the reference draws the link text
- * alone. The glyph is not painted inside an anchor; the anchor keeps its text,
- * its underline and its hit area. The other two shapes that carry the class —
- * a file mention and URL-promoted inline code — are not anchors but file chips,
- * and keep their own glyph.
+ * Render URL and file links as text alone. The host uses `.linkIcon` for
+ * category glyphs inside anchors and file mentions; hiding it also removes
+ * its margin while preserving the link text, underline and click behavior.
  */
-html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) a ._linkIcon_1ypvv_94 {
+html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdown-variant="compact"]) :is(a, ._fileMention_1ypvv_85) ._linkIcon_1ypvv_94 {
   display: none;
 }
 
@@ -848,7 +844,7 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
   vertical-align: baseline;
   font-family: var(--ccd-font-code);
   font-size: 0.95em !important;
-  font-weight: inherit;
+  font-weight: 500;
   line-height: 1.2;
   color: var(--ccd-inline-code-text);
   background: var(--ccd-inline-code-fill);

@@ -15,13 +15,23 @@ test('the ASCII field is deterministic, finite and bounded while its wave travel
   assert.ok(changed > 1000);
 });
 
-test('light stays visible over stable glyphs and moves continuously across former cycle boundaries', () => {
+test('letters and digits keep changing with independent cell cadences', () => {
+  let changed = 0, held = 0;
+  for (let x = 0; x < 960; x += 8) {
+    const at = (time: number) => rippleCell(x, 150, time, 960, 600).glyph;
+    if (at(4200) !== at(5400)) changed++;
+    if (at(4200) === at(4242)) held++;
+  }
+  assert.ok(changed > 100, 'characters change even without a click');
+  assert.ok(held > 100 && held < 120, 'nearby cells do not all tick together');
+});
+
+test('light stays visible over changing glyphs and moves continuously across former cycle boundaries', () => {
   const times = [0, 1600, 4800, 11000, 12800, 17600];
   const energy = times.map(time => {
     let total = 0;
     for (let y = 0; y < 600; y += 22) for (let x = 0; x < 960; x += 18) {
       const cell = rippleCell(x, y, time, 960, 600);
-      assert.equal(cell.glyph, rippleCell(x, y, 0, 960, 600).glyph);
       total += cell.alpha;
     }
     return total;
@@ -44,7 +54,7 @@ test('light stays visible over stable glyphs and moves continuously across forme
   assert.ok(difference > 20, 'the next pass does not replay the same wave shape');
 });
 
-test('click light spreads outward in uneven patches, then releases the unchanged ambient field', () => {
+test('click crests spread outward in uneven patches, then releases the unchanged ambient field', () => {
   const impulses = [{ x: .5, y: .5, startedAt: 11000 }];
   const delta = (x: number, y: number, age: number) => rippleCell(x, y, 11000 + age, 960, 600, impulses).alpha
     - rippleCell(x, y, 11000 + age, 960, 600).alpha;
@@ -100,7 +110,7 @@ test('drawing uses theme ink, caps pixel density, clears the prior frame and res
   } finally { globalThis.getComputedStyle = original; }
 });
 
-test('the ink and sampling mesh are resolved once per box and scheme, not per frame', () => {
+test('the ink and sampling mesh are reused at double pixel density', () => {
   const original = globalThis.getComputedStyle;
   let reads = 0;
   globalThis.getComputedStyle = (() => {
@@ -117,7 +127,7 @@ test('the ink and sampling mesh are resolved once per box and scheme, not per fr
     setTransform() {}, clearRect() {}, fillText() {},
   };
   const body: { hasAttribute(name: string): boolean } = { hasAttribute: () => false };
-  const document = { defaultView: { devicePixelRatio: 1 }, body, documentElement: { getAttribute: () => 'true' } };
+  const document = { defaultView: { devicePixelRatio: 2 }, body, documentElement: { getAttribute: () => 'true' } };
   const canvas = { width: 400, height: 300, ownerDocument: document, getContext: () => context } as unknown as HTMLCanvasElement;
   try {
     drawHeroRipples(canvas, 0);
@@ -142,13 +152,47 @@ test('the ink and sampling mesh are resolved once per box and scheme, not per fr
   }
 });
 
+test('frames reuse rasterized glyphs instead of drawing text again', () => {
+  const original = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = (() => ({ getPropertyValue: () => '#2477ac' })) as unknown as typeof getComputedStyle;
+  let textDraws = 0, sprites = 0, atlases = 0, glyphUpdates = 0;
+  const ink = { setTransform() {}, fillStyle: '', font: '', textBaseline: '',
+    fillText() { textDraws++; }, clearRect() {},
+    drawImage() { glyphUpdates++; },
+    createImageData(width: number, height: number) { return { data: new Uint8ClampedArray(width * height * 4) }; },
+    putImageData() {} };
+  const context = { ...ink, globalAlpha: 1, globalCompositeOperation: 'source-over',
+    clearRect() {}, drawImage() { sprites++; } };
+  const document = { defaultView: { devicePixelRatio: 2 }, createElement() {
+    atlases++;
+    return { width: 0, height: 0, getContext: () => ink };
+  } };
+  const canvas = { width: 800, height: 600, ownerDocument: document,
+    getContext: () => context } as unknown as HTMLCanvasElement;
+  try {
+    drawHeroRipples(canvas, 4200);
+    assert.equal(textDraws, 62);
+    assert.ok(sprites > 0);
+    const firstSprites = sprites;
+    drawHeroRipples(canvas, 4800);
+    assert.equal(atlases, 3, 'the atlas, character layer and mask survive high-DPI frames');
+    assert.equal(textDraws, 62, 'changing characters reuse the existing glyphs');
+    assert.equal(sprites - firstSprites, 2, 'a frame composites only the character layer and mask');
+    const updates = glyphUpdates;
+    drawHeroRipples(canvas, 4800);
+    assert.equal(glyphUpdates, updates, 'unchanged characters do not get repainted');
+    assert.equal(context.globalCompositeOperation, 'source-over');
+    assert.equal(context.globalAlpha, 1);
+  } finally { globalThis.getComputedStyle = original; }
+});
+
 test('hero lifecycle pauses for visibility and reduced motion and releases the canvas on phase change', async () => {
   const { mountHeroCanvas } = await import('../src/client/compat/hero-canvas.ts');
   const oldMutation = globalThis.MutationObserver, oldResize = globalThis.ResizeObserver;
-  let mutation = () => {}, resized = () => {};
+  let mutation = (_records: MutationRecord[]) => {}, resized = () => {};
   let disconnected = 0;
   globalThis.MutationObserver = class {
-    constructor(callback: () => void) { mutation = callback; }
+    constructor(callback: (records: MutationRecord[]) => void) { mutation = callback; }
     observe() {} disconnect() { disconnected++; }
   } as unknown as typeof MutationObserver;
   globalThis.ResizeObserver = class {
@@ -169,9 +213,9 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     getBoundingClientRect: () => ({ left: 50, top: 40, right: 850, bottom: 540, width: 800, height: 500 }),
     remove: () => { removed++; } };
   const titleCanvas = { ...canvas, style: {} as Record<string, string>, remove() {} };
-  const hero = { prepend() {}, contains: (target: unknown) => target === background || target === control, getBoundingClientRect: () => ({ left: 200, top: 40, width: 800, height: 500 }),
+  const hero = { isConnected: true, prepend() {}, contains: (target: unknown) => target === background || target === control, getBoundingClientRect: () => ({ left: 200, top: 40, width: 800, height: 500 }),
     getClientRects: () => [{}] };
-  let present = true;
+  let present = true, queries = 0;
   const doc = {
     body: { prepend() {} }, documentElement: {}, hidden: false,
     defaultView: { devicePixelRatio: 3, matchMedia: () => media,
@@ -179,7 +223,7 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
       cancelAnimationFrame: (frame: number) => { frames.delete(frame); },
       addEventListener: (key: string) => windowEvents.add(key), removeEventListener: (key: string) => windowEvents.delete(key),
     },
-    querySelector: (selector: string) => selector.includes('data-phase') && present ? hero : null,
+    querySelector: (selector: string) => { queries++; return selector.includes('data-phase') && present ? hero : null; },
     createElement: (() => {
       let created = 0;
       return () => created++ === 0 ? canvas : titleCanvas;
@@ -198,6 +242,16 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     assert.equal(titleCanvas.style.left, '200px');
     assert.equal(titleCanvas.style.width, '800px');
     assert.equal(titleCanvas.style.height, '40px');
+    const beforeQueries = queries;
+    mutation([{ type: 'childList', target: hero, addedNodes: [{ nodeType: 3 }], removedNodes: [] } as unknown as MutationRecord]);
+    assert.equal(queries, beforeQueries, 'streaming text does not rediscover the hero or read visibility geometry');
+    let sizeWrites = 0;
+    for (const node of [canvas, titleCanvas]) for (const key of ['width', 'height'] as const) {
+      let value = node[key];
+      Object.defineProperty(node, key, { get: () => value, set: (next: number) => { sizeWrites++; value = next; } });
+    }
+    resized();
+    assert.equal(sizeWrites, 0, 'unchanged geometry preserves both canvas buffers');
     assert.equal(frames.size, 1);
     const [frameId, draw] = [...frames][0]!; frames.delete(frameId); draw(100);
     assert.equal(calls, 2); assert.equal(frames.size, 1);
@@ -214,27 +268,31 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     tick(300); assert.equal(active.length, 1, 'controls, outside clicks and cancelled gestures stay native');
     for (let i = 0; i < 10; i++) click({ clientX: 100 + i });
     tick(400);
-    assert.deepEqual(active, [{ x: .5, y: .5, startedAt: 0 }],
-      'rapid clicks neither stack, relocate nor restart the first wave');
+    assert.equal(active.length, 11, 'every rapid click adds its own wave');
+    assert.deepEqual(active[0], { x: .5, y: .5, startedAt: 0 }, 'existing waves keep playing');
+    assert.deepEqual(active[10], { x: 59 / 800, y: .5, startedAt: 200 },
+      'each new wave uses its click position and time');
     tick(3400); assert.equal(active.length, 0, 'expired waves are released');
     click({ clientX: 130, clientY: 140 }); tick(3500);
     assert.deepEqual(active, [{ x: .1, y: .2, startedAt: 3300 }], 'a new click is accepted after completion');
-    /* A held pointer and a typing reader both leave the field one frame
-       behind; the clock keeps running so it resumes where it would have been. */
+    // Pointer gestures must not freeze the decorative field.
     const before = calls;
-    events.get('pointerdown')!({ type: 'pointerdown' }); tick(3800);
-    assert.equal(calls, before, 'a drag does not paint behind the pointer');
-    tick(3900); assert.equal(calls, before);
+    assert.equal(events.has('pointerdown'), false);
+    assert.equal(events.has('pointerup'), false);
+    assert.equal(events.has('pointercancel'), false);
+    tick(3800);
+    assert.equal(calls, before + 2, 'the field keeps painting during a held pointer');
+    tick(3900); assert.equal(calls, before + 4);
     /* One paint is two draws: the page's canvas and the title bar's. */
-    events.get('pointerup')!({ type: 'pointerup' }); tick(4000);
-    assert.equal(calls, before + 2, 'the field resumes when the gesture ends');
+    tick(4000);
+    assert.equal(calls, before + 6, 'the field continues at its normal cadence');
     events.get('keydown')!({ type: 'keydown', key: 'a' }); tick(4300);
-    assert.equal(calls, before + 2, 'typing holds the same frame');
+    assert.equal(calls, before + 6, 'typing holds the same frame');
     events.get('keyup')!({ type: 'keyup', key: 'a' }); tick(4600);
-    assert.equal(calls, before + 4, 'releasing the key lets it paint again');
+    assert.equal(calls, before + 8, 'releasing the key lets it paint again');
     /* A modifier is not typing, so the cadence carries on under it. */
     events.get('keydown')!({ type: 'keydown', key: 'Shift' }); tick(4700);
-    assert.equal(calls, before + 6, 'a bare modifier does not hold the field');
+    assert.equal(calls, before + 10, 'a bare modifier does not hold the field');
     events.get('keyup')!({ type: 'keyup', key: 'Shift' });
     doc.hidden = true; events.get('visibilitychange')!();
     assert.equal(frames.size, 0); assert.equal(canvas.hidden, true); assert.equal(titleCanvas.hidden, true);
@@ -246,9 +304,9 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     click();
     media.matches = false; mediaChange(); assert.equal(frames.size, 1);
     tick(3700); assert.equal(active.length, 0, 'reduced motion ignores clicks');
-    present = false; mutation();
+    present = false; mutation([{ type: 'attributes', target: hero, attributeName: 'data-phase' } as unknown as MutationRecord]);
     assert.equal(frames.size, 0); assert.equal(removed, 1);
-    dispose(); mutation();
+    dispose(); mutation([]);
     assert.equal(events.size, 0); assert.equal(windowEvents.size, 0);
     assert.ok(disconnected >= 2); assert.deepEqual(errors, []);
   } finally {

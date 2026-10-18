@@ -10,6 +10,7 @@ interface MenuDouble {
   removeAttribute(name: string): void;
   getAttribute(name: string): string | null;
   querySelector(): null;
+  contains(node: unknown): boolean;
   getBoundingClientRect(): { top: number; bottom: number; height: number };
 }
 
@@ -28,21 +29,27 @@ const ANCHOR: { readonly hero: string; readonly account: string } = {
  * covers that.
  */
 function fixture({ viewport = 871, anchorTop = 800, anchorBottom = 828, menuHeight = 110, anchor = ANCHOR.account } = {}) {
-  const state = { viewport, menuHeight };
+  const state = { viewport, menuHeight, open: true, queries: 0, reads: 0, writes: 0 };
+  const sibling = {};
+  const region = { isConnected: true, contains: (node: unknown) => node === region || node === control || node === sibling };
   const control = {
+    isConnected: true,
+    contains: (node: unknown) => node === control,
+    closest: () => region,
     getAttribute: (name: string) => (name === 'aria-expanded' ? 'true' : null),
-    getBoundingClientRect: () => ({ top: anchorTop, bottom: anchorBottom, height: anchorBottom - anchorTop }),
+    getBoundingClientRect: () => { state.reads++; return { top: anchorTop, bottom: anchorBottom, height: anchorBottom - anchorTop }; },
   };
   const menu: MenuDouble = {
     attributes: new Map([['role', 'menu']]),
     isConnected: true,
     /* Mimics CSSStyleDeclaration: reading an unset property answers ''. */
     style: { maxHeight: '', top: '' },
-    setAttribute(name, value) { this.attributes.set(name, value); },
+    setAttribute(name, value) { state.writes++; this.attributes.set(name, value); },
     removeAttribute(name) { this.attributes.delete(name); },
     getAttribute(name) { return this.attributes.get(name) ?? null; },
     querySelector: () => null,
-    getBoundingClientRect() { return { top: 0, bottom: state.menuHeight, height: state.menuHeight }; },
+    contains: node => node === menu,
+    getBoundingClientRect() { state.reads++; return { top: 0, bottom: state.menuHeight, height: state.menuHeight }; },
   };
   const observers: { callback: (records: unknown[]) => void; disconnected?: boolean }[] = [];
   const listeners = new Map<string, () => void>();
@@ -54,8 +61,8 @@ function fixture({ viewport = 871, anchorTop = 800, anchorBottom = 828, menuHeig
       setAttribute: () => {},
       removeAttribute: () => {},
     },
-    querySelector: (selector: string) => (selector === anchor ? control : null),
-    querySelectorAll: () => (menu.getAttribute('role') === 'menu' ? [menu] : []),
+    querySelector: (selector: string) => { state.queries++; return selector === anchor && state.open ? control : null; },
+    querySelectorAll: () => { state.queries++; return state.open && menu.getAttribute('role') === 'menu' ? [menu] : []; },
   };
   const windowDouble = {
     get innerHeight() { return state.viewport; },
@@ -72,11 +79,16 @@ function fixture({ viewport = 871, anchorTop = 800, anchorBottom = 828, menuHeig
   };
   return {
     menu,
+    state,
+    control,
+    sibling,
     documentDouble,
     windowDouble,
     MutationObserverDouble,
     /** One observer batch: the module's own correction pass. */
-    sync: () => { for (const observer of observers) if (!observer.disconnected) observer.callback([]); },
+    sync: (records = [{ type: 'attributes', target: menu, attributeName: 'style' } as unknown as MutationRecord]) => {
+      for (const observer of observers) if (!observer.disconnected) observer.callback(records);
+    },
     /** The card grew after it was measured (the account-menu header case). */
     grow: (height: number) => { state.menuHeight = height; },
     /** The picker swaps the surface to a pane that is no longer a menu. */
@@ -186,5 +198,46 @@ test('a window whose room below beats the room above keeps the host placement', 
   assert.equal(fake.menu.getAttribute('data-ccd-menu-flipped'), null);
   assert.equal(fake.menu.style.maxHeight, '');
   assert.equal(fake.menu.style.top, '');
+  dispose();
+});
+
+test('unrelated streaming and pane styles do not scan or measure open or closed menus', () => {
+  const fake = fixture();
+  install(fake);
+  const dispose = mountComposerMenuPlacement(globalThis.document, () => {});
+  const unrelated = () => {
+    fake.sync([{ type: 'childList', target: {}, addedNodes: [{ nodeType: 3 }], removedNodes: [] } as unknown as MutationRecord]);
+    fake.sync([{ type: 'attributes', target: {}, attributeName: 'style' } as unknown as MutationRecord]);
+  };
+  const before = { ...fake.state };
+  unrelated();
+  assert.equal(fake.state.queries, before.queries);
+  assert.equal(fake.state.reads, before.reads);
+  fake.state.open = false;
+  fake.sync([{ type: 'attributes', target: fake.control, attributeName: 'aria-expanded' } as unknown as MutationRecord]);
+  assert.equal(fake.menu.getAttribute('data-ccd-menu-flipped'), null);
+  const closed = { ...fake.state };
+  unrelated();
+  assert.equal(fake.state.queries, closed.queries);
+  assert.equal(fake.state.reads, closed.reads);
+  fake.state.open = true;
+  fake.sync([{ type: 'attributes', target: fake.control, attributeName: 'aria-expanded' } as unknown as MutationRecord]);
+  assert.equal(fake.menu.getAttribute('data-ccd-menu-flipped'), '', 'opening still places the menu synchronously');
+  dispose();
+});
+
+test('unchanged placement writes no marker and streamed menu content still refreshes geometry', () => {
+  const fake = fixture();
+  install(fake);
+  const dispose = mountComposerMenuPlacement(globalThis.document, () => {});
+  const writes = fake.state.writes;
+  for (let index = 0; index < 20; index++) fake.sync();
+  assert.equal(fake.state.writes, writes);
+  fake.grow(140);
+  fake.sync([{ type: 'characterData', target: fake.menu } as unknown as MutationRecord]);
+  assert.equal(fake.menu.style.top, '656px');
+  fake.grow(150);
+  fake.sync([{ type: 'childList', target: fake.sibling, addedNodes: [], removedNodes: [] } as unknown as MutationRecord]);
+  assert.equal(fake.menu.style.top, '646px', 'a sibling update inside the composer also refreshes placement');
   dispose();
 });

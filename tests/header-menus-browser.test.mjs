@@ -107,15 +107,25 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         assert.match(await page.evaluate(`document.querySelector('dialog').textContent`), /删除会话的公开接口/u);
         await page.evaluate(`document.querySelector('dialog').close()`);
         await click('[data-ccd-project-trigger]');
-        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['在访达中显示', '复制', '在终端中打开']);
-        const folder = await geometry(project); assert.equal(folder.w, 176); assert.equal(folder.h, 100);
+        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['复制', '在终端中打开']);
+        assert.equal(await page.evaluate(`document.querySelectorAll('${project} [data-ccd-header-row-icon]').length`), 0);
+        const folder = await geometry(project); assert.equal(folder.w, 176); assert.equal(folder.h, 67);
         assert.equal(folder.x, (await geometry('[data-ccd-project-trigger]')).x);
         await choose(project, '在终端中打开'); assert.equal(await page.evaluate('calls.at(-1)'), 'terminal');
-        await click('[data-ccd-project-trigger]'); await key('Home'); await key('ArrowDown'); await key('ArrowRight');
+        await click('[data-ccd-project-trigger]'); await key('Home'); await key('ArrowRight');
         assert.equal(await page.evaluate(`document.activeElement.querySelector('[data-ccd-header-row-label]').textContent`), '文件夹路径');
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-header-menu]').length`), 2);
         await key('ArrowLeft'); assert.equal(await page.evaluate(`document.activeElement.querySelector('[data-ccd-header-row-label]').textContent`), '复制');
         await key('Escape'); assert.equal(await page.evaluate(`document.activeElement.hasAttribute('data-ccd-project-trigger')`), true);
+        await page.evaluate(`document.querySelector('[data-ccd-header-view="terminal"]').disabled = true`);
+        await click('[data-ccd-project-trigger]');
+        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.textContent)`), ['复制']);
+        assert.equal(await page.evaluate(`document.querySelectorAll('${project} hr').length`), 0);
+        await key('Escape');
+        await page.evaluate(`document.querySelector('[data-ccd-header-view="terminal"]').remove()`);
+        await click('[data-ccd-project-trigger]');
+        assert.equal(await page.evaluate(`document.querySelectorAll('${project} button').length`), 1);
+        await key('Escape');
         // Escape/outside and navigation must withdraw both cards and update identity.
         await click('[data-ccd-session-trigger]');
         await page.evaluate(`document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))`);

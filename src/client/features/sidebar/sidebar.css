@@ -306,23 +306,79 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_r
   padding-right: 0;
 }
 
-/* Align the heading with the project labels' 4px inset. Overlap the toolbar
-   and first project's empty vertical padding by 4px: their centres then sit
-   28px apart, close to the navigation rhythm above, without shrinking controls.
+/* Align the search border with the navigation row's background edge. Its
+   1px border, 4px inset and 22px icon button put the icon centre at 16px,
+   matching the navigation row's 8px inset and 16px icon seat. Leave a small
+   gap below the toolbar before the first group, keeping the compact search
+   field and its controls centred in the same row.
    The collapsed rail keeps the host's own insets for its add-workspace icon. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader {
   position: relative;
-  height: 30px;
-  margin: 0 0 -4px;
-  padding-left: 4px;
+  height: 26px;
+  margin: 0 0 4px;
+  padding-left: 0;
   /* Runtime measures the tree edge, including the actual scrollbar gutter. */
   padding-right: 0;
   color: var(--ccd-text-muted);
+  /* The field now meets this row's left edge. The host's rounded clipping
+     would cut into its corners and shadow, so only the field clips itself. */
+  overflow: visible;
 }
 
-/* Search and view options keep their own line above the project tree. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchSlot:not(._7514NG_searchSlotExpanded) {
-  max-width: 22px;
+/* Keep the native search field visible in place of the region heading.
+   React still owns querying, clearing, Escape and the search shortcut. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionLabel {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchSlot {
+  flex: 1;
+  max-width: none;
+  margin-left: 0;
+  padding-left: 0;
+  transition: none;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_search {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  padding: 0 4px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 7px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-shadow-card);
+  color: var(--ccd-text-muted);
+  transition: none;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_search:focus-within {
+  border-color: var(--ccd-text-muted);
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchInput {
+  width: 0;
+  min-width: 0;
+  margin-left: 2px;
+  opacity: 1;
+  pointer-events: auto;
+  color: var(--ccd-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchInput::placeholder {
+  color: var(--ccd-text-muted);
+}
+
+/* Searching normally hides these native actions; keep View options available. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_headerActions {
+  max-width: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: none;
 }
 
 /* The reference gives a Workspace row one standing action — the plus that starts
@@ -1013,9 +1069,9 @@ html[data-dsh-ccd-style="true"] .ccd-status-heading {
   /* Section labels share the Recents toolbar's 4px inset; only session
      titles are indented past the native status icon. */
   padding: 12px 8px 4px 4px;
-  color: var(--ccd-text);
-  font-size: var(--ccd-font-size-muted);
-  font-weight: 500;
+  color: var(--ccd-text-secondary);
+  font-size: calc(var(--ccd-font-size-muted) - 1px);
+  font-weight: 400;
   line-height: 20px;
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading:nth-child(1 of .ccd-status-heading) {

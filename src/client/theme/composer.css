@@ -482,9 +482,12 @@ html[data-dsh-ccd-style="true"] .OpZ85W_root {
    the cluster and the context ring are both occupants of the dock, which is
    right-aligned, so the ring keeps the edge it already had, and the model
    button's budget is re-measured from the dock's own width by that same module.
-   `[data-composer-stats]` is the host's stable marker for the cluster, so this
-   rule outlives a build whose class hashes move. */
-html[data-dsh-ccd-style="true"][data-ccd-composer-stats="off"] [data-composer-stats] {
+   Older hosts mark the whole cluster with `[data-composer-stats]`; current
+   hosts mark each of its two anchors with `[data-composer-stat]`. Keep both
+   stable hooks so the setting survives that DOM split without depending on a
+   CSS-module hash. */
+html[data-dsh-ccd-style="true"][data-ccd-composer-stats="off"] [data-composer-stats],
+html[data-dsh-ccd-style="true"][data-ccd-composer-stats="off"] [data-composer-stat] {
   display: none;
 }
 

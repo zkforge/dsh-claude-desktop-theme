@@ -1,6 +1,6 @@
 /*
  * The conversation header's trailing cluster: the three right-panel views this
- * plugin adds — the project folder first, then terminal and browser — plus the
+ * plugin adds — terminal, browser, then the project folder — plus the
  * reference's own adaptations to the host controls of the same row (issue 16).
  * The corner seat past the cluster is retired, so these three are the whole of
  * the row's own additions.
@@ -54,14 +54,9 @@
 }
 
 /*
- * The folder opens the row, and is the mark of the control that does it.
- *
- * Its seat is the head of the utilities group — the reference draws the project
- * folder as the cluster's first control, ahead of the terminal and browser views
- * and ahead of every native entry in that group — and what it opens is the right
- * panel's file list for the Session's own directory. The glyph is the closed
- * folder the workspace chip already draws (`theme/tokens.css`), so the interface
- * has one folder, not two.
+ * The project folder follows the browser and opens the right panel's file list
+ * for the Session's own directory. It shares the workspace chip's closed-folder
+ * glyph (`theme/tokens.css`).
  */
 .ccd-header-action[data-ccd-header-view="files"]::before {
   mask-image: var(--ccd-icon-folder);
@@ -120,6 +115,11 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .iq4beG_menuAnchor {
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button,
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] button svg {
   color: var(--ccd-header-icon-color);
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] .ccd-header-action[aria-pressed="true"] {
+  color: var(--ccd-files-chip-ink);
+  background: var(--ccd-right-panel-glyph-bg);
 }
 
 /*

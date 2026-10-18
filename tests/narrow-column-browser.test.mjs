@@ -125,9 +125,9 @@ ${tabs}
 <div class="ST7X_W_headerActions"><button class="_2tNPVa_trigger">${GLYPH}<span class="_2tNPVa_triggerLabel">智能体团队</span></button></div>
 </div>
 <div class="ST7X_W_headerUtilities"><div data-slot="conversation.session.header.utilities">
-<button class="ccd-header-action" data-ccd-header-view="files" aria-label="文件"></button>
 <button class="ccd-header-action" data-ccd-header-view="terminal" aria-label="终端"></button>
 <button class="ccd-header-action" data-ccd-header-view="browser" aria-label="浏览器"></button>
+<button class="ccd-header-action" data-ccd-header-view="files" aria-label="文件"></button>
 <span class="fixtureMenu"><button class="fixtureButton fixtureSm Da3aKq_moreButton" aria-label="更多操作">${GLYPH}</button></span>
 </div></div>
 </div>
@@ -176,7 +176,7 @@ const geometry = `(() => {
     const rect = box(selector);
     return rect === null || rect.width === 0 ? null : rect;
   };
-  const views = ['files', 'terminal', 'browser'].map(kind => drawn('.ccd-header-action[data-ccd-header-view="' + kind + '"]'));
+  const views = ['terminal', 'browser', 'files'].map(kind => drawn('.ccd-header-action[data-ccd-header-view="' + kind + '"]'));
   const title = drawn('.ST7X_W_crumbs');
   return { column, dots, dotsInk, input, card, row, tools, trailing, actions, cluster, views, title };
 })()`;
@@ -286,7 +286,7 @@ test('the three right-panel views stay on the line while the switcher is parked 
     await withPage({ url: 'about:blank', width: 1400, height: 800, scale: 1, profile }, async devtools => {
       await lay(devtools, { width: 380, dock: true });
       let view = await devtools.evaluate(geometry);
-      for (const [index, name] of ['files', 'terminal', 'browser'].entries()) {
+      for (const [index, name] of ['terminal', 'browser', 'files'].entries()) {
         const box = view.views[index];
         assert.notEqual(box, null, `${name}: the view is drawn`);
         assert.equal(Math.round(box.width), 24, `${name}: it keeps the narrow column's 24px box (${box.width})`);
@@ -300,7 +300,7 @@ test('the three right-panel views stay on the line while the switcher is parked 
          step aside — the native chip keeps its full label either way. */
       await lay(devtools, { width: 380, dock: false });
       view = await devtools.evaluate(geometry);
-      for (const [index, name] of ['files', 'terminal', 'browser'].entries()) {
+      for (const [index, name] of ['terminal', 'browser', 'files'].entries()) {
         assert.equal(view.views[index], null, `${name}: the view steps aside for the switcher`);
       }
       assert.equal(

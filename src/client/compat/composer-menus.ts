@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { HOST, hostSelectors } from './host-dom.ts';
+import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 
 /** Marks a menu this module has already placed above its anchor. */
 export const FLIPPED_MENU_ATTRIBUTE = 'data-ccd-menu-flipped';
@@ -49,6 +50,7 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
   const placed = new Map<HTMLElement, Placement>();
   const measured = new Map<HTMLElement, Measurement>();
   let scheduled = 0;
+  let anchorRegion: HTMLElement | null = null;
 
   /**
    * The control that owns the open menu: the blank-session chips row (workspace
@@ -154,7 +156,7 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
        ceiling is the free space itself; every other card keeps its own height. */
     const cap = fitsAbove ? previous : `${Math.round(above)}px`;
     placed.set(menu, { previous, cap });
-    menu.setAttribute(FLIPPED_MENU_ATTRIBUTE, '');
+    if (menu.getAttribute(FLIPPED_MENU_ATTRIBUTE) !== '') menu.setAttribute(FLIPPED_MENU_ATTRIBUTE, '');
     const top = `${Math.round(anchor.top - GAP - Math.min(height, fitsAbove ? height : above))}px`;
     if (menu.style.top !== top) menu.style.top = top;
     if (menu.style.maxHeight !== cap) menu.style.maxHeight = cap;
@@ -163,6 +165,10 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
   const sync = () => {
     scheduled = 0;
     const anchor = anchorOf();
+    // Sibling controls or editor growth can move a trigger within the card.
+    anchorRegion = anchor?.closest?.<HTMLElement>(
+      `${host.heroWorkspaceRow}, ${host.heroWorkspaceChip}, ${host.composerCard}, ${host.accountTrigger}`,
+    ) ?? anchor;
     const visited = new Set<HTMLElement>();
     if (anchor !== null) {
       const anchorRect = anchor.getBoundingClientRect();
@@ -210,12 +216,20 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
 
   let observer: MutationObserver | undefined;
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => {
+      // While closed there is nothing to place. While open, only its anchor,
+      // portal or their ancestors can invalidate the measured geometry.
+      if (records.some(record => record.type === 'attributes' && record.attributeName === 'aria-expanded')
+        || (anchorRegion !== null && recordsTouch(records, anchorRegion))
+        || [...measured.keys()].some(menu => recordsTouch(records, menu))
+        || recordsIntroduce(records, `${host.menu}, ${host.heroWorkspaceRow}, ${host.heroWorkspaceChip}, ${host.composerCard}, ${host.accountTrigger}`)) schedule();
+    });
     observer.observe(document.body, {
       childList: true,
       subtree: true,
+      characterData: true,
       attributes: true,
-      attributeFilter: ['style', 'aria-expanded'],
+      attributeFilter: ['style', 'aria-expanded', 'role'],
     });
     window.addEventListener('resize', onResize);
     sync();
@@ -232,5 +246,6 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
     window.removeEventListener('resize', onResize);
     for (const menu of [...placed.keys()]) restore(menu);
     measured.clear();
+    anchorRegion = null;
   };
 }

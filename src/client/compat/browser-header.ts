@@ -68,6 +68,8 @@ export function mountBrowserHeader(document: Document, report: (error: unknown) 
   const sync = () => {
     scheduled = 0;
     if (disposed) return;
+    // Sidebar rebuilds must not retain every prior text node and its subtree.
+    for (const node of rewritten.keys()) if (!node.isConnected) rewritten.delete(node);
     name(
       document.querySelector<HTMLElement>(host.browserSectionLabel),
       document.querySelector('[data-ccd-empty-state="new"]') !== null,

@@ -112,6 +112,17 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       if (next !== list) restore();
       if (!next) return;
       list = next;
+      // Cleanup must also run when the plan below is unchanged. React can
+      // replace a wrapper or remove plugin decorations without changing rows.
+      for (const [node, values] of saved) if (!node.isConnected || !list.contains(node)) {
+        restoreNode(node, values); saved.delete(node);
+      }
+      for (const [node, animation] of animations) if (!node.isConnected || !list.contains(node)) {
+        animation.cancel(); animations.delete(node);
+      }
+      for (const node of owned) if (!node.isConnected || !list.contains(node)) {
+        node.remove(); owned.delete(node);
+      }
       const catalog = ctx.sessions.list.getSnapshot();
       const statuses = status?.getSnapshot();
       const childrenOf = readChildren(catalog);
@@ -167,6 +178,10 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
           || row.dataset.ccdStatusGroup !== group
           || row.style.getPropertyValue('--ccd-status-order') !== String(order)
           || row.getAttribute('tabindex') !== '0') { changed = true; break; }
+        for (let parent = row.parentElement; parent && parent !== list; parent = parent.parentElement) {
+          if (!parent.hasAttribute('data-ccd-status-wrapper')) { changed = true; break; }
+        }
+        if (changed) break;
       }
       if (!changed) {
         for (const [key, signature] of signatures) {
@@ -189,7 +204,8 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       /* A row that moved is the only reason to read layout. The previous rects
          are taken now, after the decision, so an unchanged pass never asks the
          engine to flush. */
-      const before = new Map(rows.map(row => [row, row.getBoundingClientRect()]));
+      const animateLayout = !motion.matches && !document.hidden;
+      const before = animateLayout ? new Map(rows.map(row => [row, row.getBoundingClientRect()])) : null;
       let layoutChanged = false;
       remember(list, 'data-ccd-status-list', '');
       const ordered: HTMLElement[] = [];
@@ -206,7 +222,9 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
           value: row.style.getPropertyValue('--ccd-status-order'),
           priority: row.style.getPropertyPriority('--ccd-status-order'),
         });
-        row.style.setProperty('--ccd-status-order', String(order));
+        if (row.style.getPropertyValue('--ccd-status-order') !== String(order)) {
+          row.style.setProperty('--ccd-status-order', String(order));
+        }
         remember(row, 'tabindex', '0');
         ordered.push(row);
         const childKey = `children:${id}`;
@@ -220,8 +238,9 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
             childBox.setAttribute('role', 'group');
             owned.add(childBox); list.append(childBox);
           }
-          childBox.style.order = String(order + 1);
-          childBox.setAttribute('aria-label', zh ? '子任务' : 'Subagents');
+          if (childBox.style.order !== String(order + 1)) childBox.style.order = String(order + 1);
+          const childLabel = zh ? '子任务' : 'Subagents';
+          if (childBox.getAttribute('aria-label') !== childLabel) childBox.setAttribute('aria-label', childLabel);
           const signature = signatures.get(childKey)!;
           if (childBox.dataset.signature !== signature) {
             layoutChanged = true;
@@ -246,7 +265,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
             heading.setAttribute('role', 'presentation');
             owned.add(heading); list.append(heading);
           }
-          heading.style.order = String(index * stride);
+          if (heading.style.order !== String(index * stride)) heading.style.order = String(index * stride);
           if (heading.textContent !== labels[index]) heading.textContent = labels[index]!;
         } else if (heading) { layoutChanged = true; owned.delete(heading); heading.remove(); }
       }
@@ -256,7 +275,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       if (layoutChanged) {
         stopAnimations();
       }
-      if (layoutChanged && !motion.matches && !document.hidden) for (const row of ordered) {
+      if (layoutChanged && before !== null) for (const row of ordered) {
         const previous = before.get(row)!;
         const rect = row.getBoundingClientRect();
         const dy = previous.top - rect.top;
@@ -265,9 +284,6 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
           { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
         animations.set(row, animation);
         animation.onfinish = () => { if (animations.get(row) === animation) animations.delete(row); };
-      }
-      for (const [node, values] of saved) if (!node.isConnected) {
-        restoreNode(node, values); saved.delete(node);
       }
     } catch (error) { restore(); report(error); }
     finally { if (!disposed) observe(); }

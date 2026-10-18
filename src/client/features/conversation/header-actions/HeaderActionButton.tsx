@@ -13,8 +13,8 @@ export interface HeaderActionProps {
 /**
  * One view button for the conversation header.
  *
- * All three sit in the utilities group beside the native actions, led by the
- * project folder; the corner seat past them holds nothing (the panel's shipped
+ * All three sit in the utilities group beside the native actions, in terminal,
+ * browser, project folder order; the corner seat past them holds nothing (the panel's shipped
  * expand control is retired there and its action moves into the Session menu).
  * All three are the same control: the box size, hover surface and spacing
  * belong to the seat's own stylesheet

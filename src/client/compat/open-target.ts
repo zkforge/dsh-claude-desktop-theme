@@ -49,22 +49,30 @@ export function mountOpenTargetMode(document: Document, report: (error: unknown)
 
   const sync = () => {
     const copy = headerLabels(document);
+    const live = new Set<HTMLElement>();
     for (const anchor of document.querySelectorAll<HTMLElement>(
       `${host.conversationHeader} ${host.openTargetAnchor}`,
     )) {
+      live.add(anchor);
       const chevron = anchor.querySelector<HTMLElement>(host.openTargetChevron);
-      const previous = annotations.get(anchor);
+      const main = anchor.querySelector<HTMLElement>(host.openTargetMain);
+      let previous = annotations.get(anchor);
+      if (previous !== undefined && (previous.chevron !== chevron || previous.main !== main)) {
+        restore(previous);
+        annotations.delete(anchor);
+        previous = undefined;
+      }
       marked.add(anchor);
       if (chevron === null) {
         /* No menu: the split would direct-open, which is not what this glyph says. */
-        anchor.setAttribute(MODE_ATTRIBUTE, 'direct');
+        if (anchor.getAttribute(MODE_ATTRIBUTE) !== 'direct') anchor.setAttribute(MODE_ATTRIBUTE, 'direct');
         if (previous !== undefined) {
           annotations.delete(anchor);
           restore(previous);
         }
         continue;
       }
-      anchor.setAttribute(MODE_ATTRIBUTE, 'menu');
+      if (anchor.getAttribute(MODE_ATTRIBUTE) !== 'menu') anchor.setAttribute(MODE_ATTRIBUTE, 'menu');
       if (previous !== undefined) {
         /* React re-renders the anchor when the remembered application or the
            locale changes, and would restore the host's own name over ours. */
@@ -72,7 +80,6 @@ export function mountOpenTargetMode(document: Document, report: (error: unknown)
         if (chevron.getAttribute('title') !== copy.open) chevron.setAttribute('title', copy.open);
         continue;
       }
-      const main = anchor.querySelector<HTMLElement>(host.openTargetMain);
       annotations.set(anchor, {
         chevron,
         main,
@@ -89,11 +96,12 @@ export function mountOpenTargetMode(document: Document, report: (error: unknown)
       main?.setAttribute('tabindex', '-1');
     }
     /* Session switches rebuild the header; records outlive their anchors. */
-    for (const [anchor, entry] of annotations) {
-      if (anchor.isConnected) continue;
-      annotations.delete(anchor);
+    for (const anchor of marked) {
+      if (live.has(anchor)) continue;
+      anchor.removeAttribute(MODE_ATTRIBUTE);
+      const entry = annotations.get(anchor);
+      if (entry !== undefined) { restore(entry); annotations.delete(anchor); }
       marked.delete(anchor);
-      restore(entry);
     }
   };
 

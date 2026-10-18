@@ -26,6 +26,9 @@ function touches(record: MutationRecord, region: Element): boolean {
   if (record.type === 'attributes' || record.type === 'characterData') {
     return overlaps(record.target, region);
   }
+  // Removed children no longer belong to the region. Their parent still does,
+  // including when removing the last text node changes the measured box.
+  if (record.target === region || region.contains(record.target)) return true;
   for (const node of record.addedNodes) if (overlaps(node, region)) return true;
   for (const node of record.removedNodes) if (overlaps(node, region)) return true;
   return false;

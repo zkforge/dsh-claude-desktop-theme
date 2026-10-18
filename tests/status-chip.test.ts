@@ -163,12 +163,16 @@ test('every container in the row spaces its children with the one gap', () => {
 
 test('the statistics readouts leave the row unless the configuration asks for them', () => {
   /* The state comes from `compat/stats-values.ts` and is read here, so the
-     attribute is pinned across the two files rather than spelled twice, and the
-     host's cluster is named by its own stable marker rather than by a class
-     hash. A default configuration writes `off`, so the row ships without the
-     readouts. */
-  const rule = ruleFor(composer, `[${STATS_ATTRIBUTE}="off"] [data-composer-stats]`);
+     attribute is pinned across the two files rather than spelled twice. The
+     old host marked the cluster; the current host marks each stat anchor, and
+     neither path needs a class hash. A default configuration writes `off`, so
+     the row ships without the readouts. */
+  const candidates = composer.filter(rule =>
+    rule.selector.includes(`[${STATS_ATTRIBUTE}="off"] [data-composer-stats]`));
+  assert.equal(candidates.length, 1, 'one rule covers both generations of the host marker');
+  const rule = candidates[0]!;
   assert.ok(rule.selector.startsWith('html[data-dsh-ccd-style="true"]'), rule.selector);
+  assert.ok(rule.selector.includes(`[${STATS_ATTRIBUTE}="off"] [data-composer-stat]`), rule.selector);
   assert.equal(rule.body.trim(), 'display: none;');
 });
 

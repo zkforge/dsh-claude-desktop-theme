@@ -48,20 +48,17 @@ test('header labels follow the document language, not a borrowed namespace', () 
   assert.equal(headerLabels(document('en-US')).expand, 'Open sidebar');
 });
 
-test('the project folder leads the cluster, ahead of every other entry', () => {
+test('the project folder follows the browser, before the session menu', () => {
   const opened: string[] = [];
   const labels = { terminal: '打开终端', browser: '打开浏览器', files: '打开项目文件夹' };
   const open = (kind: string, sessionId: string) => { opened.push(`${kind}:${sessionId}`); };
 
-  /* The order is the row's own position: the folder sits below the retired
-     open-in-app control (-10) and the native scheduled-tasks entry (-5), so a
-     Session that carries tasks still reads folder, terminal, browser, menu. */
   const utilities = VIEWS.map(view => utilitiesEntry(view, labels, open));
   assert.deepEqual(
     utilities.map(entry => [entry.id, entry.order]),
-    [['ccd-folder', -11], ['ccd-terminal', -2], ['ccd-browser', -1]],
+    [['ccd-terminal', -3], ['ccd-browser', -2], ['ccd-folder', -1]],
   );
-  const folder = utilities[0]?.inject('session-1');
+  const folder = utilities[2]?.inject('session-1');
   assert.deepEqual([folder?.kind, folder?.label], ['files', '打开项目文件夹']);
   folder?.open();
   assert.deepEqual(opened, ['files:session-1']);

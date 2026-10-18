@@ -91,6 +91,14 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-mark]
   mask: var(--ccd-icon-files-list) center / var(--ccd-right-panel-glyph-size) var(--ccd-right-panel-glyph-size) no-repeat;
 }
 
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-switch][aria-expanded="false"] {
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-switch][aria-expanded="false"]::before {
+  color: var(--ccd-right-panel-tab-ink);
+}
+
 /* The strip's controls: the reference draws five 26px seats that touch, each
    with about 12px of ink in it, so the host's own boxes shrink to that pitch —
    the split control, the fullscreen / collapse chrome and the add-tab control
@@ -570,7 +578,9 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data
 
 /* The panel's own column with panes on screen: no tab chips, no add / split
    controls, and no body — the guide's landing page is the panel's, not a
-   pane's, and it comes back the moment the last pane closes. */
+   pane's. Keep it covered through the deferred collapse and its transition. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel][data-ccd-panes-closing] [data-dockkit-pane],
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel]:not([data-sidebar-right-open]) [data-dockkit-pane],
 html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-panes] [data-dockkit-strip],
 html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-panes] [data-dockkit-tab],
 html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-panes] [data-dockkit-add-tab],
@@ -643,17 +653,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-controls] {
   gap: 0;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-file-tabs] {
-  min-width: 0;
-  max-width: 100px;
-  height: 26px;
-  border: 0;
-  border-radius: var(--ccd-chip-radius);
-  color: var(--ccd-text-muted);
-  background: var(--ccd-card);
-  font: inherit;
-  font-size: 12px;
-}
 
 html[data-dsh-ccd-style="true"] [data-ccd-pane-seam]:focus-visible {
   outline: 2px solid var(--ccd-accent);
@@ -691,15 +690,28 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-
   grid-template-rows: var(--ccd-right-panel-strip-height) minmax(0, 1fr);
 }
 
+/* One divider spans both grid rows, independent of the host body's margins. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-ccd-files-combined]):not([data-ccd-files-compact]):not([data-ccd-files-tree="hidden"])::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--ccd-files-tree-width, 34%);
+  width: 1px;
+  background: var(--ccd-border);
+  pointer-events: none;
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) {
   grid-column: 1;
   grid-row: 1;
+  border-right: 0;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root] > [data-files-body] {
   grid-column: 1;
   grid-row: 2;
-  border-right: 1px solid var(--ccd-border);
+  border-right: 0;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-ccd-files-combined]) > [data-ccd-files-landing] {
@@ -778,7 +790,8 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact] > [data-files-body] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact] > [data-files-body],
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact] > div:not([data-files-body]):not([data-ccd-files-landing]) {
   border-right: 0;
 }
 
@@ -1038,7 +1051,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-terminal-add
   border-radius: var(--ccd-chip-radius);
   background: transparent;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tabs] {
+html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tabs], [data-ccd-file-tabs]) {
   display: flex;
   align-items: center;
   flex: 0 1 auto;
@@ -1047,22 +1060,22 @@ html[data-dsh-ccd-style="true"] [data-ccd-terminal-tabs] {
   overflow-x: auto;
   scrollbar-width: none;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tabs] > [data-ccd-terminal-tab] {
+html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tabs], [data-ccd-file-tabs]) > :is([data-ccd-terminal-tab], [data-ccd-file-tab]) {
   display: inline-flex;
   flex: 0 1 auto;
   align-items: center;
   border-radius: var(--ccd-chip-radius);
   min-width: 96px;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab]:is([data-selected], :hover, :focus-within) {
+html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]):is([data-selected], :hover, :focus-within) {
   background: var(--ccd-hover);
 }
 /* Name and close are one tab surface, including hover over either button. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-terminal-tab] > button:is(:hover, :active, :focus-visible) {
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > button:is(:hover, :active, :focus-visible) {
   background: transparent;
   box-shadow: none;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab] > [role="tab"] {
+html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > [role="tab"] {
   width: auto !important;
   min-width: 0;
   flex: 1;
@@ -1076,7 +1089,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab] > [role="tab"] {
   font: inherit;
   text-align: left;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab] > [data-ccd-terminal-close] {
+html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > :is([data-ccd-terminal-close], [data-ccd-file-close]) {
   width: 20px !important;
   height: 24px !important;
   display: inline-flex;
@@ -1087,9 +1100,49 @@ html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab] > [data-ccd-terminal-clo
   border-radius: var(--ccd-chip-radius);
   background: transparent;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab] > [data-ccd-terminal-close] svg {
+html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > :is([data-ccd-terminal-close], [data-ccd-file-close]) svg {
   width: 10px !important;
   height: 10px !important;
+}
+/* At @2x the reference's 48px chip holds a 40px square close surface:
+   24px / 20px logical, with a 2px inset rather than a full-height capsule. */
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > [data-ccd-file-close] {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 5px;
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > button {
+  height: 20px !important;
+  color: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > [data-ccd-file-close]:is(:hover, :focus-visible) {
+  background: var(--ccd-file-close-hover);
+  box-shadow: var(--ccd-shadow-segment);
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > [data-ccd-file-close]:active {
+  background: var(--ccd-file-close-pressed);
+  box-shadow: none;
+}
+/* Files retain readable names and scroll along the header when space runs out. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-file-tabs] {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-file-tabs] > [data-ccd-file-tab] {
+  box-sizing: border-box;
+  flex: none;
+  max-width: 200px;
+  height: 24px;
+  padding: 2px 2px 2px 4px;
+  border-radius: 6px;
+  color: var(--ccd-right-panel-tab-ink);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-file-tab]:is(:hover, :focus-within) {
+  background: var(--ccd-file-tab-hover);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-file-tab][data-selected] {
+  background: var(--ccd-file-tab-selected);
+  color: var(--ccd-files-ink);
 }
 /* Expanded cards cover the conversation but retain the navigation column. */
 html[data-dsh-ccd-style="true"] [data-sidebar-right-panel][data-ccd-pane-expanded] [data-ccd-pane-leading] [data-dockkit-float-grip] {
@@ -1176,6 +1229,15 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-browser-addr
   height: 24px;
 }
 
+/* Only the source viewer's code gains weight; its counter stays quiet.
+   Markdown prose, code-block banners and the pane toolbar keep host weights. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] [data-code-preview] pre code {
+  font-weight: 500;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] [data-code-preview] pre code > .line::before {
+  font-weight: 400;
+}
+
 /* File preview: relative path below the title; reload beside header search. */
 html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] :is([data-document-viewer-menu], [data-textpreview-tool="reload"], [data-ccd-preview-path-source]),
 html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] [data-slot="sidebar.right.tab.document.actions"] {
@@ -1191,4 +1253,35 @@ html[data-dsh-ccd-style="true"] [data-ccd-preview-path] {
   font-family: var(--ccd-font-ui);
   font-size: 14px;
   line-height: 20px;
+}
+
+/* Match the file preview's wrap and renderer controls to the pane toolbar. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] :has(> [data-textpreview-path]) button,
+html[data-dsh-ccd-style="true"] [data-ccd-markdown-toggle] {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ccd-chip-radius);
+  color: var(--ccd-files-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] :has(> [data-textpreview-path]) button:is(:hover, :focus-visible),
+html[data-dsh-ccd-style="true"] [data-ccd-markdown-toggle]:is(:hover, :focus-visible) {
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] :has(> [data-textpreview-path]) button svg,
+html[data-dsh-ccd-style="true"] [data-ccd-markdown-toggle] svg {
+  width: 16px;
+  height: 16px;
 }
