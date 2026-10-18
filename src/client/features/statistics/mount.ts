@@ -8,6 +8,7 @@ import type { CleanupScope } from '../../core/cleanup.ts';
 import type { Logger } from '../../contracts/ports.ts';
 import { frameScheduler } from '../../compat/frame.ts';
 import { hostSelectors } from '../../compat/host-dom.ts';
+import { recordsTouch } from '../../compat/mutation-scope.ts';
 import { createStatsCard, type StatsCard } from './card.ts';
 import type { StatsSource } from './source.ts';
 import { buildCardData, INITIAL_STATS_VIEW, type StatsViewState } from './view.ts';
@@ -114,8 +115,24 @@ export function mountStatisticsCard(
   /* One pass per paint: the transcript streams many batches between frames and
      the card only has to be connected when a frame is drawn. */
   const frames = frameScheduler(() => sync(), document.defaultView);
+  /**
+   * Whether a batch can move the card.
+   *
+   * Three things matter: the hero root the stack lives in, the greeting whose
+   * height sets the card's offset, and the card itself (its own header controls
+   * write inside it). A batch anywhere else — a streaming transcript on the
+   * chat page, the right pane, the sidebar — cannot.
+   */
+  const relevant = (records: readonly MutationRecord[]): boolean => {
+    const hero = document.querySelector<HTMLElement>(HERO);
+    if (hero === null) return true;
+    if (recordsTouch(records, hero)) return true;
+    return card !== null && recordsTouch(records, card.element);
+  };
   try {
-    observer = new MutationObserver(() => frames.schedule());
+    observer = new MutationObserver(records => {
+      if (relevant(records)) frames.schedule();
+    });
     /* The phase swap replaces the whole conversation body, so the card has to
        follow it; a guarded insert keeps our own write from feeding the loop. */
     observer.observe(document.body, { childList: true, subtree: true });

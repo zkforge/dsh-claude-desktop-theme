@@ -1,0 +1,56 @@
+/**
+ * Whether a mutation batch can concern one region of the page.
+ *
+ * Several modules here observe the whole body because the host can move or
+ * rebuild their anchor at any time, then pay a geometry pass on every batch.
+ * Most batches, though, come from somewhere else — a drag in the right pane, a
+ * streaming transcript on another page, another plugin writing its own markup.
+ * This predicate lets a module skip those batches without narrowing what it
+ * observes, so an anchor that is replaced still reaches it.
+ *
+ * The answer is deliberately conservative: a region that is missing, detached
+ * or cannot answer `contains` makes every batch relevant, so a module that
+ * cannot yet measure is never starved of the mutation that would let it.
+ */
+
+/** One node overlaps a region when either contains the other. */
+function overlaps(node: Node, region: Element): boolean {
+  if (node === region) return true;
+  const candidate = node as Partial<Element>;
+  if (typeof candidate.contains === 'function' && candidate.contains(region)) return true;
+  return typeof region.contains === 'function' && region.contains(node);
+}
+
+/** Whether one record wrote in the region, or inserted/removed around it. */
+function touches(record: MutationRecord, region: Element): boolean {
+  if (record.type === 'attributes' || record.type === 'characterData') {
+    return overlaps(record.target, region);
+  }
+  for (const node of record.addedNodes) if (overlaps(node, region)) return true;
+  for (const node of record.removedNodes) if (overlaps(node, region)) return true;
+  return false;
+}
+
+/**
+ * Whether any record in a batch can move something inside `region`.
+ *
+ * `region` is the element the module measures — the composer, the scroller,
+ * the conversation root. A change inside it, on it, or on any of its ancestors
+ * counts, because those are the writes that can change its box. A `null`
+ * region, or one the host has already detached, makes the batch relevant:
+ * that is exactly the state in which the module has to look again.
+ *
+ * @param records - the observer's batch.
+ * @param region - the element being measured, or null while it is unknown.
+ * @returns true when the batch is worth a pass.
+ */
+export function recordsTouch(records: readonly MutationRecord[], region: Element | null): boolean {
+  if (region === null || region.isConnected === false) return true;
+  /* A node from another realm, or a stand-in without the DOM's containment
+     helpers, cannot answer the question this predicate asks. Treating the batch
+     as relevant is the safe side: the module looks again rather than going
+     quiet. */
+  if (typeof region.contains !== 'function') return true;
+  for (const record of records) if (touches(record, region)) return true;
+  return false;
+}

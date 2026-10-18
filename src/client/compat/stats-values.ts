@@ -1,6 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { frameScheduler } from './frame.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsTouch } from './mutation-scope.ts';
 
 /** Short readout mirrored from native text for wide columns only. */
 export const STAT_VALUE_PROPERTY = '--ccd-stat-value';
@@ -50,10 +51,17 @@ export function mountComposerStats(
   const host = hostSelectors(document);
   let trailing: HTMLElement | null = null;
   let root: HTMLElement | null = null;
+  /* Kept so a batch can say whether it came near the two things this module
+     measures. Re-read every pass, since the item's own writes and the host's
+     re-renders can both replace them. */
+  let row: HTMLElement | null = null;
+  let pills: readonly HTMLElement[] = [];
 
   const sync = () => {
+    pills = readouts ? [...document.querySelectorAll<HTMLElement>(host.statsPill)] : [];
+    row = document.querySelector<HTMLElement>(host.composerRow);
     if (readouts) {
-      for (const pill of document.querySelectorAll<HTMLElement>(host.statsPill)) {
+      for (const pill of pills) {
         const parts = (pill.querySelector(host.statsLabel)?.textContent ?? '')
           .split('·').map(part => part.trim()).filter(Boolean);
         /* The speed readout carries a slash; the usage pill's second segment is
@@ -81,7 +89,6 @@ export function mountComposerStats(
       if (root.style.getPropertyValue(TRAILING_WIDTH_PROPERTY) !== width) {
         root.style.setProperty(TRAILING_WIDTH_PROPERTY, width);
       }
-      const row = document.querySelector<HTMLElement>(host.composerRow);
       const dock = root.querySelector<HTMLElement>(host.composerDock);
       const model = trailing.querySelector<HTMLElement>(host.modelSelectTrigger);
       if (row !== null && dock !== null && model !== null) {
@@ -109,6 +116,23 @@ export function mountComposerStats(
   const frames = frameScheduler(sync, document.defaultView);
   const schedule = () => frames.schedule();
 
+  /**
+   * Whether a batch can move this module's numbers or its budget.
+   *
+   * The composer row is where every measured box lives (the trailing group, the
+   * leading controls, the model button, the dock), and each readout pill's own
+   * text sits outside it in the run's trailing cluster — so both are checked.
+   * Everything else the body reports (the sidebar, the transcript, the right
+   * pane) cannot change either measurement.
+   */
+  const relevant = (records: readonly MutationRecord[]): boolean => {
+    /* `row` is null until the first pass has found the Composer. Every batch is
+       relevant until then, which is what lets a later page's Composer arrive. */
+    if (recordsTouch(records, row)) return true;
+    for (const pill of pills) if (recordsTouch(records, pill)) return true;
+    return false;
+  };
+
   let observer: MutationObserver | undefined;
   /* The readout state is a document-wide fact — the host renders the cluster on
      both pages that carry a Composer — and the value is kept so teardown hands
@@ -118,7 +142,9 @@ export function mountComposerStats(
   const state = readouts ? 'on' : 'off';
   const previous = html.getAttribute(STATS_ATTRIBUTE);
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => {
+      if (relevant(records)) schedule();
+    });
     /* Dragging a panel changes the frame's inline grid tracks, not the window
        size. Native model collapse can also change after a layout pass. Watch
        both; guarded property writes prevent our own styles feeding a loop. */

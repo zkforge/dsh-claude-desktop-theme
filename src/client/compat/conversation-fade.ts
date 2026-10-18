@@ -1,6 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { frameScheduler } from './frame.ts';
 import { ANCHOR, hostSelectors } from './host-dom.ts';
+import { recordsTouch } from './mutation-scope.ts';
 
 /** Marks that the transcript still has content above the scroll viewport. */
 export const FADE_TOP_ATTRIBUTE = 'data-ccd-fade-top';
@@ -93,9 +94,19 @@ export function mountConversationFade(document: Document, report: (error: unknow
   const frames = frameScheduler(sync, document.defaultView);
   const schedule = () => frames.schedule();
 
+  /* A batch that wrote outside this page cannot move the transcript's edges:
+     the right pane's own drags, another plugin's markup and the sidebar's
+     counters all arrive here, and each one would otherwise cost a scroll-geometry
+     read. The scroller and the page body are the two boxes the pass measures, so
+     a write on either (or an ancestor of either) is the batch's only claim. */
+  const relevant = (records: readonly MutationRecord[]): boolean =>
+    recordsTouch(records, scroller) || recordsTouch(records, page);
+
   let observer: MutationObserver | undefined;
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => {
+      if (relevant(records)) schedule();
+    });
     /* The transcript grows through inserted nodes and streamed text; a column
        drag writes inline grid tracks; the scroller itself is rebuilt per
        Session. Both attributes this module writes are outside the filter, so

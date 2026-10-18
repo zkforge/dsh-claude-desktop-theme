@@ -334,12 +334,23 @@
 5. `stats-values` / `conversation-fade` / `statistics/mount`：统一改用
    [frame.ts](../../src/client/compat/frame.ts) 的 `frameScheduler`
    （rAF，缺失或被节流时 16ms 超时兜底），每帧最多一次读写；释放时
-   `cancel()` 丢弃排队任务。测试分别为
+   `cancel()` 丢弃排队任务。三者仍观察整个 body（锚点可能被宿主整段替换），
+   但批次先经过 [mutation-scope.ts](../../src/client/compat/mutation-scope.ts)
+   的 `recordsTouch` 过滤：只有落在被量测区域上、区域内部或区域祖先上的记录
+   才排队一次 pass，侧栏、转录流、右栏的写入直接丢弃。区域未知、已脱离或
+   不能回答 `contains` 时一律视为相关，因此不会因为过滤而错过“锚点回来了”
+   的那一批。测试分别为
    [composer-stats.test.ts](../../tests/composer-stats.test.ts)、
    [conversation-fade.test.ts](../../tests/conversation-fade.test.ts)、
-   [frame.test.ts](../../tests/frame.test.ts)。
+   [frame.test.ts](../../tests/frame.test.ts) 与
+   [mutation-scope.test.ts](../../tests/mutation-scope.test.ts)（区域内 / 区域外 /
+   祖先 / 插入 / 脱离与跨 realm 的保守分支）。
 6. `popup.ts`：body `style` 观察器、surface `ResizeObserver` 与 `resize`
    统一走 `schedulePlace`，每次 paint 至多一次 `place()`；卸载时取消排队帧。
+   surface 的尺寸另用 `cachedSize` 缓存：`place()` 只读 trigger 的 rect，
+   面板自身只在首次放置与 `ResizeObserver` 报告尺寸变化（或窗口 `resize`，
+   面板宽度被视口夹住时会改变）时重读，拖动期间不再为每次定位同步布局两次。
+   测试 [popup-size.test.ts](../../tests/popup-size.test.ts)。
 7. 上下文面板：订阅回调先比对本会话的原始投影（标量 + 四组有序条目），
    未变则不重建；`reading()` 缓存未变的 breakdown；`publishedRaw` 在
    `refresh` 记录、在关闭 / 会话切换 / trigger 替换 / dispose 时清空。
@@ -350,7 +361,7 @@
 8. `EffortPanel.tsx`：canvas 几何在挂载与 `ResizeObserver` 回调中读取，
    逐帧只做限流绘制。
 
-**验收**：`npm run check` 全绿（417 项测试）。阶段 0 的场景中，切换会话/改
+**验收**：`npm run check` 全绿（427 项测试）。阶段 0 的场景中，切换会话/改
 配置后的 listener 与 detached 节点数不随次数增长；长会话滚动时 Scripting
 时间明显下降；effort 拖动期间不再出现每帧同步 Layout。真实窗口的 Performance
 数字仍待阶段 0 的实机采样。

@@ -1,6 +1,29 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
+interface Size { width: number; height: number }
+
+/**
+ * The panel's border box, kept between placements.
+ *
+ * Its size changes only when its own content does, which the resize observer
+ * below already reports, so each placement can read the trigger alone instead
+ * of forcing a second layout of the surface. The first read is the seeding one:
+ * the panel has been shown by the time `place()` runs, so its box is real.
+ *
+ * @param surface - the popover element.
+ * @returns the cached size, and a way to re-read it when the observer fires.
+ */
+export function cachedSize(surface: Element): { current: () => Size; refresh: () => void } {
+  let size: Size | null = null;
+  const read = (): Size => {
+    const { width, height } = surface.getBoundingClientRect();
+    size = { width, height };
+    return size;
+  };
+  return { current: () => size ?? read(), refresh: read };
+}
+
 /** Viewport-clamped top-layer surface; focus and observers die with the panel. */
 export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void) {
   const panel = useRef<HTMLDivElement>(null);
@@ -14,8 +37,9 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
        The supported DSH Electron runtime supplies the native Popover API. */
     surface.setAttribute('popover', 'manual');
     surface.showPopover();
+    const size = cachedSize(surface);
     const place = () => {
-      const a = trigger.getBoundingClientRect(), p = surface.getBoundingClientRect();
+      const a = trigger.getBoundingClientRect(), p = size.current();
       const left = Math.max(12, Math.min(a.right - p.width, innerWidth - p.width - 12));
       const top = Math.max(12, Math.min(a.top - p.height - 8, innerHeight - p.height - 12));
       setPosition(previous => previous.left === left && previous.top === top && previous.visibility === 'visible'
@@ -50,9 +74,14 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
     };
     const observer = new MutationObserver(schedulePlace);
     observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] });
-    const resize = new ResizeObserver(schedulePlace);
+    /* A content change resizes the surface; this observer is that
+       notification, so it is also the hook that refreshes the cached box. */
+    const resize = new ResizeObserver(() => { size.refresh(); schedulePlace(); });
     resize.observe(surface);
-    window.addEventListener('resize', schedulePlace);
+    /* The surface is viewport-clamped, so a window resize can change its box
+       even when its content does not; re-read it there before placing. */
+    const onResize = () => { size.refresh(); schedulePlace(); };
+    window.addEventListener('resize', onResize);
     document.addEventListener('pointerdown', onPointer, true);
     document.addEventListener('focusin', onFocus);
     surface.addEventListener('keydown', onKey);
@@ -62,7 +91,7 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       if (placed !== 0) cancelAnimationFrame(placed);
       if (placementTimer !== undefined) clearTimeout(placementTimer);
       observer.disconnect(); resize.disconnect();
-      window.removeEventListener('resize', schedulePlace);
+      window.removeEventListener('resize', onResize);
       document.removeEventListener('pointerdown', onPointer, true);
       document.removeEventListener('focusin', onFocus);
       surface.removeEventListener('keydown', onKey);

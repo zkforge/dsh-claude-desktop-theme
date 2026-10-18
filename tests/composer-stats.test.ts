@@ -54,14 +54,28 @@ function fixture(readouts = true) {
       removeProperty: (key: string) => properties.delete(key),
     },
   };
+  /* The Composer's boxes carry just enough node identity for the batch
+     predicate: a write anywhere inside the row (or on it) is relevant, and a
+     node the row does not contain is not. Both the row and each pill answer
+     `contains` the way the DOM does — a node contains itself and its
+     descendants — over the fixture's flat tree. */
+  const descendants = new Map<object, Set<object>>();
+  const owns = (parent: object, children: object[]) => {
+    const set = descendants.get(parent) ?? new Set<object>();
+    set.add(parent);
+    for (const child of children) set.add(child);
+    descendants.set(parent, set);
+  };
+  const contains = (parent: object, node: object) => descendants.get(parent)?.has(node) ?? false;
+
   const trailing = { isConnected: true, getBoundingClientRect: () => ({ width }), querySelector: () => model };
   const row = { children: [leading, trailing], getBoundingClientRect: () => ({ width: rowWidth }) };
   const listeners = new Map<string, () => void>();
-  let callback: () => void = () => {};
+  let callback: (records?: MutationRecord[]) => void = () => {};
   let options: MutationObserverInit | undefined;
   let disconnected = false;
   const Observer = class {
-    constructor(fn: () => void) { callback = fn; }
+    constructor(fn: (records?: MutationRecord[]) => void) { callback = fn; }
     observe(_node: unknown, init: MutationObserverInit) { options = init; }
     disconnect() { disconnected = true; }
   };
@@ -76,6 +90,12 @@ function fixture(readouts = true) {
       removeProperty: (key: string) => statProperties.delete(key),
     },
   };
+  /* A paragraph in the transcript: a node neither the row nor the pill owns. */
+  const elsewhere = { nodeType: 1, isConnected: true };
+  Object.assign(row, { isConnected: true, contains: (node: object) => contains(row, node) });
+  Object.assign(pill, { isConnected: true, contains: (node: object) => contains(pill, node) });
+  owns(row, [row, leading, trailing, model, dock]);
+  owns(pill, [pill]);
   const doc = {
     body: {},
     querySelectorAll: () => [pill],
@@ -107,14 +127,19 @@ function fixture(readouts = true) {
   });
   const errors: unknown[] = [];
   const dispose = mountComposerStats(doc as unknown as Document, error => errors.push(error), readouts);
+  /** One batch, as a browser would hand it over. */
+  const batch = (target: object): MutationRecord[] =>
+    [{ type: 'attributes', attributeName: 'style', target, addedNodes: [], removedNodes: [] } as unknown as MutationRecord];
   return {
     properties, statProperties, statAttributes, errors, listeners, dispose,
-    changeStat: (next: string) => { statText = next; callback(); frames(); },
-    resizePanel: (next: number) => { width = next; callback(); frames(); },
-    resizeRow: (next: number) => { rowWidth = next; callback(); frames(); },
-    syncOwnStyle: () => { callback(); frames(); },
+    changeStat: (next: string) => { statText = next; callback(batch(pill)); frames(); },
+    resizePanel: (next: number) => { width = next; callback(batch(trailing)); frames(); },
+    resizeRow: (next: number) => { rowWidth = next; callback(batch(row)); frames(); },
+    syncOwnStyle: () => { callback(batch(root)); frames(); },
     /** Deliver one batch without painting. */
-    mutate: () => callback(),
+    mutate: () => callback(batch(trailing)),
+    /** A batch from somewhere this module does not measure. */
+    mutateElsewhere: () => callback(batch(elsewhere)),
     frames,
     get passes() { return passes; },
     get writes() { return writes; },
@@ -147,6 +172,22 @@ test('a stream of batches settles in one pass per paint', () => {
   assert.equal(f.passes, mount, 'queued batches do no work on delivery');
   f.frames();
   assert.equal(f.passes, mount + 1, 'twenty batches, one paint, one pass');
+  f.dispose();
+});
+
+test('a batch from elsewhere on the page queues no pass', () => {
+  const f = fixture();
+  const mount = f.passes;
+  /* A streaming transcript, a right-pane drag, a sidebar counter: none of them
+     can move the Composer row this module measures. */
+  f.mutateElsewhere();
+  f.mutateElsewhere();
+  f.frames();
+  assert.equal(f.passes, mount, 'unrelated batches measure nothing');
+  /* A write inside the row still schedules the pass. */
+  f.mutate();
+  f.frames();
+  assert.equal(f.passes, mount + 1);
   f.dispose();
 });
 

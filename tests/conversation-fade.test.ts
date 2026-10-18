@@ -45,16 +45,39 @@ function installFrames(): () => void {
   };
 }
 
+/** The scroller stand-in: enough node identity for the batch predicate and the
+    few geometry facts the fade reads. */
+interface ScrollerDouble {
+  isConnected: boolean;
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+  getBoundingClientRect(): { top: number; bottom: number };
+  attributes: Set<string>;
+  listeners: Map<string, () => void>;
+  hasAttribute(name: string): boolean;
+  setAttribute(name: string): void;
+  removeAttribute(name: string): void;
+  addEventListener(type: string, listener: () => void): void;
+  removeEventListener(type: string): void;
+  contains(node: object): boolean;
+  own(node: object): void;
+}
+
 function fixture() {
   /* The fade coalesces its passes into one paint. This fixture is a window
      without animation frames, so the scheduler's timeout fallback runs them;
      frames() drains what is queued, exactly one pass per batch of batches. */
   const frames = installFrames();
 
-  const makeElement = () => {
+  const makeElement = (): ScrollerDouble => {
     const attributes = new Set<string>();
     const listeners = new Map<string, () => void>();
-    return {
+    /* The fixture tree is flat, but the batch predicate asks each measured
+       region whether a record landed inside it, so a region answers over the
+       nodes it owns — itself and anything the test attaches. */
+    const owned = new Set<object>();
+    const element: ScrollerDouble = {
       isConnected: true,
       scrollTop: 100,
       scrollHeight: 1000,
@@ -68,17 +91,21 @@ function fixture() {
       removeAttribute: (name: string) => { attributes.delete(name); },
       addEventListener: (type: string, listener: () => void) => { listeners.set(type, listener); },
       removeEventListener: (type: string) => { listeners.delete(type); },
+      contains: (node: object) => owned.has(node),
+      own(node: object) { owned.add(node); },
     };
+    owned.add(element);
+    return element;
   };
 
   let scroller = makeElement();
   let seatTop = 370;
-  let callback = () => {};
+  let callback = (records: MutationRecord[]) => { void records; };
   let disconnected = false;
   let options: MutationObserverInit | undefined;
   Object.defineProperty(globalThis, 'MutationObserver', {
     configurable: true, value: class {
-      constructor(fn: () => void) { callback = fn; }
+      constructor(fn: (records: MutationRecord[]) => void) { callback = fn; }
       observe(_node: unknown, init: MutationObserverInit) { options = init; }
       disconnect() { disconnected = true; }
     },
@@ -93,12 +120,20 @@ function fixture() {
   /* The page body carries the inset the stylesheet's bottom overlay reads. */
   const properties = new Map<string, string>();
   const page = {
+    isConnected: true,
+    contains: () => false,
+    own() {},
     style: {
       getPropertyValue: (name: string) => properties.get(name) ?? '',
       setProperty: (name: string, value: string) => { properties.set(name, value); },
       removeProperty: (name: string) => { properties.delete(name); },
     },
   };
+  /* A paragraph in some other pane: a batch touching it cannot move this page. */
+  const elsewhere = { nodeType: 1, isConnected: true };
+  /** One batch, as a browser would hand it over. */
+  const inside = (target: object): MutationRecord[] =>
+    [{ type: 'attributes', attributeName: 'style', target, addedNodes: [], removedNodes: [] } as unknown as MutationRecord];
   const document = {
     body: {},
     querySelector: (selector: string) => {
@@ -115,18 +150,20 @@ function fixture() {
     get disconnected() { return disconnected; },
     /* A scroll is a paint-time signal too: the listener only queues the pass. */
     scrollTo(offset: number) { scroller.scrollTop = offset; scroller.listeners.get('scroll')?.(); frames(); },
-    shrink() { scroller.scrollHeight = 400; callback(); frames(); },
+    shrink() { scroller.scrollHeight = 400; callback(inside(scroller)); frames(); },
     seat(top: number) { seatTop = top; scroller.listeners.get('scroll')?.(); frames(); },
     swap() {
       const previous = scroller;
       scroller = makeElement();
-      callback();
+      callback(inside(previous));
       frames();
       return previous;
     },
     resize() { windowListeners.get('resize')?.(); frames(); },
     /** Deliver a batch without painting: what the coalescing is for. */
-    mutate() { callback(); },
+    mutate() { callback(inside(scroller)); },
+    /** A batch from another pane, which cannot move the transcript's edges. */
+    mutateElsewhere() { callback(inside(elsewhere)); },
     frames,
   };
 }
@@ -194,6 +231,25 @@ test('a stream of batches settles in one pass per paint', () => {
   f.frames();
   assert.equal(reads, 2);
   assert.equal(f.scroller.attributes.has(FADE_BOTTOM_ATTRIBUTE), false);
+  f.dispose();
+});
+
+test('a batch from another pane queues no pass', () => {
+  const f = fixture();
+  let reads = 0;
+  Object.defineProperty(f.scroller, 'scrollHeight', {
+    get() { reads += 1; return 1000; },
+    configurable: true,
+  });
+  /* A streaming transcript, a right-pane drag, a sidebar counter: none of them
+     can move this scroller's edges. */
+  for (let index = 0; index < 20; index += 1) f.mutateElsewhere();
+  f.frames();
+  assert.equal(reads, 0, 'unrelated batches measure nothing');
+  /* A write inside the scroller still queues the pass. */
+  f.mutate();
+  f.frames();
+  assert.equal(reads, 1);
   f.dispose();
 });
 
