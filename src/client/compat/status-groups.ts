@@ -2,6 +2,7 @@ import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-api-session-controller/client';
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 
 export type SessionGroup = 'input' | 'working' | 'ended';
 export interface SessionStatus {
@@ -68,11 +69,39 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
     saved.clear();
     list = null;
   };
-  const observer = new MutationObserver(() => schedule());
+  const observer = new MutationObserver(records => {
+    /* The reordered rows all live in the flat list. A streaming transcript, a
+       right-pane drag or the account menu cannot change a status or an order,
+       so those batches end here rather than in a document-wide walk. */
+    if (list !== null && list.isConnected && !recordsTouch(records, list) && !recordsIntroduce(records, host.browserFlatList)) return;
+    schedule();
+  });
   const observe = () => observer.observe(document.documentElement, {
     childList: true, subtree: true, attributes: true,
     attributeFilter: ['class', 'lang', 'data-row-key', 'data-state', 'data-ccd-blank-session'],
   });
+  /**
+   * The subagent index, rebuilt only when the catalog publishes.
+   *
+   * `Object.values(catalog.byId)` over every Session is the widest walk in this
+   * module, and it is a fact about the catalog: a native row changing state
+   * cannot move a child to another parent.
+   */
+  let childrenDirty = true;
+  type Catalog = ReturnType<typeof ctx.sessions.list.getSnapshot>;
+  type Child = Catalog['byId'][keyof Catalog['byId']];
+  let childrenByParent = new Map<string, Child[]>();
+  const readChildren = (catalog: Catalog) => {
+    if (!childrenDirty) return childrenByParent;
+    childrenByParent = new Map();
+    for (const child of Object.values(catalog.byId)) {
+      if (child.origin !== 'subagent' || !child.parentId) continue;
+      const children = childrenByParent.get(child.parentId) ?? [];
+      children.push(child); childrenByParent.set(child.parentId, children);
+    }
+    childrenDirty = false;
+    return childrenByParent;
+  };
   const sync = () => {
     queued = false;
     if (disposed) return;
@@ -85,26 +114,20 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       list = next;
       const catalog = ctx.sessions.list.getSnapshot();
       const statuses = status?.getSnapshot();
-      const childrenByParent = new Map<string, (typeof catalog.byId)[keyof typeof catalog.byId][]>();
-      for (const child of Object.values(catalog.byId)) {
-        if (child.origin !== 'subagent' || !child.parentId) continue;
-        const children = childrenByParent.get(child.parentId) ?? [];
-        children.push(child); childrenByParent.set(child.parentId, children);
-      }
+      const childrenOf = readChildren(catalog);
       const zh = document.documentElement.lang.toLowerCase().startsWith('zh');
       const labels = zh ? ['需要输入', '进行中', '已结束'] : ['Needs input', 'Working', 'Ended'];
       const rows = [...list.querySelectorAll<HTMLElement>('[data-row-key^="session:"]')]
         .filter(row => !row.hasAttribute('data-ccd-blank-session'));
-      const before = new Map(rows.map(row => [row, row.getBoundingClientRect()]));
-      let layoutChanged = false;
-      remember(list, 'data-ccd-status-list', '');
-      const counts = [0, 0, 0];
-      const stride = (rows.length + 1) * 2;
-      const ordered: HTMLElement[] = [];
-      for (const row of rows) {
+      /* Plan every row before touching the document. The plan is a pure
+         function of the catalogs and the rows, so a pass that changes nothing
+         can stop here: no inline style, no layout read, no animation — which
+         is what a native row's own status flip or a wrapper's class change
+         costs on a long list. */
+      const plan = rows.map(row => {
         const id = row.dataset.rowKey!.slice(8);
         const summary = catalog.byId[id as keyof typeof catalog.byId];
-        const children = childrenByParent.get(id) ?? [];
+        const children = childrenOf.get(id) ?? [];
         const runningChild = children.some(child => statuses?.get(child.id)?.running ?? child.running);
         // Builds without the root sessionStatus source still render StateDot.
         // Read the native row's StateDot in that case; it already combines
@@ -117,8 +140,60 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
         const group = sessionGroup({ ...ownStatus,
           running: (ownStatus?.running ?? summary?.running ?? false) || runningChild,
         }, false);
-        const index = GROUPS.indexOf(group);
-        const order = index * stride + (++counts[index]!) * 2;
+        return { row, id, group, children };
+      });
+      const counts = [0, 0, 0];
+      const stride = (rows.length + 1) * 2;
+      const orderedRows = plan.map(entry => {
+        const index = GROUPS.indexOf(entry.group);
+        return { ...entry, order: index * stride + (++counts[index]!) * 2 };
+      });
+      const boxes = new Map<string, HTMLElement>();
+      for (const node of owned) {
+        const key = node.dataset.ccdStatusOwned;
+        if (key !== undefined) boxes.set(key, node);
+      }
+      /* What this pass wants the document to say, compared with what it says
+         now. The comparison itself is free of layout and of writes. */
+      const signatures = new Map<string, string>();
+      for (const { id, group, children } of plan) {
+        if (group === 'working' && children.length > 0) {
+          signatures.set(`children:${id}`, JSON.stringify(children.map(child => [child.id, child.displayTitle, child.running])));
+        }
+      }
+      let changed = false;
+      for (const { row, group, order } of orderedRows) {
+        if (row.dataset.ccdStatusOrder !== String(order)
+          || row.dataset.ccdStatusGroup !== group
+          || row.style.getPropertyValue('--ccd-status-order') !== String(order)
+          || row.getAttribute('tabindex') !== '0') { changed = true; break; }
+      }
+      if (!changed) {
+        for (const [key, signature] of signatures) {
+          if (boxes.get(key)?.dataset.signature !== signature) { changed = true; break; }
+        }
+      }
+      if (!changed) {
+        for (const [index, group] of GROUPS.entries()) {
+          const heading = boxes.get(group);
+          if (counts[index] || showEmpty) {
+            if (heading === undefined || heading.textContent !== labels[index]) { changed = true; break; }
+          } else if (heading !== undefined) { changed = true; break; }
+        }
+      }
+      if (!changed) {
+        const live = new Set([...signatures.keys()]);
+        for (const key of boxes.keys()) if (key.startsWith('children:') && !live.has(key)) { changed = true; break; }
+      }
+      if (!changed) return;
+      /* A row that moved is the only reason to read layout. The previous rects
+         are taken now, after the decision, so an unchanged pass never asks the
+         engine to flush. */
+      const before = new Map(rows.map(row => [row, row.getBoundingClientRect()]));
+      let layoutChanged = false;
+      remember(list, 'data-ccd-status-list', '');
+      const ordered: HTMLElement[] = [];
+      for (const { row, id, group, order, children } of orderedRows) {
         if (row.dataset.ccdStatusOrder !== String(order)) layoutChanged = true;
         remember(row, 'data-ccd-status-order', String(order));
         remember(row, 'data-ccd-status-group', group);
@@ -135,7 +210,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
         remember(row, 'tabindex', '0');
         ordered.push(row);
         const childKey = `children:${id}`;
-        let childBox = [...owned].find(node => node.dataset.ccdStatusOwned === childKey);
+        let childBox = boxes.get(childKey);
         if (group === 'working' && children.length) {
           if (!childBox) {
             layoutChanged = true;
@@ -147,7 +222,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
           }
           childBox.style.order = String(order + 1);
           childBox.setAttribute('aria-label', zh ? '子任务' : 'Subagents');
-          const signature = JSON.stringify(children.map(child => [child.id, child.displayTitle, child.running]));
+          const signature = signatures.get(childKey)!;
           if (childBox.dataset.signature !== signature) {
             layoutChanged = true;
             childBox.dataset.signature = signature;
@@ -162,7 +237,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
         } else if (childBox) { layoutChanged = true; owned.delete(childBox); childBox.remove(); }
       }
       for (const [index, group] of GROUPS.entries()) {
-        let heading = [...owned].find(node => node.dataset.ccdStatusOwned === group);
+        let heading = boxes.get(group);
         if (counts[index] || showEmpty) {
           if (!heading) {
             layoutChanged = true;
@@ -223,7 +298,9 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
     if (list?.contains(event.target as Node)) { event.preventDefault(); event.stopPropagation(); }
   };
   const offStatus = status?.subscribe(schedule);
-  const offList = ctx.sessions.list.subscribe(schedule);
+  /* The catalog is what the subagent index is built from, so its publish is
+     what invalidates it. */
+  const offList = ctx.sessions.list.subscribe(() => { childrenDirty = true; schedule(); });
   document.addEventListener('keydown', keydown);
   document.addEventListener('dragstart', drag, true);
   document.addEventListener('visibilitychange', stopAnimations);

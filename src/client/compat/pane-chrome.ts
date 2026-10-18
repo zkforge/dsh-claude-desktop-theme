@@ -254,14 +254,104 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     element.textContent = match === null ? text : `${match[1]}${match[2] ?? ''}`;
     if (match?.[3]) { const workspace = document.createElement('span'); workspace.setAttribute('data-ccd-terminal-workspace', ''); workspace.textContent = ` ${match[3]}`; element.append(workspace); }
   };
+
+  /* Every card in a group draws the whole group: T terminal cards hold T tabs
+     each, so one selection change rebuilt T×T cells. A cell is kept by tab id
+     and only its own state is rewritten; a cell whose tab left the group is
+     dropped with it. */
+  type TerminalTab = PaneChromeOptions['terminals'][number];
+  interface TabCell {
+    readonly cell: HTMLElement;
+    readonly select: HTMLButtonElement;
+    readonly remove: HTMLButtonElement;
+    title: string;
+  }
+  const tabCells = new Map<string, TabCell>();
+  let tabList: HTMLElement | null = null;
+  /** The card's own name, when it holds one rather than a tab list. */
+  let nameSpan: HTMLElement | null = null;
+  let nameText = '';
+  const writeTab = (held: TabCell, tab: TerminalTab) => {
+    if (held.title !== tab.title) {
+      terminalText(held.select, tab.title);
+      held.title = tab.title;
+      const closeLabel = `${labels.chrome.closeTab} ${tab.title}`;
+      if (held.remove.getAttribute('aria-label') !== closeLabel) {
+        held.remove.setAttribute('aria-label', closeLabel);
+        held.remove.title = closeLabel;
+      }
+    }
+    if (held.select.getAttribute('aria-selected') !== String(tab.selected)) {
+      held.select.setAttribute('aria-selected', String(tab.selected));
+      held.select.tabIndex = tab.selected ? 0 : -1;
+    }
+    if (tab.selected) held.cell.setAttribute('data-selected', '');
+    else held.cell.removeAttribute('data-selected');
+  };
+  const tabCell = (tab: TerminalTab): TabCell => {
+    const kept = tabCells.get(tab.id);
+    if (kept !== undefined) return kept;
+    const cell = document.createElement('span');
+    cell.setAttribute('data-ccd-terminal-tab', '');
+    const select = document.createElement('button');
+    select.type = 'button';
+    select.setAttribute('role', 'tab');
+    select.addEventListener('pointerdown', event => event.stopPropagation());
+    select.addEventListener('click', () => options.onSelect(tab.id));
+    select.addEventListener('keydown', event => {
+      /* The group is read when the key arrives: a reused cell must answer for
+         the tabs it is shown beside now, not the ones it was built beside. */
+      const live = options.terminals;
+      const index = live.findIndex(item => item.id === tab.id);
+      const target = event.key === 'ArrowRight' ? (index + 1) % live.length
+        : event.key === 'ArrowLeft' ? (index + live.length - 1) % live.length
+          : event.key === 'Home' ? 0 : event.key === 'End' ? live.length - 1 : -1;
+      if (target < 0) return;
+      event.preventDefault(); options.onSelect(live[target]!.id);
+      document.querySelector<HTMLButtonElement>(`[data-dockkit-content="${live[target]!.id}"] [role="tab"][aria-selected="true"]`)?.focus();
+    });
+    cell.append(select);
+    const remove = button(cell, labels.chrome.closeTab, 'data-ccd-terminal-close', 'X', () => options.onClose(tab.id));
+    remove.tabIndex = -1;
+    const created: TabCell = { cell, select, remove, title: '' };
+    tabCells.set(tab.id, created);
+    return created;
+  };
+  /** The live tab list, reconciled in place: same cells, current names and selection. */
+  const updateTabs = (terminals: readonly TerminalTab[]) => {
+    const list = tabList;
+    if (list === null) return;
+    const live = new Set(terminals.map(tab => tab.id));
+    for (const [id, held] of [...tabCells]) {
+      if (live.has(id)) continue;
+      held.cell.remove();
+      tabCells.delete(id);
+    }
+    terminals.forEach((tab, index) => {
+      const held = tabCell(tab);
+      writeTab(held, tab);
+      if (list.children[index] !== held.cell) list.insertBefore(held.cell, list.children[index] ?? null);
+    });
+  };
+  const updateName = (next: PaneChromeOptions) => {
+    if (nameSpan === null || nameText === `${next.kind}|${next.title}`) return;
+    nameText = `${next.kind}|${next.title}`;
+    if (next.kind === 'terminal') terminalText(nameSpan, next.title);
+    else nameSpan.textContent = next.title;
+  };
   const update = (next: PaneChromeOptions) => {
     options = next;
     labels = paneLabels(paneLanguage(document));
     const hidden = next.filesRoot?.hasAttribute('data-ccd-files-tree') ?? false;
-    const value = `${paneLanguage(document)}|${next.kind}|${next.title}|${next.zoomed}|${hidden}|${next.files.map(file => `${file.id}:${file.selected}`).join(',')}|${next.terminals.map(tab => `${tab.id}:${tab.title}:${tab.selected}`).join(',')}`;
-    if (value === signature) { refreshNative(); return; }
+    /* Only the chrome's shape is in the signature. A tab's selection or name
+       and the card's own title are rewritten in place by the cells that hold
+       them, so a group of T cards does not rebuild T tabs each time one is
+       selected. */
+    const value = `${paneLanguage(document)}|${next.kind}|${next.zoomed}|${hidden}|${next.filesRoot === null}|${next.terminals.length > 1}|${next.terminals.map(tab => tab.id).join(',')}|${next.files.map(file => file.id).join(',')}`;
+    if (value === signature) { updateTabs(next.terminals); updateName(next); refreshNative(); return; }
     signature = value;
     dismiss(); addressResize?.disconnect(); addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
+    tabCells.clear(); tabList = null; nameSpan = null; nameText = '';
     node.setAttribute('data-ccd-pane-kind', next.kind);
     if (next.kind === 'browser') {
       const globe = button(caption, labels.chrome.address, 'data-ccd-browser-address', 'Globe', address);
@@ -284,27 +374,12 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       if (next.kind === 'terminal' && next.terminals.length > 1) {
         const tabs = document.createElement('span'); tabs.setAttribute('data-ccd-terminal-tabs', '');
         tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', labels.chrome.terminals); caption.append(tabs);
-        for (const tab of next.terminals) {
-          const cell = document.createElement('span'); cell.setAttribute('data-ccd-terminal-tab', '');
-          if (tab.selected) cell.setAttribute('data-selected', '');
-          const select = document.createElement('button'); select.type = 'button'; terminalText(select, tab.title);
-          select.setAttribute('role', 'tab'); select.setAttribute('aria-selected', String(tab.selected));
-          select.tabIndex = tab.selected ? 0 : -1;
-          select.addEventListener('pointerdown', event => event.stopPropagation());
-          select.addEventListener('click', () => next.onSelect(tab.id));
-          select.addEventListener('keydown', event => {
-            const index = next.terminals.indexOf(tab);
-            const target = event.key === 'ArrowRight' ? (index + 1) % next.terminals.length : event.key === 'ArrowLeft' ? (index + next.terminals.length - 1) % next.terminals.length : event.key === 'Home' ? 0 : event.key === 'End' ? next.terminals.length - 1 : -1;
-            if (target < 0) return;
-            event.preventDefault(); next.onSelect(next.terminals[target]!.id);
-            document.querySelector<HTMLButtonElement>(`[data-dockkit-content="${next.terminals[target]!.id}"] [role="tab"][aria-selected="true"]`)?.focus();
-          });
-          cell.append(select);
-          const remove = button(cell, `${labels.chrome.closeTab} ${tab.title}`, 'data-ccd-terminal-close', 'X', () => next.onClose(tab.id));
-          remove.tabIndex = -1; tabs.append(cell);
-        }
+        tabList = tabs;
+        updateTabs(next.terminals);
       } else {
-        const name = document.createElement('span'); if (next.kind === 'terminal') terminalText(name, next.title); else name.textContent = next.title; caption.append(name);
+        const name = document.createElement('span'); caption.append(name);
+        nameSpan = name;
+        updateName(next);
       }
       if (next.kind === 'terminal') button(caption, labels.chrome.newTerminal, 'data-ccd-terminal-add', 'Add', next.onNew);
       else if (next.filesRoot || next.kind === 'text') button(controls, labels.chrome.search, 'data-ccd-pane-search', 'Search', () => {

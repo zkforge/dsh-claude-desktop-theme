@@ -41,6 +41,30 @@ class FakeElement {
     }
   }
 
+  prepend(...children: FakeElement[]): void {
+    for (const child of children) child.parent = this;
+    this.children.unshift(...children);
+  }
+
+  remove(): void {
+    if (this.parent === null) return;
+    this.parent.children = this.parent.children.filter(child => child !== this);
+    this.parent = null;
+  }
+
+  get className(): string { return this.attributes.get('class') ?? ''; }
+
+  set className(value: string) { this.attributes.set('class', value); }
+
+  get textContent(): string { return this.text + this.children.map(child => child.textContent).join(''); }
+
+  set textContent(value: string) { this.children = []; this.text = value; }
+
+  private text = '';
+
+  /** The module writes one SVG block's markup; the fixture does not parse it. */
+  set innerHTML(_value: string) { this.children = []; }
+
   /** One compound selector: tag, `.class`es and `[attr]`／`[attr="value"]` parts. */
   matches(selector: string): boolean {
     const tokens = selector.match(/^[a-zA-Z][\w-]*|\.[\w-]+|\[[^\]]+\]/gu) ?? [];
@@ -70,19 +94,33 @@ class FakeElement {
     visit(this);
     return found;
   }
+
+  /** The containment the batch predicate asks a measured region for. */
+  contains(candidate: object): boolean {
+    if (candidate === this) return true;
+    return this.children.some(child => child.contains(candidate));
+  }
+
+  get isConnected(): boolean { return true; }
 }
 
 /** Observer double recording the last instance so a test can force a pass. */
 class FakeObserver {
   static instances: FakeObserver[] = [];
-  readonly callback: () => void;
+  readonly callback: (records: MutationRecord[]) => void;
   disconnected = false;
-  constructor(callback: () => void) {
+  constructor(callback: (records: MutationRecord[]) => void) {
     this.callback = callback;
     FakeObserver.instances.push(this);
   }
   observe(): void {}
   disconnect(): void { this.disconnected = true; }
+  /** Deliver one batch, as a browser would. */
+  deliver(...targets: FakeElement[]): void {
+    this.callback(targets.map(target => ({
+      type: 'childList', target, addedNodes: [target], removedNodes: [],
+    }) as unknown as MutationRecord));
+  }
 }
 
 /** One group container: its Workspace row, then whatever the test adds. */
@@ -97,20 +135,48 @@ function session(id: string, attributes: Record<string, string> = {}): FakeEleme
   return new FakeElement('div', { 'data-row-key': `session:${id}`, ...attributes });
 }
 
-/** A document double over one fake tree. */
-function fakeDocument(...groups: FakeElement[]): { document: Document; body: FakeElement } {
+/** A document double over one fake tree.
+ *
+ * The rows live inside the browser's list area, the way the host draws them:
+ * the module reads that area to filter batches and judges only what is under
+ * it. The sidebar's search box and header live beside it in the same body. */
+function fakeDocument(...groups: FakeElement[]) {
   const documentElement = new FakeElement('html');
   const body = new FakeElement('body');
-  body.append(...groups);
+  const area = new FakeElement('div', { class: '_7514NG_listArea' });
+  const elsewhere = new FakeElement('div', { class: '_7514NG_sectionHeader' });
+  area.append(...groups);
+  body.append(elsewhere, area);
   documentElement.append(body);
+  /* Every pass starts by listing the groups it judges, so counting those
+     queries is counting passes. */
+  let passes = 0;
+  const findAll = (selector: string) => {
+    if (selector.includes('groupSection')) passes += 1;
+    return documentElement.querySelectorAll(selector);
+  };
+  /* The pass lists groups from the tree it found, not from the document. */
+  const findAllInArea = area.querySelectorAll.bind(area);
+  area.querySelectorAll = (selector: string) => {
+    if (selector.includes('groupSection')) passes += 1;
+    return findAllInArea(selector);
+  };
   return {
+    elsewhere,
+    /* A reader, not a field: destructuring a getter would freeze the count. */
+    passes: () => passes,
     document: {
       documentElement,
       body,
-      querySelector: (selector: string) => documentElement.querySelectorAll(selector)[0] ?? null,
-      querySelectorAll: (selector: string) => documentElement.querySelectorAll(selector),
+      querySelector: (selector: string) => findAll(selector)[0] ?? null,
+      querySelectorAll: findAll,
+      /* The empty state is the module's own markup; the fixture only needs a
+         node it can attach, mark and remove. */
+      createElement: (tagName: string) => new FakeElement(tagName),
+      createElementNS: (_namespace: string, tagName: string) => new FakeElement(tagName),
     } as unknown as Document,
     body,
+    area,
   };
 }
 
@@ -215,12 +281,65 @@ test('collapsed Workspaces remain reachable until expansion reveals their member
     assert.equal(parent.hasAttribute('data-ccd-empty-group'), false);
     // Once expanded with no rows, the workspace can safely be classified empty.
     collapsed.children[0]!.setAttribute('aria-expanded', 'true');
-    FakeObserver.instances[0]!.callback();
+    FakeObserver.instances[0]!.deliver(collapsed);
     assert.equal(collapsed.hasAttribute('data-ccd-empty-group'), true);
     assert.equal(parent.hasAttribute('data-ccd-empty-group'), true);
   } finally {
     mounted.dispose();
   }
+});
+
+test('a batch from another pane scans no groups', () => {
+  const empty = group('without-sessions');
+  const { document, elsewhere, passes } = fakeDocument(empty);
+  const mounted = mount(document, true);
+  const after = passes();
+  try {
+    const observer = FakeObserver.instances[0]!;
+    /* A streaming transcript, the right pane, the Composer: none of them can
+       change which Workspace groups are empty. */
+    for (let index = 0; index < 20; index += 1) observer.deliver(elsewhere);
+    assert.equal(passes(), after, 'unrelated batches judge nothing');
+    /* A row changing inside the tree still reaches the pass. */
+    observer.deliver(empty);
+    assert.equal(passes(), after + 1);
+  } finally {
+    mounted.dispose();
+  }
+});
+
+test('a catalog answer is walked once until its own subscription publishes', () => {
+  const empty = group('empty');
+  const full = group('full');
+  for (const node of [empty, full]) node.children[0]!.setAttribute('aria-expanded', 'false');
+  const { document } = fakeDocument(empty, full);
+  let walked = 0;
+  let populated = new Set(['full']);
+  let publish: () => void = () => {};
+  const original = globalThis.MutationObserver;
+  FakeObserver.instances = [];
+  globalThis.MutationObserver = FakeObserver as unknown as typeof MutationObserver;
+  const dispose = mountEmptyGroups(document, true, error => { throw error; }, {
+    source: {
+      hasHistory: () => true,
+      populatedGroups: () => { walked += 1; return populated; },
+      subscribe(notify) { publish = notify; return () => {}; },
+    },
+  });
+  globalThis.MutationObserver = original;
+  try {
+    assert.equal(walked, 1, 'the mount reads the catalogs once');
+    const observer = FakeObserver.instances[0]!;
+    /* Sidebar churn — a row arriving, a group expanding — cannot change what
+       the catalogs say, so the walk is not repeated. */
+    observer.deliver(full);
+    observer.deliver(empty);
+    assert.equal(walked, 1);
+    populated = new Set();
+    publish();
+    assert.equal(walked, 2, 'a catalog publish is what invalidates the answer');
+    assert.equal(full.hasAttribute('data-ccd-empty-group'), true);
+  } finally { dispose(); }
 });
 
 test('the switch off means the sidebar is left exactly as the host drew it', () => {

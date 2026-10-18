@@ -15,15 +15,51 @@ export function magnet(value: number): number {
   const t = 1 - distance / .5;
   return value - delta * (.68 + .42 * t) * t * t;
 }
-export function drawPixelField(canvas: HTMLCanvasElement, elapsed: number, reduced: boolean): void {
-  const context = canvas.getContext('2d');
-  if (!context || !canvas.width || !canvas.height) return;
+/** The nine colour stops the field reads, resolved once per theme. */
+interface Palette {
+  leftColor: Color;
+  deepViolet: Color;
+  deepMid: Color;
+  midPurple: Color;
+  softMid: Color;
+  softLilac: Color;
+  paleCool: Color;
+  highlightColor: Color;
+  peakColor: Color;
+}
+
+/**
+ * The colour scheme the palette was read under.
+ *
+ * The stops live in `theme/tokens.css` and only change when the host swaps the
+ * document's scheme (`body[data-ds-dark-theme]`), so the marker is the cache
+ * key: reading it is one attribute lookup where resolving the palette is a
+ * `getComputedStyle` plus nine custom-property reads, on every drawn frame.
+ */
+function schemeOf(canvas: HTMLCanvasElement): string {
+  const document = canvas.ownerDocument;
+  return `${document?.documentElement?.getAttribute('data-dsh-ccd-style') ?? ''}|${document?.body?.hasAttribute('data-ds-dark-theme') ?? false}`;
+}
+
+const palettes = new WeakMap<HTMLCanvasElement, { readonly scheme: string; readonly palette: Palette }>();
+
+function paletteOf(canvas: HTMLCanvasElement, scheme: string): Palette {
+  const cached = palettes.get(canvas);
+  if (cached !== undefined && cached.scheme === scheme) return cached.palette;
   const style = getComputedStyle(canvas);
   const color = (key: string): Color => {
     const channels = style.getPropertyValue('--ccd-effort-pixel-' + key).split(',').map(Number);
     return [channels[0] ?? 0, channels[1] ?? 0, channels[2] ?? 0];
   };
-  const palette = {leftColor: color('leftColor'),deepViolet: color('deepViolet'),deepMid: color('deepMid'),midPurple: color('midPurple'),softMid: color('softMid'),softLilac: color('softLilac'),paleCool: color('paleCool'),highlightColor: color('highlightColor'),peakColor: color('peakColor')};
+  const palette: Palette = {leftColor: color('leftColor'),deepViolet: color('deepViolet'),deepMid: color('deepMid'),midPurple: color('midPurple'),softMid: color('softMid'),softLilac: color('softLilac'),paleCool: color('paleCool'),highlightColor: color('highlightColor'),peakColor: color('peakColor')};
+  palettes.set(canvas, { scheme, palette });
+  return palette;
+}
+
+export function drawPixelField(canvas: HTMLCanvasElement, elapsed: number, reduced: boolean): void {
+  const context = canvas.getContext('2d');
+  if (!context || !canvas.width || !canvas.height) return;
+  const palette = paletteOf(canvas, schemeOf(canvas));
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   const width = canvas.width / ratio, height = canvas.height / ratio;
   context.setTransform(ratio, 0, 0, ratio, 0, 0);

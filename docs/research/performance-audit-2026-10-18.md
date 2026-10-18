@@ -368,21 +368,52 @@
 
 ### 阶段 2：规模放大治理（3–5 天，中风险）
 
-1. `empty-groups` / `status-groups`：
-   - 观察目标收窄到侧栏列表容器；
-   - membership 按 catalog/workspace 快照缓存并失效；
-   - 先比较分组顺序，只有真正变化时才测 before/after；`owned` 改 Map；
-   - 嵌套路径预归一化，避免 `some` 内的重复正则。
-2. `files-pane`：按 tree revision/query 缓存筛选结果，差异写标记；只对文件
-   行相关 mutation 触发。
-3. `right-panes` / `pane-chrome`：只给可见终端装配一份组 chrome，或把 tab
-   list 改为单个复用的 tablist；避免 T 个终端 × T 个 tab 的 O(T²) 重建。
-4. `hero-canvas` / `ripples`：复用缓冲区、缓存静态纹理、输入/拖动期间降频或
-   暂停。
-5. `effort` 像素场：尺寸缓存，读取移出逐帧路径。
+**已完成**（`npm run check` 全绿，435 项测试）：
 
-**验收**：历史 1000 会话、10 工作区、20 个已加载文件、8 个终端时，上述场景
-的脚本时间与长任务数接近小规模基线；DOM 节点数不随无关 mutation 增长。
+1. `empty-groups`：观察器的批次先过 `recordsTouch(records, area)`，再问一次
+   `recordsIntroduce(records, host.browserListArea)`（另一个面板里新建的列表
+   也要一次 pass）；只有真正碰到侧栏列表区或向其插入列表容器的批次才扫描。
+   catalog（筛选值、嵌套标记、已占用分组、历史）改为惰性缓存，靠列表容器与
+   `ctx.sessions.list` 的订阅置脏，不再每次 pass 重走 DOM。同步改为两段式：
+   先算出分组计划并比对现有节点，未变即返回，不再为一次空 pass 读
+   `getBoundingClientRect` 或写属性。测试
+   [empty-groups.test.ts](../../tests/empty-groups.test.ts)：别的面板的批次
+   不扫分组、catalog 答案只走一次直到订阅发布。
+2. `status-groups`：同样的批次过滤（`host.browserFlatList` 的插入视为相关），
+   子节点顺序按列表快照缓存；同步同样先建 `plan` / `orderedRows` / `boxes`
+   并比对 dataset、`--ccd-status-order`、tabindex、标题与过期子盒，未变则在
+   任何 rect 读取与写入之前返回。测试
+   [status-groups.test.ts](../../tests/status-groups.test.ts)：别的面板的批次
+   不碰扁平列表、无变化的 pass 既不写也不读布局。
+3. `adapter.populatedGroups`：工作区路径的归一化按 id 记忆，不再在 `some`
+   里对同一路径反复跑正则。
+4. `files-pane`：筛选只写差异（`mark(row, hidden)`，标记已是目标状态就跳过），
+   因此一次 pass 不再把每一行重新 `setAttribute` 一遍、也不再把自己的写入喂回
+   观察器。观察器按模块实际打扮的盒子（已接管的 pane、`host.filesRoot`、
+   `host.rightbarPanel`、空栏）过滤批次，插入这些盒子的批次照旧触发。
+   空栏的落点仍只限右栏自己的派生结构
+   （`[data-sidebar-right-panel] … [data-dockkit-empty] … [data-dockkit-pane]`），
+   文件树正文不会被误认成空栏。测试
+   [files-pane-browser.test.mjs](../../tests/files-pane-browser.test.mjs)。
+5. `right-panes` / `pane-chrome`：只有组里正在显示的那张卡片装配 chrome（其余
+   卡片 `display:none`），所以 T 个终端不再各画一份 T 个 tab；tab 单元格按 id
+   复用，选中/改名只改该单元格自己的 `aria-selected` / `tabindex` /
+   `data-selected`，不再整份重建 tab list。测试
+   [right-panes-browser.test.mjs](../../tests/right-panes-browser.test.mjs)：三张
+   终端卡片只存在一份 tab list。
+6. `hero-canvas` / `ripples`：墨水色与采样网格按画布尺寸与配色缓存
+   （`RippleSurface`），`light` 缓冲跨帧复用，不再每帧 `getComputedStyle` 与
+   逐帧分配 `Float32Array`；指针按下、按键输入期间跳过这一帧的绘制（时钟照走，
+   手势结束后不补画过期帧）。测试
+   [hero-ripples.test.ts](../../tests/hero-ripples.test.ts)。
+7. `effort` 像素场：调色板按配色缓存（`WeakMap<canvas, {scheme, palette}>`），
+   逐帧只做绘制；配色标记变化（`data-dsh-ccd-style` /
+   `data-ds-dark-theme`）时重读一次。测试
+   [effort-pixels.test.ts](../../tests/effort-pixels.test.ts)。
+
+**验收**：`npm run check` 全绿（435 项测试）。历史 1000 会话、10 工作区、
+20 个已加载文件、8 个终端时，上述场景的脚本时间与长任务数接近小规模基线；
+DOM 节点数不随无关 mutation 增长。实机 Performance 采样仍待补。
 
 ### 阶段 3：Host 投影与统计（3–5 天，中高风险，需回归）
 

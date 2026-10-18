@@ -441,7 +441,11 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
           setProperty(filesRoot, TREE_WIDTH, `${width}px`);
           owned.add(filesRoot);
         }
-        if (!treeNode) decorate(node, group, root, state, records);
+        /* Only the tab a group is showing carries chrome. Its siblings are
+           `display:none` behind it, and each one's chrome draws the whole
+           group's tab list, so mounting them all cost T cards × T tabs for a
+           single group; the node that becomes active mounts its own instead. */
+        if (!treeNode && !inactive) decorate(node, group, root, state, records);
         else { controls.get(node)?.release(); controls.delete(node); }
       }
       if (tree !== undefined && !compact && !treeHidden && !hiddenGroup && width > 0) {

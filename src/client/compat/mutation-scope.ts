@@ -54,3 +54,31 @@ export function recordsTouch(records: readonly MutationRecord[], region: Element
   for (const record of records) if (touches(record, region)) return true;
   return false;
 }
+
+/**
+ * Whether a batch inserted a subtree the selector names.
+ *
+ * For modules that watch the whole body only because their anchor can be
+ * replaced: an insertion that matches the selector is the one structural event
+ * worth a pass, and it costs one `matches`/`querySelector` per inserted element
+ * rather than a scan of the document. The predicate is also conservative: a
+ * node from another realm, or one without the selector helpers, counts as a
+ * match.
+ *
+ * @param records - the observer's batch.
+ * @param selector - the marker whose arrival matters.
+ * @returns true when an inserted element is, or contains, a match.
+ */
+export function recordsIntroduce(records: readonly MutationRecord[], selector: string): boolean {
+  for (const record of records) {
+    if (record.type !== 'childList') continue;
+    for (const node of record.addedNodes) {
+      if (node.nodeType !== 1) continue;
+      const element = node as Partial<Element>;
+      if (typeof element.matches !== 'function' || typeof element.querySelector !== 'function') return true;
+      if (element.matches(selector)) return true;
+      if (element.querySelector(selector) !== null) return true;
+    }
+  }
+  return false;
+}

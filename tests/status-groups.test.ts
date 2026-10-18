@@ -62,80 +62,100 @@ class Element {
     }
     return null;
   }
-  querySelectorAll() {
+  querySelectorAll(selector?: string) {
     const result: Element[] = [];
+    const sessionRows = selector === undefined || selector.includes('data-row-key');
     const walk = (node: Element) => { for (const child of node.children) {
-      if (child.dataset.rowKey?.startsWith('session:')) result.push(child);
+      if ((sessionRows && child.dataset.rowKey?.startsWith('session:'))
+        || (selector?.includes('flatList') && child.className.includes('flatList'))) result.push(child);
       walk(child);
     } };
     walk(this); return result;
   }
+  matches(selector: string) {
+    return selector.startsWith('[') && selector.endsWith(']')
+      ? this.hasAttribute(selector.slice(1, -1)) : false;
+  }
+  contains(node: object): boolean {
+    if (node === this) return true;
+    return this.children.some(child => child.contains(node));
+  }
   getBoundingClientRect() { return { top: 0, left: 0, height: 28 }; }
+}
+
+/** One mount over two Session rows: `a` working, `b` ended. */
+function fixture(rootStatus: boolean) {
+  let notifyMutation = (records?: MutationRecord[]) => { void records; };
+  const list = new Element();
+  const wrapper = new Element();
+  const a = new Element(), b = new Element();
+  a.setAttribute('data-row-key', 'session:a'); b.setAttribute('data-row-key', 'session:b');
+  a.setAttribute('tabindex', '-1'); a.style.setProperty('--ccd-status-order', '17');
+  wrapper.append(a); list.append(wrapper, b);
+  const callbacks = [new Set<() => void>(), new Set<() => void>()];
+  const statuses = new Map<string, SessionStatus>([['a', { running: true }], ['b', {}]]);
+  const store = <T>(value: T, index: number) => ({ getSnapshot: () => value,
+    subscribe(listener: () => void) { callbacks[index]!.add(listener); return () => { callbacks[index]!.delete(listener); }; } });
+  const working = new Element();
+  working.setAttribute('aria-hidden', 'true'); working.setAttribute('data-state', 'ongoing');
+  a.append(working);
+  const ctx = { uiSession: rootStatus ? { sessionStatus: store(statuses, 0) } : {}, sessions: { list: store({ byId: {
+    a: { id: 'a', running: true }, b: { id: 'b', running: false },
+  } }, 1) } } as unknown as Context;
+  const events = new Set<string>();
+  const doc = {
+    documentElement: { lang: 'zh-CN', dataset: { platform: 'darwin' } }, hidden: false,
+    defaultView: { matchMedia: () => ({ matches: true }) },
+    querySelector: (selector: string) => selector.includes('flatList') ? list : null,
+    createElement: () => new Element(),
+    addEventListener: (key: string) => events.add(key), removeEventListener: (key: string) => events.delete(key),
+  } as unknown as Document;
+  return { list, wrapper, a, b, callbacks, statuses, pending: new Element(), ctx, doc, events,
+    /** Deliver a batch the way the browser would, through the observer. */
+    mutation: (records: MutationRecord[] = []) => notifyMutation(records),
+    setNotify: (callback: (records?: MutationRecord[]) => void) => { notifyMutation = callback; } };
+}
+
+/** A batch that names one target, as one observer delivery does. */
+function batch(type: MutationRecord['type'], target: object): MutationRecord[] {
+  return [{ type, target, addedNodes: [], removedNodes: [] } as unknown as MutationRecord];
 }
 
 for (const platform of ['darwin', 'win32']) for (const rootStatus of [true, false]) {
   test(`status grouping preserves rows and restores the list (${platform}, root source: ${rootStatus})`, async () => {
     const original = globalThis.MutationObserver;
-    let notifyMutation = () => {};
+    const f = fixture(rootStatus);
+    const { list, wrapper, a, b, callbacks, statuses, pending } = f;
     globalThis.MutationObserver = class {
-      constructor(callback: () => void) { notifyMutation = callback; }
+      constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
       observe(_target: unknown, options: MutationObserverInit) {
         assert.ok(options.attributeFilter?.includes('data-state'));
       }
       disconnect() {}
     } as unknown as typeof MutationObserver;
-    const list = new Element();
-    const wrapper = new Element();
-    const a = new Element(), b = new Element();
-    a.setAttribute('data-row-key', 'session:a'); b.setAttribute('data-row-key', 'session:b');
-    a.setAttribute('tabindex', '-1'); a.style.setProperty('--ccd-status-order', '17');
-    wrapper.append(a); list.append(wrapper, b);
-    const callbacks = [new Set<() => void>(), new Set<() => void>()];
-    const statuses = new Map<string, SessionStatus>([['a', { running: true }], ['b', {}]]);
-    const store = <T>(value: T, index: number) => ({ getSnapshot: () => value,
-      subscribe(listener: () => void) { callbacks[index]!.add(listener); return () => { callbacks[index]!.delete(listener); }; } });
-    const working = new Element();
-    working.setAttribute('aria-hidden', 'true'); working.setAttribute('data-state', 'ongoing');
-    a.append(working);
-    const ctx = { uiSession: rootStatus ? { sessionStatus: store(statuses, 0) } : {}, sessions: { list: store({ byId: {
-      a: { id: 'a', running: true }, b: { id: 'b', running: false },
-    } }, 1) } } as unknown as Context;
+    f.doc.documentElement.dataset.platform = platform;
     const errors: unknown[] = [];
-    const events = new Set<string>();
-    const doc = {
-      documentElement: { lang: 'zh-CN', dataset: { platform } }, hidden: false,
-      defaultView: { matchMedia: () => ({ matches: true }) },
-      querySelector: (selector: string) => {
-        if (selector.includes('flatList')) {
-          assert.equal(selector, platform === 'win32' ? '._9lTDKa_flatList' : '._7514NG_flatList');
-          return list;
-        }
-        return null;
-      },
-      createElement: () => new Element(),
-      addEventListener: (key: string) => events.add(key), removeEventListener: (key: string) => events.delete(key),
-    } as unknown as Document;
     try {
-      const dispose = mountStatusGroups(doc, ctx, false, error => errors.push(error));
+      const dispose = mountStatusGroups(f.doc, f.ctx, false, error => errors.push(error));
       assert.deepEqual(errors, []);
       assert.equal(a.dataset.ccdStatusGroup, 'working');
       assert.equal(b.dataset.ccdStatusGroup, 'ended');
       assert.equal(a.parentElement, wrapper);
       assert.equal(wrapper.parentElement, list);
       statuses.set('b', { running: true, pendingInteraction: { kind: 'approval' } });
-      const pending = new Element();
       pending.setAttribute('aria-hidden', 'true'); pending.setAttribute('data-state', 'warning');
       b.append(pending);
-      if (rootStatus) for (const notify of callbacks[0]!) notify();
-      else notifyMutation();
+      const arrive = () => rootStatus
+        ? callbacks[0]!.forEach(notify => notify())
+        : f.mutation(batch('attributes', pending));
+      arrive();
       await Promise.resolve();
       assert.equal(b.dataset.ccdStatusGroup, 'input');
       assert.ok(Number(b.dataset.ccdStatusOrder) < Number(a.dataset.ccdStatusOrder));
       assert.equal(list.children.filter(node => node.className === 'ccd-status-heading').length, 2);
       statuses.set('b', {});
       pending.setAttribute('data-state', 'done');
-      if (rootStatus) for (const notify of callbacks[0]!) notify();
-      else notifyMutation();
+      arrive();
       await Promise.resolve();
       assert.equal(b.dataset.ccdStatusGroup, 'ended', 'clearing input and completion reminders restores the ended group');
       dispose();
@@ -146,9 +166,62 @@ for (const platform of ['darwin', 'win32']) for (const rootStatus of [true, fals
       assert.equal(b.style.getPropertyValue('--ccd-status-order'), '');
       assert.equal(wrapper.hasAttribute('data-ccd-status-wrapper'), false);
       assert.deepEqual(callbacks.map(source => source.size), [0, 0]);
-      assert.equal(events.size, 0);
+      assert.equal(f.events.size, 0);
       assert.deepEqual(errors, []);
     } finally { globalThis.MutationObserver = original; }
   });
-
 }
+
+test('a batch from another pane does not touch the flat list', async () => {
+  const original = globalThis.MutationObserver;
+  const f = fixture(true);
+  globalThis.MutationObserver = class {
+    constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
+    observe() {}
+    disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const errors: unknown[] = [];
+  try {
+    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => errors.push(error));
+    /* A write that lands nowhere near the list cannot change a row's group; a
+       pass would walk every row and write every marker again. */
+    const before = JSON.stringify([f.a.dataset, f.b.dataset, f.a.style.values, f.b.style.values]);
+    f.mutation(batch('attributes', { nodeType: 1, isConnected: true }));
+    await Promise.resolve();
+    assert.equal(JSON.stringify([f.a.dataset, f.b.dataset, f.a.style.values, f.b.style.values]), before);
+    /* A row inside the list still reaches the pass. */
+    f.statuses.set('b', { running: true });
+    f.mutation(batch('attributes', f.b));
+    await Promise.resolve();
+    assert.equal(f.b.dataset.ccdStatusGroup, 'working');
+    assert.deepEqual(errors, []);
+    dispose();
+  } finally { globalThis.MutationObserver = original; }
+});
+
+test('an unchanged pass writes nothing and reads no layout', async () => {
+  const original = globalThis.MutationObserver;
+  const f = fixture(true);
+  globalThis.MutationObserver = class {
+    constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
+    observe() {}
+    disconnect() {}
+  } as unknown as typeof MutationObserver;
+  try {
+    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => { throw error; });
+    /* Native churn inside the list that changes no status: the wrapper's
+       classes are rewritten, the row is touched. The plan is identical, so the
+       pass must stop before it reads a rect or writes a marker. */
+    let reads = 0;
+    for (const row of [f.a, f.b]) {
+      const original = row.getBoundingClientRect.bind(row);
+      row.getBoundingClientRect = () => { reads += 1; return original(); };
+    }
+    const order = f.b.style.getPropertyValue('--ccd-status-order');
+    for (let index = 0; index < 10; index += 1) f.mutation(batch('attributes', f.wrapper));
+    await Promise.resolve();
+    assert.equal(reads, 0, 'an unchanged plan never asks the engine to flush layout');
+    assert.equal(f.b.style.getPropertyValue('--ccd-status-order'), order);
+    dispose();
+  } finally { globalThis.MutationObserver = original; }
+});

@@ -100,6 +100,48 @@ test('drawing uses theme ink, caps pixel density, clears the prior frame and res
   } finally { globalThis.getComputedStyle = original; }
 });
 
+test('the ink and sampling mesh are resolved once per box and scheme, not per frame', () => {
+  const original = globalThis.getComputedStyle;
+  let reads = 0;
+  globalThis.getComputedStyle = (() => {
+    reads += 1;
+    return { getPropertyValue: () => (reads === 1 ? '#2477ac' : '#ff0000') };
+  }) as unknown as typeof getComputedStyle;
+  const allocations: number[] = [];
+  const originalFloat = globalThis.Float32Array;
+  globalThis.Float32Array = new Proxy(originalFloat, {
+    construct(target, args) { allocations.push((args[0] as number) ?? 0); return new target(...args as [number]); },
+  }) as unknown as typeof Float32Array;
+  const context = {
+    globalAlpha: 1, fillStyle: '', font: '', textBaseline: '',
+    setTransform() {}, clearRect() {}, fillText() {},
+  };
+  const body: { hasAttribute(name: string): boolean } = { hasAttribute: () => false };
+  const document = { defaultView: { devicePixelRatio: 1 }, body, documentElement: { getAttribute: () => 'true' } };
+  const canvas = { width: 400, height: 300, ownerDocument: document, getContext: () => context } as unknown as HTMLCanvasElement;
+  try {
+    drawHeroRipples(canvas, 0);
+    assert.equal(reads, 1);
+    assert.equal(allocations.length, 1, 'the light mesh is allocated once');
+    assert.equal(context.fillStyle, '#2477ac');
+    for (let elapsed = 42; elapsed < 600; elapsed += 42) drawHeroRipples(canvas, elapsed);
+    assert.equal(reads, 1, 'frames draw from the resolved ink');
+    assert.equal(allocations.length, 1, 'and reuse the mesh');
+    /* A resize and a scheme swap are the two things that invalidate it. */
+    canvas.width = 800;
+    drawHeroRipples(canvas, 700);
+    assert.equal(allocations.length, 2, 'a new box needs a mesh of its own');
+    assert.equal(reads, 1, 'the ink is still the same colour');
+    body.hasAttribute = name => name === 'data-ds-dark-theme';
+    drawHeroRipples(canvas, 800);
+    assert.equal(reads, 2, 'the dark scheme re-reads it');
+    assert.equal(context.fillStyle, '#ff0000');
+  } finally {
+    globalThis.getComputedStyle = original;
+    globalThis.Float32Array = originalFloat;
+  }
+});
+
 test('hero lifecycle pauses for visibility and reduced motion and releases the canvas on phase change', async () => {
   const { mountHeroCanvas } = await import('../src/client/compat/hero-canvas.ts');
   const oldMutation = globalThis.MutationObserver, oldResize = globalThis.ResizeObserver;
@@ -177,6 +219,23 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     tick(3400); assert.equal(active.length, 0, 'expired waves are released');
     click({ clientX: 130, clientY: 140 }); tick(3500);
     assert.deepEqual(active, [{ x: .1, y: .2, startedAt: 3300 }], 'a new click is accepted after completion');
+    /* A held pointer and a typing reader both leave the field one frame
+       behind; the clock keeps running so it resumes where it would have been. */
+    const before = calls;
+    events.get('pointerdown')!({ type: 'pointerdown' }); tick(3800);
+    assert.equal(calls, before, 'a drag does not paint behind the pointer');
+    tick(3900); assert.equal(calls, before);
+    /* One paint is two draws: the page's canvas and the title bar's. */
+    events.get('pointerup')!({ type: 'pointerup' }); tick(4000);
+    assert.equal(calls, before + 2, 'the field resumes when the gesture ends');
+    events.get('keydown')!({ type: 'keydown', key: 'a' }); tick(4300);
+    assert.equal(calls, before + 2, 'typing holds the same frame');
+    events.get('keyup')!({ type: 'keyup', key: 'a' }); tick(4600);
+    assert.equal(calls, before + 4, 'releasing the key lets it paint again');
+    /* A modifier is not typing, so the cadence carries on under it. */
+    events.get('keydown')!({ type: 'keydown', key: 'Shift' }); tick(4700);
+    assert.equal(calls, before + 6, 'a bare modifier does not hold the field');
+    events.get('keyup')!({ type: 'keyup', key: 'Shift' });
     doc.hidden = true; events.get('visibilitychange')!();
     assert.equal(frames.size, 0); assert.equal(canvas.hidden, true); assert.equal(titleCanvas.hidden, true);
     doc.hidden = false; events.get('visibilitychange')!();

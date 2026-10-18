@@ -1,5 +1,6 @@
 import type { Disposer, SidebarSessionsPort, ViewOptionsSettingsPort } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 
 /**
  * Workspaces with nothing to show, kept out of the sidebar.
@@ -59,6 +60,16 @@ export function mountEmptyGroups(
   let emptyArea: HTMLElement | null = null;
   const unsubscribes: Disposer[] = [];
   let disposed = false;
+  /** The sidebar tree this pass reads, re-read only when it has been replaced. */
+  let area: HTMLElement | null = null;
+  /**
+   * `hasHistory` and `populatedGroups` walk both catalogs (and the nested path
+   * comparison is quadratic in Workspaces). Their answer only changes when the
+   * catalogs publish, which is exactly what the port's subscription reports, so
+   * one read serves every pass in between.
+   */
+  let catalogDirty = true;
+  let catalog: { filter: number | null; nested: boolean; populated: ReadonlySet<string> | null; history: boolean | null } | null = null;
 
   /** The row keys that keep one group on screen. */
   const keepsGroup = (group: HTMLElement, populated: ReadonlySet<string> | null): boolean => {
@@ -125,17 +136,41 @@ export function mountEmptyGroups(
     clearEmptyState();
   };
 
+  /**
+   * The two catalog answers, kept until one of the catalogs publishes.
+   *
+   * The filter and tree settings are read every pass (they are two fields on a
+   * snapshot the settings port already has in memory); the expensive walks are
+   * not. This is also what makes the settings subscription meaningful: it is
+   * the only thing besides a catalog publish that can change the answer.
+   */
+  const readCatalog = () => {
+    const preferences = options.settings?.getSnapshot();
+    const filter = preferences?.groups[2]?.selected ?? null;
+    const nested = preferences?.groups[0]?.selected === 1;
+    if (!catalogDirty && catalog !== null && catalog.filter === filter && catalog.nested === nested) return catalog;
+    catalog = {
+      filter,
+      nested,
+      history: options.source?.hasHistory() ?? null,
+      populated: options.source?.populatedGroups(filter, nested) ?? null,
+    };
+    catalogDirty = false;
+    return catalog;
+  };
+
   const sync = () => {
     scheduled = 0;
     if (disposed) return;
-    const noHistory = options.source?.hasHistory() === false;
+    const { history, populated } = readCatalog();
+    const noHistory = history === false;
     const wanted = new Set<HTMLElement>();
-    const preferences = options.settings?.getSnapshot();
-    const populated = options.source?.populatedGroups(
-      preferences?.groups[2]?.selected ?? null,
-      preferences?.groups[0]?.selected === 1,
-    ) ?? null;
-    const groups = document.querySelectorAll<HTMLElement>(host.workspaceGroup);
+    /* The rows this module judges all live in the tree. Re-reading the tree on
+       every pass would walk the whole document for rows it never marks. */
+    if (area === null || !area.isConnected) area = document.querySelector<HTMLElement>(host.browserListArea);
+    const groups = area !== null && area.isConnected
+      ? area.querySelectorAll<HTMLElement>(host.workspaceGroup)
+      : document.querySelectorAll<HTMLElement>(host.workspaceGroup);
     for (const group of groups) {
       if (noHistory || (hideEmpty && !keepsGroup(group, populated))) wanted.add(group);
     }
@@ -151,7 +186,6 @@ export function mountEmptyGroups(
       node.setAttribute('data-ccd-empty-group', '');
       marked.add(node);
     }
-    const area = document.querySelector<HTMLElement>(host.browserListArea);
     // Do not replace search/loading UI. A native empty row, or a complete set
     // of groups hidden by our rule, establishes that the session tree is empty.
     const flatRows = area?.querySelectorAll<HTMLElement>('[data-row-key^="session:"], [data-row-key^="overflow:"]');
@@ -174,16 +208,39 @@ export function mountEmptyGroups(
     }
   };
 
+  /**
+   * Whether a batch can change what this rule marks.
+   *
+   * The tree is the only place the judged rows live, so a streaming transcript,
+   * a right-pane drag or the account menu never reaches the pass. A batch is
+   * relevant when it touches the tree it reads, or inserts a tree to read;
+   * until one has been found every batch is relevant, which is what lets the
+   * sidebar arrive after this module mounts.
+   */
+  const relevant = (records: readonly MutationRecord[]): boolean => {
+    if (area === null || !area.isConnected) return true;
+    if (recordsTouch(records, area)) return true;
+    return recordsIntroduce(records, host.browserListArea);
+  };
+
+  /** A catalog publish is the only thing that can change the cached answer. */
+  const onCatalog = () => {
+    catalogDirty = true;
+    schedule();
+  };
+
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => {
+      if (relevant(records)) schedule();
+    });
     observer.observe(document.body, {
       childList: true, subtree: true, attributes: true,
       // Host expansion/current-row changes and the blank-session adapter can
       // change membership without inserting a row. Our own marker is excluded.
       attributeFilter: ['data-row-key', 'aria-expanded', 'aria-selected', 'data-ccd-blank-session'],
     });
-    if (options.source) unsubscribes.push(options.source.subscribe(schedule));
-    if (options.settings) unsubscribes.push(options.settings.subscribe(schedule));
+    if (options.source) unsubscribes.push(options.source.subscribe(onCatalog));
+    if (options.settings) unsubscribes.push(options.settings.subscribe(onCatalog));
     sync();
   } catch (error) {
     observer?.disconnect();

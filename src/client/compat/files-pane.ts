@@ -1,6 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { paneIcon } from './pane-icons.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 import { paneLabels, paneLanguage, type FilesPaneLabels, type PaneLanguage } from './pane-labels.ts';
 
 /**
@@ -247,9 +248,18 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
   const applyFilter = (pane: Pane) => {
     const query = pane.query.trim().toLowerCase();
     const rows = [...pane.body.querySelectorAll<HTMLElement>('[data-files-entry]')];
+    /* Only the difference is written. The pass runs on every structural
+       mutation batch — a streaming transcript included — so re-marking rows
+       that already carry the answer would both cost that many attribute writes
+       and feed the observer its own notifications. */
+    const mark = (row: HTMLElement, hidden: boolean) => {
+      if (row.hasAttribute(ROW_ATTRIBUTE) === hidden) return;
+      if (hidden) row.setAttribute(ROW_ATTRIBUTE, '');
+      else row.removeAttribute(ROW_ATTRIBUTE);
+    };
     if (query === '') {
-      for (const row of rows) row.removeAttribute(ROW_ATTRIBUTE);
-      pane.noMatch.hidden = true;
+      for (const row of rows) mark(row, false);
+      if (!pane.noMatch.hidden) pane.noMatch.hidden = true;
       return;
     }
     const visible = new Set<Element>();
@@ -260,10 +270,7 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
       hits++;
       for (let node: Element | null = row; node !== null; node = enclosingRow(node)) visible.add(node);
     }
-    for (const row of rows) {
-      if (visible.has(row)) row.removeAttribute(ROW_ATTRIBUTE);
-      else row.setAttribute(ROW_ATTRIBUTE, '');
-    }
+    for (const row of rows) mark(row, !visible.has(row));
     pane.noMatch.hidden = hits > 0;
   };
 
@@ -384,7 +391,41 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
     writeEmpty(block, paneLabels(paneLanguage(document)).files);
   };
 
+  /* The boxes this module dresses, for the batch predicate only. The empty
+     column keeps the host's own nesting: only a right panel's empty column
+     gets the landing state, never another DockKit surface's. */
+  const REGION_SELECTOR = [host.filesRoot, host.rightbarPanel].join(', ');
+  const ARRIVAL_SELECTOR = [host.rightbarPanel, host.filesRoot, host.dockEmpty].join(', ');
+  /* One descendant chain, exactly as the host nests it: only a dock pane
+     inside a right panel's empty column is dressed. */
+  const EMPTY_SELECTOR = `${host.rightbarPanel} ${host.dockEmpty} ${host.dockPane}`;
+  /** Every box this module dresses, kept so a batch can be judged against them. */
+  let regions: HTMLElement[] = [];
+  const collectRegions = () => {
+    /* Already adopted panes come first: a batch that says nothing about the
+       trees they sit in still has to reach the row copy and the empty block. */
+    const found = new Set<HTMLElement>();
+    for (const pane of panes.values()) found.add(pane.root);
+    for (const root of document.querySelectorAll<HTMLElement>(REGION_SELECTOR)) found.add(root);
+    for (const root of document.querySelectorAll<HTMLElement>(ARRIVAL_SELECTOR)) found.add(root);
+    regions = [...found];
+  };
+  /**
+   * Whether a batch can change what this module writes.
+   *
+   * The panes, their tabs and the empty dock columns are the only places it
+   * touches; everything else the body reports — a streaming transcript, the
+   * sidebar, a conversation's own menus — cannot. An insertion that creates one
+   * of those boxes is relevant too, which is also how a right panel that
+   * arrives empty reaches the pass.
+   */
+  const relevant = (records: readonly MutationRecord[]): boolean => {
+    if (regions.length === 0) return true;
+    for (const region of regions) if (recordsTouch(records, region)) return true;
+    return recordsIntroduce(records, ARRIVAL_SELECTOR);
+  };
   const sync = () => {
+    collectRegions();
     for (const pane of [...panes.values()]) {
       if (!pane.root.isConnected || pane.body !== pane.root.querySelector(host.filesBody)
         || pane.field.parentElement !== headerOf(pane.root)) release(pane);
@@ -426,13 +467,14 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
     /* Only the right panel's columns are dressed: the empty pane's block is
        this interface's own surface, and `right-panel.css` states it inside the
        card. Another DockKit host in the document keeps the host's own line. */
-    const panel = `${host.rightbarPanel} ${host.dockEmpty} ${host.dockPane}`;
-    for (const pane of document.querySelectorAll(panel)) adoptEmpty(pane);
+    for (const pane of document.querySelectorAll<HTMLElement>(EMPTY_SELECTOR)) adoptEmpty(pane);
   };
 
   let observer: MutationObserver | undefined;
   try {
-    observer = new MutationObserver(sync);
+    observer = new MutationObserver(records => {
+      if (relevant(records)) sync();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
     /* `<html lang>` is the one attribute this pass reads that body mutations
        cannot report; it sits outside the body, so it gets its own observation. */

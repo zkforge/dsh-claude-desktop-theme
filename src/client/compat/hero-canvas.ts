@@ -34,11 +34,25 @@ export function mountHeroCanvas(document: Document,
     }
     sync();
   });
+  /**
+   * Whether the reader is doing something that needs the main thread.
+   *
+   * The field is decorative. While a pointer is held (a column drag, a
+   * selection), the window is moving, or the reader is typing, its next frame
+   * is the first thing to give up: the clock still advances, so the field picks
+   * up where it would have been rather than restarting.
+   */
+  let busy = false;
   const tick = (time: number) => {
     frame = 0;
     if (!canvas || disposed) return;
     // Cap this background to 24 fps, independent of the display's refresh rate.
-    if (!last || time - last >= 1000 / 24) {
+    if (busy) {
+      /* Time still passes: the reveal and the tone drift must not freeze and
+         then jump forward when the gesture ends. */
+      if (last) elapsed += time - last;
+      last = time;
+    } else if (!last || time - last >= 1000 / 24) {
       if (last) elapsed += time - last;
       last = time;
       impulses = impulses.filter(impulse => elapsed - impulse.startedAt < HERO_RIPPLE_DURATION);
@@ -49,6 +63,23 @@ export function mountHeroCanvas(document: Document,
       catch (error) { stop(); report(error); return; }
     }
     frame = win.requestAnimationFrame(tick);
+  };
+  /* A key press that starts a line also means the reader is here; so does a
+     pointer going down. Neither stops the page, only this frame's paint. */
+  const engage = (event: Event) => {
+    if (event.type === 'keydown') {
+      const { key, metaKey, ctrlKey } = event as KeyboardEvent;
+      /* Modifiers alone and the command shortcuts do not produce text. */
+      if (key === 'Shift' || key === 'Control' || key === 'Alt' || key === 'Meta' || metaKey || ctrlKey) return;
+    }
+    busy = true;
+  };
+  const release = () => {
+    if (!busy) return;
+    busy = false;
+    /* Do not paint an overdue frame the moment the gesture ends; the next
+       frame's normal cadence takes over. */
+    last = 0;
   };
   function sync() {
     if (disposed) return;
@@ -107,6 +138,14 @@ export function mountHeroCanvas(document: Document,
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-phase'] });
   document.addEventListener('visibilitychange', sync);
   document.addEventListener('click', click, { passive: true });
+  /* Capture, so a handler that stops propagation deep in the page cannot
+     leave the field painting through a drag or a keystroke. */
+  document.addEventListener('pointerdown', engage, { capture: true, passive: true });
+  document.addEventListener('keydown', engage, { capture: true, passive: true });
+  document.addEventListener('pointerup', release, { capture: true, passive: true });
+  document.addEventListener('pointercancel', release, { capture: true, passive: true });
+  document.addEventListener('keyup', release, { capture: true, passive: true });
+  win.addEventListener('blur', release);
   reduced.addEventListener('change', sync);
   win.addEventListener('resize', sync);
   sync();
@@ -114,6 +153,12 @@ export function mountHeroCanvas(document: Document,
     disposed = true; stop(); observer.disconnect(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
     document.removeEventListener('visibilitychange', sync);
     document.removeEventListener('click', click);
+    document.removeEventListener('pointerdown', engage, { capture: true });
+    document.removeEventListener('keydown', engage, { capture: true });
+    document.removeEventListener('pointerup', release, { capture: true });
+    document.removeEventListener('pointercancel', release, { capture: true });
+    document.removeEventListener('keyup', release, { capture: true });
+    win.removeEventListener('blur', release);
     reduced.removeEventListener('change', sync); win.removeEventListener('resize', sync);
     root = null; canvas = null; titleCanvas = null; impulses = [];
   };

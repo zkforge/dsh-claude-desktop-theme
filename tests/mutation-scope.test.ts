@@ -1,15 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { recordsTouch } from '../src/client/compat/mutation-scope.ts';
+import { recordsIntroduce, recordsTouch } from '../src/client/compat/mutation-scope.ts';
 
-/** A node as the DOM answers the one question this predicate asks of it. */
+/** A node as the DOM answers the questions these predicates ask of it. */
 function node(connected = true) {
   const owned = new Set<object>();
   const element = {
     nodeType: 1,
     isConnected: connected,
+    marker: '',
     contains: (candidate: object) => owned.has(candidate),
     own(child: object) { owned.add(child); },
+    matches: (selector: string) => element.marker === selector,
+    querySelector: (selector: string) => [...owned].find(child => (child as { marker?: string }).marker === selector) ?? null,
   };
   owned.add(element);
   return element;
@@ -67,4 +70,23 @@ test('an unknown or detached region makes every batch relevant', () => {
   assert.equal(recordsTouch(batch, gone as unknown as Element), true, 'a region the host removed is exactly when to look again');
   /* A stand-in from another realm cannot answer `contains`; look again. */
   assert.equal(recordsTouch(batch, { isConnected: true } as unknown as Element), true);
+});
+
+test('a selector match is worth a pass wherever the batch inserted it', () => {
+  const page = node();
+  const wanted = node();
+  wanted.marker = '[data-phase="hero"]';
+  const other = node();
+  assert.equal(recordsIntroduce([insertion(page, [wanted])], '[data-phase="hero"]'), true);
+  assert.equal(recordsIntroduce([insertion(page, [other])], '[data-phase="hero"]'), false);
+  /* A batch that only writes attributes introduces nothing. */
+  assert.equal(recordsIntroduce([attribute(page)], '[data-phase="hero"]'), false);
+  /* The marker may arrive inside the inserted wrapper rather than be it. */
+  const wrapper = node();
+  wrapper.own(wanted);
+  assert.equal(recordsIntroduce([insertion(page, [wrapper])], '[data-phase="hero"]'), true);
+  /* Text nodes cannot match, and are not asked to. */
+  assert.equal(recordsIntroduce([insertion(page, [{ nodeType: 3 }])], '[data-phase="hero"]'), false);
+  /* A stand-in that cannot answer the selector helpers is treated as a match. */
+  assert.equal(recordsIntroduce([insertion(page, [{ nodeType: 1 }])], '[data-phase="hero"]'), true);
 });

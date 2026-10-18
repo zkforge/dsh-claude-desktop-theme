@@ -325,6 +325,10 @@ test('plain titles, Files header tree switch, full conversation expansion and te
   const active=await boxes(page);assert.deepEqual(Object.keys(active),['auto-terminal-2']);
   const shot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-sidebar-terminal-tabs.png',Buffer.from(shot.data,'base64'));
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=auto-terminal-2] [role=tablist]').querySelectorAll('[role=tab]').length"),3);
+  /* Three terminal cards, one group: only the card on show carries a tab list,
+     so the group's cost is its three tabs rather than three lists of three. */
+  assert.equal(await page.evaluate("document.querySelectorAll('[data-ccd-terminal-tabs]').length"),1,'only the visible card draws the tab list');
+  assert.deepEqual(await page.evaluate("['t','auto-terminal-1','auto-terminal-2'].map(id=>document.querySelector('[data-dockkit-content='+id+'] [role=tablist]')?.textContent)"),[null,null,'终端 1 repo终端 2 repo终端 3 repo'],'the hidden cards are named by the native title only');
   await page.evaluate("[...document.querySelectorAll('[data-dockkit-content=auto-terminal-2] [data-ccd-terminal-close]')].at(-1).click()");await wait(page);
   assert.deepEqual(Object.keys(await boxes(page)),['auto-terminal-1']);
   await click(page,'[data-dockkit-content=auto-terminal-1] [data-dockkit-float-close]');await wait(page);

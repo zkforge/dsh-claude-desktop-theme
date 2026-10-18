@@ -111,11 +111,23 @@ export function createSidebarSessionsPort(ctx: Context): SidebarSessionsPort | n
         if (workspace.sessionIds.some(matches)) populated.add(workspace.workspaceId);
       }
       // Tree mode keeps empty ancestor folders when a descendant has history.
+      // Every Workspace's path is normalized once rather than once per pair:
+      // the comparison below is what other code pays for repeatedly.
       if (nested) {
-        const path = (value: string) => value.replace(/\\/gu, '/').replace(/\/+$/u, '') + '/';
-        const occupiedPaths = registry.items.filter(row => populated.has(row.workspaceId)).map(row => path(row.path));
+        const paths = new Map<string, string>();
+        const path = (workspaceId: string, value: string) => {
+          let normalized = paths.get(workspaceId);
+          if (normalized === undefined) {
+            normalized = value.replace(/\\/gu, '/').replace(/\/+$/u, '') + '/';
+            paths.set(workspaceId, normalized);
+          }
+          return normalized;
+        };
+        const occupied = registry.items.filter(row => populated.has(row.workspaceId))
+          .map(row => path(row.workspaceId, row.path));
         for (const row of registry.items) {
-          if (occupiedPaths.some(child => child.startsWith(path(row.path)))) populated.add(row.workspaceId);
+          const own = path(row.workspaceId, row.path);
+          if (occupied.some(child => child.startsWith(own))) populated.add(row.workspaceId);
         }
       }
       return populated;

@@ -119,25 +119,72 @@ export function rippleCell(x: number, y: number, elapsed: number,
     + clickFieldAt(x, y, elapsed, width, height, impulses));
 }
 
+/**
+ * The ink and the sampling mesh, kept between frames.
+ *
+ * Both are facts about the canvas's box and colour scheme, and both are read
+ * with layout-forcing calls (`getComputedStyle`, `defaultView`). The field is
+ * redrawn about 24 times a second for as long as the page is up, so resolving
+ * them per frame makes the background's cost scale with the display's refresh
+ * rate for no visual difference. The mesh is keyed on the exact pixel size the
+ * canvas was last drawn at; the ink on the document's colour scheme.
+ */
+interface RippleSurface {
+  readonly width: number;
+  readonly height: number;
+  readonly ratio: number;
+  readonly step: number;
+  readonly columns: number;
+  readonly rows: number;
+  /** Reused between frames: the interpolation reads it, nothing retains it. */
+  readonly light: Float32Array;
+  readonly scheme: string;
+  ink: string;
+}
+
+const surfaces = new WeakMap<HTMLCanvasElement, RippleSurface>();
+
+/** The colour scheme the ink was read under (see `theme/tokens.css`). */
+function schemeOf(canvas: HTMLCanvasElement): string {
+  const document = canvas.ownerDocument;
+  return `${document?.documentElement?.getAttribute('data-dsh-ccd-style') ?? ''}|${document?.body?.hasAttribute('data-ds-dark-theme') ?? false}`;
+}
+
+function surfaceOf(canvas: HTMLCanvasElement, scheme: string): RippleSurface {
+  const cached = surfaces.get(canvas);
+  if (cached !== undefined && cached.width === canvas.width && cached.height === canvas.height
+    && cached.scheme === scheme) return cached;
+  const ratio = Math.min(canvas.ownerDocument.defaultView!.devicePixelRatio || 1, 2);
+  const width = canvas.width / ratio, height = canvas.height / ratio;
+  /* Sample only the smoothly varying light on a coarse mesh. Bilinear
+     interpolation keeps it continuous without evaluating noise per glyph. */
+  const step = 18;
+  const columns = Math.max(1, Math.ceil(width / step) + 1), rows = Math.max(1, Math.ceil(height / step) + 1);
+  const surface: RippleSurface = {
+    width, height, ratio, step, columns, rows,
+    light: new Float32Array(columns * rows),
+    scheme,
+    ink: cached?.scheme === scheme ? cached.ink : '',
+  };
+  surfaces.set(canvas, surface);
+  return surface;
+}
+
 /** Stationary ASCII rows lit by an autonomous, slowly swelling wave field. */
 export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
   impulses: readonly HeroRippleImpulse[] = []): void {
   const context = canvas.getContext('2d');
   if (!context) return;
-  const ratio = Math.min(canvas.ownerDocument.defaultView!.devicePixelRatio || 1, 2);
-  const width = canvas.width / ratio, height = canvas.height / ratio;
+  const surface = surfaceOf(canvas, schemeOf(canvas));
+  const { width, height, ratio, step, columns, rows, light } = surface;
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.clearRect(0, 0, width, height);
   if (!width || !height) return;
-  context.fillStyle = getComputedStyle(canvas).getPropertyValue('--ccd-hero-ripple-ink').trim();
+  if (surface.ink === '') surface.ink = getComputedStyle(canvas).getPropertyValue('--ccd-hero-ripple-ink').trim();
+  context.fillStyle = surface.ink;
   context.font = '12px monospace'; context.textBaseline = 'top';
   const frame = frameAt(elapsed, width, height);
   const fadeIn = smooth(0, 1.4, elapsed / 1000);
-  // Sample only the smoothly varying light on a coarse mesh. Bilinear
-  // interpolation keeps it continuous without evaluating noise per glyph.
-  const step = 18;
-  const columns = Math.ceil(width / step) + 1, rows = Math.ceil(height / step) + 1;
-  const light = new Float32Array(columns * rows);
   for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++) {
     light[row * columns + col] = fieldAt(col * step, row * step, frame) * fadeIn
       + clickFieldAt(col * step, row * step, elapsed, width, height, impulses);
