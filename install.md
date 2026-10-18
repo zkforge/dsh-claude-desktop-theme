@@ -1,6 +1,6 @@
 # 安装指南
 
-环境：DeepSeek Harness Desktop `0.2.0-rc.2`。桌面端支持 macOS（Apple 芯片）与 Windows 10 及以上（64 位）。首次安装前启动一次 DSH，初始化 desktop profile。源码构建另需 Node.js `>=22.18.0`、npm 和 Git。
+环境：最新版 DeepSeek Harness Desktop，兼容 `0.2.0-rc.2`。桌面端支持 macOS（Apple 芯片）与 Windows 10 及以上（64 位）。首次安装前启动一次 DSH，初始化 desktop profile。源码构建另需 Node.js `>=22.18.0`、npm 和 Git。
 
 ## 从 npm 安装（推荐）
 

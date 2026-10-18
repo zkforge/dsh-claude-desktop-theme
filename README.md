@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License"/>
   <img src="https://img.shields.io/npm/v/dsh-claude-desktop-theme?style=for-the-badge&color=4D6BFE&logo=npm&logoColor=white" alt="npm"/>
-  <img src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4D6BFE?style=for-the-badge" alt="DSH"/>
+  <img src="https://img.shields.io/badge/DSH-latest-4D6BFE?style=for-the-badge" alt="DSH"/>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-0078D4?style=for-the-badge" alt="Platform"/>
 </p>
 
@@ -82,10 +82,6 @@
 | 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
 | 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
 
-<!-- 截图占位 · 补充两张单图
-     上下文分解面板：assets/screenshots/context-panel-light.webp
-     视图选项卡片：  assets/screenshots/view-options-light.webp -->
-
 ## 细节动效
 
 <div align="center">
@@ -139,18 +135,9 @@
 > [!NOTE]
 > 自定义背景色只作用于浅色模式，深色模式使用内置深色调色板。界面默认使用 Geist，未安装时回退系统字体；仓库的 `assets/fonts/` 提供本机安装用字体与 OFL 许可，字体不包含在 npm 包中。
 
-## 已知限制
-
-插件只走宿主公开接口与样式层，不改宿主组件。少数条目还原了外观，但 DSH 尚未提供对应接口，点击时会说明限制，不会伪造状态：
-
-- 会话顶栏的 Show in Finder、Open repository on GitHub、Change folder、Output style 与 Delete。
-- 浏览器面板的启动服务器、本地文件浏览、独立窗口与页面元素选取；Files 的全目录搜索。
-
-完整清单见[已知限制](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/docs/limitations.md)。插件市场目录尚未收录，请通过插件页或终端安装。
-
 ## 环境要求
 
-DSH `0.2.0-rc.2`；macOS（Apple 芯片）或 Windows 10 及以上（64 位）。源码构建另需 Node.js ≥ 22.18.0。
+支持最新版 DSH Desktop，兼容 `0.2.0-rc.2`；macOS（Apple 芯片）或 Windows 10 及以上（64 位）。源码构建另需 Node.js ≥ 22.18.0。
 
 ## 反馈与许可
 
