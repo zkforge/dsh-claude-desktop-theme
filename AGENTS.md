@@ -15,6 +15,8 @@ npm run check
 npm run pack:local --cache .cache/npm
 ```
 
+CI（`.github/workflows/check.yml`）在每次 push 到 `main` 和每个 PR 上跑 `npm run check`。浏览器测试依赖 workflow 预装的 Google Chrome（通过 `CHROME` 指向 `/usr/bin/google-chrome`）；本地没有 Chrome 时这部分用例会静默 skip。
+
 DSH 换了构建后，宿主 CSS Module 类名会重新哈希，用下面的命令从新构建的 `app.asar` 重解前缀表（不带 `--write` 只打印）：
 
 ```sh

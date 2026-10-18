@@ -1,0 +1,53 @@
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: npm run check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      # The browser tests drive the Chrome named by $CHROME and skip silently
+      # without one. Install Google Chrome stable from its .deb rather than
+      # through setup-chrome: on Ubuntu 24.04 the .deb's postinst registers the
+      # AppArmor profile that lets Chrome create the user namespaces its
+      # sandbox needs, while setup-chrome unpacks the same .deb without running
+      # postinst. Without that profile every browser test dies with "No usable
+      # sandbox!", and the smoke test below fails fast with that message.
+      - name: Install Chrome
+        run: |
+          curl -fsSL -o /tmp/google-chrome-stable.deb \
+            https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/google-chrome-stable.deb
+          echo "CHROME=/usr/bin/google-chrome" >> "$GITHUB_ENV"
+          google-chrome --version
+          timeout 60 google-chrome --headless=new --disable-gpu \
+            --no-first-run --no-default-browser-check \
+            --user-data-dir="$(mktemp -d)" --dump-dom about:blank
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run checks
+        run: npm run check
