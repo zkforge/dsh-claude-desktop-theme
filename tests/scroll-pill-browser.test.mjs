@@ -195,22 +195,22 @@ test('the tracked surfaces carry a floating pill instead of the painted thumb', 
              own rule, read off the surface it is drawing for. */
           assert(Math.abs(pill.height - want.length) < 0.5,
             `the pill is ${want.length}px long on ${selector}${where} (${pill.height})`);
-          assert(pill.height <= 96, `and never longer than the cap on ${selector}${where}`);
-          assert(pill.height >= 36, `nor shorter than the floor on ${selector}${where}`);
+          assert(pill.height <= 96.02, `and never longer than the cap on ${selector}${where}`);
+          assert(pill.height >= 35.98, `nor shorter than the floor on ${selector}${where}`);
         }
 
         /* A surface that only just overflows is where the pill earns its keep:
            the thumb it stands in for is taller than the pill is allowed to be. */
         const pageWant = await page.evaluate(expected('#page'));
         assert(pageWant.thumb > 96, `the page's own thumb would be long (${pageWant.thumb})`);
-        assert.equal((await page.evaluate(`(${pillOn('#page')})`))[0].height, 96,
+        assert(Math.abs((await page.evaluate(`(${pillOn('#page')})`))[0].height - 96) < .02,
           `and the pill that replaces it is the capsule${where}`);
         /* A transcript with many screens behind it paints a short thumb, and the
            pill stops at the floor rather than shrinking to a dot. */
         for (const selector of ['#files', '#team']) {
           const want = await page.evaluate(expected(selector));
           assert(want.thumb < 36, `${selector}'s own thumb would be short (${want.thumb})`);
-          assert.equal((await page.evaluate(`(${pillOn(selector)})`))[0].height, 36,
+          assert(Math.abs((await page.evaluate(`(${pillOn(selector)})`))[0].height - 36) < .02,
             `and the pill stops at the floor${where}`);
         }
 

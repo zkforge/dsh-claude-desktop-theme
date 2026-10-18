@@ -196,6 +196,7 @@ const MEASURE = `(() => {
     paraGap: Math.round(rect('para2').top - rect('para').bottom),
     para2Height: Math.round(rect('para2').height),
     tableRow: Math.round(rect('th1').height),
+    tableCellPadding: style('th1', 'padding-top'),
     quoteRule: style('quote', 'border-left-width'),
     quoteRuleColour: style('quote', 'border-left-color'),
     quotePadding: style('quote', 'padding-left'),
@@ -296,7 +297,8 @@ test('the transcript markdown overrides lay out the way the reference crop measu
       assert.equal(off.bodyLine, '24px', 'the host leading returns');
       assert.equal(off.paraGap, 16);
       assert.equal(off.para2Height % 24, 0);
-      assert.ok(off.tableRow > 40, `the host cell padding returns, got ${off.tableRow}px`);
+      assert.equal(off.tableCellPadding, '10px', 'the host cell padding returns');
+      assert.ok(off.tableRow > on.tableRow, 'restoring host padding makes the row taller across platform fonts');
       assert.equal(off.quoteRule, '2px');
       assert.equal(off.taskStyle, 'disc');
       assert.equal(off.labelDisplay, 'flex', 'the language label comes back');
