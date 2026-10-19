@@ -131,9 +131,18 @@ test('the built-in dark palette agrees with the dark block it mirrors', () => {
   }
 });
 
-test('every colour the light block declares has a dark counterpart', () => {
+test('surface colours have dark counterparts while companion artwork keeps its reference palette', () => {
   const isColour = (value: string) => /^(?:#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(value);
-  const missing = [...lightVars].filter(([name, value]) => isColour(value) && !darkVars.has(name));
+  const artwork = new Map([
+    ['ccd-claude-coral', '#d87657'], ['ccd-claude-shade', '#bd6145'],
+    ['ccd-claude-eye', '#000000'], ['ccd-claude-laptop', '#888984'],
+  ]);
+  for (const [name, value] of artwork) {
+    assert.equal(lightVars.get(name), value);
+    assert.equal(darkVars.get(name) ?? lightVars.get(name), value);
+  }
+  const missing = [...lightVars].filter(([name, value]) =>
+    isColour(value) && !darkVars.has(name) && !artwork.has(name));
   assert.deepEqual(missing, [], 'the dark block leaves these tokens at their light value');
 });
 

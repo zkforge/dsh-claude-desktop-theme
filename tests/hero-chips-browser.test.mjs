@@ -158,6 +158,7 @@ const geometry = `(() => {
     pickerCut: cut('.bocITq_workspaceLabel'),
     presetCut: cut('.fixtureSeatLabel'),
     folderMark: getComputedStyle(document.querySelector('.bocITq_folder')).display,
+    presetMark: getComputedStyle(document.querySelector('.fixtureSeatIcon')).display,
     chevrons: ['.bocITq_chevron', '.fixtureSeatChevron'].map(selector => getComputedStyle(document.querySelector(selector)).display),
   };
 })()`;
@@ -221,7 +222,7 @@ test('hero controls keep natural widths and a distinct permission gap', {
          which is the rhythm the rest of the status bar keeps. */
       assert.ok(Math.abs((view.permission.left - view.row.right) - view.rowGap - 6) < 1,
         `the permission chip starts one gap after the row (${view.permission.left - view.row.right} vs ${view.rowGap})`);
-      const firstGap = view.presetIcon.left - view.workspaceLabel.right;
+      const firstGap = view.presetLabel.left - view.workspaceLabel.right;
       const secondGap = view.permissionLabel.left - view.presetLabel.right;
       assert.ok(Math.abs(firstGap - 14) < 1, `workspace to mode content gap: ${firstGap}px`);
       assert.ok(Math.abs(secondGap - 20) < 1,
@@ -229,6 +230,7 @@ test('hero controls keep natural widths and a distinct permission gap', {
       /* The row's marks are still the ones the reference draws: one folder, no
          chevron on either chip. */
       assert.equal(view.folderMark, 'none', 'the host folder svg is out of the line');
+      assert.equal(view.presetMark, 'none', 'the preset chip is text-only');
       assert.deepEqual(view.chevrons, ['none', 'none'], 'neither chip keeps its disclosure mark');
 
       /* A longer preset name takes both chips with it: the width is measured,

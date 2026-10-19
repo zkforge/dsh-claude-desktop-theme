@@ -397,9 +397,9 @@ assert.equal(settingsScopes, 1);
 // Re-enabling through the settings transport activates without a reload.
 configForms.published({ ...disabled, enabled: true });
 assert.equal(attributes.get('data-dsh-ccd-style'), 'true');
-// Design variables, the shared composer geometry, the host popup chrome, the
+// Design variables, the shared composer geometry, the host popup and dialog chrome, the
 // window's scrollbar ink, and the page stylesheet.
-assert.equal(styles.size, 5);
+assert.equal(styles.size, 6);
 assert.equal(paletteLayers, 1);
 // Exercise the actual bundled model-seat registration and its cleanup scope.
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, conversation: true } });
@@ -409,7 +409,7 @@ assert.equal(headerViews.size, 3);
 assert.equal(cornerSeats.size, 1);
 assert.equal(headerScopes, 1);
 assert.equal(paneScopes, 1, 'the pane layer holds the panel face while the interface is on');
-assert.equal(styles.size, 10); // page + theme + Composer + menus + scrollbars + model controls + effort + conversation + header actions + header menus
+assert.equal(styles.size, 11); // page + theme + Composer + menus + dialogs + scrollbars + model controls + effort + conversation + header actions + header menus
 /* The whale has its own switch, so the conversation feature alone mounts none. */
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);
@@ -456,7 +456,7 @@ configForms.published({
 assert.equal(blankPetSeats.size, 1);
 assert.equal(petScopes, 1);
 // page + theme + Composer + menus + scrollbars + model controls + effort + conversation + header actions + header menus + new session + pet
-assert.equal(styles.size, 12);
+assert.equal(styles.size, 13);
 const petFace = [...blankPetSeats][0].inject();
 // The pet is decoration: the seat injects its visual variant and the measured
 // corner, but no session, reaction state, timer or copy.
@@ -473,7 +473,7 @@ assert.equal(blankRow.getAttribute('data-ccd-blank-session'), '', 'the blank Ses
 assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Session row stays in the list');
 /* The sidebar feature mounts its column, account-menu and navigation artwork
    sheets, plus the view-options card's own. */
-assert.equal(styles.size, 9);
+assert.equal(styles.size, 10);
 assert.equal(viewOptionsSeats.size, 1, 'the sidebar draws the view-options card');
 assert.deepEqual(
   Object.keys([...viewOptionsSeats][0].inject()).sort(),

@@ -418,12 +418,12 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
 
 /* The host's preset label stacks a name and a long description. The shared
    row supplies its own short second line, so only the name stays in the label. */
-html[data-dsh-ccd-style="true"] [data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :not(:first-child) {
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :not(:first-child) {
   display: none;
 }
 
 /* Preset names have their own host font rule; inherit the shared label metrics. */
-html[data-dsh-ccd-style="true"] [data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :first-child {
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :first-child {
   color: inherit;
   font: inherit;
 }

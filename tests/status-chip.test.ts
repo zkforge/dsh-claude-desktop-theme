@@ -101,7 +101,7 @@ test('row controls keep the chip box while the inset plus shares send geometry',
   assert.equal(add.match(/bottom:\s*([^;]+)/u)?.[1], send.match(/bottom:\s*([^;]+)/u)?.[1]);
 
   const permissionRules = composer.filter(rule =>
-    rule.selector === 'html[data-dsh-ccd-style="true"] .wXeviG_trigger');
+    rule.selector.split(', ').includes('html[data-dsh-ccd-style="true"] .wXeviG_trigger'));
   assert.equal(permissionRules.length, 1, 'one base rule defines the permission chip box');
   const permission = permissionRules[0]?.body ?? '';
   assert.match(permission, /height:\s*var\(--ccd-chip-height\)/u);
