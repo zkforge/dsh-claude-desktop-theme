@@ -3,13 +3,13 @@ import type { MouseEvent, ReactElement } from 'react';
 import type {
   ConfigFormPort, SettingsPathOp, ThemePreference, ThemePreferencePort,
 } from '../../contracts/ports.ts';
-import { adoptConfig, APPEARANCE_FIELDS } from '../../../shared/config.ts';
+import { adoptConfig, APPEARANCE_FIELDS, normalizeGreetingName } from '../../../shared/config.ts';
 import type { AppearanceField, FeatureId, FontField } from '../../../shared/config.ts';
 import { hostBuildStatus } from '../../compat/host-builds.ts';
 import { commitColour, commitFont, setOperation, unsetOperation } from './edits.ts';
 import type { FieldErrors } from './edits.ts';
 import { loadSystemFontFamilies } from './fonts.ts';
-import { ColourRow, FontRow, SwitchRow, ThemeRow } from './fields.tsx';
+import { ChoiceRow, NameRow, ColourRow, FontRow, SwitchRow, ThemeRow } from './fields.tsx';
 import { zh } from './locales.ts';
 import type { SettingsKey } from './locales.ts';
 
@@ -248,6 +248,29 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
             />
           );
         })}
+      </section>
+
+      <section className="ccd-settings-section">
+        <h4 className="ccd-settings-title">{translate('section.personalization')}</h4>
+        <ChoiceRow id="ccd-settings-pet-style" label={translate('field.petStyle')}
+          value={served.personalization.petStyle}
+          options={[{ value: 'whale', label: translate('pet.whale') }, { value: 'claude', label: translate('pet.claude') }]}
+          onChange={value => void write([setOperation(['personalization', 'petStyle'], value)])} />
+        <ChoiceRow id="ccd-settings-greeting-style" label={translate('field.greetingStyle')}
+          value={served.personalization.greetingStyle}
+          options={[{ value: 'explore', label: translate('greeting.explore') }, { value: 'claude', label: translate('greeting.claude') }]}
+          onChange={value => void write([setOperation(['personalization', 'greetingStyle'], value)])} />
+        <NameRow id="ccd-settings-greeting-name" label={translate('field.greetingName')}
+          value={textOf('greetingName', served.personalization.greetingName)}
+          onChange={value => edit('greetingName', value)}
+          onCommit={() => {
+            const value = normalizeGreetingName(textOf('greetingName', served.personalization.greetingName));
+            setEditing(null);
+            if (value !== served.personalization.greetingName) {
+              void write([setOperation(['personalization', 'greetingName'], value)]);
+            }
+          }} />
+        <p className="ccd-settings-note">{translate('hint.personalization')}</p>
       </section>
 
       <section className="ccd-settings-section">

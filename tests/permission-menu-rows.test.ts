@@ -90,7 +90,7 @@ test('one row is two lines: the name over its sentence, forty pixels', () => {
      mark in the second column spanning both. Auto-placement would fill the
      first row's two cells and push the check to a third line. */
   assert.match(body, /display:\s*grid/u);
-  assert.match(body, /grid-template-columns:\s*minmax\(0, 1fr\) auto/u);
+  assert.match(body, /grid-template-columns:\s*minmax\(0, 1fr\) 14px 10px/u);
   assert.match(body, /row-gap:\s*0/u);
   /* The corner and the one fill stay the family's: a row that restated them
      would drift from the rest of the popups. */
@@ -100,7 +100,7 @@ test('one row is two lines: the name over its sentence, forty pixels', () => {
 test('the name, the sentence and the mark are placed by hand', () => {
   assert.match(ruleFor(menus, `${ROW} > ._itemLabel_4ub78_190`).body, /grid-area:\s*1 \/ 1/u);
   const description = ruleFor(menus, '[data-ccd-permission-menu] [data-ccd-permission-desc]').body;
-  assert.match(description, /grid-area:\s*2 \/ 1/u);
+  assert.match(description, /grid-area:\s*2 \/ 1 \/ 3 \/ -1/u);
   /* The document's 弱化墨: the reference measures its sentence at #898782, a
      clear step under the name it sits below. */
   assert.match(description, /color:\s*var\(--ccd-text-muted\)/u);
@@ -112,7 +112,7 @@ test('the name, the sentence and the mark are placed by hand', () => {
   assert.match(description, /white-space:\s*nowrap/u);
   assert.match(description, /text-overflow:\s*ellipsis/u);
   const check = ruleFor(menus, '[data-ccd-permission-mode] > ._check_4ub78_179').body;
-  assert.match(check, /grid-area:\s*1 \/ 2 \/ span 2/u);
+  assert.match(check, /grid-area:\s*1 \/ 2/u);
   assert.match(check, /align-self:\s*center/u);
   /* Ink only: `theme/tokens.css` owns the check's colour and this cell must not
      restate it (`._check_4ub78_179` is not named here for that reason). */
@@ -157,12 +157,14 @@ test('the group’s name sits above the rows, in the host’s own heading row', 
      it (~29px between the card's top edge and the first row). */
   assert.match(head, /padding-block:\s*6px 2px/u);
   /* Type, ink and start padding stay the family heading rule's. */
-  assert.ok(!/font-size|color|padding:/u.test(head), head);
+  assert.match(head, /font-size:\s*12px/u);
+  assert.match(head, /font-weight:\s*500/u);
+  assert.match(head, /color:\s*var\(--ccd-text-muted\)/u);
 });
 
 test('every rule the card adds is scoped to the tag and to the popup family', () => {
   const added = menus.filter(rule => rule.selector.includes('data-ccd-permission'));
-  assert.equal(added.length, 7, 'the permission block is seven rules');
+  assert.equal(added.length, 8, 'the permission block includes the shortcut column');
   for (const rule of added) {
     assert.ok(rule.selector.startsWith(MARKER), rule.selector);
     assert.ok(rule.selector.includes('[data-menu-material]'), rule.selector);

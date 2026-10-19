@@ -110,3 +110,19 @@ html[data-dsh-ccd-style="true"] .ccd-composer-pet[data-paused] * { animation-pla
 @media (prefers-reduced-motion: reduce) {
   html[data-dsh-ccd-style="true"] .ccd-composer-pet * { animation: none !important; }
 }
+
+html[data-dsh-ccd-style="true"] .ccd-pet-blank-seat[data-pet-style="claude"],
+html[data-dsh-ccd-style="true"] .ccd-claude-pet {
+  width: 36px;
+}
+html[data-dsh-ccd-style="true"] .ccd-claude-art {
+  position: absolute;
+  left: -15px;
+  top: -13px;
+  overflow: visible;
+  pointer-events: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-claude-body { fill: var(--ccd-claude-coral); }
+html[data-dsh-ccd-style="true"] .ccd-claude-shade { fill: var(--ccd-claude-shade); }
+html[data-dsh-ccd-style="true"] .ccd-claude-eyes { fill: var(--ccd-claude-eye); }
+html[data-dsh-ccd-style="true"] .ccd-claude-laptop { fill: var(--ccd-claude-laptop); }

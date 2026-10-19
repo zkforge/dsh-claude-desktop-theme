@@ -119,6 +119,7 @@ export function createContextPanelDriver(
   report: (error: unknown) => void,
 ): ContextPanelDriver {
   const host = hostSelectors(document);
+  let emptyTrigger: HTMLButtonElement | null = null;
   let trigger: HTMLElement | null = null;
   let attached: HTMLElement | null = null;
   let open = false;
@@ -268,7 +269,23 @@ export function createContextPanelDriver(
 
   const sync = () => {
     scheduled = 0;
-    const found = document.querySelector<HTMLElement>(host.contextMeterTrigger);
+    const native = document.querySelector<HTMLElement>(host.contextMeterTrigger);
+    const dock = document.querySelector<HTMLElement>(host.composerDock);
+    if (native !== null || dock === null) {
+      emptyTrigger?.remove();
+      emptyTrigger = null;
+    } else {
+      if (emptyTrigger === null) {
+        emptyTrigger = document.createElement('button');
+        emptyTrigger.type = 'button';
+        emptyTrigger.setAttribute('class', 'ccd-context-empty-trigger');
+        emptyTrigger.setAttribute('aria-haspopup', 'dialog');
+        emptyTrigger.setAttribute('aria-label', (document.documentElement.lang || '').startsWith('zh')
+          ? '上下文窗口' : 'Context window');
+      }
+      if (emptyTrigger.parentElement !== dock) dock.append(emptyTrigger);
+    }
+    const found = native ?? emptyTrigger;
     if (found === attached) {
       /* The same control can be re-rendered under a different Session, which is
          the one thing the anchor's identity does not say. */
@@ -363,6 +380,8 @@ export function createContextPanelDriver(
       attached?.removeAttribute(OPEN_ATTRIBUTE);
       attached?.removeAttribute('aria-expanded');
       document.documentElement.removeAttribute(OPEN_MARKER);
+      emptyTrigger?.remove();
+      emptyTrigger = null;
       listener = null;
       trigger = null;
       attached = null;

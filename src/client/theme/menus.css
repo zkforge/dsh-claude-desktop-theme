@@ -301,7 +301,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 14px 10px;
   align-items: center;
   row-gap: 0;
   min-height: 40px;
@@ -310,6 +310,10 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
 
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._itemLabel_4ub78_190 {
   grid-area: 1 / 1;
+  color: var(--ccd-text-strong);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
 }
 
 /* The second line, in the document's 弱化墨: the reference measures its sentence at
@@ -319,7 +323,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
  * ceiling), which is exactly what the reference does and what this family's rows,
  * being single lines of a name, never have to decide. */
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-desc] {
-  grid-area: 2 / 1;
+  grid-area: 2 / 1 / 3 / -1;
   overflow: hidden;
   color: var(--ccd-text-muted);
   font-size: 12px;
@@ -329,10 +333,9 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
 }
 
 /* The trailing mark is the host's own selected check — an accent `✓` by
- * `theme/tokens.css`, never a fill — and it centres against the two lines rather
- * than against the name. */
+ * `theme/tokens.css`, never a fill — and it aligns with the name before the shortcut. */
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._check_4ub78_179 {
-  grid-area: 1 / 2 / span 2;
+  grid-area: 1 / 2;
   align-self: center;
 }
 
@@ -383,4 +386,17 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
  * heading above a card of choices should be. */
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] ._viewport_4ub78_19 > [data-ccd-permission-heading] {
   padding-block: 6px 2px;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+/* Bare-digit shortcuts align with the name, after the selected check. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-shortcut] {
+  grid-area: 1 / 3;
+  color: var(--ccd-text-muted);
+  font: 400 12px/20px var(--ccd-font-ui);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

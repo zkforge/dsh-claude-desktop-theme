@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent, ReactElement } from 'react';
 import { filterFamilies } from './fonts.ts';
+import { MenuCheck } from './ChoiceMenu.tsx';
 
 /**
  * The installed-family menu behind a typeface row's select box.
@@ -35,7 +36,6 @@ export interface FontMenuProps {
   readonly onClose: () => void;
 }
 
-const MIN_WIDTH = 300;
 const HEIGHT = 320;
 const MARGIN = 12;
 
@@ -123,7 +123,7 @@ export function FontMenu(props: FontMenuProps): ReactElement {
 
   /* The menu hangs under the box and lines up with its leading edge, the way
      the reference select does. */
-  const width = Math.max(MIN_WIDTH, Math.round(rect.width));
+  const width = Math.min(Math.round(rect.width), window.innerWidth - MARGIN * 2);
   const below = rect.bottom + 6;
   const top = below + HEIGHT > window.innerHeight - MARGIN ? Math.max(MARGIN, rect.top - 6 - HEIGHT) : below;
   const left = Math.min(Math.max(MARGIN, rect.left), window.innerWidth - MARGIN - width);
@@ -179,7 +179,7 @@ export function FontMenu(props: FontMenuProps): ReactElement {
                     onClick={() => choose(family)}
                   >
                     <span className="ccd-settings-menu-name" style={{ fontFamily: `"${family}"` }}>{family}</span>
-                    {family === value ? <span className="ccd-settings-menu-check" aria-hidden="true">✓</span> : null}
+                    {family === value ? <MenuCheck /> : null}
                   </button>
                 </li>
               ))}

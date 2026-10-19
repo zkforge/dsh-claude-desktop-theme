@@ -2,6 +2,11 @@
  * Colours are centralized here; the dark palette follows the host's body marker.
  */
 html[data-dsh-ccd-style="true"] {
+  /* Reference companion and greeting, shared across both theme schemes. */
+  --ccd-claude-coral: #d87657;
+  --ccd-claude-shade: #bd6145;
+  --ccd-claude-eye: #000000;
+  --ccd-claude-laptop: #888984;
   /* Geometry */
   /* Top of the blank-session greeting block. The reference puts the title a
      short step below the header instead of centring it, so the statistics card
@@ -33,7 +38,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-code-radius: 6px;
   --ccd-composer-width: 770px;
   --ccd-composer-min-height: 42px;
-  --ccd-composer-radius: 10px;
+  /* Input reference: roughly 24 device pixels at @2x. */
+  --ccd-composer-radius: 12px;
   --ccd-composer-padding: 8px 14px;
   --ccd-composer-padding-block: 8px;
   --ccd-composer-padding-inline: 14px;

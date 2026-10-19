@@ -120,7 +120,7 @@ test('every category has its own colour in both palettes', () => {
 
 test('the header line is the whole affordance, and there is no button under it', () => {
   assert.match(card, /data-ccd-context-head=""/u);
-  assert.match(card, /aria-expanded=\{expanded\}/u);
+  assert.match(card, /aria-expanded=\{breakdown === null \? undefined : expanded\}/u);
   assert.match(card, /onClick=\{\(\) => \{ port\.toggleExpanded\(\); \}\}/u);
   assert.match(card, /data-ccd-context-chevron=\{open \? 'open' : 'closed'\}/u);
   assert.match(sheet, /\.ccd-context-chevron\[data-ccd-context-chevron='open'\]\s*\{[^}]*transform: rotate\(90deg\)/u);

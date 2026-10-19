@@ -1,5 +1,6 @@
 import type { ImplementedFeature } from '../../contracts/feature.ts';
 import { probeHost } from '../../compat/host-dom.ts';
+import { mountHeroGreeting } from '../../compat/hero-greeting.ts';
 import { mountHeroCanvas } from '../../compat/hero-canvas.ts';
 import { drawHeroRipples } from './ripples.ts';
 import newSessionCss from './new-session.css';
@@ -17,6 +18,7 @@ export const newSessionFeature: ImplementedFeature = {
     const probe = probeHost(document);
     if (!probe.conversation) environment.logger.debug('new-session: conversation not mounted yet');
     scope.add(environment.dom.mountStyles(newSessionCss));
+    scope.add(mountHeroGreeting(document, environment.config.personalization));
     scope.add(mountHeroCanvas(document, drawHeroRipples,
       error => environment.logger.error('new-session: ripple background failed', error)));
   },

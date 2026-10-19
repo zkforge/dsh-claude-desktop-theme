@@ -28,11 +28,13 @@ export function mountComposerPet(ctx: Context, environment: FeatureEnvironment, 
       const anchor = createPetAnchor(
         document,
         error => environment.logger.error('composer-pet: frame-wide seat unavailable; native UI retained', error),
+        environment.config.personalization.petStyle === 'claude' ? { width: 36, height: 24, inset: 9 } : undefined,
       );
       disposers.push(anchor.dispose);
       disposers.push(scope.slots.inject(DSH_SLOTS.shellOverlay, () => scope.slots.register({
         name: DSH_SLOTS.shellOverlay, id: 'ccd-blank-pet', order: PET_ORDER,
         inject: () => ({
+          petStyle: environment.config.personalization.petStyle,
           useAnchor: () => useSyncExternalStore(anchor.subscribe, anchor.getSnapshot),
         }),
       }, BlankPet)));

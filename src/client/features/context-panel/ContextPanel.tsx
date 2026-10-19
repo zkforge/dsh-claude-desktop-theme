@@ -42,7 +42,7 @@ interface Copy {
 const COPY: { readonly zh: Copy; readonly en: Copy } = {
   zh: {
     title: '上下文窗口',
-    waiting: '等待首个请求',
+    waiting: '0',
     expand: '展开明细',
     collapse: '收起明细',
     rows: {
@@ -60,7 +60,7 @@ const COPY: { readonly zh: Copy; readonly en: Copy } = {
   },
   en: {
     title: 'Context window',
-    waiting: 'Waiting for the first request',
+    waiting: '0',
     expand: 'Expand the breakdown',
     collapse: 'Collapse the breakdown',
     rows: {
@@ -273,6 +273,7 @@ export function ContextPanel({ port }: ContextPanelProps): ReactElement | null {
       className="ccd-context-panel"
       data-ccd-context-panel=""
       data-menu-material=""
+      data-ccd-context-empty={breakdown === null ? 'true' : undefined}
       role="dialog"
       aria-label={copy.title}
       ref={panel}
@@ -283,7 +284,8 @@ export function ContextPanel({ port }: ContextPanelProps): ReactElement | null {
         className="ccd-context-head"
         data-ccd-context-focus=""
         data-ccd-context-head=""
-        aria-expanded={expanded}
+        aria-expanded={breakdown === null ? undefined : expanded}
+        disabled={breakdown === null}
         aria-label={`${copy.title} — ${expanded ? copy.collapse : copy.expand}`}
         onClick={() => { port.toggleExpanded(); }}
       >
@@ -291,7 +293,7 @@ export function ContextPanel({ port }: ContextPanelProps): ReactElement | null {
         <span className="ccd-context-figures" data-ccd-context-figures={reading === null ? 'waiting' : 'ready'}>
           {reading ?? copy.waiting}
         </span>
-        <Chevron open={expanded} />
+        {breakdown !== null && <Chevron open={expanded} />}
       </button>
       <div className="ccd-context-bar" data-ccd-context-bar="" ref={bar} aria-hidden="true">
         {segments.drawn.map(entry => (

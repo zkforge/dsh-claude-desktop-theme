@@ -31,6 +31,34 @@ export type AppearanceConfig = Readonly<Record<AppearanceField, string>>;
 export type FontsConfig = Readonly<Record<FontField, string>>;
 export type ViewConfig = Readonly<Record<ViewField, boolean>>;
 
+export interface PersonalizationConfig {
+  readonly petStyle: 'whale' | 'claude';
+  readonly greetingStyle: 'explore' | 'claude';
+  readonly greetingName: string;
+}
+export const DEFAULT_PERSONALIZATION: PersonalizationConfig = Object.freeze({
+  petStyle: 'whale', greetingStyle: 'explore', greetingName: '',
+});
+
+export function normalizeGreetingName(value: unknown): string {
+  return typeof value === 'string' ? value.replace(/\s+/gu, ' ').trim().slice(0, 64) : '';
+}
+
+function personalization(input: Partial<Record<keyof PersonalizationConfig, unknown>> = {}, strict = false): PersonalizationConfig {
+  const petStyle = input.petStyle ?? DEFAULT_PERSONALIZATION.petStyle;
+  const greetingStyle = input.greetingStyle ?? DEFAULT_PERSONALIZATION.greetingStyle;
+  if (strict && petStyle !== 'whale' && petStyle !== 'claude') throw new TypeError('personalization.petStyle is invalid');
+  if (strict && greetingStyle !== 'explore' && greetingStyle !== 'claude') throw new TypeError('personalization.greetingStyle is invalid');
+  if (strict && input.greetingName !== undefined && typeof input.greetingName !== 'string') {
+    throw new TypeError('personalization.greetingName must be a string');
+  }
+  return Object.freeze({
+    petStyle: petStyle === 'claude' ? 'claude' : 'whale',
+    greetingStyle: greetingStyle === 'claude' ? 'claude' : 'explore',
+    greetingName: normalizeGreetingName(input.greetingName),
+  });
+}
+
 export interface StyleConfig {
   readonly enabled: boolean;
   readonly debug: boolean;
@@ -38,6 +66,7 @@ export interface StyleConfig {
   readonly appearance: AppearanceConfig;
   readonly fonts: FontsConfig;
   readonly view: ViewConfig;
+  readonly personalization: PersonalizationConfig;
 }
 
 export interface StyleOptions {
@@ -47,6 +76,7 @@ export interface StyleOptions {
   readonly appearance?: Partial<Record<AppearanceField, unknown>>;
   readonly fonts?: Partial<Record<FontField, unknown>>;
   readonly view?: Partial<Record<ViewField, unknown>>;
+  readonly personalization?: Partial<Record<keyof PersonalizationConfig, unknown>>;
 }
 
 export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
@@ -189,6 +219,7 @@ export function resolveConfig(input: StyleOptions = {}): StyleConfig {
     appearance: resolveSection('appearance', APPEARANCE_FIELDS, DEFAULT_APPEARANCE, normalizeColour, input.appearance, true),
     fonts: resolveSection('fonts', FONT_FIELDS, DEFAULT_FONTS, normalizeFontName, input.fonts, true),
     view: Object.freeze(view),
+    personalization: personalization(input.personalization, true),
   });
 }
 
@@ -229,6 +260,7 @@ export function adoptConfig(value: unknown): StyleConfig {
     appearance: pickFields(APPEARANCE_FIELDS, section(input.appearance), normalizeColour),
     fonts: pickFields(FONT_FIELDS, section(input.fonts), normalizeFontName),
     view,
+    personalization: personalization(section(input.personalization)),
   });
 }
 

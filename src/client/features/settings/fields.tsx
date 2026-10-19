@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import type { ThemePreference } from '../../contracts/ports.ts';
 import { FontMenu } from './FontMenu.tsx';
 import type { FontMenuLabels } from './FontMenu.tsx';
+import { ChoiceMenu } from './ChoiceMenu.tsx';
 
 /**
  * Field rows for the configuration page.
@@ -297,6 +298,57 @@ export function FontRow(props: FontRowProps): ReactElement {
           onClose={onCloseMenu}
         />
       )}
+    </div>
+  );
+}
+
+/** Styled choice control for named visual variants. */
+export function ChoiceRow({ id, label, value, options, onChange }: {
+  readonly id: string; readonly label: string; readonly value: string;
+  readonly options: readonly { readonly value: string; readonly label: string }[];
+  readonly onChange: (value: string) => void;
+}): ReactElement {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const labelId = `${id}-label`;
+  const menuId = `${id}-menu`;
+  return (
+    <div className="ccd-settings-row">
+      <span className="ccd-settings-name" id={labelId}>{label}</span>
+      <span className="ccd-settings-control">
+        <button type="button" id={id} className="ccd-settings-select" aria-labelledby={labelId}
+          aria-haspopup="listbox" aria-expanded={anchor !== null} aria-controls={anchor ? menuId : undefined}
+          onClick={event => setAnchor(anchor ? null : event.currentTarget)}
+          onKeyDown={event => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+              event.preventDefault(); setAnchor(event.currentTarget);
+            }
+          }}>
+          <span className="ccd-settings-select-value">{options.find(option => option.value === value)?.label ?? value}</span>
+          <Chevron />
+        </button>
+      </span>
+      {anchor === null ? null : (
+        <ChoiceMenu id={menuId} labelId={labelId} anchor={anchor} value={value} options={options}
+          onSelect={onChange} onClose={() => setAnchor(null)} />
+      )}
+    </div>
+  );
+}
+
+export function NameRow({ id, label, value, onChange, onCommit }: {
+  readonly id: string; readonly label: string; readonly value: string;
+  readonly onChange: (value: string) => void; readonly onCommit: () => void;
+}): ReactElement {
+  return (
+    <div className="ccd-settings-row">
+      <label className="ccd-settings-name" htmlFor={id}>{label}</label>
+      <span className="ccd-settings-control">
+        <input id={id} className="ccd-settings-text" type="text" maxLength={64} value={value}
+          autoComplete="off" onChange={event => onChange(event.target.value)} onBlur={onCommit}
+          onKeyDown={event => {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); onCommit(); }
+          }} />
+      </span>
     </div>
   );
 }

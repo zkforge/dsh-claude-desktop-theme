@@ -238,6 +238,7 @@ function page(session = 'session-a'): {
   const document = {
     documentElement: html,
     body,
+    createElement: (tag: string) => new FakeElement(tag),
     querySelector: (selector: string) => html.querySelector(selector),
     querySelectorAll: (selector: string) => html.querySelectorAll(selector),
   } as unknown as Document;
@@ -497,4 +498,40 @@ test('a released driver leaves the ring as it found it', () => {
   /* The click goes back to DSH once nothing owns the control. */
   trigger.click();
   assert.equal(trigger.getAttribute('aria-expanded'), null);
+});
+
+
+test('an empty composer gets a clickable ring and hands over to the native ring', () => {
+  const { trigger, document } = page();
+  const dock = trigger.parentElement!;
+  trigger.remove();
+  const { port: projections } = projectionsFor(new Map());
+  const driver = mount(document, projections);
+  try {
+    const empty = dock.querySelector('.ccd-context-empty-trigger');
+    assert.ok(empty, 'an empty session needs a real button');
+    empty.click();
+    assert.equal(driver.port.getSnapshot().open, true);
+    assert.equal(driver.port.getSnapshot().anchor, empty);
+    assert.equal(driver.port.getSnapshot().breakdown, null);
+    dock.append(trigger);
+    const original = globalThis.MutationObserver;
+    globalThis.MutationObserver = FakeObserver as unknown as typeof MutationObserver;
+    try { FakeObserver.instances[0]!.callback(); }
+    finally { globalThis.MutationObserver = original; }
+    assert.equal(empty.parentElement, null, 'the fallback leaves when usage arrives');
+    assert.equal(driver.port.getSnapshot().open, false);
+    trigger.click();
+    assert.equal(driver.port.getSnapshot().anchor, trigger);
+  } finally { driver.dispose(); }
+});
+
+test('releasing an empty composer removes the fallback button', () => {
+  const { trigger, document } = page();
+  const dock = trigger.parentElement!;
+  trigger.remove();
+  const driver = mount(document, projectionsFor(new Map()).port);
+  assert.ok(dock.querySelector('.ccd-context-empty-trigger'));
+  driver.dispose();
+  assert.equal(dock.querySelector('.ccd-context-empty-trigger'), null);
 });

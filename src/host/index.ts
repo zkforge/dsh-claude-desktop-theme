@@ -1,7 +1,7 @@
 import z from '@deepseek-ai/schemastery';
 import type { Context } from '@deepseek-ai/cordis';
 import {
-  DEFAULT_APPEARANCE, DEFAULT_FEATURES, DEFAULT_FONTS, DEFAULT_VIEW, FONT_NAME_MAX_LENGTH,
+  DEFAULT_APPEARANCE, DEFAULT_FEATURES, DEFAULT_FONTS, DEFAULT_VIEW, DEFAULT_PERSONALIZATION, FONT_NAME_MAX_LENGTH,
 } from '../shared/config.ts';
 import { mountStatistics } from './stats/service.ts';
 import { mountContextBreakdown } from './context/service.ts';
@@ -60,6 +60,13 @@ export const Config = z.object({
       .description('代码与等宽字体名（留空用系统栈）')
       .pattern(FONT_NAME),
   }).default({ ...DEFAULT_FONTS }).description('字体').volatile(),
+  personalization: z.object({
+    petStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.petStyle)
+      .description('输入框宠物样式'),
+    greetingStyle: z.union(['explore', 'claude']).default(DEFAULT_PERSONALIZATION.greetingStyle)
+      .description('首页问候语与图标样式'),
+    greetingName: z.string().default('').pattern(/^.{0,64}$/u).description('问候语中的称呼（可留空）'),
+  }).default({ ...DEFAULT_PERSONALIZATION }).description('个性化').volatile(),
   view: z.object({
     showHeaderSubagents: z.boolean().default(DEFAULT_VIEW.showHeaderSubagents)
       .description('显示顶栏子代理入口（仅控制入口显示）'),

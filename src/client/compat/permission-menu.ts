@@ -13,6 +13,8 @@ const DESCRIPTION_ATTRIBUTE = 'data-ccd-permission-desc';
 /** The line above the rows, written into the card's row group. */
 const HEADING_ATTRIBUTE = 'data-ccd-permission-heading';
 
+const SHORTCUT_ATTRIBUTE = 'data-ccd-permission-shortcut';
+
 /** One preset as the card draws it. */
 export interface PermissionPresetCopy {
   /** DSH's machine value for the preset (`read-only`, `auto`, …): the row's identity, never shown. */
@@ -283,6 +285,14 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
       label.after(description);
       added.push(description);
     }
+    if (row.querySelector(`:scope > [${SHORTCUT_ATTRIBUTE}]`) === null) {
+      const shortcut = document.createElement('span');
+      shortcut.setAttribute(SHORTCUT_ATTRIBUTE, '');
+      shortcut.setAttribute('aria-hidden', 'true');
+      shortcut.textContent = String(copy.presets.indexOf(preset) + 1);
+      row.append(shortcut);
+      added.push(shortcut);
+    }
     drawCard(row);
   };
 
@@ -328,6 +338,25 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
     }
   };
 
+  // Only an open permission card owns bare digits. Delegate selection to the
+  // real button so locked rows and the host's confirmation dialogs still apply.
+  const onKey = (event: KeyboardEvent) => {
+    if (event.defaultPrevented || event.repeat || event.isComposing
+      || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const index = /^[1-4]$/u.test(event.key) ? Number(event.key) - 1 : -1;
+    const preset = copy.presets[index];
+    if (preset === undefined) return;
+    const card = document.querySelector<HTMLElement>(`[${PERMISSION_MENU_ATTRIBUTE}]`);
+    if (card === null) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+    const row = card.querySelector<HTMLButtonElement>(`[${PERMISSION_MODE_ATTRIBUTE}="${preset.value}"]`);
+    if (row === null || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
+    event.preventDefault();
+    event.stopPropagation();
+    row.click();
+  };
+
   let tree: MutationObserver | undefined;
   let contents: MutationObserver | undefined;
   try {
@@ -358,6 +387,7 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
       contents.observe(initial, { childList: true, subtree: true, characterData: true });
     }
     sync();
+    document.addEventListener('keydown', onKey, true);
   } catch (error) {
     tree?.disconnect();
     contents?.disconnect();
@@ -368,6 +398,7 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
 
   return () => {
     scheduled = 0;
+    document.removeEventListener('keydown', onKey, true);
     tree?.disconnect();
     contents?.disconnect();
     restore();

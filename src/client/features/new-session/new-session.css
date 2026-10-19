@@ -95,3 +95,26 @@ html[data-dsh-ccd-style="true"] .ccd-hero-ripples-titlebar {
   inset: 0 auto auto;
   z-index: 1;
 }
+
+/* The original React heading stays in place for instant restoration. */
+html[data-dsh-ccd-style="true"] [data-ccd-greeting-style="claude"] > :not([data-ccd-greeting]) {
+  display: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-greeting] {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ccd-text-strong);
+  font: 400 20px/26px var(--ccd-font-ui);
+  letter-spacing: -0.01em;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-greeting] > svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  fill: var(--ccd-claude-coral);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-greeting] > span {
+  overflow-wrap: anywhere;
+}

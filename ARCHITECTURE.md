@@ -74,7 +74,7 @@ Composer 的状态栏在宿主里是可换行的（`InputBar.module.css` 的 `.y
 
 上下文圆环点开的是插件自己的分解面板（同一个 `shell.overlay` 槽的第三位占用者，order 40）：**收起态**是标题行（`上下文窗口` + `~已用 / 窗口 (百分比)` + 右端 chevron）加一条 4px 分段条，**展开态**在同一头部下加分类行（色块 + 名称 + token + 百分比）与按需出现的逐项分组。没有底部按钮：标题行整行就是开关，`aria-expanded` 挂在它上面。分段条按 token 权重分配 flex，已用段之间 1px、与「自动压缩余量」灰段之间 4px，宽度不足 2px 的分类整段不画（与参照图一致）；空闲空间是轨道本身。
 
-环的点击在捕获阶段被 `compat/context-panel.ts` 拦下并 `stopPropagation`——宿主的处理器是 React 在根节点委派的 `onClick`，所以在按钮上停住事件就不会走到它——因此宿主那面板从不打开，插件自持开合状态（驱动宿主开合不可行：宿主的 `useDismissOnOutsidePointer` 会把我们面板里的点击当成外部点击）。`data-ccd-context-open` 与 `composer.css` 里那条 `visibility: hidden` 是兜底而不是机制。会话切换、页面切换或环本身消失都会关闭面板；每次打开都从收起态开始。
+环的点击在捕获阶段被 `compat/context-panel.ts` 拦下并 `stopPropagation`——宿主的处理器是 React 在根节点委派的 `onClick`，所以在按钮上停住事件就不会走到它——因此宿主那面板从不打开，插件自持开合状态（驱动宿主开合不可行：宿主的 `useDismissOnOutsidePointer` 会把我们面板里的点击当成外部点击）。`data-ccd-context-open` 与 `composer.css` 里那条 `visibility: hidden` 是兜底而不是机制。会话切换、页面切换或环本身消失都会关闭面板；每次打开都从收起态开始。空会话没有宿主圆环时，驱动在 dock 中添加真实按钮，沿用同一位置与点击流程；面板只显示标题、0 和空进度条，不展示明细开关。有用量后移除占位按钮，交回宿主圆环；卸载时一并清理。
 
 数字全部是宿主的：头部读 `contextPressure`（与环同一个值），分类行读 `contextBreakdown` 加上插件投影 `ccdContext` 重算的两份明细，`sessions.list` 的 `projectionsBySession` 里三者在同一处到达。分类行与空闲空间按窗口缩放；头部采样值与分类估值可能有差异，面板不展示「估算差额」行。真实会话上这套折叠与宿主自己持久化的 `{systemTokens, toolsTokens, messageTokens}` 逐 token 相同。标题与明细分组的展开状态仅在本次打开期间保留；每次重新打开时全部收起。
 
@@ -131,3 +131,11 @@ Host 构建为 ESM，运行依赖外置。Client 打成 CommonJS factory，并�
 安装包包含 `lib/`、`cordis.patch.yml`、README、LICENSE 和 package.json。Geist 字体与 OFL 许可保留在仓库中，供本机安装。
 
 `npm run check` 执行类型、模块边界、颜色归属、文档链接、测试、构建和包内容检查；`npm run pack:local` 通过同一套检查后生成 tarball。
+
+权限菜单保留 DSH 四种权限预设及原生确认流程，按现有顺序显示数字 1–4。仅菜单打开时响应无修饰数字键；输入控件、输入法组合与按键重复不触发。勾选与数字对齐名称行，说明行跨越尾列；名称为 14px 常规字重，说明与数字为 12px 弱化色。输入面圆角采用 12px。
+
+`personalization` 是独立的 volatile 配置节：`petStyle`（whale / claude）、`greetingStyle`（explore / claude）与 `greetingName`。旧配置默认保留鲸鱼与宿主问候；两项外观独立切换，不改变已有模块开关。设置页使用原配置传输即时写入，称呼在失焦或回车时提交，最多 64 字符，按纯文本显示。
+
+Claude 宠物使用 36×24 的可点击盒，距输入面右端 9px。`claude-frames.ts` 保存用户录屏按 @2x 像素网格转录的矢量姿态与 20fps 索引，身体、侧面、眼睛与电脑分别由主题 token 上色。`ClaudePet` 点击后眨眼、取出电脑、敲键盘再恢复站姿；播放时忽略连点，页面隐藏或卸载取消动画，减少动态效果时只眨眼 200ms。鲸鱼的原有图形与动作不变。问候语由 `compat/hero-greeting.ts` 在宿主 headline 中追加独立展示，隐藏原有子节点；星芒来自用户截图轮廓，样式为 24px 图标与 20px 常规字重文本。释放时移除展示与标记，保留宿主 React 节点。
+
+问候称呼优先使用 `greetingName`，留空时读取宿主账户按钮的已登录姓名；观察账户标签文本与登录状态，姓名延迟加载或切换后更新已存在的标题。折叠侧栏暂时保留已读姓名，退出登录或账户按钮替换时清空。姓名含汉字时使用中文问候，其他姓名使用英文；没有可用姓名时按文档语言显示不含称呼的问候。标题文本仅在变化时写入，避免观察器自触发循环。

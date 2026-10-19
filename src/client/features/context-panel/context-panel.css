@@ -300,3 +300,9 @@ html[data-dsh-ccd-style="true"][data-ccd-context-open] .y0jqnG_panel {
   visibility: hidden;
   pointer-events: none;
 }
+
+/* Empty context has a reading of zero and no disclosure column. */
+.ccd-context-panel[data-ccd-context-empty='true'] .ccd-context-head {
+  grid-template-columns: minmax(0, 1fr) auto;
+  opacity: 1;
+}

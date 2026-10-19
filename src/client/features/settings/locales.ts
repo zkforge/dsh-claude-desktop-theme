@@ -10,6 +10,16 @@ export const SETTINGS_NAMESPACE = 'ccdSettings';
 
 /** Simplified Chinese dictionary; the key set is the source of truth. */
 export const zh = {
+  'section.personalization': '个性化',
+  'field.petStyle': '宠物样式',
+  'pet.whale': '小鲸鱼',
+  'pet.claude': 'Claude 像素宠物',
+  'field.greetingStyle': '首页问候',
+  'greeting.explore': '探索未知之境',
+  'greeting.claude': 'Claude 问候与图标',
+  'field.greetingName': '问候语中的称呼',
+  'hint.personalization': '两项可独立切换；宠物点击后播放对应动作。称呼留空时使用已登录账户姓名，按姓名语言显示中英文问候；原有模块开关仍控制显示。',
+
   'nav': 'Claude 主题',
   'summary': 'CCD 风格界面 · 外观 · 字体',
   'section.general': '通用',
@@ -57,7 +67,7 @@ export const zh = {
   'feature.conversation': '聊天页',
   'feature.tool-calls': '工具调用展示',
   'feature.statistics': '统计卡片',
-  'feature.composer-pet': '输入框小鲸鱼',
+  'feature.composer-pet': '输入框宠物',
   'feature.composer-stats': '状态栏统计读数',
   'hint.composer-stats': '输出速度与缓存命中率，关掉时这两项不显示（默认）',
   'feature.context-panel': '上下文分解面板',
@@ -68,6 +78,16 @@ export type SettingsKey = keyof typeof zh;
 
 /** English dictionary; every Chinese key has a counterpart. */
 export const en: Record<SettingsKey, string> = {
+  'section.personalization': 'Personalization',
+  'field.petStyle': 'Pet style',
+  'pet.whale': 'Whale',
+  'pet.claude': 'Claude pixel companion',
+  'field.greetingStyle': 'Home greeting',
+  'greeting.explore': 'Explore the unknown',
+  'greeting.claude': 'Claude greeting and icon',
+  'field.greetingName': 'Greeting name',
+  'hint.personalization': 'Choose each style independently. Click the pet to play its reaction. Leave the name empty to use your signed-in account name. Greeting language follows the name; module switches still control visibility.',
+
   'nav': 'Claude Theme',
   'summary': 'CCD interface · appearance · typefaces',
   'section.general': 'General',
@@ -115,7 +135,7 @@ export const en: Record<SettingsKey, string> = {
   'feature.conversation': 'Conversation',
   'feature.tool-calls': 'Tool call presentation',
   'feature.statistics': 'Statistics card',
-  'feature.composer-pet': 'Composer whale',
+  'feature.composer-pet': 'Composer pet',
   'feature.composer-stats': 'Composer statistics readouts',
   'hint.composer-stats': 'Output speed and cache-hit rate; the two stay out of the row while this is off (the default)',
   'feature.context-panel': 'Context breakdown panel',

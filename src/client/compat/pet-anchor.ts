@@ -27,7 +27,7 @@ export const PET_INSET = 12;
  * selects new sessions; hidden, missing or unlaid-out cards publish null.
  * @returns position source whose dispose releases all listeners and observers.
  */
-export function createPetAnchor(document: Document, report: (error: unknown) => void): PetAnchorSource {
+export function createPetAnchor(document: Document, report: (error: unknown) => void, box: { readonly width: number; readonly height: number; readonly inset?: number } = PET_BOX): PetAnchorSource {
   const anchors = hostAnchors(document);
   const listeners = new Set<() => void>();
   let value: PetAnchor | null = null;
@@ -97,8 +97,8 @@ export function createPetAnchor(document: Document, report: (error: unknown) => 
       return;
     }
     publish({
-      left: Math.round(rect.right - PET_BOX.width - PET_INSET),
-      top: Math.round(rect.top - PET_BOX.height),
+      left: Math.round(rect.right - box.width - (box.inset ?? PET_INSET)),
+      top: Math.round(rect.top - box.height),
     });
   };
 
