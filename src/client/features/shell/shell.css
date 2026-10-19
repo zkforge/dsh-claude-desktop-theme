@@ -25,11 +25,14 @@ html[data-dsh-ccd-style="true"] :is(input, textarea, [contenteditable="true"], [
   -webkit-user-select: text;
 }
 
-/* Flat, neutral sidebar column: no gradient, no blue cast. */
+/* Flat, neutral sidebar column: no gradient, no blue cast. The divider is a
+   0.5px hairline: the native edge measures one physical pixel at @2x, and a
+   full 1px reads twice as heavy on a retina screen. Non-retina displays snap
+   the half pixel back up to 1px. */
 html[data-dsh-ccd-style="true"][data-platform="darwin"] ._6Qf49G_sidebarCol,
 html[data-dsh-ccd-style="true"] ._6Qf49G_sidebarCol {
   background: var(--ccd-sidebar);
-  border-right: 1px solid var(--ccd-border);
+  border-right: 0.5px solid var(--ccd-border);
 }
 
 html[data-dsh-ccd-style="true"][data-platform="darwin"] ._6Qf49G_centerCol,

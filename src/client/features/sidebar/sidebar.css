@@ -108,6 +108,7 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-shell-leading] but
 /* The brand sits on the same inset as the navigation rows below it, so the mark
    and the app name line up with New Session and the panel glyphs. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_logoRow {
+  display: var(--ccd-sidebar-brand-display, none);
   height: 32px;
   margin-bottom: 6px;
   padding: 0 8px;
@@ -172,6 +173,14 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] ._3WPZCG_root:not(._3WPZ
   font-weight: 400;
 }
 
+/* Search moves above New Session without leaving React's tree: New Session
+   opens the row's worth of flow, and `compat/sidebar-search.ts` paints the host
+   field over that gap. The gap follows the brand row automatically. */
+html[data-dsh-ccd-style="true"]
+  ._3WPZCG_root:not(._3WPZCG_collapsed)[data-ccd-sidebar-search-placed] ._3WPZCG_newSession {
+  margin-top: calc(var(--ccd-nav-row-height) + 5px);
+}
+
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSession:hover,
 html[data-dsh-ccd-style="true"][data-platform="darwin"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSession:hover {
   background: var(--ccd-hover);
@@ -228,7 +237,7 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_n
    margin shorthand below outranks its `:not(rail)` rule. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelList {
   gap: var(--ccd-nav-gap);
-  margin-bottom: var(--ccd-nav-gap);
+  margin-bottom: 5px;
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow {
@@ -315,7 +324,7 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_r
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader {
   position: relative;
   height: 26px;
-  margin: 0 0 4px;
+  margin: 0 0 5px;
   padding-left: 0;
   /* Runtime measures the tree edge, including the actual scrollbar gutter. */
   padding-right: 0;
@@ -325,35 +334,48 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_s
   overflow: visible;
 }
 
-/* Keep the native search field visible in place of the region heading.
-   React still owns querying, clearing, Escape and the search shortcut. */
+/* The region heading is now the row's leading label. The search field keeps
+   its native place in the host tree but is positioned over the seat above New
+   Session, so it no longer consumes this row's width. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionLabel {
-  display: none;
-}
-
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchSlot {
+  display: block;
   flex: 1;
   max-width: none;
-  margin-left: 0;
-  padding-left: 0;
+  padding-left: 8px;
+  color: var(--ccd-text-secondary);
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_searchSlot {
+  position: fixed;
+  top: var(--ccd-sidebar-search-top);
+  left: var(--ccd-sidebar-search-left);
+  z-index: 2;
+  flex: none;
+  width: var(--ccd-sidebar-search-width);
+  height: var(--ccd-nav-row-height);
+  max-width: none;
+  margin: 0;
+  padding: 0;
   transition: none;
 }
 
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_search {
+html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_search {
   width: 100%;
-  height: 24px;
+  height: 100%;
   margin: 0;
   padding: 0 4px;
   border: 1px solid var(--ccd-border);
-  border-radius: 7px;
+  border-radius: var(--ccd-radius-row);
   background: var(--ccd-card);
   box-shadow: var(--ccd-shadow-card);
   color: var(--ccd-text-muted);
   transition: none;
 }
 
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_search:focus-within {
-  border-color: var(--ccd-text-muted);
+html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_search:focus-within {
+  border-color: var(--ccd-border-strong);
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchInput {
@@ -547,6 +569,15 @@ html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, 
   flex: none;
   width: 14px;
   height: 14px;
+}
+
+/* The view-options trigger carries the only control that opens this card, so
+   its sliders read one step larger than the neighbouring search and workspace
+   actions while the 22px hit box stays put. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed)
+  ._7514NG_sectionHeader ._7514NG_iconButton._7514NG_wide svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* The create button is the container's last *button*, not its last child — the
@@ -1066,17 +1097,16 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading {
   flex: none;
-  /* Section labels share the Recents toolbar's 4px inset; only session
-     titles are indented past the native status icon. */
-  padding: 12px 8px 4px 4px;
+  /* Status labels share the Recents heading and session rows' leading edge. */
+  padding: 10px 8px 4px 8px;
   color: var(--ccd-text-secondary);
   font-size: calc(var(--ccd-font-size-muted) - 1px);
   font-weight: 400;
   line-height: 20px;
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading:nth-child(1 of .ccd-status-heading) {
-  /* The toolbar already provides separation above the first visible group. */
-  padding-top: 4px;
+  /* The Recents toolbar provides the shared 5px section gap. */
+  padding-top: 0;
 }
 html[data-dsh-ccd-style="true"] .ccd-status-children {
   flex: none;

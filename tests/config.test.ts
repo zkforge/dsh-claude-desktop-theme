@@ -68,3 +68,42 @@ test('a default configuration keeps every built-in', () => {
     'a hand-edited value falls back to the default rather than failing activation');
   assert.equal(adoptConfig({ features: { 'context-panel': false } }).features['context-panel'], false);
 });
+
+test('sidebar branding defaults off, persists explicit choices and rejects invalid writes', () => {
+  assert.equal(resolveConfig().view.showSidebarBrand, false);
+  assert.equal(adoptConfig({}).view.showSidebarBrand, false);
+  for (const showSidebarBrand of [true, false]) {
+    const options = { view: { showSidebarBrand } };
+    assert.equal(resolveConfig(options).view.showSidebarBrand, showSidebarBrand);
+    assert.equal(adoptConfig(options).view.showSidebarBrand, showSidebarBrand);
+  }
+  assert.equal(adoptConfig({ view: { showSidebarBrand: 'true' } }).view.showSidebarBrand, false);
+  assert.throws(() => resolveConfig({ view: { showSidebarBrand: 'true' } }), /view.showSidebarBrand/);
+});
+
+test('hero ripples default on and can be disabled independently of the new-session layout', () => {
+  assert.equal(resolveConfig().features['hero-ripples'], true);
+  assert.equal(adoptConfig({}).features['hero-ripples'], true);
+  for (const enabled of [true, false]) {
+    const options = { features: { 'hero-ripples': enabled } };
+    for (const config of [resolveConfig(options), adoptConfig(options)]) {
+      assert.equal(config.features['hero-ripples'], enabled);
+      assert.equal(config.features['new-session'], true);
+    }
+  }
+  assert.equal(adoptConfig({ features: { 'hero-ripples': 'false' } }).features['hero-ripples'], true);
+  assert.throws(() => resolveConfig({ features: { 'hero-ripples': 'false' } } as never), /features\.hero-ripples/);
+});
+
+
+test('model icons default on, preserve explicit choices and reject invalid writes', () => {
+  assert.equal(resolveConfig().view.showModelIcons, true);
+  assert.equal(adoptConfig({}).view.showModelIcons, true);
+  for (const showModelIcons of [true, false]) {
+    const options = { view: { showModelIcons } };
+    assert.equal(resolveConfig(options).view.showModelIcons, showModelIcons);
+    assert.equal(adoptConfig(options).view.showModelIcons, showModelIcons);
+  }
+  assert.equal(adoptConfig({ view: { showModelIcons: 'false' } }).view.showModelIcons, true);
+  assert.throws(() => resolveConfig({ view: { showModelIcons: 'false' } }), /view.showModelIcons/);
+});

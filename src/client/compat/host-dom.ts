@@ -129,6 +129,7 @@ export const HOST = Object.freeze({
   filesBody: '[data-files-body]',
   filesEntry: '[data-files-entry]',
   sidebarRoot: '._3WPZCG_root',
+  sidebarCollapsed: '._3WPZCG_collapsed',
   sidebarLogoRow: '._3WPZCG_logoRow',
   sidebarBrand: '._3WPZCG_brand',
   sidebarBrandName: '._3WPZCG_brandName',

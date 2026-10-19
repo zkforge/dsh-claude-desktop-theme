@@ -15,17 +15,14 @@ import { browserHeaderWord, mountBrowserHeader } from '../src/client/compat/brow
  */
 
 test('the browsing region takes the reference word, and only over the host’s own', () => {
-  assert.equal(browserHeaderWord('会话', false), '最近会话');
-  assert.equal(browserHeaderWord('Sessions', false), 'Recents');
-  assert.equal(browserHeaderWord('工作区', true), '最近会话', 'an empty grouped tree is the reference’s empty region');
-  assert.equal(browserHeaderWord('Workspaces', true), 'Recents');
-  assert.equal(browserHeaderWord('工作区', false), null, 'a grouped tree with something to show keeps the host’s heading');
-  assert.equal(browserHeaderWord('Workspaces', false), null);
-  assert.equal(browserHeaderWord('Sessions', true), 'Recents', 'the flat word is taken in every state');
-  assert.equal(browserHeaderWord('最近会话', true), null, 'the plugin’s own word is not rewritten again');
-  assert.equal(browserHeaderWord('Sitzungen', true), null, 'a locale this module does not know is left alone');
-  assert.equal(browserHeaderWord('', true), null);
-  assert.equal(browserHeaderWord('会话 ', true), null, 'only the host’s exact string is replaced');
+  assert.equal(browserHeaderWord('会话'), '最近会话');
+  assert.equal(browserHeaderWord('Sessions'), 'Recents');
+  assert.equal(browserHeaderWord('工作区'), '最近会话');
+  assert.equal(browserHeaderWord('Workspaces'), 'Recents');
+  assert.equal(browserHeaderWord('最近会话'), null, 'the plugin’s own word is not rewritten again');
+  assert.equal(browserHeaderWord('Sitzungen'), null, 'a locale this module does not know is left alone');
+  assert.equal(browserHeaderWord(''), null);
+  assert.equal(browserHeaderWord('会话 '), null, 'only the host’s exact string is replaced');
 });
 
 test('sidebar label replacements release disconnected text records during the mount', () => {

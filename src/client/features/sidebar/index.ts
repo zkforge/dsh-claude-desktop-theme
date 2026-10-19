@@ -33,6 +33,11 @@ export const sidebarFeature: ImplementedFeature = {
     const probe = probeHost(document);
     if (!probe.sidebar) environment.logger.debug('sidebar: column not mounted yet');
     scope.add(environment.dom.mountStyles(sidebarCss));
+    if (environment.config.view.showSidebarBrand) {
+      scope.add(environment.dom.mountStyles(
+        'html[data-dsh-ccd-style="true"] { --ccd-sidebar-brand-display: flex; }',
+      ));
+    }
     scope.add(environment.dom.mountStyles(accountMenuCss));
     scope.add(environment.dom.mountStyles(navigationCss));
     scope.add(mountSidebarSessionIcons(document));

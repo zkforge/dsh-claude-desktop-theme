@@ -10,7 +10,7 @@
  */
 export const FEATURE_IDS = [
   'shell', 'sidebar', 'new-session', 'conversation', 'tool-calls', 'statistics', 'composer-pet',
-  'composer-stats', 'context-panel',
+  'composer-stats', 'context-panel', 'hero-ripples',
 ] as const;
 
 export type FeatureId = typeof FEATURE_IDS[number];
@@ -21,7 +21,7 @@ export const APPEARANCE_FIELDS = ['canvas', 'sidebar'] as const;
 /** Fields of the typeface section; an empty string means "system stack". */
 export const FONT_FIELDS = ['uiLatin', 'uiCjk', 'code'] as const;
 /** Fields of the view-options section. */
-export const VIEW_FIELDS = ['showEmptyGroups', 'groupByStatus', 'showHeaderSubagents', 'showHeaderTeam'] as const;
+export const VIEW_FIELDS = ['showEmptyGroups', 'groupByStatus', 'showHeaderSubagents', 'showHeaderTeam', 'showSidebarBrand', 'showModelIcons'] as const;
 
 export type AppearanceField = typeof APPEARANCE_FIELDS[number];
 export type FontField = typeof FONT_FIELDS[number];
@@ -89,6 +89,7 @@ export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
   'composer-pet': true,
   'composer-stats': false,
   'context-panel': true,
+  'hero-ripples': true,
 });
 
 /** Empty strings keep the built-in palette and the system font stack in charge. */
@@ -116,6 +117,8 @@ export const DEFAULT_VIEW: ViewConfig = Object.freeze({
   groupByStatus: true,
   showHeaderSubagents: false,
   showHeaderTeam: false,
+  showSidebarBrand: false,
+  showModelIcons: true,
 });
 
 /** Three- or six-digit hex, with the leading `#`; both forms normalize to six. */

@@ -18,6 +18,7 @@ import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountFilesPane } from './compat/files-pane.ts';
 import { mountRightPanes } from './compat/right-panes.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
+import { mountSidebarSearch } from './compat/sidebar-search.ts';
 import { headerMenuActions } from './compat/header-menu-actions.ts';
 import { mountHeaderMenus } from './compat/header-menus.ts';
 import { createDomPort } from './compat/dom.ts';
@@ -203,6 +204,10 @@ export function apply(ctx: Context): void {
            plugin owns; both follow the sidebar switch that draws the trigger. */
         if (next.features.sidebar) {
           const view = mountViewOptions(ctx, environment, scope);
+          scope.add(mountSidebarSearch(
+            document,
+            error => logger.error('sidebar: search field could not be placed', error),
+          ));
           if (next.view.groupByStatus) {
             scope.add(mountStatusGroups(document, ctx, next.view.showEmptyGroups,
               error => logger.error('sidebar: status grouping failed', error)));

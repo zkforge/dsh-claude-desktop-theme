@@ -721,17 +721,17 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-right-panel-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 4px 10px rgb(0 0 0 / 35%);
 }
 
-/* zanwei effort reference palette, MIT; canvas reads these theme values. */
+/* Reference card neutrals and zanwei pixel palette (MIT); canvas reads the pixel tokens. */
 html[data-dsh-ccd-style="true"] {
   --ccd-effort-color-1: #8c73c9;
   --ccd-effort-color-2: #a17ec2;
-  --ccd-effort-color-3: #5f5b58;
-  --ccd-effort-color-4: #3f3b38;
-  --ccd-effort-color-5: #77736f;
-  --ccd-effort-color-6: #edeae8;
-  --ccd-effort-color-7: #e0dbd6;
+  --ccd-effort-color-3: #898782;
+  --ccd-effort-color-4: #000000;
+  --ccd-effort-color-5: #898782;
+  --ccd-effort-color-6: #e6e6e6;
+  --ccd-effort-color-7: #bababa;
   --ccd-effort-color-8: #ffffff;
-  --ccd-effort-color-9: rgba(76, 70, 65, 0.12);
+  --ccd-effort-color-9: #d9d9d9;
   --ccd-effort-color-10: #2788d6;
   --ccd-effort-color-11: rgba(62, 56, 50, 0.05);
   --ccd-effort-color-12: rgba(62, 56, 50, 0.04);
@@ -754,8 +754,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-effort-color-29: #c8b5d4;
   --ccd-effort-color-30: #bda6cc;
   --ccd-effort-color-31: #b59bc6;
-  --ccd-effort-color-32: #b6b2af;
-  --ccd-effort-color-33: rgba(76, 70, 65, 0.13);
+  --ccd-effort-color-32: rgba(0, 0, 0, 0.29);
+  --ccd-effort-color-33: rgba(0, 0, 0, 0.15);
   --ccd-effort-color-34: rgba(62, 56, 50, 0.08);
   --ccd-effort-color-35: rgba(62, 56, 50, 0.055);
   --ccd-effort-pixel-leftColor: 210, 206, 214;
@@ -776,19 +776,18 @@ html[data-dsh-ccd-style="true"] {
 /*
  * The same reference field on the dark canvas: the purple ramp keeps its
  * left-to-right direction (neutral → violet) inside the dark range, the
- * neutrals flip so the panel is a card above the transcript, and the knob stays
- * the brightest thing on the track — its fill is also the tooltip's text
- * colour, so the two keep following one value.
+ * neutrals match the reference card and track, and the knob stays white.
+ * The translucent ticks adapt to both the filled and unfilled track.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-effort-color-1: #a48ede;
   --ccd-effort-color-2: #b294d3;
-  --ccd-effort-color-3: #e7e4de;
-  --ccd-effort-color-4: #f6f4f0;
-  --ccd-effort-color-5: #a09b94;
-  --ccd-effort-color-6: #3a3936;
-  --ccd-effort-color-7: #4b4944;
-  --ccd-effort-color-8: #2b2a28;
+  --ccd-effort-color-3: #898782;
+  --ccd-effort-color-4: #eeeeee;
+  --ccd-effort-color-5: #898782;
+  --ccd-effort-color-6: #373736;
+  --ccd-effort-color-7: #7d7d7c;
+  --ccd-effort-color-8: #20201f;
   --ccd-effort-color-9: rgba(255, 255, 255, 0.1);
   --ccd-effort-color-10: #4d93f8;
   --ccd-effort-color-11: rgba(0, 0, 0, 0.45);
@@ -799,7 +798,7 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-effort-color-16: rgba(255, 255, 255, 0.14);
   --ccd-effort-color-17: #3a3936;
   --ccd-effort-color-18: rgba(0, 0, 0, 0.5);
-  --ccd-effort-color-19: #ece9e4;
+  --ccd-effort-color-19: #ffffff;
   --ccd-effort-color-20: rgba(255, 255, 255, 0.04);
   --ccd-effort-color-21: #34332f;
   --ccd-effort-color-22: #373430;
@@ -812,7 +811,7 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-effort-color-29: #63527c;
   --ccd-effort-color-30: #6e5989;
   --ccd-effort-color-31: #786096;
-  --ccd-effort-color-32: #6f6c66;
+  --ccd-effort-color-32: rgba(255, 255, 255, 0.305);
   --ccd-effort-color-33: rgba(255, 255, 255, 0.16);
   --ccd-effort-color-34: rgba(0, 0, 0, 0.4);
   --ccd-effort-color-35: rgba(0, 0, 0, 0.35);
@@ -838,10 +837,12 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
  */
 html[data-dsh-ccd-style="true"] {
   --ccd-text-strong: #000000;
+  --ccd-text-inverse: #ffffff;
 }
 
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-text-strong: #ffffff;
+  --ccd-text-inverse: #000000;
 }
 
 /*
@@ -930,10 +931,10 @@ html[data-dsh-ccd-style="true"] [role="menuitem"] ._check_4ub78_179 svg {
  * (`compat/host-dom.ts`), and the Windows build's `wq12jW_` spelling is what
  * `compat/dom.ts` substitutes when this sheet is mounted.
  */
-html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button[aria-pressed="true"] > span[aria-hidden="true"],
-html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button[aria-pressed="true"] > span[aria-hidden="true"] svg,
-html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button > span[aria-hidden="true"]:not(:empty),
-html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button > span[aria-hidden="true"]:not(:empty) svg,
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button[aria-pressed="true"] > span[aria-hidden="true"]:not(.ccd-model-glyph),
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button[aria-pressed="true"] > span[aria-hidden="true"]:not(.ccd-model-glyph) svg,
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button > span[aria-hidden="true"]:not(:empty):not(.ccd-model-glyph),
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button > span[aria-hidden="true"]:not(:empty):not(.ccd-model-glyph) svg,
 html[data-dsh-ccd-style="true"] [role="menu"] .cl2Rlq_check,
 html[data-dsh-ccd-style="true"] [role="menuitemradio"] .cl2Rlq_check,
 html[data-dsh-ccd-style="true"] [role="menu"] .cl2Rlq_check svg,

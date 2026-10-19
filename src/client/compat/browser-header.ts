@@ -9,7 +9,7 @@ const SESSION_WORDS: readonly (readonly [string, string])[] = Object.freeze([
   ['Sessions', 'Recents'],
 ]);
 
-/** The host's grouped heading, and the name the region takes once it is empty. */
+/** The host's grouped heading, and the name the reference gives that list. */
 const GROUP_WORDS: readonly (readonly [string, string])[] = Object.freeze([
   ['工作区', '最近会话'],
   ['Workspaces', 'Recents'],
@@ -18,12 +18,10 @@ const GROUP_WORDS: readonly (readonly [string, string])[] = Object.freeze([
 /**
  * The name the browsing region's own title line draws.
  * @param text - the host's word, exactly as it rendered it.
- * @param noHistory - whether the plugin's no-history prompt is on screen.
  * @returns the reference's name, or null to leave the host's own word.
  */
-export function browserHeaderWord(text: string, noHistory: boolean): string | null {
+export function browserHeaderWord(text: string): string | null {
   for (const [host, drawn] of SESSION_WORDS) if (text === host) return drawn;
-  if (!noHistory) return null;
   for (const [host, drawn] of GROUP_WORDS) if (text === host) return drawn;
   return null;
 }
@@ -49,12 +47,12 @@ export function mountBrowserHeader(document: Document, report: (error: unknown) 
   let disposed = false;
 
   /** Write the reference's name over the host's own word, once per text node. */
-  const name = (element: HTMLElement | null, noHistory: boolean) => {
+  const name = (element: HTMLElement | null) => {
     if (element === null) return;
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     for (let found = walker.nextNode(); found !== null; found = walker.nextNode()) {
       const node = found as Text;
-      const next = browserHeaderWord(node.data.trim(), noHistory);
+      const next = browserHeaderWord(node.data.trim());
       if (next === null) continue;
       const previous = rewritten.get(node);
       const original = previous?.drawn === node.data ? previous.original : node.data;
@@ -70,10 +68,7 @@ export function mountBrowserHeader(document: Document, report: (error: unknown) 
     if (disposed) return;
     // Sidebar rebuilds must not retain every prior text node and its subtree.
     for (const node of rewritten.keys()) if (!node.isConnected) rewritten.delete(node);
-    name(
-      document.querySelector<HTMLElement>(host.browserSectionLabel),
-      document.querySelector('[data-ccd-empty-state="new"]') !== null,
-    );
+    name(document.querySelector<HTMLElement>(host.browserSectionLabel));
   };
 
   /** One microtask batch — before the paint the host's commit schedules. */
@@ -104,7 +99,6 @@ export function mountBrowserHeader(document: Document, report: (error: unknown) 
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['data-ccd-empty-state'],
     });
     sync();
   } catch (error) {

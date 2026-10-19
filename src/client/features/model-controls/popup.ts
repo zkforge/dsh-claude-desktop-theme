@@ -58,11 +58,14 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       else placementTimer = setTimeout(run, 16);
     };
     const onPointer = (event: PointerEvent) => {
-      if (!surface.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
+      const rect = surface.getBoundingClientRect();
+      const insideSurface = event.clientX >= rect.left && event.clientX <= rect.right
+        && event.clientY >= rect.top && event.clientY <= rect.bottom;
+      if (!insideSurface && !surface.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
     };
-    const onFocus = (event: FocusEvent) => {
-      if (!surface.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
-    };
+    /* Native scrollbar presses can hand focus to the host outside this React
+       tree. Focus alone must not dismiss the panel: pointer coordinates above
+       handle outside presses, and Escape/Tab below handle keyboard navigation. */
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); trigger.focus(); close(); }
       if (event.key !== 'Tab') return;
@@ -83,7 +86,6 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
     const onResize = () => { size.refresh(); schedulePlace(); };
     window.addEventListener('resize', onResize);
     document.addEventListener('pointerdown', onPointer, true);
-    document.addEventListener('focusin', onFocus);
     surface.addEventListener('keydown', onKey);
     const autofocus = requestAnimationFrame(() => surface.querySelector<HTMLElement>('[data-autofocus]')?.focus());
     return () => {
@@ -93,7 +95,6 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       observer.disconnect(); resize.disconnect();
       window.removeEventListener('resize', onResize);
       document.removeEventListener('pointerdown', onPointer, true);
-      document.removeEventListener('focusin', onFocus);
       surface.removeEventListener('keydown', onKey);
       if (surface.matches(':popover-open')) surface.hidePopover();
     };

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ModelCatalogModel, ModelSelection } from '@deepseek-ai/dsh-api-session-controller/types';
 import type { ModelDirectoryState } from '@deepseek-ai/dsh-client-ui-model-selection/client';
-import { effortChoices, effortSelection, effortView, modelSelection } from '../src/client/features/model-controls/selection.ts';
+import { effortChoices, effortDefaultIndex, effortSelection, effortView, modelSelection } from '../src/client/features/model-controls/selection.ts';
 
 const copy = { defaultName: 'Default' };
 const tiers = [{ id: 'off', name: 'Off' }, { id: 'low', name: 'Low' }, { id: 'high', name: 'High' }, { id: 'max', name: 'Max' }];
@@ -15,6 +15,18 @@ const state: ModelDirectoryState = {
   current: route, groups: [{ id: 'provider', name: 'Provider', models: [model, bare, odd] }],
   failures: [], status: 'ready', routable: true, pending: null, error: null,
 };
+
+test('the default marker prefers a valid provider default and falls back to High', () => {
+  assert.equal(effortDefaultIndex(model), 2);
+  assert.equal(effortDefaultIndex(bare), 2);
+  assert.equal(effortDefaultIndex(odd), 2);
+  assert.equal(effortDefaultIndex({ ...model, reasoning: { efforts: tiers, defaultEffort: 'low' } }), 1);
+  assert.equal(effortDefaultIndex({ ...model, reasoning: { efforts: [...tiers].reverse() } }), 1);
+  assert.equal(effortDefaultIndex({ ...model, reasoning: { efforts: [{ id: 'custom', name: 'High' }] } }), 0);
+  assert.equal(effortDefaultIndex(single), -1);
+  assert.equal(effortDefaultIndex({ id: 'plain', name: 'Plain' }), -1);
+  assert.equal(effortDefaultIndex(undefined), -1);
+});
 
 test('the slider stops are the advertised tiers alone, in provider order', () => {
   for (const catalogue of [model, bare, odd]) {

@@ -10,8 +10,8 @@
   --effort-progress: 0;
   --effort-thumb-w: 16px;
   --effort-thumb-h: 20px;
-  --effort-track-pad: 1px;
-  --effort-track-radius: 10px;
+  --effort-track-pad: 0px;
+  --effort-track-radius: 6px;
   --effort-surface: var(--ccd-effort-color-8);
   --effort-outline: var(--ccd-effort-color-9);
   --ease-decay: cubic-bezier(0.2, 0, 0, 1);
@@ -43,7 +43,7 @@
   width: 100%;
   padding: 12px;
   border: 1px solid var(--effort-outline);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--effort-surface);
   box-shadow:
     0 1px 2px var(--ccd-effort-color-11),
@@ -70,7 +70,7 @@
   min-width: 0;
   color: var(--effort-text);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.01em;
   text-wrap: balance;
@@ -80,7 +80,7 @@
   position: relative;
   display: inline-block;
   height: 1.3em;
-  margin-left: 4px;
+  margin-left: 8px;
   color: var(--effort-text-strong);
   line-height: inherit;
   vertical-align: baseline;
@@ -213,10 +213,10 @@
 .ccd-effort .axis {
   display: flex;
   justify-content: space-between;
-  margin-top: 16px;
+  margin-top: 20px;
   color: var(--effort-muted);
   font-size: 12px;
-  font-weight: 450;
+  font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
@@ -233,7 +233,6 @@
   overflow: hidden;
   border-radius: var(--effort-track-radius);
   background-color: var(--effort-track);
-  box-shadow: inset 0 1px 1px var(--ccd-effort-color-20);
 }
 
 .ccd-effort .track-fill {
@@ -241,13 +240,13 @@
   z-index: 0;
   top: 0;
   bottom: 0;
-  left: var(--effort-track-pad);
+  left: 0;
   width: calc(
     (100% - (var(--effort-track-pad) * 2) - var(--effort-thumb-w))
       * var(--effort-progress, 0)
-    + (var(--effort-thumb-w) * 0.5)
+    + var(--effort-track-pad) + (var(--effort-thumb-w) * 0.5)
   );
-  border-radius: calc(var(--effort-track-radius) - 1px) 0 0 calc(var(--effort-track-radius) - 1px);
+  border-radius: var(--effort-track-radius) 0 0 var(--effort-track-radius);
   background: var(--effort-track-fill);
   pointer-events: none;
   transition-property: opacity;
@@ -336,13 +335,27 @@
   transition-timing-function: var(--ease-decay);
 }
 
-.ccd-effort .tick:last-child {
-  background: var(--effort-accent);
-  opacity: 1;
-}
-
 .ccd-effort[data-ultra] .tick {
   opacity: 0;
+}
+
+.ccd-effort .tick.is-default {
+  height: 9px;
+}
+
+.ccd-effort .default-marker-row {
+  height: 16px;
+  color: var(--effort-muted);
+  line-height: 16px;
+  text-align: center;
+}
+
+.ccd-effort .default-marker {
+  transition: color 150ms ease-out;
+}
+
+.ccd-effort .default-marker.is-selected {
+  color: var(--ccd-text);
 }
 
 .ccd-effort .range {
@@ -374,7 +387,7 @@
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid var(--ccd-effort-color-33);
-  border-radius: 0.5rem;
+  border-radius: 6px;
   background: var(--ccd-effort-color-19);
   box-shadow:
     0 1px 2px var(--ccd-effort-color-34),
@@ -399,7 +412,7 @@
   width: var(--effort-thumb-w);
   height: var(--effort-thumb-h);
   border: 1px solid var(--ccd-effort-color-33);
-  border-radius: 0.5rem;
+  border-radius: 6px;
   background: var(--ccd-effort-color-19);
   box-shadow:
     0 1px 2px var(--ccd-effort-color-34),
@@ -408,14 +421,6 @@
   transition-property: transform;
   transition-duration: 150ms;
   transition-timing-function: ease-out;
-}
-
-.ccd-effort .range:active::-webkit-slider-thumb {
-  transform: scale(0.96);
-}
-
-.ccd-effort .range:active::-moz-range-thumb {
-  transform: scale(0.96);
 }
 
 .ccd-effort .range:focus-visible::-webkit-slider-thumb {
@@ -438,6 +443,7 @@
   .ccd-effort .panel,
   .ccd-effort .track::before,
   .ccd-effort .track-fill,
+  .ccd-effort .default-marker,
   .ccd-effort .range::-webkit-slider-thumb,
   .ccd-effort .range::-moz-range-thumb,
   .ccd-effort .help-button,

@@ -64,6 +64,7 @@ const OFFERED_FEATURES: readonly FeatureId[] = [
   'shell',
   'sidebar',
   'new-session',
+  'hero-ripples',
   'conversation',
   'composer-pet',
   'statistics',
@@ -75,6 +76,7 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
   shell: 'feature.shell',
   sidebar: 'feature.sidebar',
   'new-session': 'feature.new-session',
+  'hero-ripples': 'feature.hero-ripples',
   conversation: 'feature.conversation',
   'tool-calls': 'feature.tool-calls',
   statistics: 'feature.statistics',
@@ -89,6 +91,7 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
  * numbers it puts there.
  */
 const FEATURE_HINTS: Partial<Record<FeatureId, SettingsKey>> = {
+  'hero-ripples': 'hint.hero-ripples',
   'composer-stats': 'hint.composer-stats',
   'context-panel': 'hint.context-panel',
 };
@@ -303,6 +306,20 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
       {/* View settings share the Host transport with the sidebar's menu. */}
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.view')}</h4>
+        <SwitchRow
+          id="ccd-settings-show-model-icons"
+          label={translate('field.showModelIcons')}
+          hint={translate('hint.showModelIcons')}
+          checked={served.view.showModelIcons}
+          onChange={value => void write([setOperation(['view', 'showModelIcons'], value)])}
+        />
+        <SwitchRow
+          id="ccd-settings-show-sidebar-brand"
+          label={translate('field.showSidebarBrand')}
+          hint={translate('hint.showSidebarBrand')}
+          checked={served.view.showSidebarBrand}
+          onChange={value => void write([setOperation(['view', 'showSidebarBrand'], value)])}
+        />
         <SwitchRow
           id="ccd-settings-show-header-subagents"
           label={translate('field.showHeaderSubagents')}

@@ -47,7 +47,16 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * gives them; everything the card decides for itself — how tall a row is, what
  * a heading is worth, where an editable face's line steps — is below.
  */
-.ccd-model-panel, .ccd-model-error { position: fixed; z-index: 1000; box-sizing: border-box; width: min(240px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; padding: 6px; border: 1px solid var(--ccd-border); border-radius: 12px; background: var(--ccd-card); color: var(--ccd-text); box-shadow: var(--ccd-effort-shadow); font: 13px/1.4 var(--ccd-font-ui); }
+.ccd-model-panel, .ccd-model-error { position: fixed; z-index: 1000; box-sizing: border-box; width: min(240px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: hidden; padding: 6px; border: 1px solid var(--ccd-border); border-radius: 12px; background: var(--ccd-card); color: var(--ccd-text); box-shadow: var(--ccd-effort-shadow); font: 13px/1.4 var(--ccd-font-ui); }
+/*
+ * The scrolling viewport is the option list, not the card. A directory with
+ * dozens of models once grew the card to its viewport clamp, covering the
+ * Composer it belongs to; the list now stops at the same ceiling the settings
+ * page's own choice menu takes (`min(320px, calc(100vh - 24px))`,
+ * settings.css) — about ten 24px rows — and scrolls inside it, so the search
+ * cell, the loading and failure notes stay in view while the list moves.
+ */
+.ccd-model-options { max-height: min(320px, calc(100vh - 24px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 /* Native top-layer placement keeps the existing anchor coordinates. The
    backdrop stays click-through so usePopup still owns outside dismissal. */
 .ccd-model-panel[popover], .ccd-effort[popover] { inset: auto; margin: 0; }
@@ -79,12 +88,16 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
    one — neither may reach the card. */
 .ccd-model-search:focus, .ccd-model-search:focus-visible { outline: none; }
 /*
- * The provider heading is a cell of the same 24px rhythm as the rows it opens,
+ * The provider heading is a chip on the same 24px rhythm as the rows it opens,
  * not a block with a size of its own: one 20px line with 2px above and below,
- * in the control-label size (12px — the document's scale has no 11px step) and
- * the secondary ink. It never takes a fill, because it is not a choice.
+ * in the control-label size (12px — the document's scale has no 11px step).
+ * It is appearance only — the heading stays out of the button flow and the
+ * keyboard never reaches it — but the inverted fill is what makes one
+ * provider's block read apart from the next on a crowded card: the dark
+ * scheme paints it white on near-black and the light scheme paints it
+ * black on near-white, so the mark is legible on either canvas.
  */
-.ccd-model-provider { padding: 2px 8px; color: var(--ccd-text-secondary); font-size: 12px; line-height: 20px; }
+.ccd-model-provider { width: max-content; margin: 2px 0; padding: 1px 8px; border-radius: 6px; background: var(--ccd-text-strong); color: var(--ccd-text-inverse); font-size: 12px; line-height: 18px; }
 /*
  * One row is 24px (DESIGN.md §6.7): a 13px label on a 20px line with 2px above
  * and below — the reference's 48 device px at @2x, against the 34px this card
@@ -115,6 +128,20 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * that row rather than resting on a grey it had all along.
  */
 .ccd-model-options button:hover, .ccd-model-options button:focus-visible { background: var(--ccd-hover); }
+/*
+ * The row's leading seat (the user's one exception to §6.7's flat cell): a
+ * 16px box that carries the provider's mark, or the provider's initial when
+ * the map in `model-icons.tsx` names none. While model icons are enabled,
+ * each row draws a seat so the labels align on one x. Marks use the theme's strong black/white
+ * ink rather than the secondary grey.
+ */
+.ccd-model-glyph { flex: 0 0 16px; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; color: var(--ccd-text-strong); }
+/* The row spreads its children with `space-between`; the auto margin keeps
+   the label beside the glyph instead of centred between glyph and check. */
+.ccd-model-name { margin-right: auto; }
+.ccd-model-options button:hover .ccd-model-glyph, .ccd-model-options button:focus-visible .ccd-model-glyph { color: var(--ccd-text-strong); }
+.ccd-model-glyph svg { width: 16px; height: 16px; }
+.ccd-model-glyph-fallback { color: var(--ccd-text-strong); font-size: 11px; line-height: 1; }
 /*
  * Keyboard focus is more than the fill the walk shares with the pointer: the
  * row the keyboard is on and the row the pointer is on look the same, so the

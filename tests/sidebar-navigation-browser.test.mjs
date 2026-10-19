@@ -50,6 +50,11 @@ test('sidebar navigation survives host rerenders, locales and rail mode, then re
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 3);
         assert.equal(await page.evaluate(`document.querySelector('#other').hasAttribute('data-ccd-nav')`), false);
         assert.equal(await page.evaluate(`document.querySelector('#new').getAttribute('aria-keyshortcuts')`), 'Meta+N');
+        const navigationMargin = await page.evaluate(aliasHostClasses(
+          `getComputedStyle(document.querySelector('._3WPZCG_panelList')).marginBottom`,
+          buildInfo,
+        ));
+        assert.equal(navigationMargin, '5px', 'the navigation stack leaves a 5px gap below its last row');
         assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('[data-ccd-nav] svg')).filter(el=>!el.closest('[data-ccd-nav-glyph]')).map(el=>getComputedStyle(el).display)`), ['none', 'none', 'none']);
         for (const id of ['new', 'plugins', 'routines']) await page.evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
         assert.deepEqual(await page.evaluate('window.clicks'), ['new', 'plugins', 'routines']);

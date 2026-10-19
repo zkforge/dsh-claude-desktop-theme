@@ -191,6 +191,29 @@ html[data-dsh-ccd-style="true"] :is(
   background: var(--ccd-scrollbar-thumb);
 }
 
+/* The model picker keeps a wider native hit area. Its scroll mark lasts longer
+   than other surfaces, and hover/active keep the thumb visible during a grab. */
+html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar {
+  width: 10px;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar-thumb {
+  min-height: 32px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  background-clip: padding-box;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options[data-ccd-scrolling]::-webkit-scrollbar-thumb {
+  background-color: var(--ccd-scrollbar-thumb);
+}
+
+html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar-thumb:hover,
+html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar-thumb:active {
+  background-color: var(--ccd-scrollbar-thumb-hover);
+}
+
 /*
  * The five pill surfaces keep no ink at all — the floating capsule speaks for
  * them. They are named by the module's own mark rather than by the two lists,

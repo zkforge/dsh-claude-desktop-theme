@@ -8,6 +8,7 @@ export interface EffortPanelProps {
   readonly anchor: RefObject<HTMLButtonElement>;
   readonly choices: readonly EffortChoice[];
   readonly selected: number;
+  readonly defaultIndex: number;
   readonly disabled: boolean;
   readonly busy: boolean;
   readonly error: string | null;
@@ -16,7 +17,7 @@ export interface EffortPanelProps {
 }
 
 /** Presentation-only slider: continuous local preview, one supported choice on release. */
-export function EffortPanel({ anchor, choices, selected, disabled, busy, error, onCommit, onClose }: EffortPanelProps) {
+export function EffortPanel({ anchor, choices, selected, defaultIndex, disabled, busy, error, onCommit, onClose }: EffortPanelProps) {
   const helpId = useId();
   const { panel, position } = usePopup(anchor, onClose);
   const [value, setValue] = useState(selected);
@@ -158,7 +159,7 @@ export function EffortPanel({ anchor, choices, selected, disabled, busy, error, 
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M9.8 9.2a2.35 2.35 0 0 1 4.55.82c0 1.8-2.35 2.05-2.35 3.7M12 17.2h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
       </button><div className="tooltip" id={helpId} role="tooltip">Higher effort means more thorough responses, but takes longer and uses your limits faster.</div></div></div>
       <div className="axis" aria-hidden="true"><span>Faster</span><span>Smarter</span></div>
-      <div className="track-shell"><div className="track" aria-hidden="true"><div className="track-fill" /><div className="ultra-fallback" /><canvas ref={canvas} className="pixel-field" /><div className="ticks">{choices.map((choice, i) => <span key={choice.id ?? i} className="tick" style={{ opacity: ultra ? 0 : i === index ? 1 : .82 }} />)}</div></div>
+      <div className="track-shell"><div className="track" aria-hidden="true"><div className="track-fill" /><div className="ultra-fallback" /><canvas ref={canvas} className="pixel-field" /><div className="ticks">{choices.map((choice, i) => <span key={choice.id ?? i} className={`tick${i === defaultIndex ? ' is-default' : ''}`} style={{ opacity: ultra ? 0 : i === index ? 1 : .82 }} />)}</div></div>
         <input data-autofocus className="range" type="range" min="0" max={Math.max(0, max)} step="0.001" value={value} disabled={disabled || max < 1}
           aria-label="Effort level" aria-valuetext={name} aria-disabled={busy || disabled}
           onPointerDown={event => { if (busy) { event.preventDefault(); return; } committed.current = false; cancelAnimationFrame(frame.current); dragging.current = true; samples.current = [{ time: performance.now(), value: lastValue.current }]; event.currentTarget.setPointerCapture(event.pointerId); }}
@@ -173,6 +174,7 @@ export function EffortPanel({ anchor, choices, selected, disabled, busy, error, 
             event.preventDefault(); if (busy) return; committed.current = true; cancelAnimationFrame(frame.current); const next = clamp(target, 0, max); publish(next); setLabelIndex(next); onCommit(next);
           }} />
       </div>
+      {defaultIndex >= 0 && defaultIndex <= max && <div className="default-marker-row"><span className={`default-marker${index === defaultIndex ? ' is-selected' : ''}`}>Default</span></div>}
       {error && <div className="selection-error" role="alert">{error}</div>}
     </section>
   </div>;

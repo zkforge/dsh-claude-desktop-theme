@@ -45,6 +45,17 @@ export function effortChoices(model: ModelCatalogModel | undefined, defaultName:
   ];
 }
 
+/** Default marker: a valid provider default wins; otherwise mark High if offered. */
+export function effortDefaultIndex(model: ModelCatalogModel | undefined): number {
+  const reasoning = model?.reasoning;
+  if (!reasoning) return -1;
+  const supplied = reasoning.defaultEffort === undefined ? -1
+    : reasoning.efforts.findIndex(choice => choice.id === reasoning.defaultEffort);
+  if (supplied >= 0) return supplied;
+  const high = reasoning.efforts.findIndex(choice => choice.id.toLowerCase() === 'high');
+  return high >= 0 ? high : reasoning.efforts.findIndex(choice => choice.name.toLowerCase() === 'high');
+}
+
 /**
  * Lay out the card's stops, the resting thumb, and the trigger caption.
  *

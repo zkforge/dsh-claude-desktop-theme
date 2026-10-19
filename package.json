@@ -81,6 +81,7 @@
     "typecheck": "tsc --noEmit",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:package": "node scripts/check-package.mjs",
+    "icons:models": "node scripts/generate-model-icons.mjs",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "check": "npm run typecheck && npm run check:architecture && npm test && npm run build && npm run check:package",
     "prepack": "npm run check",

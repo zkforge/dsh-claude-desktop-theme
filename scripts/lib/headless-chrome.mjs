@@ -125,7 +125,7 @@ export class Devtools {
  * @param callback - receives the connected `Devtools`.
  * @returns whatever `callback` returns.
  */
-export async function withPage({ url, width, height, scale = 1, transparent = false, profile }, callback) {
+export async function withPage({ url, width, height, scale = 1, transparent = false, hideScrollbars = true, profile }, callback) {
   // Chrome chooses an unused port. PID-modulo ports can collide with a live
   // DSH renderer or another browser test and attach to the wrong page.
   const portFile = join(profile, 'DevToolsActivePort');
@@ -133,7 +133,7 @@ export async function withPage({ url, width, height, scale = 1, transparent = fa
   const child = spawn(findChrome(), [
     '--headless=new',
     '--disable-gpu',
-    '--hide-scrollbars',
+    ...(hideScrollbars ? ['--hide-scrollbars'] : []),
     '--no-first-run',
     '--no-default-browser-check',
     '--allow-file-access-from-files',

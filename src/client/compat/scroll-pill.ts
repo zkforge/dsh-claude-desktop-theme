@@ -57,6 +57,9 @@ export const PILL_ATTRIBUTE = 'data-ccd-scroll-thumb';
  */
 export const IDLE_MS = 800;
 
+/** Leave enough time to move from the model rows onto their scrollbar. */
+const MODEL_IDLE_MS = 2200;
+
 /** The pill's longest and shortest length, in CSS pixels. */
 const PILL_MAX = 96;
 const PILL_MIN = 36;
@@ -154,7 +157,7 @@ export function mountScrollPills(document: Document, report: (error: unknown) =>
     marks.set(surface, window.setTimeout(() => {
       marks.delete(surface);
       surface.removeAttribute(SCROLLING_ATTRIBUTE);
-    }, IDLE_MS));
+    }, surface.classList?.contains('ccd-model-options') ? MODEL_IDLE_MS : IDLE_MS));
   };
 
   /** Put one pill where its surface's own thumb is, or take it away. */

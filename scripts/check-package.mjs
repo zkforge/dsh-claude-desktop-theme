@@ -458,9 +458,10 @@ assert.equal(petScopes, 1);
 // page + theme + Composer + menus + scrollbars + model controls + effort + conversation + header actions + header menus + new session + pet
 assert.equal(styles.size, 12);
 const petFace = [...blankPetSeats][0].inject();
-// The pet is decoration: the seat injects the measured corner and nothing else
-// — no session, no reaction state, no timer, no copy.
-assert.deepEqual(Object.keys(petFace), ['useAnchor']);
+// The pet is decoration: the seat injects its visual variant and the measured
+// corner, but no session, reaction state, timer or copy.
+assert.deepEqual(Object.keys(petFace).sort(), ['petStyle', 'useAnchor']);
+assert.ok(['whale', 'claude'].includes(petFace.petStyle));
 assert.equal(typeof petFace.useAnchor, 'function');
 assert.ok(documentListenersOpened > 0, 'the frame-wide seat must observe the card');
 /* The provisional New Session row: the column keeps the host's blank Session

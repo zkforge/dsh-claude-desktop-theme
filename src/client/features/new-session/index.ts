@@ -19,7 +19,9 @@ export const newSessionFeature: ImplementedFeature = {
     if (!probe.conversation) environment.logger.debug('new-session: conversation not mounted yet');
     scope.add(environment.dom.mountStyles(newSessionCss));
     scope.add(mountHeroGreeting(document, environment.config.personalization));
-    scope.add(mountHeroCanvas(document, drawHeroRipples,
-      error => environment.logger.error('new-session: ripple background failed', error)));
+    if (environment.config.features['hero-ripples']) {
+      scope.add(mountHeroCanvas(document, drawHeroRipples,
+        error => environment.logger.error('new-session: ripple background failed', error)));
+    }
   },
 };

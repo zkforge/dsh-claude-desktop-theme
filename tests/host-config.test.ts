@@ -73,4 +73,12 @@ test('unusable values are refused at the settings boundary', () => {
   assert.throws(() => schema({ fonts: { code: 'url(evil)' } }), /code/);
   assert.doesNotThrow(() => schema({ appearance: { canvas: '#AABBCC' }, fonts: { uiCjk: '思源黑体' } }));
   assert.doesNotThrow(() => schema({}));
+  assert.doesNotThrow(() => schema({ features: { 'hero-ripples': false } }));
+  assert.throws(() => schema({ features: { 'hero-ripples': 'false' } }), /hero-ripples/);
+  for (const showModelIcons of [true, false]) {
+    assert.doesNotThrow(() => schema({ view: { showModelIcons } }));
+  }
+  assert.throws(() => schema({ view: { showModelIcons: 'false' } }), /showModelIcons/);
+  assert.doesNotThrow(() => schema({ view: { showSidebarBrand: true } }));
+  assert.throws(() => schema({ view: { showSidebarBrand: 'true' } }), /showSidebarBrand/);
 });

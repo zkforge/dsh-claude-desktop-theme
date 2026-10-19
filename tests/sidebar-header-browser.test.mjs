@@ -22,6 +22,7 @@ const hostCss = `
     --dsh-sidebar-inline-padding:10px;--dsh-workspace-indent:0px;--ds-ease-in-out:ease-in-out}
   body{margin:0;background:#fbfbfa}
   ._3WPZCG_root{box-sizing:border-box}
+  ._3WPZCG_newSession{position:relative}
   ._7514NG_root{--dsh-session-list-edge-inset:var(--dsh-sidebar-inline-padding);--dsh-session-list-scrollbar-width:5px;
     --dsh-session-list-scrollbar-offset:2px;box-sizing:border-box;min-height:0;padding-right:var(--dsh-session-list-edge-inset);
     flex-direction:column;flex:1;display:flex}
@@ -140,8 +141,10 @@ function group(key, name, sessions, marked = false) {
 }
 
 /** The browsing region: the host's header above the tree's own list area. */
-function region({ label = '工作区', header: heading, tree, empty = false }) {
-  return `<div class="_3WPZCG_root" style="width:264px;height:420px;display:flex;flex-direction:column">
+function region({ label = '工作区', header: heading, tree, empty = false, brand = false }) {
+  return `<div class="_3WPZCG_root" style="width:264px;height:420px;display:flex;flex-direction:column${brand ? ';--ccd-sidebar-brand-display:flex' : ''}">
+    ${brand ? '<div class="_3WPZCG_logoRow"><span>DeepSeek Harness</span></div>' : ''}
+    <button class="_3WPZCG_newSession"><span class="_3WPZCG_newSessionContent"><svg width="16" height="16"></svg><span class="_3WPZCG_newSessionLabel">新建会话</span></span></button>
     <div class="_7514NG_root">
       ${heading ?? header(label)}
       <div class="_7514NG_listArea"${empty ? ' data-ccd-list-empty' : ''}>
@@ -161,6 +164,7 @@ const flatList = region({
   tree: `<div class="_7514NG_flatList">${sessionRow('a', '你好')}${sessionRow('b', '第二条')}</div>`,
 });
 const searching = region({ tree: group('first', 'dsh-ccd-style', sessionRow('a', '你好')), header: header('工作区', true) });
+const branded = region({ brand: true, tree: group('first', 'dsh-ccd-style', sessionRow('a', '你好')) });
 
 /* One Workspace with more Sessions than the column holds, so the tree scrolls. */
 /* The collapsed rail: no title and no in-header Search, only the add-workspace
@@ -185,11 +189,16 @@ const boxes = `(() => {
     const element = document.querySelector(selector);
     if (element === null) return null;
     const rect = element.getBoundingClientRect();
-    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom };
+    return {
+      x: rect.x, y: rect.y, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom,
+      display: getComputedStyle(element).display,
+    };
   };
   return {
     region: box('._7514NG_root'), header: box('._7514NG_sectionHeader'), label: box('._7514NG_sectionLabel'),
-    search: box('#search'), searchButton: box('#search-button'), options: box('#view-options'), add: box('#add-workspace'),
+    search: box('#search'), searchSlot: box('._7514NG_searchSlot'), searchButton: box('#search-button'),
+    options: box('#view-options'), add: box('#add-workspace'), logoRow: box('._3WPZCG_logoRow'),
+    newSession: box('._3WPZCG_newSession'),
     row: box('#row-first'), title: box('#row-first .jJkEga_title'), plus: box('#plus-first'), menu: box('#menu-first'),
     session: box('[data-row-key="session:a"]'), empty: box('[data-ccd-empty-state]'),
   };
@@ -204,20 +213,30 @@ test('the separate browsing toolbar and compact project actions support both bui
   const bundle = await build({
     stdin: { resolveDir: root, contents: `
       import {mountBrowserHeader} from './src/client/compat/browser-header.ts';
+      import {mountSidebarSearch} from './src/client/compat/sidebar-search.ts';
       window.releaseHeader=mountBrowserHeader(document,error=>{throw error});
+      window.releaseSearch=mountSidebarSearch(document,error=>{throw error});
     ` }, bundle: true, write: false, format: 'iife',
   });
   for (const hostBuild of [PINNED_BUILD, WINDOWS_BUILD]) {
     const profile = await mkdtemp(join(tmpdir(), `ccd-sidebar-header-${hostBuild.id}-`));
     try {
       await withPage({ url: 'about:blank', width: 300, height: 420, scale: 1, profile }, async devtools => {
-        for (const fixture of [several, searching, flatList, noHistory, rail]) {
+        for (const [name, fixture] of Object.entries({ several, branded, searching, flatList, noHistory, rail })) {
           await devtools.evaluate(`{document.documentElement.lang='en';document.documentElement.dataset.dshCcdStyle='true';document.documentElement.dataset.platform=${JSON.stringify(hostBuild === WINDOWS_BUILD ? 'win32' : 'darwin')};document.body.innerHTML=${JSON.stringify(aliasHostClasses(fixture, hostBuild))};document.head.querySelector('style')?.remove();const style=document.createElement('style');style.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, hostBuild))};document.head.append(style);}`);
           await devtools.evaluate(bundle.outputFiles[0].text);
           await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
           const geometry = await devtools.evaluate(aliasHostClasses(boxes, hostBuild));
-          if (fixture === several) {
-            assert(Math.abs(geometry.row.y - geometry.header.bottom - 4) < 0.5, 'the search toolbar leaves a 4px gap above the project row');
+          if (name === 'several') {
+            assert(Math.abs(geometry.row.y - geometry.header.bottom - 5) < 0.5,
+              'the search toolbar leaves the shared 5px section gap above the project row');
+            assert(Math.abs(geometry.searchSlot.height - geometry.newSession.height) < 0.5, 'the search field matches a navigation row');
+            assert(Math.abs(geometry.searchSlot.x - geometry.newSession.x) < 0.5, 'the search field shares New Session’s leading edge');
+            assert(Math.abs(geometry.searchSlot.width - geometry.newSession.width) < 0.5,
+              'the search field shares New Session’s width');
+            assert(Math.abs(geometry.searchSlot.bottom + 5 - geometry.newSession.y) < 0.5,
+              'the search field sits the shared 5px section gap above New Session');
+            assert.equal(geometry.label.display, 'block');
             assert.equal(geometry.plus.width, 22);
             assert.equal(geometry.plus.height, 22);
             assert.equal(geometry.searchButton.width, 22);
@@ -230,11 +249,18 @@ test('the separate browsing toolbar and compact project actions support both bui
             assert(Math.abs(trailing.first - trailing.second) < 0.5, 'project actions align across groups');
             assert(Math.abs(trailing.row - trailing.first - 4) < 0.5, 'actions use the row trailing inset');
           }
-          if (fixture === searching) {
-            assert(Math.abs(geometry.row.y - geometry.header.bottom - 4) < .5,
+          if (name === 'branded') {
+            assert(geometry.logoRow !== null && geometry.logoRow.height > 0, 'the brand row is visible');
+            assert(geometry.searchSlot.y >= geometry.logoRow.bottom,
+              'the search field sits below the brand when the brand is visible');
+            assert(Math.abs(geometry.searchSlot.bottom + 5 - geometry.newSession.y) < 0.5,
+              'the branded search field still sits the shared 5px gap above New Session');
+          }
+          if (name === 'searching') {
+            assert(Math.abs(geometry.row.y - geometry.header.bottom - 5) < .5,
               'expanded search keeps the same gap above the project row');
           }
-          if (fixture !== rail) {
+          if (name !== 'rail') {
             const field = await devtools.evaluate(aliasHostClasses(`(() => {
               const input = document.querySelector('._7514NG_searchInput');
               const options = document.querySelector('#view-options');
@@ -246,13 +272,74 @@ test('the separate browsing toolbar and compact project actions support both bui
             assert.equal(field.inputOpacity, '1');
             assert.equal(field.optionsVisibility, 'visible', 'view options remain available while searching');
           }
-          if (fixture === flatList || fixture === noHistory) {
+          if (name === 'flatList' || name === 'noHistory') {
             assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_sectionLabel').textContent`, hostBuild)), '最近会话');
           }
           const addDisplay = await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`);
-          if (fixture === rail) assert.notEqual(addDisplay, 'none');
+          if (name === 'rail') assert.notEqual(addDisplay, 'none');
           else assert.equal(addDisplay, 'none');
+          if (name === 'several') {
+            const placed = await devtools.evaluate(aliasHostClasses(`(() => {
+              const root = document.querySelector('._3WPZCG_root');
+              const slot = document.querySelector('._7514NG_searchSlot');
+              return {
+                marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
+                top: slot.style.getPropertyValue('--ccd-sidebar-search-top'),
+                left: slot.style.getPropertyValue('--ccd-sidebar-search-left'),
+                width: slot.style.getPropertyValue('--ccd-sidebar-search-width'),
+              };
+            })()`, hostBuild));
+            assert.equal(placed.marked, true);
+            assert.notEqual(placed.top, '');
+            assert.notEqual(placed.left, '');
+            assert.notEqual(placed.width, '');
+            await devtools.evaluate(aliasHostClasses(
+              `document.querySelector('._3WPZCG_root').classList.add('_3WPZCG_collapsed')`,
+              hostBuild,
+            ));
+            await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
+            const collapsed = await devtools.evaluate(aliasHostClasses(`(() => {
+              const root = document.querySelector('._3WPZCG_root');
+              const slot = document.querySelector('._7514NG_searchSlot');
+              return {
+                marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
+                properties: [
+                  slot.style.getPropertyValue('--ccd-sidebar-search-top'),
+                  slot.style.getPropertyValue('--ccd-sidebar-search-left'),
+                  slot.style.getPropertyValue('--ccd-sidebar-search-width'),
+                ],
+              };
+            })()`, hostBuild));
+            assert.equal(collapsed.marked, false, 'the collapsed rail releases the parked search');
+            assert.deepEqual(collapsed.properties, ['', '', '']);
+            await devtools.evaluate(aliasHostClasses(
+              `document.querySelector('._3WPZCG_root').classList.remove('_3WPZCG_collapsed')`,
+              hostBuild,
+            ));
+            await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
+            assert.equal(await devtools.evaluate(aliasHostClasses(
+              `document.querySelector('._3WPZCG_root').hasAttribute('data-ccd-sidebar-search-placed')`,
+              hostBuild,
+            )), true, 'the search is parked again when the column expands');
+          }
           await devtools.evaluate('window.releaseHeader()');
+          await devtools.evaluate('window.releaseSearch()');
+          if (name !== 'rail') {
+            const released = await devtools.evaluate(aliasHostClasses(`(() => {
+              const root = document.querySelector('._3WPZCG_root');
+              const slot = document.querySelector('._7514NG_searchSlot');
+              return {
+                marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
+                properties: [
+                  slot.style.getPropertyValue('--ccd-sidebar-search-top'),
+                  slot.style.getPropertyValue('--ccd-sidebar-search-left'),
+                  slot.style.getPropertyValue('--ccd-sidebar-search-width'),
+                ],
+              };
+            })()`, hostBuild));
+            assert.equal(released.marked, false, 'release removes the parking marker');
+            assert.deepEqual(released.properties, ['', '', ''], 'release removes every measured property');
+          }
         }
       });
     } finally {

@@ -3,18 +3,20 @@ import type { ModelSelectInjected } from '@deepseek-ai/dsh-client-ui-model-selec
 import type { ModelDirectoryState } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
 import type { ModelSelection } from '@deepseek-ai/dsh-api-session-controller/types';
-import { effortView, modelSelection } from './selection.ts';
+import { effortDefaultIndex, effortView, modelSelection } from './selection.ts';
 import { EffortPanel } from './EffortPanel.tsx';
+import { ModelIcon } from './model-icons.tsx';
 import { usePopup } from './popup.ts';
 
 export type ModelControlsProps = Omit<ModelSelectInjected, 'directory'> & PropsLocale<'model'> & {
+  readonly showModelIcons: boolean;
   readonly locked: boolean;
   readonly useDirectory: () => ModelDirectoryState;
   readonly selectEffort: (route: ModelSelection, effort: string | undefined) => void;
 };
 
 /** SDK-derived values/hooks and callbacks only; DSH retains all business state. */
-export function ModelControls({ locked, available, useDirectory, load, select, selectEffort, t }: ModelControlsProps) {
+export function ModelControls({ showModelIcons, locked, available, useDirectory, load, select, selectEffort, t }: ModelControlsProps) {
   const state = useDirectory();
   const alive = useRef(true);
   const restoreModelFocus = useRef(false);
@@ -52,15 +54,16 @@ export function ModelControls({ locked, available, useDirectory, load, select, s
     {caption !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || !pickable}
       aria-label={`Effort: ${caption}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
       onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{caption}</span></button>}
-    {open === 'effort' && current && pickable && <EffortPanel key={`${current.provider}/${current.model}`} anchor={effortAnchor} choices={choices} selected={preview} disabled={locked || !available} busy={busy} error={state.error}
+    {open === 'effort' && current && pickable && <EffortPanel key={`${current.provider}/${current.model}`} anchor={effortAnchor} choices={choices} selected={preview} defaultIndex={effortDefaultIndex(model)} disabled={locked || !available} busy={busy} error={state.error}
       onClose={close} onCommit={index => { const choice = choices[index]; if (choice && choice.id !== effort) selectEffort(current, choice.id); }} />}
-    {open === 'model' && <ModelPanel anchor={modelAnchor} state={state} disabled={disabled} load={load} t={t} onClose={close}
+    {open === 'model' && <ModelPanel showModelIcons={showModelIcons} anchor={modelAnchor} state={state} disabled={disabled} load={load} t={t} onClose={close}
       onSelect={selection => { restoreModelFocus.current = true; void select(selection).then(result => { if (!alive.current) return; if (result?.ok) { modelAnchor.current?.focus(); close(); } }).catch(() => {}); }} />}
     {open === null && state.error && <div className="ccd-model-error" role="alert">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
   </div>;
 }
 
-function ModelPanel({ anchor, state, disabled, load, t, onClose, onSelect }: PropsLocale<'model'> & {
+export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, onClose, onSelect }: PropsLocale<'model'> & {
+  readonly showModelIcons: boolean;
   readonly anchor: React.RefObject<HTMLButtonElement>;
   readonly state: ModelDirectoryState;
   readonly disabled: boolean;
@@ -91,7 +94,7 @@ function ModelPanel({ anchor, state, disabled, load, t, onClose, onSelect }: Pro
       {groups.map(group => <div key={group.id}><div className="ccd-model-provider">{group.name}</div>{group.models.map(model => {
         const chosen = state.current?.provider === group.id && state.current.model === model.id;
         return <button type="button" data-model-option key={model.id} aria-pressed={chosen} disabled={disabled}
-          onClick={() => onSelect(modelSelection(group.id, model, state.current))}><span className="ccd-model-name">{model.name}</span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button>;
+          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name">{model.name}</span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button>;
       })}</div>)}
     </div>
   </div>;

@@ -36,6 +36,7 @@ export const Config = z.object({
     'composer-pet': z.boolean().default(DEFAULT_FEATURES['composer-pet']),
     'composer-stats': z.boolean().default(DEFAULT_FEATURES['composer-stats']),
     'context-panel': z.boolean().default(DEFAULT_FEATURES['context-panel']),
+    'hero-ripples': z.boolean().default(DEFAULT_FEATURES['hero-ripples']),
   }).default({ ...DEFAULT_FEATURES }).description('按模块启用').volatile(),
   /* One volatile node per section, exactly like `features`: Cordis rejects a
      volatile field nested inside another volatile field ("volatile fields
@@ -68,6 +69,10 @@ export const Config = z.object({
     greetingName: z.string().default('').pattern(/^.{0,64}$/u).description('问候语中的称呼（可留空）'),
   }).default({ ...DEFAULT_PERSONALIZATION }).description('个性化').volatile(),
   view: z.object({
+    showModelIcons: z.boolean().default(DEFAULT_VIEW.showModelIcons)
+      .description('显示模型选单中的前置图标（默认开启）'),
+    showSidebarBrand: z.boolean().default(DEFAULT_VIEW.showSidebarBrand)
+      .description('显示侧栏 DeepSeek Harness 品牌条目（默认关闭）'),
     showHeaderSubagents: z.boolean().default(DEFAULT_VIEW.showHeaderSubagents)
       .description('显示顶栏子代理入口（仅控制入口显示）'),
     showHeaderTeam: z.boolean().default(DEFAULT_VIEW.showHeaderTeam)

@@ -83,6 +83,19 @@ test('the card is the document’s popup surface', () => {
   assert.match(body, /font:\s*13px\//u);
 });
 
+test('the option list is the scrolling viewport, at the settings menu’s ceiling', () => {
+  /* A directory with dozens of models once grew the card to its viewport
+     clamp, covering the Composer it hangs from. The card itself only clips —
+     its chrome (search cell, notes) stays put — and the list scrolls inside
+     the same ceiling the settings page's own choice menu takes. */
+  const card = ruleFor(controls, '.ccd-model-panel, .ccd-model-error').body;
+  assert.match(card, /overflow:\s*hidden/u);
+  const list = exactRule(controls, '.ccd-model-options').body;
+  assert.match(list, /max-height:\s*min\(320px, calc\(100vh - 24px\)\)/u);
+  assert.match(list, /overflow-y:\s*auto/u);
+  assert.match(list, /overscroll-behavior:\s*contain/u);
+});
+
 test('one row is 24px: a 20px label line with 2px above and below', () => {
   const body = exactRule(controls, '.ccd-model-options button').body;
   /* Pinned against the box model rather than inherited from it: the button
@@ -116,14 +129,15 @@ test('the pointer’s state is the flat fill and the keyboard’s is the documen
   assert.ok(!/background|box-shadow|border/u.test(ring), ring);
 });
 
-test('the provider heading is a cell of the same rhythm, one size down', () => {
+test('the provider heading is an inverted chip within the same row rhythm', () => {
   const body = ruleFor(controls, '.ccd-model-provider').body;
   assert.match(body, /font-size:\s*12px/u);
-  assert.match(body, /line-height:\s*20px/u);
-  assert.match(body, /padding:\s*2px 8px/u);
-  assert.match(body, /color:\s*var\(--ccd-text-secondary\)/u);
-  /* A heading is not a choice: no fill, at rest or ever. */
-  assert.ok(!/background|box-shadow/u.test(body), body);
+  assert.match(body, /line-height:\s*18px/u);
+  assert.match(body, /padding:\s*1px 8px/u);
+  assert.match(body, /margin:\s*2px 0/u);
+  assert.match(body, /border-radius:\s*6px/u);
+  assert.match(body, /background:\s*var\(--ccd-text-strong\)/u);
+  assert.match(body, /color:\s*var\(--ccd-text-inverse\)/u);
 });
 
 test('the card’s search cell is a bare line, not a box', () => {
