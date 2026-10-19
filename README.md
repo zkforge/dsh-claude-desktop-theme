@@ -26,7 +26,82 @@
 - **插件页**：「插件 → 添加插件」，输入 `dsh-claude-desktop-theme`
 - **终端**：`dsh plugin --profile desktop add dsh-claude-desktop-theme`
 
-首次安装后插件自动开启，升级沿用已保存的配置。应用内安装无需注册 CLI；重载、应用内置 CLI 路径、旧包名迁移与源码安装见[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
+源码安装见[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
+
+
+## 界面预览
+
+截图为 macOS、默认配色与 Geist 字体，统计卡片开启，状态栏统计读数保持默认关闭。两种宠物的点击回应与 Effort 拉到底的动效见下一节。
+
+| 界面 | 浅色 | 深色 |
+| --- | --- | --- |
+| 新会话页 | ![新会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.webp) | ![新会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-dark.webp) |
+| 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
+| 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
+
+### 全屏展示
+
+以下为 macOS 全屏窗口实拍，使用 Claude 像素宠物与首页问候样式，关闭主页水波纹，保留统计卡片。
+
+| 界面 | 浅色 | 深色 |
+| --- | --- | --- |
+| 新会话页 · 全屏 | ![新会话页全屏 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp) | ![新会话页全屏 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-dark.webp) |
+| 模型选单展开 · 全屏 | ![模型选单全屏 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-light.webp) | ![模型选单全屏 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-dark.webp) |
+
+### 组件特写
+
+| 组件 | 浅色 | 深色 |
+| --- | --- | --- |
+| 模型选择器 | ![模型选择器 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-picker-light.webp) | ![模型选择器 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-picker-dark.webp) |
+| 上下文圆环与分解面板 | ![上下文圆环与分解面板 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-light.webp) | ![上下文圆环与分解面板 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-dark.webp) |
+
+模型选择器与上下文分解面板均为组件局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项，可选模型和 Effort 档位以 DSH 实际提供的目录为准；上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
+
+## 细节动效
+
+<div align="center">
+
+<table>
+<tr>
+<td width="25%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-spout.gif" width="150" alt="喷一口水：身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下"><br/>
+<b>喷一口水</b><br/>
+身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下
+</td>
+<td width="25%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-hop.gif" width="150" alt="轻弹眨眼：蓄力、向上轻跳、落地回弹并眨眼"><br/>
+<b>轻弹眨眼</b><br/>
+蓄力、向上轻跳、落地回弹并眨眼
+</td>
+<td width="25%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-wag.gif" width="150" alt="摆尾回应：身体左右轻晃，尾巴与胸鳍摆动并眨眼"><br/>
+<b>摆尾回应</b><br/>
+身体左右轻晃，尾巴与胸鳍摆动并眨眼
+</td>
+<td width="25%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-claude.gif" width="150" alt="Claude 像素宠物：取出笔记本电脑、敲键盘，再收起电脑恢复站姿"><br/>
+<b>Claude 像素宠物</b><br/>
+取出笔记本电脑、敲键盘，再恢复站姿
+</td>
+</tr>
+</table>
+
+<p>在「设置 → Claude 主题 → 个性化 → 宠物样式」中切换小鲸鱼或 Claude 像素宠物，点击宠物即可播放动作。</p>
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/effort/effort-light.gif" width="260" alt="浅色 Effort 面板：滑杆停在 Max，实心填充淡出，像素流光从右端扫入并在轨道上持续流动"><br/>
+<b>Effort 拉到底 · 浅色</b>
+</td>
+<td width="50%" align="center">
+<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/effort/effort-dark.gif" width="260" alt="深色 Effort 面板：同一条像素流光，亮紫像素落在深色轨道上"><br/>
+<b>Effort 拉到底 · 深色</b>
+</td>
+</tr>
+</table>
+
+</div>
 
 ## 功能
 
@@ -75,55 +150,6 @@
 - 输入卡旁的宠物可在小鲸鱼与 Claude 像素宠物之间切换：小鲸鱼点击随机喷水、弹跳或摆尾；Claude 宠物点击后取出笔记本电脑、敲键盘，再恢复站姿。
 - 「Claude 主题 → 个性化」可独立选择宠物样式、首页问候与图标；首页保留「探索未知之境」，也可切换为橙色星芒图标与 “What’s up next?”，问候语跟随界面语言，不显示姓名。默认保持原样式。
 - 用量统计卡片：概览 / 模型视图、时间范围、贡献热力图与模型图表。
-
-## 界面预览
-
-截图为 macOS、默认配色与 Geist 字体，统计卡片开启，状态栏统计读数保持默认关闭。小鲸鱼的点击回应与 Effort 拉到底的动效见下一节。
-
-| 界面 | 浅色 | 深色 |
-| --- | --- | --- |
-| 新会话页 | ![新会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.webp) | ![新会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-dark.webp) |
-| 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
-| 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
-
-## 细节动效
-
-<div align="center">
-
-<table>
-<tr>
-<td width="33%" align="center">
-<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-spout.gif" width="150" alt="喷一口水：身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下"><br/>
-<b>喷一口水</b><br/>
-身体轻晃、闭眼，从头顶喷出水柱，水滴向两侧散开落下
-</td>
-<td width="33%" align="center">
-<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-hop.gif" width="150" alt="轻弹眨眼：蓄力、向上轻跳、落地回弹并眨眼"><br/>
-<b>轻弹眨眼</b><br/>
-蓄力、向上轻跳、落地回弹并眨眼
-</td>
-<td width="33%" align="center">
-<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/pet/pet-wag.gif" width="150" alt="摆尾回应：身体左右轻晃，尾巴与胸鳍摆动并眨眼"><br/>
-<b>摆尾回应</b><br/>
-身体左右轻晃，尾巴与胸鳍摆动并眨眼
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td width="50%" align="center">
-<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/effort/effort-light.gif" width="260" alt="浅色 Effort 面板：滑杆停在 Max，实心填充淡出，像素流光从右端扫入并在轨道上持续流动"><br/>
-<b>Effort 拉到底 · 浅色</b>
-</td>
-<td width="50%" align="center">
-<img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/effort/effort-dark.gif" width="260" alt="深色 Effort 面板：同一条像素流光，亮紫像素落在深色轨道上"><br/>
-<b>Effort 拉到底 · 深色</b>
-</td>
-</tr>
-</table>
-
-</div>
 
 ## 配置
 

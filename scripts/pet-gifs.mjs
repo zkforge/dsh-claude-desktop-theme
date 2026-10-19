@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Renders the whale's three click reactions to transparent GIFs for the README.
+ * Renders the whale and Claude pet's click reactions to transparent README GIFs.
  *
  * The pet is SVG plus Web Animations (`composer-pet/reactions.ts`), so there is
  * no frame artwork to export. This script drives the real component in headless
@@ -9,8 +9,9 @@
  * browser plumbing lives in `lib/headless-chrome.mjs`.
  *
  * Usage:
- *   node scripts/pet-gifs.mjs               # all three reactions
+ *   node scripts/pet-gifs.mjs               # all four reactions
  *   node scripts/pet-gifs.mjs spout wag     # a subset, by reaction name
+ *   node scripts/pet-gifs.mjs claude        # Claude's laptop reaction only
  */
 
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -37,6 +38,9 @@ const frameBottom = 26;
 const scale = 8;
 const width = (frameRight - frameLeft) * scale;
 const height = (frameBottom - frameTop) * scale;
+/* ClaudeArt's own viewBox includes the laptop's complete movement. */
+const claudeWidth = 52 * scale;
+const claudeHeight = 37 * scale;
 
 /** 25 fps. The reaction easing is stepped, so a finer grid would only add bytes. */
 const fps = 25;
@@ -46,10 +50,10 @@ const holdEnd = 8;
 
 const reactions = process.argv.slice(2).length > 0
   ? process.argv.slice(2)
-  : ['spout', 'hop', 'wag'];
+  : ['spout', 'hop', 'wag', 'claude'];
 
-if (!reactions.every(reaction => ['spout', 'hop', 'wag'].includes(reaction))) {
-  throw new Error(`Unknown reaction; expected spout, hop or wag`);
+if (!reactions.every(reaction => ['spout', 'hop', 'wag', 'claude'].includes(reaction))) {
+  throw new Error(`Unknown reaction; expected spout, hop, wag or claude`);
 }
 
 /* ---------------------------------------------------------------- the page */
@@ -74,6 +78,10 @@ const page = `<!doctype html>
 :root {
   --ccd-pet-blue: ${token(tokensCss, 'ccd-pet-blue')};
   --ccd-pet-light: ${token(tokensCss, 'ccd-pet-light')};
+  --ccd-claude-coral: ${token(tokensCss, 'ccd-claude-coral')};
+  --ccd-claude-shade: ${token(tokensCss, 'ccd-claude-shade')};
+  --ccd-claude-eye: ${token(tokensCss, 'ccd-claude-eye')};
+  --ccd-claude-laptop: ${token(tokensCss, 'ccd-claude-laptop')};
 }
 html, body { background: transparent; }
 body { margin: 0; }
@@ -96,13 +104,25 @@ html[data-dsh-ccd-style="true"] .ccd-pet-stage .ccd-pet-art {
   width: ${32 * scale}px;
   height: ${24 * scale}px;
 }
+html[data-dsh-ccd-style="true"] .ccd-pet-stage[data-pet-style="claude"] .ccd-composer-pet {
+  left: 0;
+  top: 0;
+  width: ${claudeWidth}px;
+  height: ${claudeHeight}px;
+}
+html[data-dsh-ccd-style="true"] .ccd-pet-stage .ccd-claude-art {
+  left: 0;
+  top: 0;
+  width: ${claudeWidth}px;
+  height: ${claudeHeight}px;
+}
 </style>
 </head>
 <body>
 <div class="ccd-pet-stage"></div>
 <script src="./harness.js"></script>
 <script>
-const { Whale, playPetReaction } = petHarness;
+const { Whale, playPetReaction, ClaudeArt, CLAUDE_REACTION_MS } = petHarness;
 const stage = document.querySelector('.ccd-pet-stage');
 let built = null;
 
@@ -111,10 +131,18 @@ let built = null;
    is what the stylesheet uses to suspend the idle blink and tail. */
 function rebuild(reaction) {
   stage.replaceChildren();
+  stage.dataset.petStyle = reaction === 'claude' ? 'claude' : 'whale';
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'ccd-composer-pet';
   button.dataset.reaction = reaction;
+  if (reaction === 'claude') {
+    button.classList.add('ccd-claude-pet');
+    button.append(ClaudeArt({ elapsed: null }));
+    stage.append(button);
+    built = { reaction, animations: [] };
+    return built;
+  }
   button.append(Whale());
   stage.append(button);
   const before = new Set(document.getAnimations());
@@ -128,11 +156,16 @@ function rebuild(reaction) {
 
 window.petDuration = reaction => {
   const state = built?.reaction === reaction ? built : rebuild(reaction);
+  if (reaction === 'claude') return CLAUDE_REACTION_MS;
   return state.animations[0].effect.getTiming().duration;
 };
 
 window.petSeek = (reaction, time) => {
   const state = built?.reaction === reaction ? built : rebuild(reaction);
+  if (reaction === 'claude') {
+    stage.querySelector('button').replaceChildren(ClaudeArt({ elapsed: time === 0 ? null : time }));
+    return 1;
+  }
   for (const animation of state.animations) animation.currentTime = time;
   return state.animations.length;
 };
@@ -155,7 +188,8 @@ async function renderReaction(devtools, reaction, directory) {
     const shot = await devtools.send('Page.captureScreenshot', {
       format: 'png',
       captureBeyondViewport: true,
-      clip: { x: 0, y: 0, width, height, scale: 1 },
+      clip: { x: 0, y: 0, width: reaction === 'claude' ? claudeWidth : width,
+        height: reaction === 'claude' ? claudeHeight : height, scale: 1 },
     });
     const name = `frame-${String(index).padStart(3, '0')}.png`;
     await writeFile(join(directory, name), Buffer.from(shot.data, 'base64'));
@@ -203,6 +237,8 @@ await build({
     contents: [
       `export { Whale } from './src/client/features/composer-pet/Whale.tsx';`,
       `export { playPetReaction } from './src/client/features/composer-pet/reactions.ts';`,
+      `export { ClaudeArt } from './src/client/features/composer-pet/ClaudePet.tsx';`,
+      `export { CLAUDE_REACTION_MS } from './src/client/features/composer-pet/claude-motion.ts';`,
     ].join('\n'),
     resolveDir: root,
     sourcefile: 'pet-harness.ts',
@@ -223,7 +259,7 @@ await writeFile(join(work, 'harness.html'), page);
 
 await withPage({
   url: `file://${join(work, 'harness.html')}`,
-  width, height, transparent: true, profile: join(work, 'profile'),
+  width: Math.max(width, claudeWidth), height, transparent: true, profile: join(work, 'profile'),
 }, async devtools => {
   for (const reaction of reactions) {
     const directory = join(work, reaction);

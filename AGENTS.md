@@ -24,7 +24,7 @@ node scripts/host-prefixes.mjs --windows <app.asar> --write
 node scripts/host-prefixes.mjs --pinned <macOS app.asar> --windows <Windows app.asar> --write
 ```
 
-README 里小鲸鱼的三个动图不是导出资源：`scripts/pet-gifs.mjs` 用无头 Chrome 逐帧渲染 `composer-pet/reactions.ts` 的真实动画，再用 ffmpeg 合成 GIF。改了鲸鱼动作或配色后重跑一次（需要机器上已有 Chrome 与 ffmpeg，产物在 `assets/pet/`）：
+README 里宠物动图不是导出资源：`scripts/pet-gifs.mjs` 用无头 Chrome 逐帧渲染小鲸鱼 `composer-pet/reactions.ts` 与 Claude 像素宠物 `ClaudeArt` 的真实动画，再用 ffmpeg 合成 GIF。改了宠物动作或配色后重跑一次（需要机器上已有 Chrome 与 ffmpeg，产物在 `assets/pet/`）；只更新 Claude 动图可运行 `npm run pet:gifs -- claude`：
 
 ```sh
 npm run pet:gifs
@@ -36,6 +36,10 @@ Effort 面板拉到底时的像素流光同理：`scripts/effort-gif.mjs` 直接
 npm run effort:gifs
 ```
 
-README 的界面截图是人工拍摄的，没有脚本：改到侧栏、会话页、右栏、设置页这类会被拍到的界面后，按同一口径重拍受影响的图。口径是 macOS、窗口 1392×932 逻辑 px、@2x、默认配色与 Geist、统计卡片开启、状态栏统计读数关闭、演示数据不含真实账号信息；导出 1600px 宽 WebP（`cwebp -resize 1600 0 -q 82`），文件名见 README 里的截图占位注释。`check:architecture` 会校验 README 里绝对路径的图片是否还在仓库中。
+README 的完整界面截图是人工拍摄的：改到侧栏、会话页、右栏、设置页这类会被拍到的界面后，按同一口径重拍受影响的图。口径是 macOS、窗口 1392×932 逻辑 px、@2x、默认配色与 Geist、统计卡片开启、状态栏统计读数关闭、演示数据不含真实账号信息；导出 1600px 宽 WebP（`cwebp -resize 1600 0 -q 82`），文件名见 README 的图片引用。模型选择器的两张局部截图例外：运行 `node scripts/model-picker-screenshots.mjs`，直接渲染真实 `ModelControls` 与演示目录，沿用窗口、字体和 @2x 口径，裁剪组件后按原始分辨率以 WebP q82 导出。`check:architecture` 会校验 README 里绝对路径的图片是否还在仓库中。
 
-两个脚本共用 `scripts/lib/headless-chrome.mjs` 里的 Chrome 与 DevTools 连接。
+`fullscreen-*.webp` 与 `model-menu-fullscreen-*.webp` 为 1920×1080 逻辑 px 全屏窗口实拍，使用 Claude 宠物与问候样式、关闭水波纹；同样导出为 1600px 宽 WebP q82。
+
+资源渲染脚本共用 `scripts/lib/headless-chrome.mjs` 里的 Chrome 与 DevTools 连接。
+
+上下文圆环与分解面板的局部截图运行 `node scripts/context-panel-screenshots.mjs` 更新。脚本用演示数据渲染真实 `ContextPanel`，保留宿主圆环的几何与主题样式，展开分类和 MCP 明细，按与模型选择器相同的 @2x、Geist、WebP q82 口径导出黑白两张图。
