@@ -225,7 +225,10 @@ test('hero controls keep natural widths and a distinct permission gap', {
       const firstGap = view.presetLabel.left - view.workspaceLabel.right;
       const secondGap = view.permissionLabel.left - view.presetLabel.right;
       assert.ok(Math.abs(firstGap - 14) < 1, `workspace to mode content gap: ${firstGap}px`);
-      assert.ok(Math.abs(secondGap - 20) < 1,
+      // The host anchor is at least 54px; shorter platform font metrics leave
+      // spare space after the label in addition to the chip's 6px padding.
+      const presetSlack = view.anchor.width - view.presetLabel.width - 12;
+      assert.ok(Math.abs(secondGap - (20 + presetSlack)) < 1,
         `permission has a larger visible gap: ${firstGap}px / ${secondGap}px`);
       /* The row's marks are still the ones the reference draws: one folder, no
          chevron on either chip. */
