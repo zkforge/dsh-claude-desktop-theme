@@ -39,14 +39,14 @@
 | 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
 | 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
 
-### 全屏展示
+### 完整窗口展示
 
-以下为 macOS 全屏窗口实拍，使用 Claude 像素宠物与首页问候样式，关闭主页水波纹，保留统计卡片。
+以下为 macOS 完整窗口截图，使用 Claude 像素宠物与首页问候样式，关闭主页水波纹，保留统计卡片。
 
 | 界面 | 浅色 | 深色 |
 | --- | --- | --- |
-| 新会话页 · 全屏 | ![新会话页全屏 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp) | ![新会话页全屏 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-dark.webp) |
-| 模型选单展开 · 全屏 | ![模型选单全屏 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-light.webp) | ![模型选单全屏 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-dark.webp) |
+| 新会话页 · 完整窗口 | ![新会话页完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp) | ![新会话页完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-dark.webp) |
+| 模型选单展开 · 完整窗口 | ![模型选单完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-light.webp) | ![模型选单完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-dark.webp) |
 
 ### 组件特写
 

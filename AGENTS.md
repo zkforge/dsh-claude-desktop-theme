@@ -38,7 +38,7 @@ npm run effort:gifs
 
 README 的完整界面截图是人工拍摄的：改到侧栏、会话页、右栏、设置页这类会被拍到的界面后，按同一口径重拍受影响的图。口径是 macOS、窗口 1392×932 逻辑 px、@2x、默认配色与 Geist、统计卡片开启、状态栏统计读数关闭、演示数据不含真实账号信息；导出 1600px 宽 WebP（`cwebp -resize 1600 0 -q 82`），文件名见 README 的图片引用。模型选择器的两张局部截图例外：运行 `node scripts/model-picker-screenshots.mjs`，直接渲染真实 `ModelControls` 与演示目录，沿用窗口、字体和 @2x 口径，裁剪组件后按原始分辨率以 WebP q82 导出。`check:architecture` 会校验 README 里绝对路径的图片是否还在仓库中。
 
-`fullscreen-*.webp` 与 `model-menu-fullscreen-*.webp` 为 1920×1080 逻辑 px 全屏窗口实拍，使用 Claude 宠物与问候样式、关闭水波纹；同样导出为 1600px 宽 WebP q82。
+`fullscreen-*.webp` 与 `model-menu-fullscreen-*.webp` 使用用户提供的 2718×1866 px 完整窗口截图，保留原始构图、背景和窗口边缘，使用 Claude 宠物与问候样式、关闭水波纹；同样导出为 1600px 宽 WebP q82。
 
 资源渲染脚本共用 `scripts/lib/headless-chrome.mjs` 里的 Chrome 与 DevTools 连接。
 
