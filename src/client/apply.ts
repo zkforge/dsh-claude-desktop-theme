@@ -12,7 +12,8 @@ import { mountComposerStats } from './compat/stats-values.ts';
 import { mountHeroChips } from './compat/hero-chips.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
-import { mountPermissionMenu } from './compat/permission-menu.ts';
+import { mountPermissionConfirmation } from './compat/permission-confirmation.ts';
+import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountFilesPane } from './compat/files-pane.ts';
@@ -142,13 +143,18 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: placeholder observer failed', error),
         ));
-        /* The permission picker's second line is the one piece of copy this
-           plugin writes rather than rewrites, so it is mounted like the other
-           Composer compat modules: beside them, on both pages that render the
-           control. */
+        /* Both pickers share two-line rows, headings and numeric shortcuts. */
         scope.add(mountPermissionMenu(
           document,
           error => logger.error('composer: permission card observer failed', error),
+        ));
+        scope.add(mountPermissionConfirmation(
+          document,
+          error => logger.error('composer: permission confirmation observer failed', error),
+        ));
+        scope.add(mountAgentPresetMenu(
+          document,
+          error => logger.error('composer: agent preset card observer failed', error),
         ));
         /* The workspace picker's labels come from the host's own locale namespace,
            so the typed ellipsis is rewritten in the rendered text nodes instead. */

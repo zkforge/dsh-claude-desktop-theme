@@ -33,7 +33,7 @@ export function mountSidebarNavigation(
   let language: MutationObserver | undefined;
 
   const copy = () => (document.documentElement.lang || globalThis.navigator?.language || '').toLowerCase().startsWith('zh')
-    ? { newSession: '新建会话', routines: '例程' }
+    ? { newSession: '新建', routines: '例程' }
     : { newSession: 'New session', routines: 'Routines' };
 
   const attribute = (element: Element, name: string, value: string) => {

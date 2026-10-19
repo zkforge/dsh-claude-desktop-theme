@@ -80,7 +80,7 @@ test('the mark is painted in the seat the host svg held', () => {
   /* The label's ink and the label's hover step, both inherited: the reference
      paints the mark and the text beside it at the same darkness. */
   assert.match(body, /background-color:\s*currentColor/u);
-  assert.match(body, /mask:\s*var\(--ccd-icon-folder\)\s*center\s*\/\s*16px 16px no-repeat/u);
+  assert.match(body, /mask:\s*var\(--ccd-icon-folder\)\s*center\s*\/\s*14px 14px no-repeat/u);
 });
 
 test('the seat claims nothing the chip already decides', () => {

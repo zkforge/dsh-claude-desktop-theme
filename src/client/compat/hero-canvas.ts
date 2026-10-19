@@ -16,10 +16,11 @@ export function mountHeroCanvas(document: Document,
   let titleCanvas: HTMLCanvasElement | null = null;
   let frame = 0;
   let last = 0;
+  let nextPaintAt = 0;
   let elapsed = 0;
   let impulses: HeroRippleImpulse[] = [];
   let disposed = false;
-  const stop = () => { win.cancelAnimationFrame(frame); frame = 0; last = 0; };
+  const stop = () => { win.cancelAnimationFrame(frame); frame = 0; last = 0; nextPaintAt = 0; };
   const resize = new ResizeObserver(() => {
     if (!canvas || !root) return;
     const ratio = Math.min(win.devicePixelRatio || 1, 2);
@@ -45,13 +46,18 @@ export function mountHeroCanvas(document: Document,
   const tick = (time: number) => {
     frame = 0;
     if (!canvas || disposed) return;
-    // Cap this background to 24 fps, independent of the display's refresh rate.
+    // Keep a 60 fps deadline instead of counting from the last paint: on
+    // 120/144 Hz displays, rounding every interval down would lose frames.
     if (busy) {
       /* Time still passes: the reveal and the tone drift must not freeze and
          then jump forward when the gesture ends. */
       if (last) elapsed += time - last;
       last = time;
-    } else if (!last || time - last >= 1000 / 24) {
+      nextPaintAt = 0;
+    } else if (!nextPaintAt || time >= nextPaintAt - .5) {
+      const interval = 1000 / 60;
+      nextPaintAt = nextPaintAt ? nextPaintAt + (Math.floor(Math.max(0, time - nextPaintAt) / interval) + 1) * interval
+        : time + interval;
       if (last) elapsed += time - last;
       last = time;
       impulses = impulses.filter(impulse => elapsed - impulse.startedAt < HERO_RIPPLE_DURATION);
@@ -75,6 +81,7 @@ export function mountHeroCanvas(document: Document,
     /* Do not paint an overdue frame the moment the gesture ends; the next
        frame's normal cadence takes over. */
     last = 0;
+    nextPaintAt = 0;
   };
   function sync() {
     if (disposed) return;

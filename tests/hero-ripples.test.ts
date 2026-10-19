@@ -304,6 +304,20 @@ test('hero lifecycle pauses for visibility and reduced motion and releases the c
     click();
     media.matches = false; mediaChange(); assert.equal(frames.size, 1);
     tick(3700); assert.equal(active.length, 0, 'reduced motion ignores clicks');
+    for (const [index, hz] of [60, 120, 144].entries()) {
+      const start = 5000 + index * 2000;
+      doc.hidden = true; events.get('visibilitychange')!();
+      doc.hidden = false; events.get('visibilitychange')!();
+      tick(start);
+      const paintsBefore: number = calls;
+      for (let i = 1; i <= hz; i++) tick(start + i * 1000 / hz);
+      assert.equal(calls - paintsBefore, 120, `${hz} Hz delivers 60 paints per second for both canvases`);
+    }
+    const beforeGap = calls;
+    tick(12000);
+    assert.equal(calls - beforeGap, 2, 'a delayed callback paints once without a catch-up burst');
+    tick(12001);
+    assert.equal(calls - beforeGap, 2, 'the next callback still respects the frame deadline');
     present = false; mutation([{ type: 'attributes', target: hero, attributeName: 'data-phase' } as unknown as MutationRecord]);
     assert.equal(frames.size, 0); assert.equal(removed, 1);
     dispose(); mutation([]);

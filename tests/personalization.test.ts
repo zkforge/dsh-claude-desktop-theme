@@ -104,14 +104,16 @@ test('idle mark matches the reference width, feet spacing and two black eyes', (
   const body = CLAUDE_IDLE[0]!;
   const eyes = CLAUDE_IDLE[2]!;
   assert.equal(inkAt(body, 28.75, 1), true);
-  assert.equal(inkAt(body, 29.25, 1), false, 'the body ends at 29, not 30');
+  assert.equal(inkAt(body, 29.25, 1), true, 'retain the half-pixel edge of the reference');
+  assert.equal(inkAt(body, 29.75, 1), false, 'the body ends at 29.5');
   for (const x of [7, 13, 22, 28]) assert.equal(inkAt(body, x, 22), true);
   for (const x of [10, 17, 25]) assert.equal(inkAt(body, x, 22), false);
   assert.equal(inkAt(body, 7, 23.75), false, 'the reference is 23.5px tall');
   assert.equal(inkAt(eyes, 10, 4), true);
   assert.equal(inkAt(eyes, 24, 4), true);
   assert.equal(inkAt(eyes, 11.75, 4), true, 'the left eye grows inward to 3px');
-  assert.equal(inkAt(eyes, 23.25, 4), true, 'the right eye grows inward to 3px');
+  assert.equal(inkAt(eyes, 23.75, 4), true, 'the right eye retains its half-pixel anchor');
+  assert.equal(inkAt(eyes, 23.25, 4), false, 'do not shift the right eye toward the middle');
   assert.equal(inkAt(eyes, 12.25, 4), false, 'the middle gap stays clear');
 });
 
@@ -122,28 +124,23 @@ test('greeting follows interface language and contains no account or configured 
   assert.equal(claudeGreeting(''), 'What’s up next?');
 });
 
-test('retrieving the laptop keeps all four upright feet at the idle anchors', () => {
+test('upright feet stay planted while the belly squashes down over them', () => {
   for (const frame of [...Array.from({ length: 13 }, (_, i) => i), 50, 51, 52, 53, 54, 55, 56]) {
     const pose = CLAUDE_FRAMES[CLAUDE_TRACK[frame]!]!;
-    for (let y = 17.5; y < 24; y += 0.5) {
-      for (let x = 0; x < 35; x += 0.5) {
-        assert.equal(inkAt(pose[0]!, x, y) || inkAt(pose[1]!, x, y), inkAt(CLAUDE_IDLE[0]!, x, y),
-          `frame ${frame}: foot at ${x},${y} moved during the upright phase`);
-      }
-    }
+    for (const x of [7, 13.5, 22, 28]) assert.equal(inkAt(pose[0]!, x, 23), true, `frame ${frame}: a foot lost contact`);
+    for (const x of [10, 17, 25]) assert.equal(inkAt(pose[0]!, x, 23), false, `frame ${frame}: feet merged`);
   }
+  const squashed = CLAUDE_FRAMES[CLAUDE_TRACK[0]!]!;
+  assert.equal(inkAt(CLAUDE_IDLE[0], 10, 18), false);
+  assert.equal(inkAt(squashed[0], 10, 18), true, 'the belly descends instead of pasting the idle legs over it');
 });
 
-test('typing keeps the projected foot positions while the near hand is free to move', () => {
-  const reference = CLAUDE_FRAMES[CLAUDE_TRACK[25]!]!;
+test('typing compresses the exposed legs while keeping their projected toe contacts', () => {
   for (let frame = 18; frame < 46; frame++) {
     const pose = CLAUDE_FRAMES[CLAUDE_TRACK[frame]!]!;
-    for (let y = 18; y < 24; y++) {
-      for (let x = y < 20 ? 8 : 3; x < 35; x++) {
-        assert.equal(inkAt(pose[0]!, x, y) || inkAt(pose[1]!, x, y),
-          inkAt(reference[0]!, x, y) || inkAt(reference[1]!, x, y), `frame ${frame}: a planted foot moved`);
-      }
-    }
+    for (const x of [6, 12, 20.5, 26.5]) assert.equal(inkAt(pose[0], x, 23), true, `frame ${frame}: a toe lost contact`);
+    assert.equal(inkAt(pose[0], 8.5, 19), true, `frame ${frame}: the belly must compress the legs`);
+    assert.equal(inkAt(pose[0], 8.5, 20), false, `frame ${frame}: retain the gap between the feet`);
   }
 });
 

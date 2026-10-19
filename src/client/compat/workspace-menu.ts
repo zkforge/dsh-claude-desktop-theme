@@ -16,7 +16,7 @@ import { hostSelectors } from './host-dom.ts';
  * `compat/account-menu.ts` reads for its own card — and the add row is the one
  * the primitive pins in the card's footer group, the second
  * `role="presentation"` block of the surface, below the `.viewport` the
- * workspace rows scroll in. Nothing is added, removed or reordered: the text is
+ * workspace rows scroll in. A heading is added above the workspace rows; the footer text is
  * changed on the node the host rendered, so the button's accessible name, which
  * the browser computes from its own contents, follows the visible label instead
  * of being restated by hand.
@@ -67,6 +67,7 @@ export function mountWorkspaceMenu(document: Document, report: (error: unknown) 
   const rewritten: Rewritten[] = [];
   let trigger: HTMLElement | null = null;
   let watched: HTMLElement | null = null;
+  let heading: HTMLElement | null = null;
   let scheduled = 0;
 
   /** Every text node under one element, in document order. */
@@ -79,6 +80,8 @@ export function mountWorkspaceMenu(document: Document, report: (error: unknown) 
 
   /** Put the host's own label back on every node this module still owns. */
   const restore = () => {
+    heading?.remove();
+    heading = null;
     for (const { node, original } of rewritten) {
       /* Only a node still carrying what was written is restored: the host may
          have re-rendered it, and its text then belongs to React again. */
@@ -107,6 +110,15 @@ export function mountWorkspaceMenu(document: Document, report: (error: unknown) 
        second one. */
     const pinned = groups.length > 1 ? groups[groups.length - 1] : undefined;
     if (pinned === undefined) return;
+    const viewport = menu.querySelector<HTMLElement>(host.menuViewport);
+    if (viewport !== null && (heading === null || heading.parentElement !== viewport)) {
+      heading?.remove();
+      heading = document.createElement('div');
+      heading.setAttribute('role', 'presentation');
+      const language = document.documentElement.lang || globalThis.navigator?.language || '';
+      heading.textContent = language.toLowerCase().startsWith('zh') ? '最近项目' : 'Recent projects';
+      viewport.prepend(heading);
+    }
     for (const row of pinned.querySelectorAll(host.menuItem)) {
       for (const node of textNodes(row)) {
         const next = spacedDots(node.data);

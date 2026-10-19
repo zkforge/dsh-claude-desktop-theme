@@ -110,7 +110,7 @@ test('the New Session row keeps the selected fill while its page is the current 
         await page.evaluate('window.mountNavigation()');
         await settle();
         assert.equal(await page.evaluate(`document.getElementById('new').getAttribute('data-ccd-nav')`), 'newSession');
-        assert.equal(await page.evaluate(`document.querySelector('#new .' + ${JSON.stringify(label)}).textContent`), '新建会话');
+        assert.equal(await page.evaluate(`document.querySelector('#new .' + ${JSON.stringify(label)}).textContent`), '新建');
 
         /* The hero phase is the New Session location: the row takes the same
            selected fill the panel rows take from `panelActive`, while neither

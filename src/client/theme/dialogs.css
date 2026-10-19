@@ -1,0 +1,92 @@
+/* Modal and RiskConfirmation come from the shared static frontend bundle. */
+html[data-dsh-ccd-style="true"] ._mask_o6lrb_18 {
+  backdrop-filter: none;
+}
+
+html[data-dsh-ccd-style="true"] ._mask_o6lrb_18::after {
+  background: var(--ccd-dialog-mask);
+}
+
+html[data-dsh-ccd-style="true"] ._dialog_o6lrb_33 {
+  gap: 16px;
+  border-radius: 12px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-dialog-shadow);
+}
+
+html[data-dsh-ccd-style="true"] ._header_o6lrb_71 {
+  padding: 24px 24px 0;
+}
+
+html[data-dsh-ccd-style="true"] ._title_o6lrb_79 {
+  color: var(--ccd-text);
+  font: 500 16px/22px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] ._description_o6lrb_106 {
+  margin-top: 4px;
+  color: var(--ccd-text-secondary);
+  font: 400 14px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] ._body_o6lrb_115 {
+  margin-top: 8px;
+}
+
+html[data-dsh-ccd-style="true"] ._footer_o6lrb_123 > button {
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font: 400 14px/20px var(--ccd-font-ui);
+}
+
+/* The compact confirmation reference is 400px wide, with 24px insets.
+ * Other modals keep their own widths and their form controls. */
+html[data-dsh-ccd-style="true"] ._confirmation_cjd8z_1 {
+  width: min(400px, 100%);
+}
+
+html[data-dsh-ccd-style="true"] ._confirmation_cjd8z_1 ._close_o6lrb_87,
+html[data-dsh-ccd-style="true"] ._confirmation_cjd8z_1 ._warningIcon_cjd8z_32 {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] ._warning_cjd8z_19 {
+  color: var(--ccd-text-secondary);
+  font: 400 14px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] ._modalAction_cjd8z_67 {
+  min-width: 0;
+  border: 1px solid var(--ccd-border);
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-dialog-button-shadow);
+}
+
+html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71 {
+  min-width: 0;
+  border: 1px solid var(--ccd-dialog-danger);
+  background: var(--ccd-dialog-danger);
+  color: var(--ccd-menu-danger-ink);
+}
+
+/* The reference keeps a thin red ring outside a white gap in both states. */
+html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71:not(:disabled) {
+  box-shadow: 0 0 0 2px var(--ccd-card), 0 0 0 3px var(--ccd-dialog-danger-ring), var(--ccd-dialog-danger-glow);
+}
+
+html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71:hover:not(:disabled) {
+  border-color: var(--ccd-dialog-danger-hover);
+  background: var(--ccd-dialog-danger-hover);
+}
+
+html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71:focus-visible {
+  outline: 1px solid var(--ccd-dialog-danger-ring);
+  outline-offset: 2px;
+}
+
+/* Set only after the native checkbox handler has enabled the final action. */
+html[data-dsh-ccd-style="true"] [data-ccd-permission-acknowledged] {
+  display: none;
+}

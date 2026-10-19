@@ -16,7 +16,7 @@
 </div>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.webp" width="1200" alt="新会话页：浅色主题、用量统计与字符水波纹">
+  <img src="https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp" width="1200" alt="新会话页：浅色主题、Claude 像素宠物、用量统计与字符水波纹">
 </p>
 
 ## 快速安装
@@ -41,7 +41,7 @@
 
 ### 完整窗口展示
 
-以下为 macOS 完整窗口截图，使用 Claude 像素宠物与首页问候样式，关闭主页水波纹，保留统计卡片。
+以下为 macOS 完整窗口截图，使用 Claude 像素宠物与首页问候样式，开启主页水波纹，保留统计卡片。
 
 | 界面 | 浅色 | 深色 |
 | --- | --- | --- |
@@ -108,8 +108,8 @@
 ### 侧栏
 
 - DeepSeek Harness 品牌条目默认隐藏，可在「设置 → Claude 主题 → 视图」开启显示。
-- 新建会话 / 插件 / 例程三枚入口与工作区、会话列表、账号菜单共用紧凑行高，当前入口常驻底色。
-- 会话搜索框与导航行同宽同高，位于「新建会话」上方；原位置改为左侧「最近会话」标题和右侧筛选视图按钮。
+- 新建 / 插件 / 例程三枚入口与工作区、会话列表、账号菜单共用紧凑行高，当前入口常驻底色。
+- 会话搜索框与导航行同宽同高，位于「新建」上方；原位置改为左侧「最近会话」标题和右侧筛选视图按钮。
 - 会话条目尾部只有一枚 ⋮，菜单里是置顶、重命名、分叉与归档。
 - 视图选项分状态、分组与排序、空分组三段。「按状态」把会话分为需要输入 / 进行中 / 已结束，状态变化时平滑移动，进行中的会话下显示子任务；项目分组与单列表仍然可选。
 - 「对话 / 轨迹」切换器停在侧栏窗口控制行，以图标表示。

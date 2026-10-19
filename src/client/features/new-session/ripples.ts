@@ -91,17 +91,19 @@ function clicksAt(elapsed: number, width: number, height: number,
   for (const impulse of impulses) {
     const age = (elapsed - impulse.startedAt) / HERO_RIPPLE_DURATION;
     if (age < 0 || age >= 1) continue;
-    const growth = smooth(0, .2, age), radius = age * 1.25, thickness = .022 + age * .018;
+    // Overlapping soft crests read as one folded band, rather than three thin
+    // rings. Let the band broaden as it travels, like the light reference.
+    const growth = smooth(0, .2, age), radius = age * 1.25, thickness = .028 + age * .035;
     const contact = (1 - smooth(.025, .12, age)) * .24;
     // Domain warp changes radius by at most sqrt(2)*.12 + .035 + .018.
     // Four Gaussian widths include all visible crests (tail < 0.00000012).
     const margin = growth * (Math.SQRT2 * .12 + .053) + thickness * 4;
-    const inner = contact > 0 ? 0 : Math.max(0, radius - .19 - margin);
+    const inner = contact > 0 ? 0 : Math.max(0, radius - .16 - margin);
     const outer = Math.max(radius + margin, contact > 0 ? .4 : 0);
     frames.push({ x: impulse.x * width, y: impulse.y * height, scale, age,
       seed: impulse.x * 7 + impulse.y * 11 + impulse.startedAt / 10000,
       growth, radius, thickness, contact,
-      fade: smooth(0, .045, age) * (1 - smooth(.25, 1, age)),
+      fade: smooth(0, .045, age) * (1 - smooth(.4, 1, age)),
       innerSquared: inner * inner, outerSquared: outer * outer });
   }
   return frames;
@@ -121,14 +123,14 @@ function clickLightAt(x: number, y: number, frame: ClickFrame): number {
       + .018 * Math.sin(angle * 5 - age * 3));
   let crests = 0;
   for (let i = 0; i < 3; i++) {
-    const front = (distance - radius + i * .095) / thickness;
+    const front = (distance - radius + i * .08) / thickness;
     if (Math.abs(front) <= 4) crests += Math.exp(-front * front) * (1 - i * .23);
   }
   // Most points between the crests need neither patch noise nor exponentials.
-  const patches = crests > 0 ? .025 + .975 * smooth(-.1, .65,
+  const patches = crests > 0 ? .08 + .92 * smooth(-.3, .65,
     noise(u * 5 + seed + age * .3, v * 5 - age * .2)) : 0;
   const point = contact > 0 ? Math.exp(-(u * u + v * v) / .009) * contact : 0;
-  return (crests * patches * .65 + point) * fade;
+  return (crests * patches * .72 + point) * fade;
 }
 
 function characterAt(x: number, y: number, illumination: number,
@@ -157,7 +159,7 @@ export function rippleCell(x: number, y: number, elapsed: number,
  *
  * Both are facts about the canvas's box and colour scheme, and both are read
  * with layout-forcing calls (`getComputedStyle`, `defaultView`). The field is
- * redrawn about 24 times a second for as long as the page is up, so resolving
+ * redrawn up to 60 times a second for as long as the page is up, so resolving
  * them per frame makes the background's cost scale with the display's refresh
  * rate for no visual difference. The mesh is keyed on the exact pixel size the
  * canvas was last drawn at; the ink on the document's colour scheme.

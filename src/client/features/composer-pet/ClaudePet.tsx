@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CLAUDE_IDLE } from './claude-frames.ts';
+import { CLAUDE_GROUND_Y, CLAUDE_IDLE } from './claude-frames.ts';
 import { claudePose, CLAUDE_REACTION_MS } from './claude-motion.ts';
 
 /** Reference pixel companion: take out a laptop, type, then return to standing. */
@@ -55,10 +55,14 @@ export function ClaudeArt({ elapsed = null, reducedMotion = false }: {
   return (
     <svg className="ccd-claude-art" viewBox="-15 -13 52 37" width="52" height="37"
       shapeRendering="crispEdges" aria-hidden="true">
-      {paths.map((path, index) => (
-        <path key={index} className={['ccd-claude-body', 'ccd-claude-shade', 'ccd-claude-eyes', 'ccd-claude-laptop'][index]}
-          d={blink && index === 2 ? 'M9 4h3v.5H9ZM23 4h3v.5h-3Z' : path} />
-      ))}
+      {/* Keep the recorded ground line on the 24px seat, including half-pixel feet. */}
+      <g transform={`translate(0 ${24 - CLAUDE_GROUND_Y})`}>
+        {/* The hand stays in front of the laptop; no grey edge crosses the body. */}
+        {[3, 0, 1, 2].map(index => (
+          <path key={index} className={['ccd-claude-body', 'ccd-claude-shade', 'ccd-claude-eyes', 'ccd-claude-laptop'][index]}
+            d={blink && index === 2 ? 'M9 4h3v.5H9ZM23.5 4h3v.5h-3Z' : paths[index]} />
+        ))}
+      </g>
     </svg>
   );
 }

@@ -265,7 +265,16 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
   border-top-color: var(--ccd-border-soft);
 }
 
-/* The permission card: the family's one two-line cell.
+/* The full-window reference places a ~280px card beside a 770px Composer.
+ * Keep that width when Chinese summaries are shorter than the English copy. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu],
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] {
+  width: 280px;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
+}
+
+/* Permission and Agent preset cards share the two-line cell.
  *
  * Every other card in this family draws a row as text plus a trailing mark, and
  * DSH's permission card draws its four presets that way too — `仅可查看` and its
@@ -298,6 +307,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
  * second — beside it — and the check the third line. The icon seat needs no
  * placement at all: the family rule takes it out of the line with `display: none`,
  * and a `display: none` child generates no box to place. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [role="menuitem"][data-ccd-agent-mode],
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] {
   box-sizing: border-box;
   display: grid;
@@ -308,10 +318,11 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
   padding-block: 2px;
 }
 
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [role="menuitem"][data-ccd-agent-mode] > ._itemLabel_4ub78_190,
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._itemLabel_4ub78_190 {
   grid-area: 1 / 1;
   color: var(--ccd-text-strong);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 20px;
 }
@@ -322,6 +333,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
  * to the longest sentence (its own measure lands just inside the primitive's 360px
  * ceiling), which is exactly what the reference does and what this family's rows,
  * being single lines of a name, never have to decide. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [data-ccd-agent-desc],
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-desc] {
   grid-area: 2 / 1 / 3 / -1;
   overflow: hidden;
@@ -334,6 +346,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
 
 /* The trailing mark is the host's own selected check — an accent `✓` by
  * `theme/tokens.css`, never a fill — and it aligns with the name before the shortcut. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [role="menuitem"][data-ccd-agent-mode] > ._check_4ub78_179,
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._check_4ub78_179 {
   grid-area: 1 / 2;
   align-self: center;
@@ -384,6 +397,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [
  * the 24px a cell of the family's rhythm occupies, and the 6px above it is that
  * difference. The name is a step lighter than the rows' names, which is what a
  * heading above a card of choices should be. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] ._viewport_4ub78_19 > [data-ccd-agent-heading],
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] ._viewport_4ub78_19 > [data-ccd-permission-heading] {
   padding-block: 6px 2px;
   color: var(--ccd-text-muted);
@@ -393,10 +407,23 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] .
 }
 
 /* Bare-digit shortcuts align with the name, after the selected check. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [data-ccd-agent-shortcut],
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-shortcut] {
   grid-area: 1 / 3;
   color: var(--ccd-text-muted);
   font: 400 12px/20px var(--ccd-font-ui);
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* The host's preset label stacks a name and a long description. The shared
+   row supplies its own short second line, so only the name stays in the label. */
+html[data-dsh-ccd-style="true"] [data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :not(:first-child) {
+  display: none;
+}
+
+/* Preset names have their own host font rule; inherit the shared label metrics. */
+html[data-dsh-ccd-style="true"] [data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :first-child {
+  color: inherit;
+  font: inherit;
 }

@@ -35,8 +35,8 @@ import { hostAnchors, hostSelectors } from '../src/client/compat/host-dom.ts';
  */
 const SHARED_CLASSES = ['_markdown_1ypvv_5', '_fileMention_1ypvv_85', '_linkIcon_1ypvv_94', '_markdown_1wejo_28'];
 
-/** One class of the shared `Menu` bundle: `<local>_4ub78_<line>`. */
-const SHARED_MENU = /_[_A-Za-z0-9]*_4ub78_\d+/gu;
+/** Shared frontend Menu, Modal and RiskConfirmation classes: `<local>_<hash>_<line>`. */
+const SHARED_MENU = /_[_A-Za-z0-9]*_(?:4ub78|o6lrb|cjd8z)_\d+/gu;
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 

@@ -186,6 +186,20 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] > button {
   cursor: pointer;
 }
 
+/* Signed-out host menus size the first span of every descendant menu row as
+   a 16px icon. Our flyout starts link rows with text instead; give that label
+   its own flexible seat so it cannot wrap and overlap the following rows. */
+html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] > button[role="menuitem"] > span:not([aria-hidden]) {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  color: inherit;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] > [role="separator"] {
   height: 1px;
   margin: 4px 10px;

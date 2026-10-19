@@ -46,7 +46,7 @@ test('sidebar navigation survives host rerenders, locales and rail mode, then re
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 0);
         await page.evaluate(`document.querySelector('[data-slot=sidebar]').append(window.nativeSidebar)`);
         await settle();
-        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('button')).map(el=>el.getAttribute('aria-label'))`), ['新建会话', '插件', '例程', '其他插件']);
+        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('button')).map(el=>el.getAttribute('aria-label'))`), ['新建', '插件', '例程', '其他插件']);
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 3);
         assert.equal(await page.evaluate(`document.querySelector('#other').hasAttribute('data-ccd-nav')`), false);
         assert.equal(await page.evaluate(`document.querySelector('#new').getAttribute('aria-keyshortcuts')`), 'Meta+N');

@@ -1,47 +1,128 @@
-/** Pixel-grid vector traces of the user-supplied click reference, sampled at 20fps.
- * Paths are body, shaded side, eyes and laptop; no background or cursor is retained.
- * Upright feet use the still reference throughout laptop retrieval and the return.
- * Typing feet share one planted pose; only the near hand and turn transitions move.
- * Faces are painted continuously beneath the eyes, including their former cutouts. */
-/** Still reference at @2x: 70×47 device pixels, including the half-pixel feet. */
-export const CLAUDE_IDLE: readonly string[] = [
-  'M6 0h23v17.5h-23ZM0 6h6v6h-6ZM29 6h6v6h-6ZM6 17.5h3v6h-3ZM12 17.5h3v6h-3ZM20.5 17.5h3v6h-3ZM26.5 17.5h2.5v6h-2.5Z',
-  '',
-  'M9 3h3v3h-3ZM23 3h3v3h-3Z',
-  '',
-];
+/** Geometric reconstruction of the original click sequence, sampled at 20fps.
+ * Recording antialiasing/compression fringes are not artwork: there is no outline
+ * layer. All feet have a constant 3px width; their roots follow the belly while
+ * their toes share a ground line. Only the projected feet have a deliberate bend.
+ */
+export type ClaudeFrame = readonly [body: string, shade: string, eyes: string, laptop: string];
+export const CLAUDE_GROUND_Y = 23.5;
 
-export const CLAUDE_FRAMES: readonly (readonly string[])[] = [
-  ["M6 1h23v3h-23ZM6 4h28v3h-28ZM11 7h23v1h-23ZM11 8h10v1h-10ZM26 8h8v1h-8ZM6 7h2v3h-2ZM11 9h11v1h-11ZM25 9h9v1h-9ZM6 10h23v1h-23ZM1 11h28v4h-28ZM2 15h27v1h-27ZM3 16h26v1h-26ZM6 17h23v0.5h-23ZM6 17.5h3v6h-3ZM12 17.5h3v6h-3ZM20.5 17.5h3v6h-3ZM26.5 17.5h2.5v6h-2.5ZM9 7h3v3h-3ZM22 8h5v2h-5ZM8 7h1v1h-1ZM8 8h1v1h-1ZM8 9h1v1h-1ZM21 8h1v1h-1Z","","M9 7h3v3h-3ZM22 8h5v2h-5Z",""],
-  ["M6 0h23v3h-23ZM0 3h8v2h-8ZM11 3h12v2h-12ZM26 3h3v2h-3ZM0 5h29v2h-29ZM0 7h34v1h-34ZM1 8h33v2h-33ZM3 10h31v1h-31ZM5 11h29v1h-29ZM6 12h28v1h-28ZM6 13h23v4h-23ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 3h3v2h-3ZM23 3h3v2h-3ZM8 3h1v1h-1ZM8 4h1v1h-1Z","","M9 3h3v2h-3ZM23 3h3v2h-3Z","M1 -5h3v2h-3ZM-2 -3h6v1h-6ZM-6 -2h7v1h-7ZM-6 -1h4v2h-4ZM-6 1h10v1h-10ZM-1 2h1v1h-1Z"],
-  ["M6 0h22v1h-22ZM6 1h23v2h-23ZM0 3h8v2h-8ZM11 3h12v2h-12ZM26 3h3v2h-3ZM0 5h29v2h-29ZM0 7h34v1h-34ZM1 8h33v2h-33ZM3 10h31v1h-31ZM5 11h29v1h-29ZM6 12h28v1h-28ZM6 13h23v4h-23ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 3h3v2h-3ZM23 3h3v2h-3ZM8 3h1v1h-1ZM8 4h1v1h-1Z","","M9 3h3v2h-3ZM23 3h3v2h-3Z","M1 -5h3v2h-3ZM-2 -3h6v1h-6ZM-6 -2h7v1h-7ZM-6 -1h4v2h-4ZM-6 1h10v1h-10ZM-1 2h1v1h-1Z"],
-  ["M0 -2h5v1h-5ZM0 -1h6v1h-6ZM0 0h28v1h-28ZM0 1h29v2h-29ZM0 3h8v1h-8ZM11 3h12v2h-12ZM26 3h3v2h-3ZM6 4h2v1h-2ZM6 5h23v2h-23ZM6 7h28v6h-28ZM6 13h23v4h-23ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 3h3v2h-3ZM23 3h3v2h-3ZM8 3h1v1h-1ZM8 4h1v1h-1Z","","M9 3h3v2h-3ZM23 3h3v2h-3Z","M-5 -11h1v7h-1ZM-5 -4h2v1h-2ZM-5 -3h5v1h-5Z"],
-  ["M6 0h22v1h-22ZM6 1h23v3h-23ZM26 4h3v1h-3ZM6 4h2v2h-2ZM26 5h4v1h-4ZM11 4h12v3h-12ZM6 6h3v1h-3ZM25 6h9v1h-9ZM3 7h31v2h-31ZM1 8h1v1h-1ZM1 9h33v2h-33ZM2 11h27v1h-27ZM0 12h29v5h-29ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 4h3v3h-3ZM23 4h3v3h-3ZM8 4h1v1h-1ZM8 5h1v1h-1Z","","M9 4h3v3h-3ZM23 4h3v3h-3Z","M-12 4h3v1h-3ZM-14 5h6v2h-6ZM-14 7h8v1h-8ZM-12 8h6v2h-6ZM-11 10h12v1h-12ZM-8 11h10v1h-10ZM-1 12h1v1h-1Z"],
-  ["M6 0h22v1h-22ZM6 1h23v3h-23ZM26 4h3v1h-3ZM6 4h2v2h-2ZM26 5h4v1h-4ZM11 4h12v3h-12ZM6 6h3v1h-3ZM25 6h9v1h-9ZM3 7h31v1h-31ZM1 8h33v3h-33ZM2 11h27v1h-27ZM0 12h29v5h-29ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 4h3v3h-3ZM23 4h3v3h-3ZM8 4h1v1h-1ZM8 5h1v1h-1Z","","M9 4h3v3h-3ZM23 4h3v3h-3Z","M-12 4h3v1h-3ZM-14 5h6v2h-6ZM-14 7h8v1h-8ZM-12 8h6v2h-6ZM-11 10h12v1h-12ZM-8 11h10v1h-10ZM-1 12h1v1h-1Z"],
-  ["M6 0h22v1h-22ZM6 1h23v3h-23ZM6 4h2v2h-2ZM26 4h3v2h-3ZM11 4h12v3h-12ZM6 6h3v1h-3ZM25 6h4v1h-4ZM6 7h28v6h-28ZM0 13h29v4h-29ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 4h3v3h-3ZM23 4h3v3h-3ZM8 4h1v1h-1ZM8 5h1v1h-1Z","","M9 4h3v3h-3ZM23 4h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h9v2h-9Z"],
-  ["M6 0h22v1h-22ZM6 1h23v3h-23ZM6 4h2v2h-2ZM26 4h8v2h-8ZM11 4h12v3h-12ZM0 6h9v1h-9ZM25 6h9v1h-9ZM0 7h34v3h-34ZM0 10h29v1h-29ZM5 11h24v1h-24ZM6 12h23v5h-23ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 4h3v3h-3ZM23 4h3v3h-3ZM8 4h1v1h-1ZM8 5h1v1h-1Z","","M9 4h3v3h-3ZM23 4h3v3h-3Z","M-15 17h3v1h-3ZM-12 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h9v2h-9Z"],
-  ["M3 -6h5v3h-5ZM17 -6h6v3h-6ZM1 -3h7v1h-7ZM17 -3h7v1h-7ZM1 -2h24v3h-24ZM1 1h23v1h-23ZM4 2h20v2h-20ZM4 4h1v2h-1ZM8 4h12v3h-12ZM23 4h1v3h-1ZM4 6h2v1h-2ZM4 7h20v10h-20ZM10 17h3v5h-3ZM25 18h1v4h-1ZM4 17h3v6h-3ZM19 17h2v6h-2ZM10 22h2v1h-2ZM25 22h2v1h-2ZM5 4h3v3h-3ZM20 4h3v3h-3Z","M25 -2h2v3h-2ZM24 1h3v17h-3ZM26 18h1v4h-1ZM24 18h1v5h-1Z","M5 4h3v3h-3ZM20 4h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h9v1h-9Z"],
-  ["M3 -6h5v3h-5ZM17 -6h6v3h-6ZM1 -3h7v1h-7ZM17 -3h7v1h-7ZM1 -2h24v4h-24ZM4 2h20v2h-20ZM4 4h1v2h-1ZM8 4h12v3h-12ZM23 4h1v3h-1ZM4 6h2v1h-2ZM4 7h20v7h-20ZM4 14h21v3h-21ZM18 17h3v1h-3ZM24 17h2v1h-2ZM10 17h3v5h-3ZM25 18h1v4h-1ZM4 17h3v6h-3ZM19 18h2v5h-2ZM10 22h2v1h-2ZM24 22h3v1h-3ZM5 4h3v3h-3ZM20 4h3v3h-3Z","M25 -2h2v4h-2ZM24 2h3v12h-3ZM25 14h2v3h-2ZM26 17h1v5h-1Z","M5 4h3v3h-3ZM20 4h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h9v1h-9Z"],
-  ["M3 1h17v2h-17ZM2 3h18v2h-18ZM-2 4h3v2h-3ZM2 5h1v5h-1ZM5 5h9v5h-9ZM17 5h3v5h-3ZM-3 6h4v6h-4ZM2 10h18v2h-18ZM-3 12h23v1h-23ZM3 13h17v1h-17ZM-3 14h23v3h-23ZM8 17h3v1h-3ZM9 18h2v1h-2ZM25 1h1v19h-1ZM-3 17h8v3h-8ZM17 17h3v3h-3ZM8 19h3v1h-3ZM-3 20h10v1h-10ZM9 20h4v1h-4ZM17 20h4v1h-4ZM-3 21h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM3 5h2v5h-2ZM14 5h3v5h-3Z","M1 3h1v9h-1ZM20 1h5v16h-5ZM23 17h2v4h-2ZM24 21h1v1h-1Z","M3 5h2v5h-2ZM14 5h3v5h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h4v1h-4ZM-8 22h5v1h-5Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM3 10h17v1h-17ZM-1 11h21v1h-21ZM-2 12h22v1h-22ZM-3 13h23v5h-23ZM2 18h3v1h-3ZM25 3h1v17h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 19h2v1h-2ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 18h2v3h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h5v1h-5ZM-2 20h3v1h-3Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM3 10h17v1h-17ZM-2 11h22v2h-22ZM-3 13h23v5h-23ZM2 18h3v1h-3ZM25 3h1v17h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 19h2v1h-2ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 18h2v3h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h5v1h-5ZM-2 20h3v1h-3Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v5h-22ZM2 15h18v1h-18ZM3 16h17v1h-17ZM-3 17h23v1h-23ZM25 3h1v15h-1ZM-3 18h8v2h-8ZM-3 20h6v1h-6ZM-3 21h4v1h-4ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h4v1h-4ZM-8 22h5v1h-5Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v8h-22ZM25 3h1v15h-1ZM-2 18h7v2h-7ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M-3 10h1v7h-1ZM20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h9v2h-9Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM3 10h17v1h-17ZM-1 11h21v1h-21ZM-2 12h22v1h-22ZM-3 13h23v5h-23ZM2 18h3v1h-3ZM25 3h1v15h-1ZM3 19h2v1h-2ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h9v1h-9Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM3 10h17v1h-17ZM-2 11h22v2h-22ZM-3 13h23v5h-23ZM2 18h3v1h-3ZM25 3h1v15h-1ZM3 19h2v1h-2ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h9v1h-9Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v8h-22ZM25 3h1v15h-1ZM-2 18h7v2h-7ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M-3 10h1v7h-1ZM20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h9v2h-9Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM3 10h17v1h-17ZM-2 11h22v2h-22ZM-3 13h23v5h-23ZM2 18h3v1h-3ZM25 3h1v15h-1ZM3 19h2v1h-2ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 13h2v1h-2ZM-14 14h3v1h-3ZM-12 15h3v2h-3ZM-11 17h3v1h-3ZM-9 18h2v1h-2ZM-9 19h3v1h-3ZM-8 20h9v1h-9Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v5h-22ZM2 15h18v1h-18ZM3 16h17v1h-17ZM-3 17h23v1h-23ZM25 3h1v15h-1ZM-3 18h8v2h-8ZM-3 20h6v1h-6ZM-3 21h4v1h-4ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h4v1h-4ZM-8 22h5v1h-5Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v8h-22ZM25 3h1v15h-1ZM-2 18h7v2h-7ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M-3 10h1v7h-1ZM20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h9v2h-9Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v5h-22ZM2 15h18v1h-18ZM3 16h17v1h-17ZM-3 17h23v1h-23ZM25 3h1v15h-1ZM-3 18h8v2h-8ZM-3 20h6v1h-6ZM-3 21h5v2h-5ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h4v2h-4Z"],
-  ["M3 3h17v4h-17ZM5 7h9v3h-9ZM17 7h3v3h-3ZM-2 10h22v7h-22ZM-3 17h23v1h-23ZM25 3h1v15h-1ZM-3 18h8v2h-8ZM-3 20h6v1h-6ZM-3 21h5v2h-5ZM25 18h1v2h-1ZM8 18h3v2h-3ZM17 18h3v2h-3ZM3 20h4v1h-4ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM2 7h3v3h-3ZM14 7h3v3h-3Z","M-3 10h1v7h-1ZM20 3h5v15h-5ZM23 20h2v1h-2ZM23 18h2v2h-2ZM24 21h1v1h-1Z","M2 7h3v3h-3ZM14 7h3v3h-3Z","M-14 14h2v1h-2ZM-14 15h3v2h-3ZM-12 17h3v1h-3ZM-11 18h3v2h-3ZM-9 20h3v1h-3ZM-8 21h4v2h-4Z"],
-  ["M4 1h17v4h-17ZM0 4h3v2h-3ZM-1 6h4v2h-4ZM7 5h9v5h-9ZM18 5h3v5h-3ZM-1 8h2v5h-2ZM2 8h1v5h-1ZM4 10h17v3h-17ZM2 13h19v2h-19ZM-2 14h3v1h-3ZM-2 15h24v2h-24ZM-3 17h10v1h-10ZM8 17h3v1h-3ZM9 18h2v1h-2ZM17 17h3v3h-3ZM25 17h1v3h-1ZM-3 18h8v2h-8ZM8 19h3v1h-3ZM-3 20h10v1h-10ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM4 5h3v5h-3ZM16 5h2v5h-2Z","M-2 6h1v6h-1ZM3 3h1v10h-1ZM21 1h6v14h-6ZM1 8h1v7h-1ZM22 15h5v2h-5ZM23 17h2v4h-2ZM24 21h1v1h-1Z","M4 5h3v5h-3ZM16 5h2v5h-2Z","M-12 8h1v2h-1ZM-12 10h3v1h-3ZM-11 11h3v1h-3ZM-9 12h1v1h-1ZM-9 13h3v1h-3ZM-8 14h3v1h-3ZM-6 15h3v2h-3Z"],
-  ["M4 1h17v4h-17ZM0 4h3v2h-3ZM-1 6h4v2h-4ZM7 5h9v5h-9ZM18 5h3v5h-3ZM-1 8h2v4h-2ZM2 8h1v5h-1ZM4 10h17v3h-17ZM-2 12h3v1h-3ZM2 13h19v1h-19ZM-2 14h3v1h-3ZM2 14h20v1h-20ZM-2 15h24v2h-24ZM-3 17h10v1h-10ZM8 17h3v1h-3ZM9 18h2v1h-2ZM17 17h3v3h-3ZM25 17h1v3h-1ZM-3 18h8v2h-8ZM8 19h3v1h-3ZM-3 20h10v1h-10ZM9 20h4v1h-4ZM17 20h4v1h-4ZM10 21h3v1h-3ZM18 21h3v1h-3ZM25 20h2v3h-2ZM4 21h3v2h-3ZM10 22h2v1h-2ZM19 22h2v1h-2ZM4 5h3v5h-3ZM16 5h2v5h-2Z","M-2 6h1v6h-1ZM3 3h1v10h-1ZM21 1h6v13h-6ZM1 8h1v7h-1ZM22 14h5v3h-5ZM23 17h2v4h-2ZM24 21h1v1h-1Z","M4 5h3v5h-3ZM16 5h2v5h-2Z","M-12 8h1v2h-1ZM-12 10h3v1h-3ZM-11 11h3v1h-3ZM-9 12h1v1h-1ZM-9 13h3v1h-3ZM-8 14h3v1h-3ZM-6 15h3v2h-3Z"],
-  ["M6 0h20v4h-20ZM23 4h3v2h-3ZM28 0h1v7h-1ZM8 4h12v3h-12ZM24 6h2v1h-2ZM3 7h20v2h-20ZM0 9h23v2h-23ZM24 7h7v6h-7ZM-3 11h26v3h-26ZM24 13h2v1h-2ZM-3 14h29v1h-29ZM5 15h21v1h-21ZM6 16h20v1h-20ZM28 13h1v9h-1ZM6 17h2v6h-2ZM12 17h2v6h-2ZM20 17h3v6h-3ZM26 22h2v1h-2ZM5 4h3v3h-3ZM20 4h3v3h-3Z","M26 0h2v7h-2ZM23 6h1v8h-1ZM26 13h2v9h-2ZM11 17h1v6h-1Z","M5 4h3v3h-3ZM20 4h3v3h-3Z","M-1 7h3v1h-3ZM-2 8h3v1h-3ZM-2 9h2v1h-2ZM-5 10h2v1h-2ZM-6 11h2v4h-2Z"],
-  ["M6 1h23v3h-23ZM6 4h28v3h-28ZM26 7h8v2h-8ZM6 7h2v3h-2ZM11 7h12v3h-12ZM25 9h9v1h-9ZM6 10h23v1h-23ZM1 11h28v4h-28ZM2 15h27v1h-27ZM3 16h26v1h-26ZM6 17h23v0.5h-23ZM6 17.5h3v6h-3ZM12 17.5h3v6h-3ZM20.5 17.5h3v6h-3ZM26.5 17.5h2.5v6h-2.5ZM9 7h3v3h-3ZM23 7h3v3h-3ZM8 7h1v1h-1ZM8 8h1v1h-1ZM8 9h1v1h-1Z","","M9 7h3v3h-3ZM23 7h3v3h-3Z",""],
-  ["M6 1h23v3h-23ZM6 4h28v3h-28ZM26 7h8v2h-8ZM6 7h2v3h-2ZM11 7h12v3h-12ZM25 9h9v1h-9ZM6 10h23v1h-23ZM3 11h26v6h-26ZM5 17h24v0.5h-24ZM6 17.5h3v6h-3ZM12 17.5h3v6h-3ZM20.5 17.5h3v6h-3ZM26.5 17.5h2.5v6h-2.5ZM9 7h3v3h-3ZM23 7h3v3h-3ZM8 7h1v1h-1ZM8 8h1v1h-1ZM8 9h1v1h-1Z","","M9 7h3v3h-3ZM23 7h3v3h-3Z",""],
-  ["M6 1h23v3h-23ZM6 4h28v3h-28ZM26 7h8v2h-8ZM6 7h2v3h-2ZM11 7h12v3h-12ZM25 9h9v1h-9ZM6 10h23v1h-23ZM3 11h26v6h-26ZM6 17h23v0.5h-23ZM6 17.5h3v6h-3ZM12 17.5h3v6h-3ZM20.5 17.5h3v6h-3ZM26.5 17.5h2.5v6h-2.5ZM9 7h3v3h-3ZM23 7h3v3h-3ZM8 7h1v1h-1ZM8 8h1v1h-1ZM8 9h1v1h-1Z","","M9 7h3v3h-3ZM23 7h3v3h-3Z",""],
-  ["M6 0h23v3h-23ZM6 3h2v2h-2ZM11 3h12v2h-12ZM26 3h3v2h-3ZM6 5h23v2h-23ZM0 7h34v6h-34ZM6 13h23v4h-23ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 3h3v2h-3ZM23 3h3v2h-3ZM8 3h1v1h-1ZM8 4h1v1h-1Z","","M9 3h3v2h-3ZM23 3h3v2h-3Z",""],
-  ["M6 0h23v3h-23ZM6 3h2v2h-2ZM11 3h12v2h-12ZM26 3h3v2h-3ZM6 5h23v1h-23ZM0 6h34v5h-34ZM5 11h24v1h-24ZM6 12h23v5h-23ZM6 17h3v6.5h-3ZM12 17h3v6.5h-3ZM20.5 17h3v6.5h-3ZM26.5 17h2.5v6.5h-2.5ZM9 3h3v2h-3ZM23 3h3v2h-3ZM8 3h1v1h-1ZM8 4h1v1h-1Z","","M9 3h3v2h-3ZM23 3h3v2h-3Z",""],
+function box(x: number, y: number, width: number, height: number): string {
+  return `M${x} ${y}h${width}v${height}h-${width}Z`;
+}
+
+const uprightToes = [6, 12, 20.5, 26.5] as const;
+const projectedRoots = [3, 9, 17.5, 23.5] as const;
+const projectedToes = [4.5, 10.5, 19, 25] as const;
+
+function straightFeet(belly: number, toes: readonly number[] = uprightToes): string {
+  return toes.map(x => box(x, belly, 3, CLAUDE_GROUND_Y - belly)).join('');
+}
+
+/** Equal-width roots and toes overlap at the knee; no tapered tips or slivers. */
+function bentFoot(root: number, toe: number, belly: number): string {
+  return box(root, belly, 3, 22 - belly) + box(toe, 20.5, 3, 3);
+}
+
+function projectedFeet(belly: number): string {
+  return projectedRoots.map((root, i) => bentFoot(root, projectedToes[i]!, belly)).join('');
+}
+
+function eyes(left: number, right: number, y: number, height = 3): string {
+  return box(left, y, 3, height) + box(right, y, 3, height);
+}
+
+function upright(top: number, belly: number, arms: string, face: string, laptop = '', shade = ''): ClaudeFrame {
+  return [box(6, top, 23.5, belly - top) + arms + straightFeet(belly), shade, face, laptop];
+}
+
+/** The laptop uses a continuous pixel staircase, never a traced body fringe. */
+function laptopSteps(y: number, x = -13, steps = 5, base = 8.5): string {
+  return Array.from({ length: steps }, (_, i) => box(x + i * 1.5, y + i * 1.5, 3, 1.5)).join('')
+    + (base > 0 ? box(x + (steps - 1) * 1.5, y + steps * 1.5, base, 1.5) : '');
+}
+
+const laptopOut = box(1.5, -4.5, 3, 3) + box(-1.5, -3, 6, 1.5)
+  + box(-5.5, -1.5, 7, 1.5) + box(-5.5, 0, 4.5, 1.5) + box(-5.5, 1.5, 10, 1.5);
+const laptopUp = box(-4, -10, 1.5, 8.5) + box(-4, -3, 8.5, 1.5);
+const laptopSwing = box(-11.5, 4.5, 3, 1.5) + box(-13, 6, 6, 1.5)
+  + box(-13, 7.5, 7.5, 1.5) + box(-11.5, 9, 6, 1.5)
+  + box(-10, 10.5, 10, 1.5) + box(-7, 12, 9, 1.5);
+const laptopFlat = box(-14.5, 17.5, 4.5, 1.5) + box(-11.5, 19, 4.5, 1.5)
+  + box(-8.5, 20.5, 4.5, 1.5) + box(-7, 22, 8.5, 1.5);
+const laptopFold = box(-6, 11, 3, 4.5) + box(-6, 14, 10.5, 1.5)
+  + box(-4.5, 9.5, 3, 1.5) + box(-3, 8, 3, 1.5) + box(-1.5, 6.5, 3, 1.5);
+
+const idleArms = box(0, 6, 6, 6) + box(29.5, 6, 5.5, 6);
+const winkArms = box(1.5, 11.5, 4.5, 4.5) + box(3, 16, 3, 1.5) + box(29.5, 4.5, 5.5, 6);
+const reachingArm = box(0, 3.5, 6, 4) + box(1.5, 7.5, 4.5, 1.5)
+  + box(3, 9, 3, 1.5) + box(4.5, 10.5, 1.5, 1.5);
+const swingingArm = box(3, 7.5, 3, 1.5) + box(1.5, 9, 4.5, 3) + box(0, 12, 6, 5.5);
+
+export const CLAUDE_IDLE: ClaudeFrame = upright(0, 17.5, idleArms, eyes(9, 23.5, 3));
+
+const turningBody = box(4.5, -1.5, 23.5, 19) + box(3, -5.5, 6, 4)
+  + box(17.5, -5.5, 6, 4) + box(1.5, -3, 7.5, 6) + box(23.5, -3, 1.5, 1.5);
+const turn: ClaudeFrame = [turningBody + straightFeet(17.5, [4.5, 10.5, 19, 25]),
+  box(25, -1.5, 3, 19) + box(25, 17.5, 3, 6), eyes(6, 20.5, 4.5), laptopSteps(13)];
+
+const slopeHand = box(1.5, 10.5, 1.5, 1.5) + box(0, 12, 3, 1.5)
+  + box(-1.5, 13.5, 4.5, 1.5) + box(-3, 15, 6, 4.5);
+const raisedHand = box(-1.5, 10.5, 4.5, 6) + box(1.5, 16.5, 1.5, 3)
+  + box(-3, 18, 6, 1.5);
+const pressedHand = box(-1.5, 10.5, 4.5, 9);
+const loweredHand = raisedHand + box(-3, 19.5, 6, 4);
+const raisedCrease = box(-3, 18, 6, 1.5);
+const pressedCrease = box(-1.5, 10.5, 4.5, 1.5);
+
+function typing(hand: string, crease = '', laptop = laptopSteps(14.5)): ClaudeFrame {
+  return [box(3, 3, 23.5, 16.5) + hand + projectedFeet(19.5),
+    box(20.5, 3, 6, 16.5) + bentFoot(23.5, 25, 19.5) + crease,
+    eyes(3, 14.5, 7.5), laptop];
+}
+
+const lean: ClaudeFrame = [box(3, 1.5, 23.5, 16) + box(-3, 6, 6, 7.5)
+  + box(1.5, 13.5, 1.5, 1.5) + box(-3, 15, 6, 2.5) + projectedFeet(17.5),
+  box(20.5, 1.5, 6, 16) + bentFoot(23.5, 25, 17.5) + box(-3, 15, 6, 1.5),
+  eyes(3, 14.5, 6, 4.5), laptopSteps(14.5)];
+
+const foldingHand = box(0, 4.5, 4.5, 1.5) + box(-1.5, 6, 6, 7.5) + box(0, 13.5, 4.5, 4);
+const foldingCrease = box(-1.5, 12, 6, 1.5);
+const fold: ClaudeFrame = [box(4.5, 1.5, 23.5, 16) + foldingHand + projectedFeet(17.5),
+  box(22, 1.5, 6, 16) + bentFoot(23.5, 25, 17.5) + foldingCrease,
+  eyes(4.5, 16, 6, 4.5), laptopSteps(7.5, -11.5, 5, 0)];
+
+const returnArms = box(-3, 11, 9, 3) + box(0, 9.5, 6, 1.5) + box(3, 8, 3, 1.5)
+  + box(29.5, 7.5, 5.5, 6);
+const returning = upright(0, 17.5, returnArms, eyes(6, 20.5, 4.5), laptopFold,
+  box(26.5, 0, 3, 17.5) + box(26.5, 17.5, 3, 6) + box(29.5, 12, 5.5, 1.5));
+
+/** Pose order and hold times follow the recording; identical clean silhouettes
+ * are reused so compression noise cannot animate otherwise stationary edges. */
+export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
+  upright(1.5, 19, winkArms, box(9, 7.5, 3, 3) + box(22, 9, 4.5, 1.5)),
+  upright(0, 17.5, reachingArm + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 3), laptopOut),
+  upright(0, 17.5, box(0, -1.5, 6, 6) + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 3), laptopUp),
+  upright(0, 17.5, swingingArm + box(29.5, 6, 5.5, 6), eyes(9, 23.5, 4.5), laptopSwing),
+  upright(0, 17.5, box(0, 13.5, 6, 5.5) + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 4.5), laptopSteps(14.5)),
+  upright(0, 17.5, box(0, 6, 6, 6) + box(29.5, 4.5, 5.5, 6), eyes(9, 23.5, 4.5), laptopFlat),
+  turn,
+  lean,
+  typing(slopeHand, '', laptopSteps(13)),
+  typing(slopeHand, '', laptopSteps(13)),
+  typing(raisedHand, raisedCrease),
+  typing(pressedHand, pressedCrease),
+  typing(slopeHand),
+  typing(pressedHand, pressedCrease),
+  typing(raisedHand, raisedCrease),
+  typing(pressedHand, pressedCrease),
+  typing(loweredHand, raisedCrease + box(-3, 19.5, 6, 4)),
+  typing(loweredHand, raisedCrease + box(-3, 19.5, 6, 4)),
+  fold,
+  fold,
+  returning,
+  upright(1.5, 19, winkArms, eyes(9, 23.5, 7.5)),
+  upright(1.5, 19, box(3, 11.5, 3, 6) + box(29.5, 4.5, 5.5, 6), eyes(9, 23.5, 7.5)),
+  upright(0, 17.5, box(0, 7.5, 6, 6) + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 3)),
+  CLAUDE_IDLE,
 ];
-export const CLAUDE_TRACK: readonly number[] = [0,0,0,1,2,3,3,3,4,5,6,7,7,8,9,10,11,12,13,13,14,15,16,13,13,14,15,15,13,14,14,15,16,13,13,17,18,18,19,19,20,18,18,21,21,22,23,24,25,25,26,26,26,27,28,29,30];
+export const CLAUDE_TRACK: readonly number[] = [0,0,0,1,1,2,2,2,3,3,4,5,5,6,6,7,8,9,10,10,11,12,12,10,10,11,12,12,10,11,11,12,12,10,10,13,13,13,14,14,15,13,13,16,16,17,18,19,20,20,21,21,21,22,22,23,24];

@@ -8,7 +8,7 @@
  * editable root, and only where its parts sit changes.
  *
  * Reference geometry (@2x reference screenshots, logical px at 1374x871):
- * - input surface: 770x42, 1px border, radius 10, text line 24px at 8/14 padding
+ * - input surface: 770x42, 1px border, radius 13, text line 24px at 8/14 padding
  * - the send control is the return arrow *inside* that surface, 24px, 14px in
  *   from the right border and anchored to the bottom text line
  * - control row: outside the surface, 4px below it, ~28px tall
@@ -51,10 +51,10 @@ html[data-dsh-ccd-style="true"] .yhfFVG_scroll {
   min-height: var(--ccd-composer-min-height);
   margin-right: 0;
   padding: var(--ccd-composer-padding);
-  border: 1px solid var(--ccd-border-strong);
+  border: 1px solid var(--ccd-composer-border);
   border-radius: var(--ccd-composer-radius);
   background: var(--ccd-card);
-  box-shadow: var(--ccd-shadow-card);
+  box-shadow: var(--ccd-composer-shadow);
 }
 
 html[data-dsh-ccd-style="true"] .yhfFVG_cardWorkspaceTrigger .yhfFVG_scroll {
@@ -84,11 +84,11 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .dVdiKa_rail {
   box-sizing: border-box;
   margin-bottom: 0;
   padding: 10px var(--ccd-composer-padding-inline) 0;
-  border: 1px solid var(--ccd-border-strong);
+  border: 1px solid var(--ccd-composer-border);
   border-bottom: 0;
   border-radius: var(--ccd-composer-radius) var(--ccd-composer-radius) 0 0;
   background: var(--ccd-card);
-  box-shadow: var(--ccd-shadow-card);
+  box-shadow: var(--ccd-composer-shadow);
 }
 
 html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .yhfFVG_scroll {
@@ -577,7 +577,10 @@ html[data-dsh-ccd-style="true"] .y0jqnG_fill {
    reason the readouts above are. Host class pinned in
    src/client/compat/host-dom.ts (`ui-permission-presets`'s
    PermissionSelect.module.css, `wXeviG_`). */
-html[data-dsh-ccd-style="true"] .wXeviG_trigger {
+html[data-dsh-ccd-style="true"] .wXeviG_trigger,
+html[data-dsh-ccd-style="true"] .yhfFVG_row .wXeviG_trigger {
+  color: var(--ccd-text-strong);
+  font-weight: 400;
   box-sizing: border-box;
   height: var(--ccd-chip-height);
   padding: 0 var(--ccd-chip-padding-inline);
@@ -749,8 +752,8 @@ html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="m
   white-space: nowrap;
 }
 
-/* Keep the workspace picker and the existing preset seat as the same native
-   menu controls, with the lightweight chip geometry of the lower tool row. */
+/* Workspace and preset labels share the model/effort chips' strong ink and
+   regular weight, as well as the lower tool row's chip geometry. */
 html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"],
 html[data-dsh-ccd-style="true"] .bocITq_workspace {
   box-sizing: border-box;
@@ -761,8 +764,9 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace {
   border-radius: var(--ccd-chip-radius);
   background: transparent;
   box-shadow: none;
-  color: var(--ccd-text-secondary);
+  color: var(--ccd-text-strong);
   font-size: var(--ccd-font-size-muted);
+  font-weight: 400;
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"]:hover:not(:disabled),
@@ -770,7 +774,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="m
 html[data-dsh-ccd-style="true"] .bocITq_workspace:hover:not(:disabled),
 html[data-dsh-ccd-style="true"] .bocITq_workspace[aria-expanded="true"] {
   background: var(--ccd-hover);
-  color: var(--ccd-text);
+  color: var(--ccd-text-strong);
 }
 
 /* The chip's leading mark. The host picks that glyph from the chip's own state:
@@ -778,7 +782,7 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace[aria-expanded="true"] {
    — as soon as a workspace is chosen, and a closed folder only while the chip
    carries its placeholder. The reference leads with one closed folder either
    way, so the host's svg is taken out of the line and the mark is painted in
-   its place from `--ccd-icon-folder`, on the same 16px box, with the chip's own
+   its place from `--ccd-icon-folder`, at 14px centered in the same 16px box, with the chip's own
    `currentColor` — which is the ink the label beside it uses, and the ink the
    chip already steps up on hover, so the mark follows both for free.
 
@@ -798,7 +802,12 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace::before {
   width: 16px;
   height: 16px;
   background-color: currentColor;
-  mask: var(--ccd-icon-folder) center / 16px 16px no-repeat;
+  mask: var(--ccd-icon-folder) center / 14px 14px no-repeat;
+}
+
+/* The preset chip is text-only; its label already identifies the mode. */
+html[data-dsh-ccd-style="true"] [data-slot="conversation.hero.agentPreset"] button[aria-haspopup="menu"] > svg {
+  display: none;
 }
 
 /* Neither chip in the row closes on a disclosure mark. The reference draws the
@@ -829,33 +838,6 @@ html[data-dsh-ccd-style="true"] .ST7X_W_heroWorkspaceRow button[aria-haspopup="m
    §6.7), so this sheet keeps only what belongs to the Composer it lays out.
 
    What is genuinely the mode card's own is the second line of its rows: */
-
-/* The mode card's second line, and the reason its rows were not flat cells in
-   the first place: `ui-agent-preset` renders each row's label as a stack of a
-   name and a description (`AgentPresetSeat.module.css`: `.item` is a column
-   flex with a 2px gap, `.itemName` 13px/20px, `.itemDesc` a 12px/16px caption),
-   which makes one row 66px tall and stretches the card to its longest
-   description's measure — 324px for the four shipped presets, where the flat
-   cell needs a fraction of that. The design document's popup row is "text plus
-   a trailing mark" (DESIGN.md §6.7) and its height is one 20px line, so the
-   description is not drawn: the row then draws its name alone, and the card
-   falls back to the primitive's own 144px minimum width.
-
-   The line is reached structurally, not by class name: those two spans are the
-   label wrapper's only children and that wrapper is the row label's only child,
-   so "everything after the first span of the label's own span" is the
-   description on every row of this card. The classes in that pane (`m0vb0q_*`)
-   are a per-build hash of a desktop package — the same fact `host-builds.ts`
-   records for `_3li69W_` from the same package — so naming one would leave the
-   Windows build's rows two lines tall, silently, because that build has no
-   counterpart to alias it to. The guard is the preset seat's own expanded
-   state: the workspace chip beside it is the row's other `aria-haspopup`
-   button, and `:not(.bocITq_workspace)` keeps this rule on the mode card (the
-   workspace chip's class is pinned in `compat/host-dom.ts`). */
-html[data-dsh-ccd-style="true"]:has(.ST7X_W_heroWorkspaceRow button[aria-haspopup="menu"]:not(.bocITq_workspace)[aria-expanded="true"])
-  [role="menu"] > ._viewport_4ub78_19 > ._itemWrap_4ub78_90 > ._item_4ub78_90 > ._itemLabel_4ub78_190 > span > :not(:first-child) {
-  display: none;
-}
 
 html[data-dsh-ccd-style="true"] .ccd-context-empty-trigger:hover,
 html[data-dsh-ccd-style="true"] .ccd-context-empty-trigger[aria-expanded="true"] {

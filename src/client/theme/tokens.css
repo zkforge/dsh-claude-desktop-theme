@@ -38,8 +38,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-code-radius: 6px;
   --ccd-composer-width: 770px;
   --ccd-composer-min-height: 42px;
-  /* Input reference: roughly 24 device pixels at @2x. */
-  --ccd-composer-radius: 12px;
+  /* Input reference: 26 device pixels at @2x. */
+  --ccd-composer-radius: 13px;
   --ccd-composer-padding: 8px 14px;
   --ccd-composer-padding-block: 8px;
   --ccd-composer-padding-inline: 14px;
@@ -193,6 +193,13 @@ html[data-dsh-ccd-style="true"] {
   --ccd-canvas: #fcfcfb;
   --ccd-sidebar: #fbfbf9;
   --ccd-card: #ffffff;
+  --ccd-dialog-mask: rgba(0, 0, 0, .4);
+  --ccd-dialog-shadow: 0 12px 24px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .08);
+  --ccd-dialog-button-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+  --ccd-dialog-danger: #d33838;
+  --ccd-dialog-danger-hover: #e94343;
+  --ccd-dialog-danger-ring: #ff5757;
+  --ccd-dialog-danger-glow: 0 1px 6px rgba(255, 87, 87, .2);
   /* Segmented-control track. The reference measures #f6f6f4 against a white
      page; the same step down from this canvas keeps the same contrast. */
   --ccd-track: #f3f3f2;
@@ -238,6 +245,9 @@ html[data-dsh-ccd-style="true"] {
   /* Lines */
   --ccd-border: #e3e3e1;
   --ccd-border-strong: #e0e0df;
+  /* Composer outline and soft lift sampled from the input reference. */
+  --ccd-composer-border: #c8c8c8;
+  --ccd-composer-shadow: 0 8px 24px rgb(0 0 0 / 6%);
   --ccd-border-soft: #ebebe9;
   /* The rule under a table head reads one step stronger than the card outline
      in the reference (#d9d9d9 against #e3e3e3). */
@@ -360,7 +370,8 @@ html[data-dsh-ccd-style="true"] {
      mode, and it shares the stats heat ramp's hue
      family (hsl(217 …)), which keeps every blue in the interface one voice. */
   --ccd-accent: #4b76ce;
-  --ccd-hero-ripple-ink: #60bdeb;
+  /* Lavender ink keeps the light reference's crests visible on the pale page. */
+  --ccd-hero-ripple-ink: #8574c4;
 
   /* State colours that DSH already owns semantics for. */
   --ccd-diff-added: #508c48;
@@ -575,6 +586,13 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-canvas: #151515;
   --ccd-sidebar: #111111;
   --ccd-card: #30302e;
+  --ccd-dialog-mask: rgba(0, 0, 0, .55);
+  --ccd-dialog-shadow: 0 12px 24px rgba(0, 0, 0, .4), 0 2px 6px rgba(0, 0, 0, .25);
+  --ccd-dialog-button-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+  --ccd-dialog-danger: #d33838;
+  --ccd-dialog-danger-hover: #e94343;
+  --ccd-dialog-danger-ring: #ff5757;
+  --ccd-dialog-danger-glow: 0 1px 6px rgba(255, 87, 87, .2);
   --ccd-header-menu-border: var(--ccd-border);
   --ccd-header-menu-separator: var(--ccd-border-soft);
   --ccd-header-menu-danger: #f08080;
@@ -618,6 +636,8 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   /* Lines */
   --ccd-border: #3e3e3b;
   --ccd-border-strong: #474743;
+  --ccd-composer-border: var(--ccd-border-strong);
+  --ccd-composer-shadow: var(--ccd-shadow-card);
   --ccd-border-soft: #343431;
   /* The head rule stays the one line drawn stronger than the card outline. */
   --ccd-table-head-line: #4a4a46;

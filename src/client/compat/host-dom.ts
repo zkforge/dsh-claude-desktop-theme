@@ -44,6 +44,8 @@ import { aliasHostClasses, detectHostBuild, type HostBuild } from './host-builds
  * - `packages/client/ui-settings/src/client/SettingsRoot.module.css` (`Dws9Sa_`)
  * - `packages/client/ui-settings-account/src/client/AccountMenu.module.css` (`ZogL4G_`)
  * - `packages/client/ui-primitives/lib/Menu.module.css` (`_4ub78_`, `_ri079_`)
+ * - `packages/client/ui-primitives/lib/Modal.module.css` (`_o6lrb_`) and
+ *   `RiskConfirmation.module.css` (`_cjd8z_`), shared static frontend styles
  * - `packages/client/ui-primitives/lib/Menu.js` (`MenuItemButton`: the icon seat
  *   `account-menu.css` scales; its `[role="menuitem"] > span` structure)
  * - `packages/client/ui-chat/src/client/chat/AssistantMarkdown.module.css` (`gKv1-q_`)
@@ -329,6 +331,11 @@ export const HOST = Object.freeze({
       children, so the statistics card is appended here and positioned against
       the greeting. */
   heroComposerStack: '.ST7X_W_composerStack',
+  /** Shared frontend RiskConfirmation DOM, identical in both desktop builds. */
+  riskConfirmation: '._confirmation_cjd8z_1[role="dialog"]',
+  riskAcknowledgement: '._acknowledgement_cjd8z_38',
+  riskConfirmAction: '._confirmAction_cjd8z_71',
+  riskCancelAction: '._modalAction_cjd8z_67',
   /** Every menu surface the `Menu` primitive renders, portal or in place. */
   menu: '[role="menu"]',
   menuItem: '[role="menuitem"]',

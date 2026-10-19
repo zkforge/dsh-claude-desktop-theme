@@ -7,14 +7,6 @@ export const PERMISSION_MODE_ATTRIBUTE = 'data-ccd-permission-mode';
 /** Tags the card those rows sit in, so the stylesheet can reach the card itself. */
 export const PERMISSION_MENU_ATTRIBUTE = 'data-ccd-permission-menu';
 
-/** The row's second line: this plugin's sentence, on a node the host never renders. */
-const DESCRIPTION_ATTRIBUTE = 'data-ccd-permission-desc';
-
-/** The line above the rows, written into the card's row group. */
-const HEADING_ATTRIBUTE = 'data-ccd-permission-heading';
-
-const SHORTCUT_ATTRIBUTE = 'data-ccd-permission-shortcut';
-
 /** One preset as the card draws it. */
 export interface PermissionPresetCopy {
   /** DSH's machine value for the preset (`read-only`, `auto`, …): the row's identity, never shown. */
@@ -55,13 +47,13 @@ export interface PermissionCopy {
 const ZH: PermissionCopy = {
   heading: '模式',
   presets: [
-    { value: 'read-only', name: '仅可查看', label: '仅可查看', description: '文件只读，需要改动时会先征求你的同意' },
-    { value: 'workspace-write', name: '工作区内修改', label: '工作区内修改', description: '工作区内的文件可直接改，工作区之外要先问你' },
-    { value: 'danger-full-access', name: '完全权限', label: '完全权限', description: '不再限制文件改动，确认步骤更少' },
+    { value: 'read-only', name: '仅可查看', label: '仅可查看', description: '修改文件前询问' },
+    { value: 'workspace-write', name: '工作区内修改', label: '工作区内修改', description: '自动批准工作区内的文件修改' },
+    { value: 'danger-full-access', name: '完全权限', label: '完全权限', description: '允许访问所有文件和运行命令' },
     {
       value: 'auto', name: 'Auto review', label: '自动审查',
       badge: { host: 'EXP', text: '实验' },
-      description: '无沙箱运行，每次工具调用前由模型先审一遍',
+      description: '由模型审查并批准工具调用',
     },
   ],
 };
@@ -74,13 +66,13 @@ const ZH: PermissionCopy = {
 const EN: PermissionCopy = {
   heading: 'Mode',
   presets: [
-    { value: 'read-only', name: 'Read Only', label: 'Read Only', description: 'Files stay read-only; changes ask for your approval' },
-    { value: 'workspace-write', name: 'Workspace Write', label: 'Workspace Write', description: 'Edits inside the workspace go through; anything beyond it asks' },
-    { value: 'danger-full-access', name: 'Full access', label: 'Full access', description: 'No file restrictions, and fewer confirmations' },
+    { value: 'read-only', name: 'Read Only', label: 'Read Only', description: 'Ask before making file changes' },
+    { value: 'workspace-write', name: 'Workspace Write', label: 'Workspace Write', description: 'Automatically accept edits within the workspace' },
+    { value: 'danger-full-access', name: 'Full access', label: 'Full access', description: 'Allow access to all files and command execution' },
     {
       value: 'auto', name: 'Auto review', label: 'Auto review',
       badge: { host: 'EXP', text: 'EXP' },
-      description: 'No sandbox; the model reviews every tool call first',
+      description: 'Let the model review and approve tool calls',
     },
   ],
 };
@@ -98,6 +90,27 @@ const EN: PermissionCopy = {
 export function permissionCopy(document: Document): PermissionCopy {
   const language = (document.documentElement.lang || globalThis.navigator?.language || '').toLowerCase();
   return language.startsWith('zh') ? ZH : EN;
+}
+
+/** Short summaries of DSH's four built-in Agent presets. */
+export function agentPresetCopy(document: Document): PermissionCopy {
+  const zh = permissionCopy(document) === ZH;
+  const names = zh
+    ? ['标准模式', 'PTC 模式', '极简模式', '创造模式']
+    : ['Standard', 'PTC', 'Minimal', 'Creator'];
+  const descriptions = zh
+    ? ['处理代码、文件和资料', '批量调用工具，筛选和汇总结果', '使用终端和图片读取工具', '编写插件、扩展界面和创建模式']
+    : ['Work with code, files and documents', 'Run tools in batches, filter and summarize results', 'Use terminal and image-reading tools', 'Build plugins, extend the UI and create presets'];
+  return {
+    heading: zh ? 'Agent 预设' : 'Agent presets',
+    presets: ['standard', 'ptc', 'minimal', 'cordis'].map((value, index) => ({
+      value, name: names[index]!, label: names[index]!, description: descriptions[index]!,
+    })),
+  };
+}
+
+export function mountAgentPresetMenu(document: Document, report: (error: unknown) => void): Disposer {
+  return mountChoiceMenu(document, report, agentPresetCopy(document), true);
 }
 
 /** One text node this module rewrote, and both ends of the rewrite. */
@@ -125,7 +138,7 @@ interface Drawn {
  * `permissionCopy` above. It is kept in one table per document language, so a
  * wording change is one edit in one place.
  *
- * Three facts decide how the rows are reached, and each is worth stating:
+ * Three facts decide how the permission rows are reached, and each is worth stating:
  *
  * - **A row is recognised by its name.** `Menu` rows carry no identity of their
  *   own — no id, no data attribute, and the preset's own glyph is a thing this
@@ -157,8 +170,19 @@ interface Drawn {
  * @returns disposer that disconnects the observers and takes every write back.
  */
 export function mountPermissionMenu(document: Document, report: (error: unknown) => void): Disposer {
+  return mountChoiceMenu(document, report, permissionCopy(document));
+}
+
+/** Shared two-line rows, heading, numeric selection and reversible DOM writes. */
+function mountChoiceMenu(
+  document: Document, report: (error: unknown) => void, copy: PermissionCopy, agent = false,
+): Disposer {
   const host = hostSelectors(document);
-  const copy = permissionCopy(document);
+  const modeAttribute = agent ? 'data-ccd-agent-mode' : PERMISSION_MODE_ATTRIBUTE;
+  const menuAttribute = agent ? 'data-ccd-agent-menu' : PERMISSION_MENU_ATTRIBUTE;
+  const descriptionAttribute = agent ? 'data-ccd-agent-desc' : 'data-ccd-permission-desc';
+  const headingAttribute = agent ? 'data-ccd-agent-heading' : 'data-ccd-permission-heading';
+  const shortcutAttribute = agent ? 'data-ccd-agent-shortcut' : 'data-ccd-permission-shortcut';
   const drawn: Drawn[] = [];
   const added: HTMLElement[] = [];
   const marked: HTMLElement[] = [];
@@ -192,8 +216,8 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
     for (const node of added) node.remove();
     added.length = 0;
     for (const node of marked) {
-      node.removeAttribute(PERMISSION_MODE_ATTRIBUTE);
-      node.removeAttribute(PERMISSION_MENU_ATTRIBUTE);
+      node.removeAttribute(modeAttribute);
+      node.removeAttribute(menuAttribute);
     }
     marked.length = 0;
   };
@@ -232,7 +256,8 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
    * wording from a name it no longer has anything to do with.
    */
   const nameOf = (label: Element): string =>
-    (label.querySelector(host.permissionSelectOptionLabelText)?.textContent ?? label.textContent ?? '').trim();
+    (agent ? label.querySelector(':scope > span > :first-child')?.textContent ?? ''
+      : label.querySelector(host.permissionSelectOptionLabelText)?.textContent ?? label.textContent ?? '').trim();
 
   /** The preset a control is showing, by the name it draws. */
   const presetOf = (label: Element): PermissionPresetCopy | undefined => {
@@ -252,16 +277,16 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
   const drawCard = (row: HTMLElement) => {
     const card = row.closest<HTMLElement>(host.menu);
     if (card === null) return;
-    card.setAttribute(PERMISSION_MENU_ATTRIBUTE, '');
+    card.setAttribute(menuAttribute, '');
     if (!marked.includes(card)) marked.push(card);
     const viewport = card.querySelector<HTMLElement>(host.menuViewport);
     if (viewport === null) return;
-    if (viewport.querySelector(`:scope > [${HEADING_ATTRIBUTE}]`) !== null) return;
+    if (viewport.querySelector(`:scope > [${headingAttribute}]`) !== null) return;
     /* A `role="presentation"` div is the host's own heading row — `Menu` renders
        a `{ type: 'label' }` entry exactly this way — and it stays out of the
        keyboard's walk, which collects buttons. */
     const heading = document.createElement('div');
-    heading.setAttribute(HEADING_ATTRIBUTE, '');
+    heading.setAttribute(headingAttribute, '');
     heading.setAttribute('role', 'presentation');
     heading.textContent = copy.heading;
     viewport.prepend(heading);
@@ -276,18 +301,18 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
     const preset = presetOf(label);
     if (preset === undefined) return;
     drawName(label, badge, preset);
-    row.setAttribute(PERMISSION_MODE_ATTRIBUTE, preset.value);
+    row.setAttribute(modeAttribute, preset.value);
     if (!marked.includes(row)) marked.push(row);
-    if (row.querySelector(`:scope > [${DESCRIPTION_ATTRIBUTE}]`) === null) {
+    if (row.querySelector(`:scope > [${descriptionAttribute}]`) === null) {
       const description = document.createElement('span');
-      description.setAttribute(DESCRIPTION_ATTRIBUTE, '');
+      description.setAttribute(descriptionAttribute, '');
       description.textContent = preset.description;
       label.after(description);
       added.push(description);
     }
-    if (row.querySelector(`:scope > [${SHORTCUT_ATTRIBUTE}]`) === null) {
+    if (row.querySelector(`:scope > [${shortcutAttribute}]`) === null) {
       const shortcut = document.createElement('span');
-      shortcut.setAttribute(SHORTCUT_ATTRIBUTE, '');
+      shortcut.setAttribute(shortcutAttribute, '');
       shortcut.setAttribute('aria-hidden', 'true');
       shortcut.textContent = String(copy.presets.indexOf(preset) + 1);
       row.append(shortcut);
@@ -346,11 +371,11 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
     const index = /^[1-4]$/u.test(event.key) ? Number(event.key) - 1 : -1;
     const preset = copy.presets[index];
     if (preset === undefined) return;
-    const card = document.querySelector<HTMLElement>(`[${PERMISSION_MENU_ATTRIBUTE}]`);
+    const card = document.querySelector<HTMLElement>(`[${menuAttribute}]`);
     if (card === null) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
-    const row = card.querySelector<HTMLButtonElement>(`[${PERMISSION_MODE_ATTRIBUTE}="${preset.value}"]`);
+    const row = card.querySelector<HTMLButtonElement>(`[${modeAttribute}="${preset.value}"]`);
     if (row === null || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
     event.preventDefault();
     event.stopPropagation();
@@ -366,7 +391,7 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
        carries an observer of its own; it is re-attached whenever the host
        replaces the control. */
     tree = new MutationObserver(() => {
-      const found = document.querySelector<HTMLElement>(host.permissionSelectTrigger);
+      const found = agent ? null : document.querySelector<HTMLElement>(host.permissionSelectTrigger);
       if (found !== attached) {
         contents?.disconnect();
         attached = found;
@@ -379,7 +404,7 @@ export function mountPermissionMenu(document: Document, report: (error: unknown)
       schedule();
     });
     tree.observe(document.body, { childList: true, subtree: true });
-    const initial = document.querySelector<HTMLElement>(host.permissionSelectTrigger);
+    const initial = agent ? null : document.querySelector<HTMLElement>(host.permissionSelectTrigger);
     if (initial !== null) {
       attached = initial;
       trigger = initial;

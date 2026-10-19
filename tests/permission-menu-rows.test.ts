@@ -81,7 +81,7 @@ test('one row is two lines: the name over its sentence, forty pixels', () => {
   /* Pinned against the box model: the page default is content-box, where the
      same declarations would build a 44px row. */
   assert.match(body, /box-sizing:\s*border-box/u);
-  /* 14px on a 20px line over 12px on a 16px line, flush, on the family's own 2px
+  /* 12px on a 20px line over 12px on a 16px line, flush, on the family's own 2px
      of block padding — the reference's 40.25px per row, measured at @2x. */
   assert.match(body, /min-height:\s*40px/u);
   assert.match(body, /padding-block:\s*2px/u);
@@ -164,7 +164,7 @@ test('the group’s name sits above the rows, in the host’s own heading row', 
 
 test('every rule the card adds is scoped to the tag and to the popup family', () => {
   const added = menus.filter(rule => rule.selector.includes('data-ccd-permission'));
-  assert.equal(added.length, 8, 'the permission block includes the shortcut column');
+  assert.equal(added.length, 9, 'the permission block includes card width and the shortcut column');
   for (const rule of added) {
     assert.ok(rule.selector.startsWith(MARKER), rule.selector);
     assert.ok(rule.selector.includes('[data-menu-material]'), rule.selector);
@@ -260,6 +260,6 @@ test('a document that is not Chinese takes the English table', () => {
 
 test('the module is mounted with the other Composer compat modules', () => {
   const assembly = read('../src/client/apply.ts');
-  assert.match(assembly, /import \{ mountPermissionMenu \} from '\.\/compat\/permission-menu\.ts'/u);
+  assert.match(assembly, /import \{ mountAgentPresetMenu, mountPermissionMenu \} from '\.\/compat\/permission-menu\.ts'/u);
   assert.match(assembly, /scope\.add\(mountPermissionMenu\(/u);
 });

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mountPermissionMenu } from '../src/client/compat/permission-menu.ts';
+import { mountAgentPresetMenu, mountPermissionMenu } from '../src/client/compat/permission-menu.ts';
 
-test('bare digits select native permission rows only while the menu is open', () => {
+for (const agent of [false, true]) test(`bare digits select native ${agent ? 'Agent preset' : 'permission'} rows only while the menu is open`, () => {
   const original = globalThis.MutationObserver;
   globalThis.MutationObserver = class {
     observe() {}
@@ -19,14 +19,14 @@ test('bare digits select native permission rows only while the menu is open', ()
   };
   const document = {
     documentElement: { lang: 'en' }, body: {},
-    querySelector: (selector: string) => selector === '[data-ccd-permission-menu]' && open ? card : null,
+    querySelector: (selector: string) => selector === `[data-ccd-${agent ? 'agent' : 'permission'}-menu]` && open ? card : null,
     addEventListener(_type: string, listener: typeof onKey) { onKey = listener; },
     removeEventListener(_type: string, listener: typeof onKey) {
       assert.equal(listener, onKey);
       onKey = undefined;
     },
   } as unknown as Document;
-  const dispose = mountPermissionMenu(document, error => { throw error; });
+  const dispose = (agent ? mountAgentPresetMenu : mountPermissionMenu)(document, error => { throw error; });
   const press = (key: string, extra: Record<string, unknown> = {}) => {
     let prevented = false;
     const event = {
@@ -39,8 +39,9 @@ test('bare digits select native permission rows only while the menu is open', ()
     assert.equal(press('1'), false);
     open = true;
     for (const key of ['1', '2', '3', '4']) assert.equal(press(key), true);
-    assert.deepEqual(selected, ['read-only', 'workspace-write', 'danger-full-access', 'auto']
-      .map(value => `[data-ccd-permission-mode="${value}"]`));
+    assert.deepEqual(selected, (agent ? ['standard', 'ptc', 'minimal', 'cordis']
+      : ['read-only', 'workspace-write', 'danger-full-access', 'auto'])
+      .map(value => `[data-ccd-${agent ? 'agent' : 'permission'}-mode="${value}"]`));
     for (const extra of [{ ctrlKey: true }, { metaKey: true }, { altKey: true },
       { shiftKey: true }, { repeat: true }, { isComposing: true },
       { target: { closest: () => ({}) } }]) assert.equal(press('1', extra), false);

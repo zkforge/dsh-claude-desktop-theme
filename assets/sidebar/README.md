@@ -14,7 +14,7 @@
 280ms 过渡回正，`prefers-reduced-motion` 下不过渡。新建圆底在悬停、聚焦或选中时
 隐藏。
 
-其中新建、工具箱、定时三个已接入 DSH 侧栏（新建会话、插件、例程）：SVG 常量在
+其中新建、工具箱、定时三个已接入 DSH 侧栏（新建、插件、例程）：SVG 常量在
 `src/client/features/sidebar/navigation-icons.ts`，动作在
 `src/client/features/sidebar/navigation.css`。本目录保存的是同一份 SVG，供对照与
 复用，构建不读取它们；改图标时两处要一起改。

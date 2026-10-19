@@ -712,6 +712,88 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_time {
   display: none;
 }
 
+/* SearchResultItem is a separate host row, not a SessionRow. Keep its second
+   line for the workspace/content match while sharing the conversation list's
+   insets, typography, fills and archived ink. */
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow {
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: var(--ccd-radius-row);
+  background: transparent;
+  color: var(--ccd-text);
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow:is(:hover, .jJkEga_selected) {
+  background: var(--ccd-selected);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultHeading {
+  gap: 0;
+  min-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultTitle {
+  flex: 1;
+  margin-left: 0;
+  color: var(--ccd-text);
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultMeta {
+  margin-left: 16px;
+}
+
+html[data-dsh-ccd-style="true"] :is(.jJkEga_searchResultWorkspace, .jJkEga_searchResultSnippet) {
+  color: var(--ccd-text-muted);
+  font-size: calc(var(--ccd-font-size-muted) - 1px);
+  line-height: 16px;
+}
+
+/* Without a snippet the project name can use the whole second line. */
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultWorkspace:only-child {
+  max-width: 100%;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow.jJkEga_archived :is(.jJkEga_searchResultTitle, .jJkEga_searchResultWorkspace, .jJkEga_searchResultSnippet, .jJkEga_slot) {
+  color: var(--ccd-text-archived);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow.jJkEga_archived:is(:hover, .jJkEga_selected) :is(.jJkEga_searchResultTitle, .jJkEga_searchResultWorkspace, .jJkEga_searchResultSnippet, .jJkEga_slot) {
+  color: var(--ccd-text-archived-hover);
+}
+
+/* Reserve the restore control's seat so hover does not reflow the title. */
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultHeading .jJkEga_rowActions {
+  display: inline-flex;
+  visibility: hidden;
+  flex: none;
+  height: 20px;
+  margin-left: 4px;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow:is(:hover, :focus-within) .jJkEga_rowActions {
+  visibility: visible;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow .jJkEga_iconButton {
+  width: 22px;
+  height: 20px;
+  border-radius: 6px;
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow .jJkEga_iconButton:hover {
+  background: var(--ccd-hover-strong);
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow:focus-visible {
+  outline: 1px solid var(--ccd-accent);
+  outline-offset: -1px;
+}
+
 /* A Session row's trailing side is one control: the ⋮ that opens its menu.
  *
  * The host hangs two hover buttons of its own there — archive and pin,
