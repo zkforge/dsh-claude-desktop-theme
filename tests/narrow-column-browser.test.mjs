@@ -142,8 +142,8 @@ ${tabs}
 <div class="yhfFVG_row">
 <div class="yhfFVG_tools"><button class="yhfFVG_add" aria-label="命令">${GLYPH}</button>
 <div class="yhfFVG_modes"><div data-slot="conversation.input.permission"><button class="wXeviG_trigger"><span class="wXeviG_triggerLabel">完全权限</span></button></div>
-<div data-ccd-voice-seat="permission"><div data-slot="conversation.input.activity"><button class="yhfFVG_activity" aria-label="语音输入">${GLYPH}</button></div></div></div></div>
-<div class="yhfFVG_trailing"><div data-slot="conversation.input.model"><button class="cl2Rlq_trigger"><span class="cl2Rlq_triggerLabel">DeepSeek V4.1 Flash · OpenCode</span><span class="cl2Rlq_triggerEffort">Max</span></button></div></div>
+</div></div>
+<div class="yhfFVG_trailing"><div data-slot="conversation.input.model"><button class="cl2Rlq_trigger"><span class="cl2Rlq_triggerLabel">DeepSeek V4.1 Flash · OpenCode</span><span class="cl2Rlq_triggerEffort">Max</span></button></div><div class="yhfFVG_activity"><div data-slot="conversation.input.activity"><button aria-label="语音输入">${GLYPH}</button></div></div></div>
 </div>
 </div>
 </div>

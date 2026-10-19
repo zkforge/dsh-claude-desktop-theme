@@ -421,6 +421,7 @@ html[data-dsh-ccd-style="true"] {
      and SVG state markers; these masks replace only their visible artwork. */
   --ccd-send-radius: 6px;
   --ccd-icon-send: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M12 4.5V8A2 2 0 0 1 10 10H3.5M6.5 7L3.5 10L6.5 13' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --ccd-icon-voice-confirm: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3 8L6.5 11.5L13 5' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ccd-icon-stop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5.5' fill='none' stroke='black' stroke-width='1.25'/%3E%3Crect x='6' y='6' width='4' height='4' rx='.6' fill='black'/%3E%3C/svg%3E");
 
   /* The header's three painted glyphs, taken from DSH 0.2.0-rc.2 shared

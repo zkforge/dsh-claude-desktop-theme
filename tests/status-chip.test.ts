@@ -10,7 +10,7 @@ import { STATS_ATTRIBUTE } from '../src/client/compat/stats-values.ts';
  * The tool row's controls are the reference's chips, not boxes stretched to the
  * row: the model and effort chips draw their fill as one label line (40 device
  * px at @2x, so a 20px box around the same 12px label), and
- * the permission control, the voice control, the statistics readouts and the
+ * the permission control, the statistics readouts and the
  * context ring now carry that same box, so a pointer crossing the row finds one
  * fill height instead of three. The row itself keeps its 28px —
  * `--ccd-control-row-height` is what the dock, the ring's seat and the trailing
@@ -97,7 +97,7 @@ test('row controls keep the chip box while the inset plus shares send geometry',
   assert.match(add, /border-radius:\s*var\(--ccd-chip-radius\)/u);
   /* The plus is in the input, so its box and last-line anchor match send. */
   assert.match(add, /width:\s*var\(--ccd-send-size\)/u);
-  const send = ruleFor(composer, '.yhfFVG_primary').body;
+  const send = ruleFor(composer, 'html[data-dsh-ccd-style="true"] .yhfFVG_primary').body;
   assert.equal(add.match(/bottom:\s*([^;]+)/u)?.[1], send.match(/bottom:\s*([^;]+)/u)?.[1]);
 
   const permissionRules = composer.filter(rule =>

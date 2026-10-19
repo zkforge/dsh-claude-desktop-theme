@@ -12,6 +12,7 @@ import { mountComposerStats } from './compat/stats-values.ts';
 import { mountHeroChips } from './compat/hero-chips.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
+import { mountVoiceWaveform } from './compat/voice-waveform.ts';
 import { mountPermissionConfirmation } from './compat/permission-confirmation.ts';
 import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
@@ -132,12 +133,14 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: hero chip width observer failed', error),
         ));
-        /* The voice seat sits in a different flex container from the permission
-           seat, so its place in the status bar is arranged from the compatibility
-           layer rather than by `order`. */
+        /* Keep context-ring labels in sync with their percentage-free glyph. */
         scope.add(mountComposerStatusOrder(
           document,
           error => logger.error('composer: status-bar order observer failed', error),
+        ));
+        scope.add(mountVoiceWaveform(
+          document,
+          error => logger.error('composer: voice waveform failed', error),
         ));
         scope.add(mountComposerPlaceholder(
           document,

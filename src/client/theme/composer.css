@@ -33,12 +33,6 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card {
   box-shadow: none;
 }
 
-/* Capture mode hides the native tools group, including the plus. Let its text
-   reclaim the leading inset without changing the voice seat or its layout. */
-html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_tools[hidden]) {
-  --ccd-composer-add-reserve: 0px;
-}
-
 /* Without a workspace the host makes the whole card a workspace picker and
    draws a dashed ::after around it. Move that state cue to the input surface
    that owns our border, while keeping the host's picker behavior. */
@@ -261,8 +255,8 @@ html[data-dsh-ccd-style="true"] .cl2Rlq_triggerEffort {
 /* Move only the native command button's painted box into the input surface.
    Like send/stop, it follows the last visible text line from the row's top, so
    multiline growth, editor scrolling and attachment caps cannot displace it.
-   It remains inside the tools group: the host's hidden attribute still removes
-   it during voice capture, and its focus/selection-aware launcher stays intact. */
+   It remains inside the tools group, which stays visible during voice capture;
+   its focus/selection-aware launcher stays intact. */
 html[data-dsh-ccd-style="true"] .yhfFVG_add {
   box-sizing: border-box;
   position: absolute;
@@ -409,8 +403,16 @@ html[data-dsh-ccd-style="true"] .yhfFVG_trailing {
   margin-right: var(--ccd-context-ring-seat);
 }
 
+/* Capture replaces only the input hint and voice actions. Keep the status
+   controls in their original seats despite the host's full-row capture layout. */
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity]) :is(.yhfFVG_tools[hidden], .yhfFVG_standardControls[hidden]) {
+  display: flex;
+}
+
 html[data-dsh-ccd-style="true"] .yhfFVG_root:has(.yhfFVG_trailingActive) .yhfFVG_trailing {
-  margin-right: 0;
+  flex: 0 1 auto;
+  margin-left: auto;
+  margin-right: var(--ccd-context-ring-seat);
 }
 
 /* Keep the empty dock visible until the context driver mounts its button. */
@@ -434,10 +436,6 @@ html[data-dsh-ccd-style="true"] .yhfFVG_hero .yhfFVG_dock:empty {
  * (and, through `--ccd-trailing-width`, the whole cluster) back onto that edge.
  * An expanded activity control carries the other class and keeps its seat.
  *
- * The control itself no longer lives in this group: flex `order` cannot cross
- * the two containers, so compat/composer-status-order.ts moves the seat into the
- * leading group's modes cluster, immediately after the permission control. The
- * same empty-seat rule is repeated for that parent below.
  */
 html[data-dsh-ccd-style="true"] .yhfFVG_tools,
 html[data-dsh-ccd-style="true"] .yhfFVG_modes,
@@ -451,37 +449,202 @@ html[data-dsh-ccd-style="true"] .yhfFVG_modes > .yhfFVG_activity:not(:has(> :not
   display: none;
 }
 
-/* Voice input. The glyph is addressed through the control's own slot outlet —
-   the one stable name the seat has — so its size holds whether the seat still
-   sits in the trailing group or already beside the permission control, which is
-   where compat/composer-status-order.ts moves it; the `data-ccd-voice-seat` mark
-   that module leaves on a relocated seat is what the placement rule reads. The
-   host draws the microphone at 18px, while every other glyph in the status bar
-   (command plus, statistics readouts, context ring) is 14px artwork, so the
-   mic takes that size and stays centred in its box. Only `button > svg` is
-   resized: the recording row's waveform is a direct child of its own row and
-   keeps the host's sizing. */
-html[data-dsh-ccd-style="true"] .yhfFVG_modes > [data-ccd-voice-seat] {
+/* Voice controls keep their React parent. Like send/stop, the idle trigger
+   and capture row are painted above the status row, inside the input surface. */
+html[data-dsh-ccd-style="true"] .yhfFVG_activity:has([data-slot="conversation.input.activity"] button),
+html[data-dsh-ccd-style="true"] .yhfFVG_activityExpanded:has([data-voice-activity]) {
+  position: absolute;
+  bottom: calc(100% + var(--ccd-composer-row-gap) + var(--ccd-composer-padding-block) + 1px);
+  right: var(--ccd-composer-padding-inline);
+  z-index: 2;
+}
+
+html[data-dsh-ccd-style="true"] [data-slot="conversation.input.activity"] button {
+  box-sizing: border-box;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ccd-send-size);
+  height: var(--ccd-send-size);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text-strong);
+}
+
+html[data-dsh-ccd-style="true"] [data-slot="conversation.input.activity"] button:hover:not(:disabled) {
+  background: var(--ccd-hover);
+  color: var(--ccd-text-strong);
 }
 
 html[data-dsh-ccd-style="true"] [data-slot="conversation.input.activity"] button > svg {
-  width: var(--ccd-row-icon-size);
-  height: var(--ccd-row-icon-size);
+  width: 18px;
+  height: 18px;
 }
 
-/* The mic's own hit box is the row's glyph box, not the host's 28×14 strip: a
-   chip of the row's height around the 14px mark, the same box the command plus
-   beside it carries. The capture layout is left alone — the host hands that row
-   its own round buttons and its own geometry. */
-html[data-dsh-ccd-style="true"] .yhfFVG_root:not(:has(.yhfFVG_trailingActive))
-  [data-slot="conversation.input.activity"] button {
-  box-sizing: border-box;
-  display: inline-flex;
-  width: calc(var(--ccd-row-icon-size) + 2 * var(--ccd-chip-padding-inline));
-  height: var(--ccd-chip-height);
+/* The mic always precedes send, including an empty draft. Keeping both seats
+   stable avoids a jump when typing begins and preserves the native send cue. */
+html[data-dsh-ccd-style="true"] .yhfFVG_activity:has([data-slot="conversation.input.activity"] button) {
+  right: calc(var(--ccd-composer-padding-inline) + var(--ccd-send-size) + 6px);
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-slot="conversation.input.activity"] button):not(:has([data-voice-activity])) :is(.yhfFVG_input, .yhfFVG_placeholder) {
+  padding-right: calc(var(--ccd-send-reserve) + var(--ccd-send-size) + 6px);
+}
+
+/* The host portals this tooltip. Anchor its painted bubble below the actual
+   mic button so it cannot cover the pet perched above the input surface. */
+html[data-dsh-ccd-style="true"] .yhfFVG_activity [data-slot="conversation.input.activity"] button {
+  anchor-name: --ccd-voice-trigger;
+  color: var(--ccd-text-strong);
+}
+
+html[data-dsh-ccd-style="true"]:has(.yhfFVG_activity [data-slot="conversation.input.activity"] :is(:hover, :focus-visible)) [role="tooltip"] {
+  position: fixed;
+  top: calc(anchor(--ccd-voice-trigger bottom) + 6px) !important;
+  left: anchor(--ccd-voice-trigger center) !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_primary + .yhfFVG_primary) .yhfFVG_activity:has([data-slot="conversation.input.activity"] button) {
+  right: calc(var(--ccd-composer-padding-inline) + 2 * (var(--ccd-send-size) + 6px));
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_primary + .yhfFVG_primary):has([data-slot="conversation.input.activity"] button) :is(.yhfFVG_input, .yhfFVG_placeholder) {
+  padding-right: calc(var(--ccd-send-reserve) + 2 * (var(--ccd-send-size) + 6px));
+}
+
+/* Capture stays on the existing input line: the listening hint occupies the
+   placeholder seat and the waveform/actions sit to its right. No extra height
+   or bottom padding is added. Other phases keep the host's actual status. */
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity]) .yhfFVG_primary {
+  visibility: hidden;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_activityExpanded:has([data-voice-activity]) {
+  max-width: calc(100% - 2 * var(--ccd-composer-padding-inline));
+  width: min(164px, calc(100% - 120px));
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity] {
   align-items: center;
-  justify-content: center;
+  min-height: var(--ccd-send-size);
+  gap: var(--ccd-cluster-gap);
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity] > button {
+  order: 1;
+  display: grid;
+  place-items: center;
+  width: var(--ccd-send-size);
+  height: var(--ccd-send-size);
+  gap: 0;
+  line-height: 0;
+  border: 1px solid var(--ccd-composer-border);
+  box-shadow: var(--ccd-dialog-button-shadow);
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity] > button > svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  transform: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity] > svg {
+  flex: 1;
+  min-width: 0;
+  width: 104px;
+  height: 20px;
+  margin-left: auto;
+  color: var(--ccd-text-secondary);
+}
+
+/* The native SVG remains the accessible, real-audio source. Only its visual
+   ink is replaced, after the reference renderer has mounted successfully. */
+html[data-dsh-ccd-style="true"] [data-voice-activity]:has(> [data-ccd-voice-waveform]) > svg:not([data-ccd-voice-waveform]) {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-voice-waveform] {
+  overflow: hidden;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-voice-waveform] line {
+  stroke: currentColor;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity="recording"] > button:last-child > svg {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity="recording"] > button:last-child::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  background: currentColor;
+  mask: var(--ccd-icon-voice-confirm) center / contain no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity="recording"]) .yhfFVG_grow::after {
+  content: "正在聆听…";
+  position: absolute;
+  top: 0;
+  left: var(--ccd-composer-add-reserve);
+  right: calc(min(164px, 100% - 120px) + var(--ccd-cluster-gap));
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ccd-text-placeholder);
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"]:lang(en) .yhfFVG_card:has([data-voice-activity="recording"]) .yhfFVG_grow::after {
+  content: "Listening…";
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity="recording"]) .yhfFVG_input,
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity="recording"]) .yhfFVG_placeholder {
+  visibility: hidden;
+}
+
+/* Keep the host's actual feedback (including no-speech errors) in the same
+   placeholder seat as the listening hint; retain its status semantics/text. */
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity="feedback"]) .yhfFVG_grow {
+  anchor-name: --ccd-voice-feedback-seat;
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity="feedback"] {
+  justify-content: flex-end;
+}
+
+html[data-dsh-ccd-style="true"] [data-voice-activity="feedback"] > [role="status"] {
+  position: fixed;
+  top: anchor(--ccd-voice-feedback-seat top);
+  left: calc(anchor(--ccd-voice-feedback-seat left) + var(--ccd-composer-add-reserve));
+  width: max(0px, calc(anchor-size(--ccd-voice-feedback-seat width) - var(--ccd-composer-add-reserve) - 64px));
+  height: 24px;
+  color: var(--ccd-text-placeholder);
+  font-size: var(--dsh-content-font-size, 14px);
+  line-height: 24px;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-voice-activity="feedback"]) :is(.yhfFVG_input, .yhfFVG_placeholder) {
+  visibility: hidden;
 }
 
 html[data-dsh-ccd-style="true"] .OpZ85W_root {
