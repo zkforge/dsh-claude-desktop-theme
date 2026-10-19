@@ -2,6 +2,8 @@
  * Colours are centralized here; the dark palette follows the host's body marker.
  */
 html[data-dsh-ccd-style="true"] {
+  --ccd-price-off-peak: #38734f;
+  --ccd-price-peak: #996025;
   /* Reference companion and greeting, shared across both theme schemes. */
   --ccd-claude-coral: #d87657;
   --ccd-claude-shade: #bd6145;
@@ -580,6 +582,8 @@ html[data-dsh-ccd-style="true"] body {
  * separate; text keeps the light palette's descending tone order.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
+  --ccd-price-off-peak: #a1c9aa;
+  --ccd-price-peak: #dfb77d;
   --ccd-hero-ripple-ink: #60bdeb;
   /* The same flat frame uses gray-850 for the dark page and mixes it with
      20% black for the sidebar. The control track stays below its raised thumb

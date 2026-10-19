@@ -1,26 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CLAUDE_GROUND_Y, CLAUDE_IDLE } from './claude-frames.ts';
 import { claudePose, CLAUDE_REACTION_MS } from './claude-motion.ts';
 
-/** Reference pixel companion: take out a laptop, type, then return to standing. */
+/** On appearing or clicking, take out a laptop, type, then return to standing. */
 export function ClaudePet() {
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [hidden, setHidden] = useState(() => document.hidden);
   const frame = useRef<number | null>(null);
   const reduced = useRef(false);
-  const cancel = () => {
+  const cancel = useCallback(() => {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
     frame.current = null;
-  };
-  useEffect(() => {
-    const visibility = () => {
-      setHidden(document.hidden);
-      if (document.hidden) { cancel(); setElapsed(null); }
-    };
-    document.addEventListener('visibilitychange', visibility);
-    return () => { cancel(); document.removeEventListener('visibilitychange', visibility); };
   }, []);
-  const play = () => {
+  const play = useCallback(() => {
     if (frame.current !== null || document.hidden) return;
     reduced.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const start = performance.now();
@@ -36,7 +28,16 @@ export function ClaudePet() {
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
-  };
+  }, []);
+  useEffect(() => {
+    play();
+    const visibility = () => {
+      setHidden(document.hidden);
+      if (document.hidden) { cancel(); setElapsed(null); }
+    };
+    document.addEventListener('visibilitychange', visibility);
+    return () => { cancel(); document.removeEventListener('visibilitychange', visibility); };
+  }, [cancel, play]);
   return (
     <button type="button" className="ccd-composer-pet ccd-claude-pet" aria-label="Play with Claude"
       aria-disabled={hidden || elapsed !== null} data-paused={hidden || undefined}

@@ -57,7 +57,7 @@ const EXPLICIT_ALIASES: Readonly<Record<string, readonly string[]>> = {
   grok: ['grok', 'xai grok', 'x ai grok'],
   hailuo: ['hailuo', 'minimax hailuo'],
   hedra: ['hedra'],
-  hunyuan: ['hunyuan', 'tencent hunyuan'],
+  hunyuan: ['hunyuan', 'tencent hunyuan', 'hy3', '混元'],
   ideogram: ['ideogram'],
   jimeng: ['jimeng'],
   kimi: ['kimi', 'moonshot kimi', 'moonshot ai kimi'],

@@ -94,6 +94,9 @@ test('common model families map to their upstream marks', () => {
     'LongCat-Flash': 'longcat',
     'Doubao Seed': 'doubao',
     'Hunyuan Turbo': 'hunyuan',
+    'Hy3': 'hunyuan',
+    'Hy3 (X)': 'hunyuan',
+    '混元': 'hunyuan',
     'Wenxin 4.5': 'wenxin',
     'ERNIE 5': 'wenxin',
     'Spark X1': 'spark',
@@ -116,5 +119,6 @@ test('unknown models fall back to their own initial, not the routing group', () 
 test('short aliases respect token boundaries', () => {
   assert.equal(slugFor('Stepper'), null);
   assert.equal(slugFor('Yield Curve'), null);
+  assert.equal(slugFor('Hy3drogen'), null);
   assert.equal(slugFor('GPT-6.1 Sol'), 'openai');
 });

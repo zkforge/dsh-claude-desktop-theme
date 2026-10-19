@@ -18,7 +18,7 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
  * control to its text.
  */
 .ccd-model-trigger, .ccd-effort-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; height: var(--ccd-chip-height, 20px); padding: 0 var(--ccd-chip-padding-inline, 7px); border: 0; border-radius: var(--ccd-chip-radius, 6px); background: transparent; color: var(--ccd-text-strong); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
-.ccd-model-trigger { flex: 1 1 auto; overflow: hidden; }
+.ccd-model-trigger { flex: 1 1 auto; overflow: hidden; gap: 6px; }
 .ccd-model-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .ccd-effort-trigger { flex: 0 0 auto; }
 .ccd-model-trigger:hover, .ccd-effort-trigger:hover, .ccd-model-trigger[aria-expanded="true"], .ccd-effort-trigger[aria-expanded="true"] { background: var(--ccd-hover); }
@@ -56,7 +56,7 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * settings.css) — about ten 24px rows — and scrolls inside it, so the search
  * cell, the loading and failure notes stay in view while the list moves.
  */
-.ccd-model-options { max-height: min(320px, calc(100vh - 24px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.ccd-model-options { max-height: min(320px, calc(100vh - 24px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: auto; }
 /* Native top-layer placement keeps the existing anchor coordinates. The
    backdrop stays click-through so usePopup still owns outside dismissal. */
 .ccd-model-panel[popover], .ccd-effort[popover] { inset: auto; margin: 0; }
@@ -64,14 +64,9 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
 /*
  * The card's one editable face is a bare line, not a box.
  *
- * The reference draws that cell chrome-free: no outline, no fill, no corner
- * and no hint text inside it, with one hairline under the cell where the list
- * begins — the caret and that rule are the whole of the affordance. The user
- * asked for exactly those two properties, because the panel focuses this cell
- * as it opens: the accent ring §七 gives a focused control turned the card's
- * first row into a blue frame, and the placeholder put a hint on a field the
- * reader had not asked to fill in, which the reference does not draw either
- * (`ModelControls.tsx` writes no `placeholder` attribute).
+ * The cell has no outline, fill or corner, with one hairline under it where
+ * the list begins. A muted placeholder labels the empty search field, while
+ * automatic focus keeps the caret ready for typing without an accent ring.
  *
  * The cell keeps the card's 24px rhythm — the same box the rows and the group
  * headings below it occupy — and bleeds to the card's edges (`margin: 0 -6px`
@@ -83,6 +78,7 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * on the row labels' x instead of 6px ahead of it.
  */
 .ccd-model-search { box-sizing: border-box; width: calc(100% + 12px); height: 24px; margin: 0 -6px 4px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--ccd-border-soft); border-radius: 0; background: transparent; color: inherit; font: inherit; }
+.ccd-model-search::placeholder { color: var(--ccd-text-placeholder); opacity: 1; }
 /* Focus is the caret. Both spellings are named because the panel focuses the
    field itself rather than a pointer, and a UA stylesheet may paint either
    one — neither may reach the card. */
@@ -138,7 +134,8 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
 .ccd-model-glyph { flex: 0 0 16px; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; color: var(--ccd-text-strong); }
 /* The row spreads its children with `space-between`; the auto margin keeps
    the label beside the glyph instead of centred between glyph and check. */
-.ccd-model-name { margin-right: auto; }
+.ccd-model-name { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; min-width: 0; }
+.ccd-model-name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ccd-model-options button:hover .ccd-model-glyph, .ccd-model-options button:focus-visible .ccd-model-glyph { color: var(--ccd-text-strong); }
 .ccd-model-glyph svg { width: 16px; height: 16px; }
 .ccd-model-glyph-fallback { color: var(--ccd-text-strong); font-size: 11px; line-height: 1; }
@@ -168,3 +165,18 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
 .ccd-model-retry:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 .ccd-model-error { bottom: 60px; right: 16px; }
 @container ccd-composer (max-width: 420px) { .ccd-model-trigger { padding-inline: 4px; } .ccd-effort-trigger { padding-inline: 4px; } }
+
+/* Price information stays quiet until the model is hovered or focused. */
+.ccd-price-anchor { min-width: 0; }
+.ccd-price-anchor-compact { display: flex; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.ccd-price-mark { flex: 0 0 auto; color: var(--ccd-price-off-peak); font-size: 12px; white-space: nowrap; }
+.ccd-price-mark[data-peak="true"] { color: var(--ccd-price-peak); }
+.ccd-price-trend { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 12px; }
+.ccd-price-trend svg { display: block; width: 16px; height: 12px; }
+.ccd-price-tooltip { position: fixed; inset: auto; margin: 0; z-index: 1001; box-sizing: border-box; width: min(276px, calc(100vw - 24px)); padding: 14px; border: 1px solid var(--ccd-border); border-radius: 12px; background: var(--ccd-card); color: var(--ccd-text-strong); box-shadow: var(--ccd-effort-shadow); text-align: left; font: 12px/1.5 var(--ccd-font-ui); cursor: default; }
+.ccd-price-tooltip::backdrop { background: transparent; pointer-events: none; }
+.ccd-price-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ccd-price-countdown { margin: 5px 0 14px; color: var(--ccd-text-secondary); font-variant-numeric: tabular-nums; }
+.ccd-price-unit { margin-bottom: 5px; color: var(--ccd-text-secondary); }
+.ccd-price-rates { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin: 0; }
+.ccd-price-rates dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }

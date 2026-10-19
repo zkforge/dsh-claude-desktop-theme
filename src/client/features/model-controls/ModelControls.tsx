@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ModelSelectInjected } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import type { ModelDirectoryState } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
@@ -7,6 +7,7 @@ import { effortDefaultIndex, effortView, modelSelection } from './selection.ts';
 import { EffortPanel } from './EffortPanel.tsx';
 import { ModelIcon } from './model-icons.tsx';
 import { usePopup } from './popup.ts';
+import { PriceMark, PricingHint } from './PricingHint.tsx';
 
 export type ModelControlsProps = Omit<ModelSelectInjected, 'directory'> & PropsLocale<'model'> & {
   readonly showModelIcons: boolean;
@@ -46,11 +47,12 @@ export function ModelControls({ showModelIcons, locked, available, useDirectory,
   }, [busy]);
   if (!available) return null;
   return <div className="ccd-model-controls" data-ccd-model-controls>
-    <button ref={modelAnchor} className="ccd-model-trigger" data-ccd-model-trigger type="button" disabled={disabled}
+    <PricingHint provider={current?.provider} model={model?.id} compact enabled={open === null} ignoreFocus={() => restoreModelFocus.current}><button ref={modelAnchor} className="ccd-model-trigger" data-ccd-model-trigger type="button" disabled={disabled}
       aria-label={current ? t('trigger.aria', { model: label }) : t('trigger.selectAria')} aria-haspopup="dialog" aria-expanded={open === 'model'}
       onClick={() => { setOpen(open === 'model' ? null : 'model'); load(); }}>
       <span className="ccd-model-label">{label}</span>
-    </button>
+      <PriceMark provider={current?.provider} model={model?.id} compact />
+    </button></PricingHint>
     {caption !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || !pickable}
       aria-label={`Effort: ${caption}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
       onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{caption}</span></button>}
@@ -73,19 +75,30 @@ export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, o
 }) {
   const { panel, position } = usePopup(anchor, onClose);
   const [query, setQuery] = useState('');
+  const options = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const list = options.current;
+    if (!list) return;
+    const update = () => {
+      const range = list.scrollHeight - list.clientHeight;
+      const progress = range > 0 ? Math.max(0, Math.min(1, list.scrollTop / range)) : 0;
+      list.style.setProperty('--ccd-model-scroll-progress', String(progress));
+    };
+    update();
+    list.addEventListener('scroll', update, { passive: true });
+    const resize = new ResizeObserver(update);
+    resize.observe(list);
+    return () => { list.removeEventListener('scroll', update); resize.disconnect(); };
+  }, [query, state.groups]);
   const groups = state.groups.map(group => ({ ...group, models: group.models.filter(model => `${model.name} ${model.id} ${group.name}`.toLowerCase().includes(query.toLowerCase())) })).filter(group => group.models.length > 0);
   return <div ref={panel} className="ccd-model-panel" role="dialog" aria-label={t('menu.model')} style={position}>
-    {/* The field keeps the host's string as its accessible name only: the card
-        draws no hint text and no frame (controls.css), because the panel
-        focuses this cell the moment it opens and a placeholder plus §七's ring
-        would put a framed, labelled box on the card's first row. */}
-    <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
+    <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} placeholder={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); panel.current?.querySelector<HTMLButtonElement>('[data-model-option]')?.focus(); } }} />
     {state.status === 'loading' && <p role="status" className="ccd-model-note">{t('status.loading')}</p>}
     {state.error && <div role="alert" className="ccd-model-note">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
     {state.failures.map(failure => <div key={failure.id} role="status" className="ccd-model-note">{failure.name}: {failure.message}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>)}
     {groups.length === 0 && state.status !== 'loading' && <p className="ccd-model-note">{query ? t('search.empty') : t('empty.models')}</p>}
-    <div className="ccd-model-options" onKeyDown={event => {
+    <div ref={options} className="ccd-model-options" onKeyDown={event => {
       const targets = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
       const index = targets.indexOf(document.activeElement as HTMLButtonElement);
       const next = event.key === 'ArrowDown' ? (index + 1) % targets.length : event.key === 'ArrowUp' ? (index - 1 + targets.length) % targets.length : event.key === 'Home' ? 0 : event.key === 'End' ? targets.length - 1 : undefined;
@@ -93,8 +106,8 @@ export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, o
     }}>
       {groups.map(group => <div key={group.id}><div className="ccd-model-provider">{group.name}</div>{group.models.map(model => {
         const chosen = state.current?.provider === group.id && state.current.model === model.id;
-        return <button type="button" data-model-option key={model.id} aria-pressed={chosen} disabled={disabled}
-          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name">{model.name}</span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button>;
+        return <PricingHint key={model.id} provider={group.id} model={model.id}><button type="button" data-model-option aria-pressed={chosen} disabled={disabled}
+          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name"><span className="ccd-model-name-text">{model.name}</span><PriceMark provider={group.id} model={model.id} compact /></span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button></PricingHint>;
       })}</div>)}
     </div>
   </div>;
