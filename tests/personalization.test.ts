@@ -41,7 +41,7 @@ test('the click sequence returns to idle and reduced motion never plays the lapt
 
 test('greeting is optional personalization and original heading nodes survive mounting and release', () => {
   assert.equal(claudeGreeting(''), 'What’s up next?');
-  assert.equal(claudeGreeting('zoukai'), 'What’s up next, zoukai?');
+  assert.equal(claudeGreeting('en'), 'What’s up next?');
   class Element {
     isConnected = true;
     children: Element[] = [];
@@ -59,15 +59,8 @@ test('greeting is optional personalization and original heading nodes survive mo
   const heading = new Element();
   const originalText = new Element(); originalText.textContent = '探索未知之境';
   heading.append(originalText);
-  let signedOut = false;
-  let label: { textContent: string } | null = { textContent: '  zoukai  ' };
-  const account = {
-    getAttribute: () => String(signedOut),
-    querySelector: () => label,
-  };
   const document = {
     body: {}, documentElement: { lang: 'zh-CN' }, querySelectorAll: () => [heading],
-    querySelector: (selector: string) => selector === '.ZogL4G_trigger' ? account : null,
     createElement: () => new Element(), createElementNS: () => new Element(),
   } as unknown as Document;
   const original = globalThis.MutationObserver;
@@ -83,31 +76,11 @@ test('greeting is optional personalization and original heading nodes survive mo
     sync();
     assert.equal(heading.children.length, 2, 'repeated mutations add no duplicate heading');
     assert.equal(heading.children[0], originalText);
-    assert.equal(heading.children[1]?.children[1]?.textContent, 'What’s up next, <Kai>?');
+    assert.equal(heading.children[1]?.children[1]?.textContent, '接下来想做什么？');
     release();
     assert.deepEqual(heading.children, [originalText]);
     assert.equal(heading.attributes.has('data-ccd-greeting-style'), false);
     assert.equal(disconnected, true);
-    const releaseAccount = mountHeroGreeting(document, { ...DEFAULT_PERSONALIZATION, greetingStyle: 'claude' });
-    const title = () => heading.children[1]?.children[1]?.textContent;
-    assert.equal(title(), 'What’s up next, zoukai?', 'Latin account name uses English even in a Chinese app');
-    label = { textContent: '张三' };
-    sync();
-    assert.equal(title(), '接下来想做什么，张三？', 'a changed Chinese name updates the existing title');
-    label = null;
-    sync();
-    assert.equal(title(), '接下来想做什么，张三？', 'collapsing the sidebar retains the name');
-    signedOut = true;
-    sync();
-    assert.equal(title(), '接下来想做什么？', 'sign-out clears the cached account name');
-    signedOut = false;
-    label = { textContent: '' };
-    sync();
-    assert.equal(title(), '接下来想做什么？', 'a loading profile does not show an old account name');
-    label.textContent = 'Alice';
-    sync();
-    assert.equal(title(), 'What’s up next, Alice?', 'late profile text updates without reopening the page');
-    releaseAccount();
   } finally { globalThis.MutationObserver = original; }
 });
 
@@ -143,12 +116,10 @@ test('idle mark matches the reference width, feet spacing and two black eyes', (
 });
 
 
-test('greeting language follows the name, falling back to the document language without a name', () => {
-  assert.equal(claudeGreeting('Alice', 'zh-CN'), 'What’s up next, Alice?');
-  assert.equal(claudeGreeting('李明', 'en'), '接下来想做什么，李明？');
-  assert.equal(claudeGreeting('Kai 张', 'en'), '接下来想做什么，Kai 张？');
-  assert.equal(claudeGreeting('', 'zh-CN'), '接下来想做什么？');
-  assert.equal(claudeGreeting('', 'en'), 'What’s up next?');
+test('greeting follows interface language and contains no account or configured name', () => {
+  assert.equal(claudeGreeting('zh-CN'), '接下来想做什么？');
+  assert.equal(claudeGreeting('en'), 'What’s up next?');
+  assert.equal(claudeGreeting(''), 'What’s up next?');
 });
 
 test('retrieving the laptop keeps all four upright feet at the idle anchors', () => {

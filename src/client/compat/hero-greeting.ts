@@ -1,13 +1,10 @@
-import { normalizeGreetingName } from '../../shared/config.ts';
 import type { PersonalizationConfig } from '../../shared/config.ts';
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 
-/** Reference greeting, kept as plain text so names cannot introduce markup. */
-export function claudeGreeting(name: string, language = ''): string {
-  const chinese = name === '' ? language.toLowerCase().startsWith('zh') : /\p{Script=Han}/u.test(name);
-  if (chinese) return name === '' ? '接下来想做什么？' : `接下来想做什么，${name}？`;
-  return name === '' ? 'What’s up next?' : `What’s up next, ${name}?`;
+/** The greeting follows the interface language and never includes an account name. */
+export function claudeGreeting(language = ''): string {
+  return language.toLowerCase().startsWith('zh') ? '接下来想做什么？' : 'What’s up next?';
 }
 
 /** Add a reversible presentation beside the native heading without taking its React nodes. */
@@ -16,25 +13,6 @@ export function mountHeroGreeting(document: Document, config: PersonalizationCon
   const host = hostSelectors(document);
   const added = new Map<HTMLElement, HTMLElement>();
   const titles = new Map<HTMLElement, HTMLElement>();
-  let accountTrigger: HTMLElement | null = null;
-  let accountName = '';
-  const readName = () => {
-    const trigger = document.querySelector<HTMLElement>(host.accountTrigger);
-    if (trigger !== accountTrigger) {
-      accountTrigger = trigger;
-      accountName = '';
-    }
-    if (trigger?.getAttribute('data-signed-out') !== 'false') {
-      accountName = '';
-    } else {
-      const label = trigger.querySelector<HTMLElement>(host.accountLabel);
-      // A collapsed sidebar unmounts the label. Retain the last signed-in name
-      // until the account changes; an empty mounted label means profile loading.
-      if (label !== null) accountName = normalizeGreetingName(label.textContent);
-      if (/^(已登录|已登入|signed in|signed-in)$/iu.test(accountName)) accountName = '';
-    }
-    return config.greetingName || accountName;
-  };
   const sync = () => {
     for (const [heading, copy] of added) {
       if (heading.isConnected) continue;
@@ -43,7 +21,7 @@ export function mountHeroGreeting(document: Document, config: PersonalizationCon
       added.delete(heading);
       titles.delete(heading);
     }
-    const greeting = claudeGreeting(readName(), document.documentElement.lang || '');
+    const greeting = claudeGreeting(document.documentElement.lang || '');
     for (const heading of document.querySelectorAll<HTMLElement>(host.heroHeadline)) {
       const existing = titles.get(heading);
       if (existing !== undefined) {
@@ -70,8 +48,8 @@ export function mountHeroGreeting(document: Document, config: PersonalizationCon
   };
   const observer = new MutationObserver(sync);
   observer.observe(document.body, {
-    childList: true, subtree: true, characterData: true,
-    attributes: true, attributeFilter: ['data-signed-out', 'lang'],
+    childList: true, subtree: true,
+    attributes: true, attributeFilter: ['lang'],
   });
   sync();
   return () => {
@@ -82,7 +60,5 @@ export function mountHeroGreeting(document: Document, config: PersonalizationCon
     }
     added.clear();
     titles.clear();
-    accountTrigger = null;
-    accountName = '';
   };
 }

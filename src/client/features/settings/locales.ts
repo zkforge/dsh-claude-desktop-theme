@@ -18,7 +18,7 @@ export const zh = {
   'greeting.explore': '探索未知之境',
   'greeting.claude': 'Claude 问候与图标',
   'field.greetingName': '问候语中的称呼',
-  'hint.personalization': '两项可独立切换；宠物点击后播放对应动作。称呼留空时使用已登录账户姓名，按姓名语言显示中英文问候；原有模块开关仍控制显示。',
+  'hint.personalization': '两项可独立切换；宠物点击后播放对应动作，问候语跟随界面语言，不显示姓名。原有模块开关仍控制显示。',
 
   'nav': 'Claude 主题',
   'summary': 'CCD 风格界面 · 外观 · 字体',
@@ -86,7 +86,7 @@ export const en: Record<SettingsKey, string> = {
   'greeting.explore': 'Explore the unknown',
   'greeting.claude': 'Claude greeting and icon',
   'field.greetingName': 'Greeting name',
-  'hint.personalization': 'Choose each style independently. Click the pet to play its reaction. Leave the name empty to use your signed-in account name. Greeting language follows the name; module switches still control visibility.',
+  'hint.personalization': 'Choose each style independently. Click the pet to play its reaction. The greeting follows the interface language without a name; module switches still control visibility.',
 
   'nav': 'Claude Theme',
   'summary': 'CCD interface · appearance · typefaces',
