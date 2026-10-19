@@ -480,8 +480,8 @@ html[data-dsh-ccd-style="true"] [data-slot="conversation.input.activity"] button
 }
 
 html[data-dsh-ccd-style="true"] [data-slot="conversation.input.activity"] button > svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 /* The mic always precedes send, including an empty draft. Keeping both seats
