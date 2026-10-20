@@ -1,6 +1,7 @@
 import type { ImplementedFeature } from '../../contracts/feature.ts';
 import { mountConversationFade } from '../../compat/conversation-fade.ts';
 import { mountConversationProcess } from '../../compat/conversation-process.ts';
+import { mountRunningStatus } from '../../compat/running-status.ts';
 import { mountReplySignature } from '../../compat/reply-signature.ts';
 import { probeHost } from '../../compat/host-dom.ts';
 import { mountViewSwitch } from '../../compat/view-switch.ts';
@@ -32,9 +33,12 @@ export const conversationFeature: ImplementedFeature = {
     const probe = probeHost(document);
     if (!probe.conversation) environment.logger.debug('conversation: body not mounted yet');
     scope.add(environment.dom.mountStyles(conversationCss));
+    scope.add(mountRunningStatus(document, environment.config.personalization.runningStyle,
+      error => environment.logger.error('conversation: running status failed', error)));
     scope.add(mountReplySignature(
       document,
       error => environment.logger.error('conversation: reply signature failed', error),
+      environment.config.personalization.replySignatureStyle,
     ));
     scope.add(mountConversationProcess(
       document,

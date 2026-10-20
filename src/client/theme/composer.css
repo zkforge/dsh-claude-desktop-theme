@@ -494,20 +494,13 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card:has([data-slot="conversation.input.
   padding-right: calc(var(--ccd-send-reserve) + var(--ccd-send-size) + 6px);
 }
 
-/* The host portals this tooltip. Anchor its painted bubble below the actual
-   mic button so it cannot cover the pet perched above the input surface. */
 html[data-dsh-ccd-style="true"] .yhfFVG_activity [data-slot="conversation.input.activity"] button {
-  anchor-name: --ccd-voice-trigger;
   color: var(--ccd-text-strong);
 }
 
-html[data-dsh-ccd-style="true"]:has(.yhfFVG_activity [data-slot="conversation.input.activity"] :is(:hover, :focus-visible)) [role="tooltip"] {
-  position: fixed;
-  top: calc(anchor(--ccd-voice-trigger bottom) + 6px) !important;
-  left: anchor(--ccd-voice-trigger center) !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: translateX(-50%) !important;
+/* Keep the portaled dictation hint hidden through its exit animation too. */
+html[data-dsh-ccd-style="true"] [data-ccd-dictation-tooltip] {
+  display: none !important;
 }
 
 html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_primary + .yhfFVG_primary) .yhfFVG_activity:has([data-slot="conversation.input.activity"] button) {

@@ -9,21 +9,25 @@ import { CLAUDE_IDLE, CLAUDE_TRACK, CLAUDE_FRAMES } from '../src/client/features
 test('existing installs keep their whale and native greeting; choices are independent', () => {
   assert.deepEqual(adoptConfig({}).personalization, DEFAULT_PERSONALIZATION);
   assert.deepEqual(resolveConfig({ personalization: { petStyle: 'claude' } }).personalization,
-    { petStyle: 'claude', greetingStyle: 'explore', greetingName: '' });
+    { petStyle: 'claude', replySignatureStyle: 'whale', greetingStyle: 'explore', greetingName: '' });
   assert.deepEqual(adoptConfig({ personalization: {
     greetingStyle: 'claude', greetingName: '  Kai\n  Zou  ',
-  } }).personalization, { petStyle: 'whale', greetingStyle: 'claude', greetingName: 'Kai Zou' });
+  } }).personalization, { petStyle: 'whale', replySignatureStyle: 'whale', greetingStyle: 'claude', greetingName: 'Kai Zou' });
 });
 
 test('invalid stored variants fall back, strict writes are rejected', () => {
   assert.deepEqual(adoptConfig({ personalization: {
-    petStyle: 'unknown', greetingStyle: false, greetingName: 1,
+    petStyle: 'unknown', replySignatureStyle: 'unknown', greetingStyle: false, greetingName: 1,
   } }).personalization, DEFAULT_PERSONALIZATION);
   assert.throws(() => resolveConfig({ personalization: { petStyle: 'unknown' } }), /petStyle/);
+  assert.throws(() => resolveConfig({ personalization: { replySignatureStyle: 'unknown' } }), /replySignatureStyle/);
   assert.throws(() => resolveConfig({ personalization: { greetingStyle: 'unknown' } }), /greetingStyle/);
   const schema = Config as unknown as (input: unknown) => unknown;
-  assert.doesNotThrow(() => schema({ personalization: { petStyle: 'claude', greetingStyle: 'claude', greetingName: 'Kai' } }));
+  assert.doesNotThrow(() => schema({ personalization: { petStyle: 'claude', replySignatureStyle: 'whale', greetingStyle: 'claude', greetingName: 'Kai' } }));
   assert.throws(() => schema({ personalization: { petStyle: 'unknown' } }), /petStyle/);
+  assert.throws(() => schema({ personalization: { replySignatureStyle: 'unknown' } }), /replySignatureStyle/);
+  assert.doesNotThrow(() => schema({ personalization: { replySignatureStyle: 'claude' } }));
+  assert.equal(resolveConfig({ personalization: { replySignatureStyle: 'claude' } }).personalization.replySignatureStyle, 'claude');
   assert.throws(() => schema({ personalization: { greetingName: 'x'.repeat(65) } }), /greetingName/);
   assert.equal(adoptConfig({ personalization: { greetingName: 'x'.repeat(100) } }).personalization.greetingName.length, 64);
 });

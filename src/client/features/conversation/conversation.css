@@ -15,6 +15,26 @@ html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] {
   display: none;
 }
 
+/* Keep message clocks and actions quiet, including the latest reply that the
+   host otherwise always reveals. The final assistant step and its turn tail
+   are adjacent flow items, so hovering the reply reveals only its own strip.
+   Only the action strip itself keeps the actions revealed in the tail; the
+   signature and the surrounding blank space must not reveal them. Keep the
+   occupied space and keyboard access; touch devices retain actions. */
+@media (hover: hover) {
+  html[data-dsh-ccd-style="true"] :is(.IzP3Va_userRow, [data-turn-tail]) [data-clock] {
+    opacity: 0;
+    pointer-events: auto;
+  }
+
+  html[data-dsh-ccd-style="true"] .IzP3Va_userRow:is(:hover, :focus-within) [data-clock],
+  html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock]:is(:hover, :focus-within),
+  html[data-dsh-ccd-style="true"] [data-chat-flow-kind="assistant-step"]:has(.gKv1-q_body:hover) + [data-chat-flow-kind="turn-tail"] [data-clock] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 /* MessageIconActions exposes data-clock="end" on assistant action strips.
    Keep the native actions and feedback slot, with Claude-sized icon seats. */
 html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] {
@@ -24,26 +44,16 @@ html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] {
   margin-left: -4px;
 }
 
-/* compat/reply-signature.ts seats this button only at the latest settled reply.
+/* compat/reply-signature.ts seats this static mark only at the latest settled reply.
    The mask is DSH's RunningWhaleTail REST_PATH (16 × 16). */
 html[data-dsh-ccd-style="true"] .ccd-reply-signature {
   display: block;
   flex: none;
   align-self: flex-start;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   margin-top: 8px;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-  transform-origin: 45% 85%;
-}
-
-html[data-dsh-ccd-style="true"] .ccd-reply-signature:focus-visible {
-  outline: 2px solid var(--ccd-accent);
-  outline-offset: 4px;
+  pointer-events: none;
 }
 
 html[data-dsh-ccd-style="true"] .ccd-reply-signature::before {
@@ -53,6 +63,12 @@ html[data-dsh-ccd-style="true"] .ccd-reply-signature::before {
   height: 100%;
   background: var(--ccd-pet-blue);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8.844 13.742C8.967 12.328 8.45 10.4 8.45 9.65C8.45 8.94 8.88 8.43 9.6 8.43C11.285 8.43 12.106 8.281 12.685 8.104C13.71 7.791 14.585 6.768 15.055 5.945C15.137 5.803 14.99 5.641 14.829 5.671C13.829 5.86 12.828 5.376 11.827 4.978C10.659 4.514 9.491 4.707 8.935 4.876C8.805 4.915 8.658 4.819 8.636 4.686C8.468 3.643 7.405 2.615 5.498 2.238C4.54 2.048 3.748 1.574 3.347 1.202C3.252 1.113 3.088 1.125 3.03 1.242C2.628 2.059 2.168 3.82 5.248 6.115C5.82 6.494 6.31 6.785 6.574 7.637C6.72 8.104 6.157 9.168 6.061 9.368C5.157 11.27 5.089 12.19 4.926 13.742' stroke='black' stroke-width='1'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-reply-signature-claude::before,
+html[data-dsh-ccd-style="true"] .ccd-running-star::before {
+  background: #d97757;
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M4.709%2015.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0%2011.784l.055-.352.48-.321.686.06%201.52.103%202.278.158%201.652.097%202.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686%201.908%201.476%202.491%201.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97%202.97%200%2001-.104-.729L6.283.134%206.696%200l.996.134.42.364.62%201.414%201.002%202.229%201.555%203.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286%201.851-.559%202.903-.364%201.942h.212l.243-.242.985-1.306%201.652-2.064.73-.82.85-.904.547-.431h1.033l.76%201.129-.34%201.166-1.064%201.347-.881%201.142-1.264%201.7-.79%201.36.073.11.188-.02%202.856-.606%201.543-.28%201.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061%201.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093%201.068%202.006%201.81%202.509%202.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649%202.345%203.521.122%201.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674%207.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434%201.967-2.18%202.945-1.726%201.845-.414.164-.717-.37.067-.662.401-.589%202.388-3.036%201.44-1.882.93-1.086-.006-.158h-.055L4.132%2018.56l-1.13.146-.487-.456.061-.746.231-.243%201.908-1.312-.006.006z%22%2F%3E%3C%2Fsvg%3E");
 }
 
 html[data-dsh-ccd-style="true"] [data-turn-tail] [data-clock="end"] button:has(> svg:only-child) {
@@ -726,10 +742,10 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
   }
 }
 
-/* Transcript column keeps the reference's breathing room. */
+/* Leave room between the final message/signature and the Composer stack. */
 html[data-dsh-ccd-style="true"] .icaHSq_scroll {
   padding-top: 16px;
-  padding-bottom: 8px;
+  padding-bottom: 48px;
 }
 
 /* Center and size the host's jump-to-bottom control.
@@ -1159,4 +1175,47 @@ html[data-dsh-ccd-style="true"] .HiSsxa_root,
 html[data-dsh-ccd-style="true"] .-gRAhq_root {
   color: var(--ccd-text-secondary);
   font-size: var(--ccd-font-size-body);
+}
+
+/* Native clock keeps ticking behind the optional Claude presentation. */
+html[data-dsh-ccd-style="true"] [data-ccd-running-style="claude"] > :not(.ccd-running-content) {
+  display: none !important;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-running-content {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--ccd-text-secondary);
+  font: 400 12px/24px var(--ccd-font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: pre-wrap;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-running-star {
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-running-star::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  animation: ccd-star-breathe 1.8s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+/* The rays contract towards the centre, then spread back out; no spin. */
+@keyframes ccd-star-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  45% { transform: scale(.54, .62); }
+  72% { transform: scale(.9, .85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .ccd-running-star::before { animation: none; }
 }

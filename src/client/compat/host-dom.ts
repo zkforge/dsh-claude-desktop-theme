@@ -361,6 +361,11 @@ export const HOST = Object.freeze({
  * means the frame is not the pinned one and the feature must stay off.
  */
 export const ANCHOR = Object.freeze({
+  /** ChatNodeSeat / ToolCallTree: immutable transcript seats and atomic calls. */
+  chatFlowItem: '[data-chat-flow-kind]',
+  toolFlow: '[data-chat-flow-kind="tool-call"]',
+  toolCall: '[data-chat-call-id]',
+
   /** ui-chat TurnProcessNodeView / ChatGroupSeat: process containers, not leaf details. */
   turnProcess: 'button[data-turn-process]',
   stepProcessToggle: '[data-step-process] > div > button[data-process-activity]',

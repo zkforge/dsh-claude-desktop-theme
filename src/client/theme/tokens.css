@@ -334,6 +334,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-inline-code-text: #a8322d;
   --ccd-inline-code-fill: #f1f1f0;
   --ccd-inline-code-border: #e2e2e0;
+  --ccd-command-name: #087cff;
+  --ccd-command-argument: #159d36;
 
   /* Context meter. The host paints the ring's consumed arc with the same
      tertiary label grey as the percentage beside it, so the reading carries no
@@ -705,6 +707,8 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-inline-code-text: #f0918a;
   --ccd-inline-code-fill: #35332f;
   --ccd-inline-code-border: #454239;
+  --ccd-command-name: #7db3ff;
+  --ccd-command-argument: #8ccf91;
 
   /* Context meter ring, dark side: the same hue as the light accent, one step
      up in lightness (55% → 68%) and saturation so the arc keeps its blue on

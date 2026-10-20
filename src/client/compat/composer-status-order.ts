@@ -8,11 +8,12 @@ import { hostSelectors } from './host-dom.ts';
 /** One percentage reading, with the spacing the host copy puts around it. */
 const PERCENT_READING = /\s*\d+(?:[.,]\d+)?\s*%/u;
 
-/** Name context rings without changing their host-owned behavior. */
+/** Name context rings and suppress the host's portaled dictation hint. */
 export function mountComposerStatusOrder(document: Document, report: (error: unknown) => void): Disposer {
   const host = hostSelectors(document);
   /** The host's own accessible name per ring trigger. */
   const labels = new WeakMap<Element, string>();
+  const tooltips = new Set<Element>();
   let scheduled = false;
 
   const nameRings = (): void => {
@@ -37,6 +38,17 @@ export function mountComposerStatusOrder(document: Document, report: (error: unk
 
   const sync = (): void => {
     nameRings();
+    // The host portals this bubble to body without an owner id. Match its
+    // localized label while the voice trigger exists, independent of hover so
+    // withdrawing the pointer cannot reveal the bubble during its exit.
+    for (const tooltip of tooltips) if (!tooltip.isConnected) tooltips.delete(tooltip);
+    if (!document.querySelector('[data-slot="conversation.input.activity"] button')) return;
+    for (const tooltip of document.querySelectorAll('[role="tooltip"][data-portal]')) {
+      const label = tooltip.textContent?.trim();
+      if (label !== '听写' && label !== 'Dictate') continue;
+      tooltip.setAttribute('data-ccd-dictation-tooltip', '');
+      tooltips.add(tooltip);
+    }
   };
 
   /* Straight from the observer, like `compat/stats-values.ts`: an occluded window
@@ -67,5 +79,7 @@ export function mountComposerStatusOrder(document: Document, report: (error: unk
   return () => {
     observer?.disconnect();
     restoreLabels();
+    for (const tooltip of tooltips) tooltip.removeAttribute('data-ccd-dictation-tooltip');
+    tooltips.clear();
   };
 }

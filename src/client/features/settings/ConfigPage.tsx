@@ -59,13 +59,14 @@ const THEME_KEYS: Record<ThemePreference, SettingsKey> = {
   dark: 'theme.dark',
 };
 
-/** Switches the page offers, in row order; `tool-calls` is not one of them. */
+/** Switches the page offers, in row order. */
 const OFFERED_FEATURES: readonly FeatureId[] = [
   'shell',
   'sidebar',
   'new-session',
   'hero-ripples',
   'conversation',
+  'tool-calls',
   'composer-pet',
   'statistics',
   'composer-stats',
@@ -259,6 +260,14 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
           value={served.personalization.petStyle}
           options={[{ value: 'whale', label: translate('pet.whale') }, { value: 'claude', label: translate('pet.claude') }]}
           onChange={value => void write([setOperation(['personalization', 'petStyle'], value)])} />
+        <ChoiceRow id="ccd-settings-running-style" label={translate('field.runningStyle')}
+          value={served.personalization.runningStyle}
+          options={[{ value: 'whale', label: translate('running.whale') }, { value: 'claude', label: translate('running.claude') }]}
+          onChange={value => void write([setOperation(['personalization', 'runningStyle'], value)])} />
+        <ChoiceRow id="ccd-settings-reply-signature-style" label={translate('field.replySignatureStyle')}
+          value={served.personalization.replySignatureStyle}
+          options={[{ value: 'whale', label: translate('signature.whale') }, { value: 'claude', label: translate('signature.claude') }]}
+          onChange={value => void write([setOperation(['personalization', 'replySignatureStyle'], value)])} />
         <ChoiceRow id="ccd-settings-greeting-style" label={translate('field.greetingStyle')}
           value={served.personalization.greetingStyle}
           options={[{ value: 'explore', label: translate('greeting.explore') }, { value: 'claude', label: translate('greeting.claude') }]}

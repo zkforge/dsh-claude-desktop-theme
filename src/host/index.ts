@@ -64,6 +64,10 @@ export const Config = z.object({
   personalization: z.object({
     petStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.petStyle)
       .description('输入框宠物样式'),
+    runningStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.runningStyle)
+      .description('聊天输出中的等待图标与状态样式'),
+    replySignatureStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.replySignatureStyle)
+      .description('回复结束后的签名图标样式'),
     greetingStyle: z.union(['explore', 'claude']).default(DEFAULT_PERSONALIZATION.greetingStyle)
       .description('首页问候语与图标样式'),
     greetingName: z.string().default('').pattern(/^.{0,64}$/u).description('问候语中的称呼（可留空）'),

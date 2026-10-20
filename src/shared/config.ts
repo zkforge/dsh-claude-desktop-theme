@@ -33,11 +33,13 @@ export type ViewConfig = Readonly<Record<ViewField, boolean>>;
 
 export interface PersonalizationConfig {
   readonly petStyle: 'whale' | 'claude';
+  readonly runningStyle: 'whale' | 'claude';
+  readonly replySignatureStyle: 'whale' | 'claude';
   readonly greetingStyle: 'explore' | 'claude';
   readonly greetingName: string;
 }
 export const DEFAULT_PERSONALIZATION: PersonalizationConfig = Object.freeze({
-  petStyle: 'whale', greetingStyle: 'explore', greetingName: '',
+  petStyle: 'whale', runningStyle: 'whale', replySignatureStyle: 'whale', greetingStyle: 'explore', greetingName: '',
 });
 
 export function normalizeGreetingName(value: unknown): string {
@@ -46,14 +48,20 @@ export function normalizeGreetingName(value: unknown): string {
 
 function personalization(input: Partial<Record<keyof PersonalizationConfig, unknown>> = {}, strict = false): PersonalizationConfig {
   const petStyle = input.petStyle ?? DEFAULT_PERSONALIZATION.petStyle;
+  const runningStyle = input.runningStyle ?? DEFAULT_PERSONALIZATION.runningStyle;
+  const replySignatureStyle = input.replySignatureStyle ?? DEFAULT_PERSONALIZATION.replySignatureStyle;
   const greetingStyle = input.greetingStyle ?? DEFAULT_PERSONALIZATION.greetingStyle;
   if (strict && petStyle !== 'whale' && petStyle !== 'claude') throw new TypeError('personalization.petStyle is invalid');
+  if (strict && runningStyle !== 'whale' && runningStyle !== 'claude') throw new TypeError('personalization.runningStyle is invalid');
+  if (strict && replySignatureStyle !== 'whale' && replySignatureStyle !== 'claude') throw new TypeError('personalization.replySignatureStyle is invalid');
   if (strict && greetingStyle !== 'explore' && greetingStyle !== 'claude') throw new TypeError('personalization.greetingStyle is invalid');
   if (strict && input.greetingName !== undefined && typeof input.greetingName !== 'string') {
     throw new TypeError('personalization.greetingName must be a string');
   }
   return Object.freeze({
     petStyle: petStyle === 'claude' ? 'claude' : 'whale',
+    runningStyle: runningStyle === 'claude' ? 'claude' : 'whale',
+    replySignatureStyle: replySignatureStyle === 'claude' ? 'claude' : 'whale',
     greetingStyle: greetingStyle === 'claude' ? 'claude' : 'explore',
     greetingName: normalizeGreetingName(input.greetingName),
   });
@@ -84,7 +92,7 @@ export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
   sidebar: true,
   'new-session': true,
   conversation: true,
-  'tool-calls': false,
+  'tool-calls': true,
   statistics: false,
   'composer-pet': true,
   'composer-stats': false,
