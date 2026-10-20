@@ -202,6 +202,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-dialog-danger-hover: #e94343;
   --ccd-dialog-danger-ring: #ff5757;
   --ccd-dialog-danger-glow: 0 1px 6px rgba(255, 87, 87, .2);
+  /* Focus-only ring for neutral dialog buttons; the red action uses the danger ring. */
+  --ccd-dialog-focus-ring: var(--ccd-accent);
   /* Segmented-control track. The reference measures #f6f6f4 against a white
      page; the same step down from this canvas keeps the same contrast. */
   --ccd-track: #f3f3f2;
@@ -589,6 +591,8 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-dialog-danger-hover: #e94343;
   --ccd-dialog-danger-ring: #ff5757;
   --ccd-dialog-danger-glow: 0 1px 6px rgba(255, 87, 87, .2);
+  /* Focus-only ring for neutral dialog buttons; the red action uses the danger ring. */
+  --ccd-dialog-focus-ring: var(--ccd-accent);
   --ccd-header-menu-border: var(--ccd-border);
   --ccd-header-menu-separator: var(--ccd-border-soft);
   --ccd-header-menu-danger: #f08080;

@@ -62,6 +62,8 @@ export interface PaneChromeLabels {
 
 /** The capture menu's one row, and the webview area's two states. */
 export interface BrowserPaneLabels {
+  readonly newTab: string;
+  readonly tabs: string;
   readonly saveScreenshot: string;
   readonly awaitingServer: string;
   readonly enterAddress: string;
@@ -107,9 +109,11 @@ const ZH: PaneLabels = {
     close: '关闭',
   },
   browser: {
+    newTab: '新建标签页',
+    tabs: '浏览器标签页',
     saveScreenshot: '保存截图',
     awaitingServer: '等待服务器响应…',
-    enterAddress: '输入服务地址',
+    enterAddress: '输入 URL',
   },
 };
 
@@ -146,9 +150,11 @@ const EN: PaneLabels = {
     close: 'Close',
   },
   browser: {
+    newTab: 'New tab',
+    tabs: 'Browser tabs',
     saveScreenshot: 'Save screenshot',
     awaitingServer: 'Awaiting server…',
-    enterAddress: 'Enter server address',
+    enterAddress: 'Enter URL',
   },
 };
 

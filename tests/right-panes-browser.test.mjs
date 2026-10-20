@@ -74,7 +74,7 @@ const sidebar={close:id=>window.closeTab(id),openTabs:{getSnapshot:()=>window.ta
   node.prepend(header);node.querySelector('[data-dockkit-float-close]').onclick=()=>window.closeTab(id);
   window.notify();
  },dock:id=>window.calls.dock.push(id),focus:id=>{window.focused=id;document.querySelectorAll('[data-dockkit-float-active]').forEach(node=>node.removeAttribute('data-dockkit-float-active'));document.querySelector('[data-dockkit-content="'+id+'"]')?.setAttribute('data-dockkit-float-active','')},
- openTab:kind=>{window.calls.open.push(kind);window.add(kind==='files'?'auto-files':'auto-terminal-'+window.calls.open.length,kind)},
+ openTab:kind=>{window.calls.open.push(kind);window.add(kind==='files'?'auto-files':'auto-'+kind+'-'+window.calls.open.length,kind)},
  toggleExpanded:()=>{window.calls.toggle++;const node=document.querySelector('[data-sidebar-right-session="'+window.session()+'"] .panel');node.toggleAttribute('data-sidebar-right-open')}
 };
 document.addEventListener('click',event=>{if(event.target.closest('[data-sidebar-right-toggle]'))sidebar.toggleExpanded()});
@@ -295,14 +295,14 @@ test('reference chrome preserves button order and native browser navigation; una
   const readOrder=kind=>page.evaluate(`[...document.querySelector('[data-ccd-pane-kind="${kind}"] [data-ccd-pane-controls]').children].map(node=>[...node.attributes].find(a=>a.name.startsWith('data-ccd-'))?.name)`);
   assert.deepEqual(await readOrder('terminal'),['data-ccd-pane-more','data-ccd-pane-zoom']);
   assert.deepEqual(await readOrder('files'),['data-ccd-pane-search','data-ccd-pane-more','data-ccd-pane-zoom']);
-  assert.deepEqual(await readOrder('browser'),['data-ccd-browser-back','data-ccd-browser-forward','data-ccd-browser-pick','data-ccd-browser-reload','data-ccd-pane-more','data-ccd-pane-zoom']);
+  assert.deepEqual(await readOrder('browser'),['data-ccd-pane-more','data-ccd-pane-zoom']);
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-pane-zoom]')).borderTopWidth"),'0px');
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-pane-zoom] svg')).width"),'16px');
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-browser-toolbar]')).display"),'flex','address form is visible in the header');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'等待服务器响应…');
   await page.evaluate("const original=document.querySelector('[data-ccd-browser-toolbar]>button');original.disabled=false;original.onclick=()=>window.backSeen=true");await wait(page);
   await click(page,'[data-ccd-browser-back]');assert.equal(await page.evaluate('window.backSeen'),true);
-  await click(page,'[data-ccd-browser-address]');await wait(page);
+  await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').focus()");await wait(page);
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-dockkit-tab-title]').textContent='renamed'");await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),'终端 renamed','native rename is reflected by the reference caption');
@@ -370,14 +370,36 @@ test('plain titles, Files header tree switch, full conversation expansion and te
 }));
 
 
-test('browser globe edits the address without a dropdown; capture delegates to the guest and stops after removal',options,async()=>withFixture(async page=>{
+test('browser tabs share a card and preserve per-page state through select, add, close and cleanup',options,async()=>withFixture(async page=>{
+  await page.evaluate("window.add('b1','browser');window.add('b2','browser')");await wait(page);
+  assert.deepEqual(Object.keys(await boxes(page)),['b2']);
+  const active = '[data-ccd-pane-kind="browser"]:not([data-ccd-pane-inactive])';
+  assert.equal(await page.evaluate(`document.querySelectorAll('${active} [role="tab"]').length`),2);
+  await page.evaluate("document.querySelector('[data-dockkit-content=b1] input').value='https://one.example';document.querySelector('[data-dockkit-content=b2] input').value='https://two.example'");
+  await click(page,`${active} [role="tab"]`);await wait(page);
+  assert.deepEqual(Object.keys(await boxes(page)),['b1']);
+  assert.equal(await page.evaluate(`document.querySelector('${active} input').value`),'https://one.example');
+  await page.evaluate(`document.querySelector('${active} [role="tab"]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))`);await wait(page);
+  assert.deepEqual(Object.keys(await boxes(page)),['b2']);
+  assert.equal(await page.evaluate(`document.querySelector('${active} input').value`),'https://two.example');
+  await click(page,`${active} [data-ccd-browser-tab][data-selected] [data-ccd-browser-close]`);await wait(page);
+  assert.deepEqual(Object.keys(await boxes(page)),['b1']);
+  await click(page,`${active} [data-ccd-browser-add]`);await wait(page);
+  assert.deepEqual(await page.evaluate('window.calls.open'),['browser']);
+  assert.equal(Object.keys(await boxes(page)).length,1);
+  assert.equal(await page.evaluate(`document.querySelectorAll('${active} [role="tab"]').length`),2);
+  await click(page,`${active} [data-dockkit-float-close]`);await wait(page);
+  assert.deepEqual(await page.evaluate('window.tabs'),[],'card close removes every browser tab');
+}));
+
+test('browser address occupies the second row; capture delegates to the guest and stops after removal',options,async()=>withFixture(async page=>{
   await page.evaluate("window.add('browser','browser')");await wait(page);
   await click(page,'[data-ccd-pane-zoom]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').getAttribute('data-ccd-browser-wait')"),'idle');
   assert.equal(await page.evaluate("getComputedStyle(document.querySelector('[data-ccd-browser-wait-mark]')).display"),'none','idle browser is the reference blank canvas');
-  const field=await page.evaluate("(()=>{const button=document.querySelector('[data-ccd-browser-address]'),b=button.getBoundingClientRect(),icons=[...button.querySelectorAll('svg')].map(n=>n.getBoundingClientRect()),f=document.querySelector('[data-ccd-browser-toolbar]'),r=f.getBoundingClientRect(),s=document.querySelector('[data-ccd-browser-address-slot]').getBoundingClientRect();return {iconCenter:icons[0].left+icons[0].width/2,buttonCenter:b.left+b.width/2,iconY:icons[0].top+icons[0].height/2,buttonY:b.top+b.height/2,fieldY:r.top+r.height/2,left:r.left,buttonRight:b.right,width:r.width,slotWidth:s.width,parent:f.parentElement.className,popover:f.hasAttribute('popover')}})()");
-  assert.equal(field.iconCenter,field.buttonCenter,'globe is centred in its button');
-  assert.equal(field.iconY,field.buttonY);assert.equal(field.fieldY,field.buttonY);
+  const field=await page.evaluate("(()=>{const button=document.querySelector('[data-ccd-browser-reload]'),b=button.getBoundingClientRect(),f=document.querySelector('[data-ccd-browser-toolbar]'),r=f.getBoundingClientRect(),s=document.querySelector('[data-ccd-browser-address-slot]').getBoundingClientRect(),t=document.querySelector('[data-ccd-browser-tabs]').getBoundingClientRect();return {fieldY:r.top+r.height/2,buttonY:b.top+b.height/2,left:r.left,buttonRight:b.right,width:r.width,slotWidth:s.width,tabBottom:t.bottom,top:r.top,parent:f.parentElement.className,popover:f.hasAttribute('popover')}})()");
+  assert.equal(field.fieldY,field.buttonY);
+  assert.ok(field.top>field.tabBottom,'address field is below the tabs');
   assert.equal(field.left,field.buttonRight+4);assert.equal(field.width,field.slotWidth);assert.ok(field.width>200);
   assert.equal(field.parent,'browserRoot','the controlled form retains its native React parent');assert.equal(field.popover,false);
   await page.evaluate("document.querySelector('[data-ccd-browser-toolbar]').onsubmit=event=>{event.preventDefault();window.submittedAddress=event.currentTarget.querySelector('input').value}");
@@ -388,10 +410,9 @@ test('browser globe edits the address without a dropdown; capture delegates to t
   await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',unmodifiedText:'\r',windowsVirtualKeyCode:13});
   await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await wait(page);
   assert.equal(await page.evaluate('window.submittedAddress'),'http://localhost:3000','direct entry keeps native Enter submission');
-  await click(page,'[data-ccd-browser-address]');await wait(page);
+  await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').focus()");await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]')"),null,'globe does not open a menu');
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-address]').hasAttribute('aria-haspopup')"),false);
-  assert.equal(await page.evaluate("document.querySelectorAll('[data-ccd-browser-address] svg').length"),1,'dropdown caret is removed');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-address]')"),null,'server/globe button is omitted');
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await click(page,'[data-ccd-pane-more]');await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').textContent"),'保存截图');
@@ -399,7 +420,7 @@ test('browser globe edits the address without a dropdown; capture delegates to t
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-menu]').getBoundingClientRect().width"),130);
   const shot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-browser-capture-menu.png',Buffer.from(shot.data,'base64'));
   await page.evaluate("document.querySelector('[data-ccd-browser-menu]').hidePopover()");await wait(page);
-  await page.evaluate("document.querySelector('[data-ccd-browser-address]').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))");await wait(page);
+  await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').focus()");await wait(page);
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true,'native address editing remains reachable');
   await page.evaluate("window.captureCount=0;window.downloads=[];const view=document.createElement('webview');view.getURL=()=> 'http://localhost:3000';view.isLoading=()=>false;view.capturePage=()=>{window.captureCount++;return new Promise(resolve=>window.finishCapture=()=>resolve({isEmpty:()=>false,toDataURL:()=> 'data:image/png;base64,iVBORw0KGgo='}))};document.querySelector('[aria-busy]').append(view);document.addEventListener('click',event=>{const a=event.target.closest('a[download]');if(a){event.preventDefault();window.downloads.push({name:a.download,url:a.href})}})");await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]')"),null);
@@ -427,7 +448,7 @@ test('the whole right panel writes its own words in the document’s language',o
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-search]').getAttribute('aria-label')"),'搜索文件');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'过滤文件，或按 ? 在文件内容中搜索');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'等待服务器响应…');
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').placeholder"),'输入服务地址');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').placeholder"),'输入 URL');
   await click(page,'[data-dockkit-content=f] [data-ccd-pane-more]');await wait(page);
   const rows=await page.evaluate("[...document.querySelectorAll('[data-ccd-pane-menu] button')].map(node=>node.textContent)");
   assert.deepEqual(rows,['收起文件树','刷新文件','Open folder in app','放大面板','收起侧边栏','关闭']);

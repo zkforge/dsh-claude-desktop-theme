@@ -14,8 +14,9 @@ export interface HeaderActionProps {
  * One view button for the conversation header.
  *
  * All three sit in the utilities group beside the native actions, in terminal,
- * browser, project folder order; the corner seat past them holds nothing (the panel's shipped
- * expand control is retired there and its action moves into the Session menu).
+ * browser, project folder order. Blank Sessions use the corner seat instead,
+ * because the host omits their utilities group. The panel's shipped expand
+ * control is retired and its action moves into the Session menu.
  * All three are the same control: the box size, hover surface and spacing
  * belong to the seat's own stylesheet
  * (`features/conversation/conversation.css`) so every control in the row shares

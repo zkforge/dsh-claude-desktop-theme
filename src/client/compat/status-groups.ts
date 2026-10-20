@@ -19,6 +19,16 @@ export function sessionGroup(status: SessionStatus | undefined, running: boolean
   return (status?.running ?? running) ? 'working' : 'ended';
 }
 const GROUPS = ['input', 'working', 'ended'] as const;
+const COLLAPSED_KEY = 'ccd-status-collapsed';
+
+/** Collapsed sections are a per-window view preference; storage may be absent. */
+function readCollapsed(storage: Storage | undefined): Set<SessionGroup> {
+  try {
+    const value: unknown = JSON.parse(storage?.getItem(COLLAPSED_KEY) ?? '[]');
+    return new Set(Array.isArray(value)
+      ? GROUPS.filter(group => value.includes(group)) : []);
+  } catch { return new Set(); }
+}
 
 /**
  * Present the host's flat rows in status sections. React-owned rows never leave
@@ -38,6 +48,8 @@ export function mountStatusGroups(document: Document, ctx: Context,
   const saved = new Map<HTMLElement, Map<string, string | null>>();
   const animations = new Map<HTMLElement, Animation>();
   const orders = new Map<HTMLElement, { value: string; priority: string }>();
+  const storage = (() => { try { return win.localStorage; } catch { return undefined; } })();
+  const collapsed = readCollapsed(storage);
   let list: HTMLElement | null = null;
   let queued = false;
   let disposed = false;
@@ -177,7 +189,8 @@ export function mountStatusGroups(document: Document, ctx: Context,
         if (row.dataset.ccdStatusOrder !== String(order)
           || row.dataset.ccdStatusGroup !== group
           || row.style.getPropertyValue('--ccd-status-order') !== String(order)
-          || row.getAttribute('tabindex') !== '0') { changed = true; break; }
+          || row.getAttribute('tabindex') !== '0'
+          || row.hasAttribute('data-ccd-status-hidden') !== collapsed.has(group)) { changed = true; break; }
         for (let parent = row.parentElement; parent && parent !== list; parent = parent.parentElement) {
           if (!parent.hasAttribute('data-ccd-status-wrapper')) { changed = true; break; }
         }
@@ -191,7 +204,8 @@ export function mountStatusGroups(document: Document, ctx: Context,
       if (!changed) {
         for (const [index, group] of GROUPS.entries()) {
           const heading = boxes.get(group);
-          if (heading === undefined || heading.textContent !== labels[index]) { changed = true; break; }
+          if (heading === undefined || heading.textContent !== labels[index]
+            || heading.getAttribute('aria-expanded') !== String(!collapsed.has(group))) { changed = true; break; }
         }
       }
       if (!changed) {
@@ -224,6 +238,8 @@ export function mountStatusGroups(document: Document, ctx: Context,
           row.style.setProperty('--ccd-status-order', String(order));
         }
         remember(row, 'tabindex', '0');
+        if (row.hasAttribute('data-ccd-status-hidden') !== collapsed.has(group)) layoutChanged = true;
+        remember(row, 'data-ccd-status-hidden', collapsed.has(group) ? '' : null);
         ordered.push(row);
         const childKey = `children:${id}`;
         let childBox = boxes.get(childKey);
@@ -237,6 +253,9 @@ export function mountStatusGroups(document: Document, ctx: Context,
             owned.add(childBox); list.append(childBox);
           }
           if (childBox.style.order !== String(order + 1)) childBox.style.order = String(order + 1);
+          if (childBox.hasAttribute('hidden') !== collapsed.has(group)) {
+            if (collapsed.has(group)) childBox.setAttribute('hidden', ''); else childBox.removeAttribute('hidden');
+          }
           const childLabel = zh ? '子任务' : 'Subagents';
           if (childBox.getAttribute('aria-label') !== childLabel) childBox.setAttribute('aria-label', childLabel);
           const signature = signatures.get(childKey)!;
@@ -257,13 +276,15 @@ export function mountStatusGroups(document: Document, ctx: Context,
         let heading = boxes.get(group);
         if (!heading) {
           layoutChanged = true;
-          heading = document.createElement('div');
+          heading = document.createElement('button');
           heading.className = 'ccd-status-heading'; heading.dataset.ccdStatusOwned = group;
-          heading.setAttribute('role', 'presentation');
+          heading.setAttribute('type', 'button');
           owned.add(heading); list.append(heading);
         }
         if (heading.style.order !== String(index * stride)) heading.style.order = String(index * stride);
         if (heading.textContent !== labels[index]) heading.textContent = labels[index]!;
+        const expanded = String(!collapsed.has(group));
+        if (heading.getAttribute('aria-expanded') !== expanded) heading.setAttribute('aria-expanded', expanded);
       }
       const liveIds = new Set(rows.map(row => `children:${row.dataset.rowKey!.slice(8)}`));
       for (const node of owned) if (node.dataset.ccdStatusOwned?.startsWith('children:')
@@ -294,6 +315,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
     const target = event.target as HTMLElement;
     if (!list?.contains(target) || !target.matches('[data-ccd-status-order]')) return;
     const rows = [...list.querySelectorAll<HTMLElement>('[data-ccd-status-order]')]
+      .filter(row => !row.hasAttribute('data-ccd-status-hidden'))
       .sort((a, b) => Number(a.dataset.ccdStatusOrder) - Number(b.dataset.ccdStatusOrder));
     const index = rows.indexOf(target);
     let next: HTMLElement | undefined;
@@ -303,6 +325,16 @@ export function mountStatusGroups(document: Document, ctx: Context,
     if (event.key === 'End') next = rows.at(-1);
     if (next) { event.preventDefault(); next.focus(); }
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); target.click(); }
+  };
+  // Headings are plugin-owned buttons; one delegated listener survives their
+  // re-creation and leaves nothing on the nodes when the view is restored.
+  const toggle = (event: MouseEvent) => {
+    const heading = (event.target as Element | null)?.closest?.<HTMLElement>('.ccd-status-heading');
+    const group = heading?.dataset.ccdStatusOwned as SessionGroup | undefined;
+    if (!heading || !owned.has(heading) || !group || !GROUPS.includes(group)) return;
+    if (!collapsed.delete(group)) collapsed.add(group);
+    try { storage?.setItem(COLLAPSED_KEY, JSON.stringify([...collapsed])); } catch { /* view-only */ }
+    schedule();
   };
   // Manual native DnD rewrites the saved account order, which is not the order
   // shown in this view. Keep that gesture for the project's original views.
@@ -314,6 +346,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
      what invalidates it. */
   const offList = ctx.sessions.list.subscribe(() => { childrenDirty = true; schedule(); });
   document.addEventListener('keydown', keydown);
+  document.addEventListener('click', toggle);
   document.addEventListener('dragstart', drag, true);
   document.addEventListener('visibilitychange', stopAnimations);
   motion.addEventListener?.('change', stopAnimations);
@@ -321,6 +354,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
   return () => {
     disposed = true; observer.disconnect(); offList(); offStatus?.();
     document.removeEventListener('keydown', keydown);
+    document.removeEventListener('click', toggle);
     document.removeEventListener('dragstart', drag, true);
     document.removeEventListener('visibilitychange', stopAnimations);
     motion.removeEventListener?.('change', stopAnimations);

@@ -71,19 +71,23 @@ html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71 {
   color: var(--ccd-menu-danger-ink);
 }
 
-/* The reference keeps a thin red ring outside a white gap in both states. */
-html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71:not(:disabled) {
-  box-shadow: 0 0 0 2px var(--ccd-card), 0 0 0 3px var(--ccd-dialog-danger-ring), var(--ccd-dialog-danger-glow);
-}
-
 html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71:hover:not(:disabled) {
   border-color: var(--ccd-dialog-danger-hover);
   background: var(--ccd-dialog-danger-hover);
 }
 
+/* The thin ring outside a card-coloured gap is a keyboard focus indicator for
+ * every footer button, not a resting style: the red action takes a red ring,
+ * the rest the neutral one. */
+html[data-dsh-ccd-style="true"] ._footer_o6lrb_123 button:focus-visible,
+html[data-dsh-ccd-style="true"] ._modalAction_cjd8z_67:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ccd-card), 0 0 0 3px var(--ccd-dialog-focus-ring);
+}
+
+html[data-dsh-ccd-style="true"] ._footer_o6lrb_123 ._confirmAction_cjd8z_71:focus-visible,
 html[data-dsh-ccd-style="true"] ._confirmAction_cjd8z_71:focus-visible {
-  outline: 1px solid var(--ccd-dialog-danger-ring);
-  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--ccd-card), 0 0 0 3px var(--ccd-dialog-danger-ring), var(--ccd-dialog-danger-glow);
 }
 
 /* Set only after the native checkbox handler has enabled the final action. */

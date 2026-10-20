@@ -173,6 +173,8 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
     if (anchor !== null) {
       const anchorRect = anchor.getBoundingClientRect();
       for (const menu of document.querySelectorAll<HTMLElement>(host.menu)) {
+        // A side card the plugin nests in a card places itself beside that card.
+        if (menu.parentElement?.closest(host.menu) != null) continue;
         if (getComputedStyle(menu).position !== 'fixed') continue;
         visited.add(menu);
         place(menu, anchorRect, window.innerHeight);

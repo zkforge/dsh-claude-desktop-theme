@@ -16,6 +16,7 @@ import { mountVoiceWaveform } from './compat/voice-waveform.ts';
 import { mountPermissionConfirmation } from './compat/permission-confirmation.ts';
 import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
+import { workspacePickerPort } from './compat/workspace-picker-port.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountFilesPane } from './compat/files-pane.ts';
 import { mountRightPanes } from './compat/right-panes.ts';
@@ -160,10 +161,12 @@ export function apply(ctx: Context): void {
           error => logger.error('composer: agent preset card observer failed', error),
         ));
         /* The workspace picker's labels come from the host's own locale namespace,
-           so the typed ellipsis is rewritten in the rendered text nodes instead. */
+           so the add row is rewritten in the rendered text nodes; the search line
+           and the branch row are the plugin's own nodes in that card. */
         scope.add(mountWorkspaceMenu(
           document,
-          error => logger.error('workspace menu: label rewrite failed', error),
+          workspacePickerPort(ctx),
+          error => logger.error('workspace menu: picker extension failed', error),
         ));
         /* The window's scrollbars span every feature the plugin draws — the
            sidebar's tree, the Files pane, the agent-team panel and the

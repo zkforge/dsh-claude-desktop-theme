@@ -268,7 +268,8 @@ html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal
 }
 
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] > div:first-child > div:first-child > div > span[data-state] {
-  position: static;
+  /* Stay positioned: the dot paints through an absolute ::after (inset: 20%). */
+  position: relative;
   align-self: center;
   transform: none;
 }

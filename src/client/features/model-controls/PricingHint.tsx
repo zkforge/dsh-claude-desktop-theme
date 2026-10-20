@@ -32,15 +32,17 @@ const snapshot = () => now;
 const noopSubscribe = () => () => {};
 function chinese() { return (document.documentElement.lang || navigator.language).toLowerCase().startsWith('zh'); }
 
-/** Static trend glyphs distinguish peak and off-peak by shape as well as colour. */
-export function PriceMark({ provider, model, compact = false }: { provider: string | undefined; model: string | undefined; compact?: boolean }) {
+/** Menu badges spell out the period; the Composer keeps its compact trend glyph. */
+export function PriceMark({ provider, model, compact = false, badge = false }: { provider: string | undefined; model: string | undefined; compact?: boolean; badge?: boolean }) {
   const price = officialPrice(provider, model);
   const time = useSyncExternalStore(price ? subscribe : noopSubscribe, snapshot);
   const period = price && pricingPeriod(time);
   if (!period) return null;
   const label = chinese() ? period.peak ? '峰时' : '谷时' : period.peak ? 'Peak' : 'Off-peak';
-  return <span className={`ccd-price-mark${compact ? ' ccd-price-trend' : ''}`} data-peak={period.peak} aria-label={label}>
-    {compact ? <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  return <span className={`ccd-price-mark${badge ? ' ccd-price-badge' : compact ? ' ccd-price-trend' : ''}`} data-peak={period.peak} aria-label={label}>
+    {badge ? <><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.25" /><path d="M7 7h1v4h1" /><circle cx="8" cy="4.75" r=".75" fill="currentColor" stroke="none" />
+    </svg>{label}</> : compact ? <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <g transform={period.peak ? 'translate(0 12) scale(1 -1)' : undefined}>
         <path d="M1.5 2.5 5.5 6.5 9 3.5 14.5 9.5 M10.5 9.5H14.5V5.5" />
       </g>

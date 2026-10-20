@@ -273,7 +273,7 @@ test('the separate browsing toolbar and compact project actions support both bui
             assert.equal(field.optionsVisibility, 'visible', 'view options remain available while searching');
           }
           if (name === 'flatList' || name === 'noHistory') {
-            assert.equal(await devtools.evaluate(aliasHostClasses(`document.querySelector('._7514NG_sectionLabel').textContent`, hostBuild)), '最近会话');
+            assert.equal(await devtools.evaluate(aliasHostClasses(`getComputedStyle(document.querySelector('._7514NG_sectionLabel')).display`, hostBuild)), 'none');
           }
           const addDisplay = await devtools.evaluate(`getComputedStyle(document.querySelector('#add-workspace')).display`);
           if (name === 'rail') assert.notEqual(addDisplay, 'none');

@@ -30,6 +30,7 @@ const COMPACT = 'data-ccd-files-compact';
 const TREE_WIDTH = '--ccd-files-tree-width';
 const FILE_GROUP = 'files';
 const TERMINAL_GROUP = 'terminals';
+const BROWSER_GROUP = 'browsers';
 const EXPANDED = 'data-ccd-pane-expanded';
 const CLOSING = 'data-ccd-panes-closing';
 
@@ -37,6 +38,8 @@ interface SessionState {
   layout: PaneLayout;
   preview: string | null;
   terminal: string | null;
+  browser: string | null;
+  browsers: Set<string>;
   terminals: Set<string>;
   previews: Set<string>;
   fileShare: number;
@@ -55,6 +58,7 @@ interface Group {
   readonly tree?: string;
   readonly preview?: string;
   readonly terminal?: string;
+  readonly browser?: string;
 }
 interface Boundary {
   readonly key: string;
@@ -110,7 +114,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
   const stateOf = (session: string): SessionState => {
     let state = sessions.get(session);
     if (state === undefined) {
-      state = { layout: EMPTY_LAYOUT, preview: null, terminal: null, terminals: new Set(), previews: new Set(), fileShare: 0.4, maximized: null, requestedFiles: false, hadViews: false, active: null, seeded: false, records: -1 };
+      state = { layout: EMPTY_LAYOUT, preview: null, terminal: null, browser: null, browsers: new Set(), terminals: new Set(), previews: new Set(), fileShare: 0.4, maximized: null, requestedFiles: false, hadViews: false, active: null, seeded: false, records: -1 };
       sessions.set(session, state);
     }
     return state;
@@ -182,13 +186,22 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     else if (active !== null && active !== state.active && terminalIds.includes(active)) state.terminal = active;
     if (state.terminal === null || !terminalIds.includes(state.terminal)) state.terminal = terminalIds.at(-1) ?? null;
     state.terminals = new Set(terminalIds);
+    const browserIds = records.filter(record => record.kind === 'browser').map(record => record.tabId);
+    const addedBrowser = browserIds.filter(id => !state.browsers.has(id)).at(-1);
+    if (addedBrowser !== undefined) state.browser = addedBrowser;
+    else if (active !== null && active !== state.active && browserIds.includes(active)) state.browser = active;
+    if (state.browser === null || !browserIds.includes(state.browser)) state.browser = browserIds.at(-1) ?? null;
+    state.browsers = new Set(browserIds);
     const groups: Group[] = [];
+    let browsersAdded = false;
     let terminalsAdded = false;
     let filesAdded = false;
     for (const record of records) {
       if (record.kind === 'guide') continue;
       if (record.kind === 'terminal') {
         if (!terminalsAdded) { groups.push({ id: TERMINAL_GROUP, tabs: terminalIds, ...(state.terminal === null ? {} : { terminal: state.terminal }) }); terminalsAdded = true; }
+      } else if (record.kind === 'browser') {
+        if (!browsersAdded) { groups.push({ id: BROWSER_GROUP, tabs: browserIds, ...(state.browser === null ? {} : { browser: state.browser }) }); browsersAdded = true; }
       } else if (tree !== undefined && (record.tabId === tree.tabId || isFile(record))) {
         if (!filesAdded) {
           groups.push({ id: FILE_GROUP, tabs: [tree.tabId, ...previews], tree: tree.tabId,
@@ -267,10 +280,13 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       panel: root.closest<HTMLElement>(host.rightbarPanel)!,
       onZoom: () => {
         state.maximized = state.maximized === group.id ? null : group.id;
-        sidebar.focus(group.terminal ?? group.preview ?? group.tree ?? group.tabs[0]!);
+        sidebar.focus(group.browser ?? group.terminal ?? group.preview ?? group.tree ?? group.tabs[0]!);
         endDrag(); schedule();
       },
-      onNew: () => sidebar.openTab('terminal'),
+      onNew: () => {
+        if (kind === 'browser') sidebar.openTab('browser', { revealIfOpened: false });
+        else sidebar.openTab('terminal');
+      },
       closeTabs: group.tabs,
       ...(sidebar.close ? { onCloseGroup: () => {
         // Use host ids rather than DOM close buttons: React can commit the
@@ -279,8 +295,13 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         for (const id of group.tabs) sidebar.close!(id);
         schedule();
       } } : {}),
-      onSelect: id => { if (group.id === TERMINAL_GROUP) state.terminal = id; else state.preview = id; sidebar.focus(id); schedule(); },
+      onSelect: id => { if (group.id === TERMINAL_GROUP) state.terminal = id; else if (group.id === BROWSER_GROUP) state.browser = id; else state.preview = id; sidebar.focus(id); schedule(); },
       onClose: id => {
+        if (state.browser === id) {
+          const index = group.tabs.indexOf(id);
+          state.browser = group.tabs[index + 1] ?? group.tabs[index - 1] ?? null;
+          if (state.browser !== null) sidebar.focus(state.browser);
+        }
         if (state.preview === id) {
           const files = group.tabs.filter(tab => records.some(record => record.tabId === tab && isFile(record)));
           const index = files.indexOf(id);
@@ -293,6 +314,11 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         const close = root.querySelector<HTMLButtonElement>(`[data-dockkit-content="${id}"] [data-dockkit-float-close]`);
         if (close) { close.setAttribute('data-ccd-close-tab', ''); close.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); close.removeAttribute('data-ccd-close-tab'); }
       },
+      browsers: group.id === BROWSER_GROUP ? group.tabs.map(id => {
+        const pane = root.querySelector<HTMLElement>(`[data-dockkit-content="${id}"]`);
+        const title = pane?.querySelector('[data-dockkit-tab-title]')?.textContent?.trim();
+        return { id, title: title && !/^(?:browser|浏览器)$/iu.test(title) && title !== id ? title : labels.browser.newTab, selected: id === group.browser };
+      }) : [],
       terminals: group.id === TERMINAL_GROUP ? group.tabs.map((id, index) => ({ id, title: group.tabs.length > 1 ? `${labels.chrome.terminal} ${index + 1}${workspace ? ` ${workspace}` : ''}` : title, selected: id === group.terminal })) : [],
       files: group.tabs.filter(id => id !== group.tree && records.find(record => record.tabId === id)?.kind === 'text')
         .map(id => ({ id, title: filename(id), path: filepath(id), selected: id === group.preview })),
@@ -463,7 +489,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         liveNodes.add(node);
         place(node, group.id, paneRect);
         if (paneRect.x === area.x && paneRect.y === area.y) setAttribute(node, LEADING, ''); else node.removeAttribute(LEADING);
-        const inactive = hiddenGroup || (treeNode && treeHidden) || (group.tree !== undefined && tabId !== group.tree && tabId !== group.preview) || (group.terminal !== undefined && tabId !== group.terminal);
+        const inactive = hiddenGroup || (treeNode && treeHidden) || (group.tree !== undefined && tabId !== group.tree && tabId !== group.preview) || (group.terminal !== undefined && tabId !== group.terminal) || (group.browser !== undefined && tabId !== group.browser);
         if (inactive) setAttribute(node, INACTIVE, ''); else node.removeAttribute(INACTIVE);
         if (treeNode) setAttribute(node, TREE, ''); else node.removeAttribute(TREE);
         if (combined && tabId === group.preview) {

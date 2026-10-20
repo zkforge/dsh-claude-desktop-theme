@@ -28,6 +28,39 @@
   cursor: pointer;
 }
 
+/* Blank Sessions omit utilities but retain the native corner slot. */
+html[data-dsh-ccd-style="true"] .ST7X_W_headerBlank .ST7X_W_headerCorner:has(.ccd-blank-header-actions) {
+  order: 3;
+  margin-left: auto;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-blank-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ccd-header-action-gap);
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-blank-header-actions > .ccd-header-action {
+  box-sizing: border-box;
+  flex: none;
+  width: var(--ccd-header-action-size);
+  height: var(--ccd-header-action-size);
+  border-radius: var(--ccd-radius-row);
+}
+
+/* The host's own blank state selects exactly one cluster, including on send. */
+html[data-dsh-ccd-style="true"] .ST7X_W_header:not(.ST7X_W_headerBlank) .ST7X_W_headerCorner:has(.ccd-blank-header-actions) {
+  display: none;
+}
+
+@container ccd-conversation (max-width: 520px) {
+  html[data-dsh-ccd-style="true"] .ccd-blank-header-actions > .ccd-header-action {
+    width: var(--ccd-header-action-compact);
+    height: var(--ccd-header-action-compact);
+  }
+}
+
 /* The hover/focus signal is the host's own fill; the ink keeps its full
    strength in every state, exactly as the native ghost buttons beside this one
    behave. */

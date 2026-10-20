@@ -229,7 +229,8 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
  * the statement of that decision rather than a leftover of the host's. The
  * account card is left out here as everywhere else in this sheet. */
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]:focus-visible,
-html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"][aria-selected="true"] {
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="option"][aria-selected="true"],
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [data-ccd-menu-search] {
   outline: none;
 }
 
@@ -426,4 +427,117 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [data-
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [data-ccd-agent-mode] > ._itemLabel_4ub78_190 > span > :first-child {
   color: inherit;
   font: inherit;
+}
+
+/* Workspace picker: search line, branch row and branch side card.
+ *
+ * `compat/workspace-menu.ts` and `compat/workspace-branch.ts` add these nodes to
+ * the host's picker card; rows reuse the classes of a row the host rendered in
+ * the same card, so the family's 24px cell, fill and check above apply as is.
+ * The search line is the model card's bare line: no box, one soft hairline
+ * under it, bled over the card's 4px padding and handing that 4px back so the
+ * caret lands on the row labels' x; like the rows it draws no focus ring (the
+ * no-ring rule above names it), the caret is its focus. */
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-menu-search] {
+  box-sizing: border-box;
+  display: block;
+  width: calc(100% + 8px);
+  height: 28px;
+  margin: -4px -4px 4px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--ccd-border-soft);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-menu-search]::placeholder {
+  color: var(--ccd-text-placeholder);
+  opacity: 1;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-filtered] {
+  display: none !important;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-menu-note]:not([hidden]) {
+  box-sizing: border-box;
+  padding: 2px 8px;
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* The branch row: label, the current branch in the secondary ink, a chevron. */
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row] {
+  width: 100%;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row] > [data-ccd-branch-value] {
+  min-width: 0;
+  max-width: 160px;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row] > [data-ccd-menu-chevron] {
+  display: inline-flex;
+  flex: none;
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row][aria-disabled="true"] > [data-ccd-menu-chevron] {
+  visibility: hidden;
+}
+
+/* The side card is a manual popover nested in the host card: the UA's centred
+ * popover box is withdrawn and the module writes `left`/`top`. Only the list
+ * scrolls, so the search line stays on the card. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 24px));
+  max-height: min(360px, calc(100vh - 24px));
+  overflow: hidden;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [data-ccd-branch-list] {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* While a switch runs every row waits; the one being checked out dims last. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] [data-ccd-branch-name][aria-disabled="true"] {
+  cursor: default;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] [data-ccd-branch-name][aria-busy="true"] {
+  color: var(--ccd-text-secondary);
+}
+
+/* The foot line: progress and carried changes in the secondary ink, a refusal
+ * in the menu's danger red. It wraps rather than widening the card. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [data-ccd-branch-notice] {
+  max-width: 280px;
+  margin-top: 4px;
+  border-top: 1px solid var(--ccd-border-soft);
+  padding-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [data-ccd-branch-notice][data-tone="error"] {
+  color: var(--ccd-menu-danger);
 }

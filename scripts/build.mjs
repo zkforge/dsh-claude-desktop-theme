@@ -24,6 +24,7 @@ const client = {
   entryPoints: ['src/client/index.ts'], outfile: 'lib/client.js', bundle: true,
   format: 'cjs', platform: 'browser', target: 'es2022', metafile: true,
   external: baseline, loader: { '.css': 'text' },
+  define: { __CCD_PLUGIN_VERSION__: JSON.stringify(pkg.version) },
   banner: { js: `window.__ModuleLoader__.load({\n  id: ${JSON.stringify(pkg.name)},\n  factory(require) {\n    const module = { exports: {} };\n    const exports = module.exports;` },
   footer: { js: '\n    return module.exports;\n  }\n});' },
   plugins: [{

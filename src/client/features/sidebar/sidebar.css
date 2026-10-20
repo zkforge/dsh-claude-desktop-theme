@@ -334,17 +334,10 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_s
   overflow: visible;
 }
 
-/* The region heading is now the row's leading label. The search field keeps
-   its native place in the host tree but is positioned over the seat above New
-   Session, so it no longer consumes this row's width. */
+/* Keep this toolbar for View options only; the search field sits above New
+   Session while the host retains ownership of its heading node. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionLabel {
-  display: block;
-  flex: 1;
-  max-width: none;
-  padding-left: 8px;
-  color: var(--ccd-text-secondary);
-  font-size: var(--ccd-font-size-muted);
-  line-height: 20px;
+  display: none;
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_searchSlot {
@@ -428,6 +421,7 @@ html[data-dsh-ccd-style="true"] .ccd-sidebar-search-shortcut kbd {
 
 /* Searching normally hides these native actions; keep View options available. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_headerActions {
+  margin-left: auto;
   max-width: none;
   opacity: 1;
   visibility: visible;
@@ -1040,9 +1034,11 @@ html[data-dsh-ccd-style="true"] [data-ccd-list-empty] {
 html[data-dsh-ccd-style="true"] .ccd-sidebar-empty {
   position: absolute;
   /* The native scrolling tree is a positioned sibling painted after this
-     prepended prompt. Keep recovery controls above its empty hit surface. */
+     prepended prompt. Keep recovery controls above its empty hit surface, but
+     let the rest of the overlay pass clicks through to the status headings. */
   z-index: 1;
   inset: 0;
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1064,6 +1060,7 @@ html[data-dsh-ccd-style="true"] .ccd-sidebar-empty-pixels {
 }
 
 html[data-dsh-ccd-style="true"] .ccd-sidebar-empty button {
+  pointer-events: auto;
   border: 0;
   background: transparent;
   padding: 0;
@@ -1248,12 +1245,60 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading {
   flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  max-width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
   /* Status labels share the Recents heading and session rows' leading edge. */
   padding: 10px 8px 4px 8px;
+  background: transparent;
   color: var(--ccd-text-secondary);
+  font: inherit;
   font-size: calc(var(--ccd-font-size-muted) - 1px);
   font-weight: 400;
   line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+/* Every section, empty or not, can fold. While open the down chevron shows
+   only on hover or focus; a collapsed section keeps its right chevron so the
+   hidden rows stay findable. */
+html[data-dsh-ccd-style="true"] .ccd-status-heading::after {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  mask: var(--ccd-icon-chevron-right) center / 14px 14px no-repeat;
+  opacity: 0;
+  rotate: 90deg;
+  transition: rotate 120ms ease, opacity 120ms ease;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading:is(:hover, :focus-visible) {
+  color: var(--ccd-text);
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading:is(:hover, :focus-visible)::after,
+html[data-dsh-ccd-style="true"] .ccd-status-heading[aria-expanded="false"]::after {
+  opacity: 1;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading[aria-expanded="false"]::after {
+  rotate: 0deg;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading:focus-visible {
+  outline: 1px solid var(--ccd-accent);
+  outline-offset: -1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .ccd-status-heading::after {
+    transition: none;
+  }
+}
+html[data-dsh-ccd-style="true"] [data-ccd-status-order][data-ccd-status-hidden] {
+  display: none;
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading:nth-child(1 of .ccd-status-heading) {
   /* The Recents toolbar provides the shared 5px section gap. */

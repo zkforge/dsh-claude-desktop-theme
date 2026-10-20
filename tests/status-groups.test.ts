@@ -311,3 +311,49 @@ test('unchanged groups release detached wrappers and restore removed headings', 
     assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), false);
   } finally { globalThis.MutationObserver = original; }
 });
+
+test('a heading collapses its section, persists the choice and expands again', async () => {
+  const original = globalThis.MutationObserver;
+  const f = fixture(true);
+  globalThis.MutationObserver = class {
+    constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const stored = new Map<string, string>();
+  const listeners = new Map<string, (event: unknown) => void>();
+  Object.assign(f.doc, {
+    defaultView: { matchMedia: () => ({ matches: true }), localStorage: {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => { stored.set(key, value); },
+    } },
+    addEventListener: (key: string, listener: (event: unknown) => void) => listeners.set(key, listener),
+    removeEventListener: (key: string) => listeners.delete(key),
+  });
+  try {
+    const dispose = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
+    const heading = (group: string) => f.list.children.find(node => node.dataset.ccdStatusOwned === group)!;
+    const click = (group: string) => listeners.get('click')!({ target: { closest: () => heading(group) } });
+    assert.equal(heading('ended').getAttribute('aria-expanded'), 'true');
+    click('input');
+    await Promise.resolve();
+    assert.equal(heading('input').getAttribute('aria-expanded'), 'false', 'an empty section folds too');
+    click('input');
+    await Promise.resolve();
+    assert.equal(heading('input').getAttribute('aria-expanded'), 'true');
+    click('ended');
+    await Promise.resolve();
+    assert.equal(heading('ended').getAttribute('aria-expanded'), 'false');
+    assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), true);
+    assert.equal(f.a.hasAttribute('data-ccd-status-hidden'), false);
+    assert.equal(stored.get('ccd-status-collapsed'), '["ended"]');
+    dispose();
+    assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), false, 'restore clears the plugin marker');
+    const again = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
+    assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), true, 'a new mount reads the saved choice');
+    click('ended');
+    await Promise.resolve();
+    assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), false);
+    assert.equal(stored.get('ccd-status-collapsed'), '[]');
+    again();
+  } finally { globalThis.MutationObserver = original; }
+});

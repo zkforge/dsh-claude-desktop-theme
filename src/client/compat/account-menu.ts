@@ -4,6 +4,7 @@ import { mountAccountMore } from './account-more.ts';
 import { mountAccountTheme } from './account-theme.ts';
 import { mountAccountBalance, type AccountBalanceCache } from './account-balance.ts';
 import { recordsInTranscript } from './mutation-scope.ts';
+import { openPluginFeedback } from './plugin-feedback.ts';
 
 /** Marks the portalled account menu for the stylesheet. */
 export const ACCOUNT_MENU_ATTRIBUTE = 'data-ccd-account-menu';
@@ -79,44 +80,18 @@ export function mountAccountMenu(
   let balanceCache: AccountBalanceCache = {};
   let trigger: HTMLElement | null = null;
   let scheduled = 0;
+  let closeFeedback = () => {};
   const bug = document.createElement('button');
   bug.type = 'button';
   bug.setAttribute('data-ccd-plugin-feedback', '');
   const zh = (document.documentElement.lang || document.defaultView?.navigator.language || '').toLowerCase().startsWith('zh');
   const bugLabel = zh ? '插件 UI Bug 反馈' : 'Report a plugin UI bug';
   bug.setAttribute('aria-label', bugLabel);
-  const tooltip = document.createElement('div');
-  tooltip.id = 'ccd-plugin-feedback-tooltip';
-  tooltip.setAttribute('data-ccd-plugin-feedback-tooltip', '');
-  tooltip.setAttribute('role', 'tooltip');
-  tooltip.textContent = bugLabel;
-  tooltip.popover = 'manual';
-  tooltip.hidden = true;
-  bug.setAttribute('aria-describedby', tooltip.id);
-  const hideTooltip = () => {
-    if (tooltip.hidden) return;
-    tooltip.hidePopover();
-    tooltip.hidden = true;
-  };
-  const showTooltip = () => {
-    if (!tooltip.isConnected) document.body.append(tooltip);
-    tooltip.hidden = false;
-    tooltip.showPopover();
-    const rect = bug.getBoundingClientRect();
-    const width = tooltip.offsetWidth;
-    tooltip.style.left = `${Math.max(8, Math.min(rect.right - width, (document.defaultView?.innerWidth ?? width) - width - 8))}px`;
-    tooltip.style.top = `${Math.max(8, rect.top - tooltip.offsetHeight - 8)}px`;
-  };
-  bug.addEventListener('pointerenter', showTooltip);
-  bug.addEventListener('pointerleave', hideTooltip);
-  bug.addEventListener('focus', showTooltip);
-  bug.addEventListener('blur', hideTooltip);
-  bug.addEventListener('keydown', event => { if (event.key === 'Escape') hideTooltip(); });
   bug.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><path d="M8 9h8v7a4 4 0 0 1-8 0V9Zm2 0V6a2 2 0 0 1 4 0v3M12 10v9M6 4l3 3m6 0 3-3M4 10l4 2m8 0 4-2M3 16h5m8 0h5M6 22l3-3m6 0 3 3"/></g></svg>';
   bug.addEventListener('click', event => {
     event.stopPropagation();
-    hideTooltip();
-    document.defaultView?.open('https://github.com/zkforge/dsh-claude-desktop-theme/issues/new', '_blank', 'noopener,noreferrer');
+    closeFeedback();
+    closeFeedback = openPluginFeedback(document);
   });
 
   const clear = () => {
@@ -236,9 +211,8 @@ export function mountAccountMenu(
     attributes?.disconnect();
     resize.disconnect();
     clear();
-    hideTooltip();
-    tooltip.remove();
     bug.remove();
+    closeFeedback();
     report(error);
     return () => {};
   }
@@ -250,8 +224,7 @@ export function mountAccountMenu(
     resize.disconnect();
     document.defaultView?.removeEventListener('resize', schedule);
     clear();
-    hideTooltip();
-    tooltip.remove();
     bug.remove();
+    closeFeedback();
   };
 }

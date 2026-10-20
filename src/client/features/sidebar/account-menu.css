@@ -70,27 +70,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback] svg {
   opacity: 0.65;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-tooltip] {
-  position: fixed;
-  inset: auto;
-  margin: 0;
-  padding: 6px 10px;
-  border: 1px solid var(--ccd-border);
-  border-radius: 6px;
-  background: var(--ccd-card);
-  color: var(--ccd-text);
-  box-shadow: var(--ccd-effort-shadow);
-  font-family: inherit;
-  font-size: 12px;
-  line-height: 18px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-tooltip][hidden] {
-  display: none;
-}
-
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback]:hover {
   color: var(--ccd-text);
   background: var(--ccd-hover);
@@ -382,4 +361,103 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-theme] button[aria-checked="tr
 html[data-dsh-ccd-style="true"] [data-ccd-account-theme] button:focus-visible {
   outline: 1px solid var(--ccd-text-muted);
   outline-offset: 1px;
+}
+
+/* Plugin feedback sheet, drawn after the host's own "send feedback" dialog. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] {
+  box-sizing: border-box;
+  width: min(400px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 10px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-view-menu-shadow);
+  font: 13px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog]::backdrop {
+  background: var(--ccd-dialog-mask);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 84px;
+  /* Vertical resize stays between three lines and a viewport-bound maximum. */
+  min-height: 64px;
+  max-height: min(320px, 50vh);
+  padding: 6px 8px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] textarea::placeholder {
+  color: var(--ccd-text-muted);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] textarea:focus {
+  border-color: var(--ccd-accent);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] p {
+  margin: 8px 0 14px;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] button {
+  padding: 3px 10px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] button:not([data-ccd-primary]):hover {
+  background: var(--ccd-hover);
+}
+
+/* Send matches the plugin's red confirmation action (`theme/dialogs.css`). */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] [data-ccd-primary] {
+  border-color: var(--ccd-dialog-danger);
+  background: var(--ccd-dialog-danger);
+  color: var(--ccd-menu-danger-ink);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] [data-ccd-primary]:hover {
+  border-color: var(--ccd-dialog-danger-hover);
+  background: var(--ccd-dialog-danger-hover);
+}
+
+/* Same focus-only ring as the shared Modal footer buttons. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ccd-card), 0 0 0 3px var(--ccd-dialog-focus-ring);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-dialog] [data-ccd-primary]:focus-visible {
+  box-shadow: 0 0 0 2px var(--ccd-card), 0 0 0 3px var(--ccd-dialog-danger-ring), var(--ccd-dialog-danger-glow);
 }

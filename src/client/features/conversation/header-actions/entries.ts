@@ -77,16 +77,15 @@ export function utilitiesEntry(
 }
 
 /**
- * The corner seat's retirement: the cell the reference leaves empty.
+ * Retire the corner seat's shipped expand control.
  *
  * That seat's shipped occupant is `ui-sidebar-right`'s collapsed-panel expand
  * control, and this interface does not want it: hovering it drew a control the
  * reference has no room for, and the action it carries lives in the Session menu
  * instead ({@link sidebarExpandRow}). Registering below the occupant's rank
- * ({@link OVERRIDE_PRIORITY}) takes the cell, and the entry's component renders
- * nothing — a structural retirement rather than a control hidden in place, so
- * nothing of the displaced button stays behind: no hover surface, no tooltip and
- * no hit area.
+ * ({@link OVERRIDE_PRIORITY}) takes the cell. The replacement holds the three
+ * view buttons on blank Sessions, where the host omits utilities; on active
+ * Sessions the corner is hidden and utilities hold those same actions.
  *
  * @returns the options the registry is called with.
  */

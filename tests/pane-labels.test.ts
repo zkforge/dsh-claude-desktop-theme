@@ -34,7 +34,7 @@ const CHROME_KEYS = [
   'more', 'expand', 'restore', 'search', 'reload', 'back', 'forward', 'pick', 'pickNotice', 'address',
   'terminal', 'terminals', 'newTerminal', 'closeTab', 'refresh', 'openFolder', 'hideSidebar', 'close',
 ] as const;
-const BROWSER_KEYS = ['saveScreenshot', 'awaitingServer', 'enterAddress'] as const;
+const BROWSER_KEYS = ['newTab', 'tabs', 'saveScreenshot', 'awaitingServer', 'enterAddress'] as const;
 
 test('a Chinese document takes the Chinese table, the same rule as the header’s labels', () => {
   for (const lang of ['zh', 'zh-CN', 'zh-Hans-CN', 'ZH-cn']) {
@@ -81,7 +81,7 @@ test('the English table restates the reference’s words, so nothing drifts sile
   assert.equal(labels.files.emptyBody, 'Pick a file in the tree, or click a file path in the conversation.');
   assert.equal(labels.browser.saveScreenshot, 'Save screenshot');
   assert.equal(labels.browser.awaitingServer, 'Awaiting server…');
-  assert.equal(labels.browser.enterAddress, 'Enter server address');
+  assert.equal(labels.browser.enterAddress, 'Enter URL');
 });
 
 test('the Chinese table translates every English word, not just the visible ones', () => {

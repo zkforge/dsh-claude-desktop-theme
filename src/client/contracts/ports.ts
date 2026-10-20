@@ -83,7 +83,7 @@ export interface SidebarTabRecord {
  */
 export interface SidebarRightPort {
   /** Open one page kind for the on-screen Session; an unregistered kind throws. */
-  openTab(kind: string, options?: { readonly params?: Record<string, string> }): void;
+  openTab(kind: string, options?: { readonly params?: Record<string, string>; readonly revealIfOpened?: boolean }): void;
   /** Focus a tab and the pane holding it; a missing tab is left alone. */
   focus(tabId: string): void;
   /** Close a tab in the on-screen Session through the host's cleanup path. */

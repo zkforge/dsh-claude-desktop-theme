@@ -1222,11 +1222,106 @@ html[data-dsh-ccd-style="true"] [data-ccd-browser-address] > svg {
   display: block;
   flex: none;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-browser-address-slot] {
+html[data-dsh-ccd-style="true"] [data-ccd-browser-navigation] > [data-ccd-browser-address-slot] {
   display: block;
   flex: 1;
   min-width: 0;
   height: 24px;
+}
+
+/* Browser chrome has a tab strip above its native address field. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-dockkit-float-grip] button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane-kind="browser"] [data-dockkit-float-grip] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 26px;
+  grid-template-rows: 28px 28px;
+  height: 68px;
+  padding: 4px;
+  gap: 4px;
+  border-bottom: 1px solid var(--ccd-border);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-ccd-pane-caption] {
+  grid-area: 1 / 1;
+  overflow: hidden;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-ccd-pane-controls] {
+  grid-area: 1 / 2;
+  display: flex;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-dockkit-float-close] {
+  grid-area: 1 / 3;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-browser-navigation] {
+  grid-area: 2 / 1 / 3 / -1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-browser-navigation] > button:disabled {
+  color: var(--ccd-text-muted);
+  opacity: .5;
+  cursor: default;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-browser-toolbar] input {
+  padding-inline: 8px;
+  font-size: 14px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-browser-toolbar] button[type="submit"] {
+  display: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-ccd-pane-caption] > [data-ccd-browser-tabs] {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-browser-tab] {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  max-width: 180px;
+  height: 24px;
+  padding-inline: 4px 2px;
+  border-radius: 6px;
+  background: var(--ccd-file-tab-hover);
+  color: var(--ccd-text-secondary);
+  font-size: 13px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-browser-tab][data-selected] {
+  background: var(--ccd-file-tab-selected);
+  color: var(--ccd-files-ink);
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-browser-tab] > [role="tab"] {
+  width: auto;
+  min-width: 0;
+  max-width: 150px;
+  height: 24px;
+  padding-inline: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: inherit;
+  color: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-browser-close] {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-browser-close] svg {
+  width: 12px;
+  height: 12px;
 }
 
 /* Only the source viewer's code gains weight; its counter stays quiet.

@@ -223,10 +223,9 @@ test('the utilities seat sizes controls, never the tooltip bubble beside one', (
   }
 });
 
-test('the corner seat is retired without a control left behind', () => {
-  /* Nothing reaches for the shipped expand control's marker: its occupant is
-     shadowed through the slot registry (`cornerRetirement`), which leaves no
-     hidden button, no hover surface and no tooltip in the cell. */
+test('the native expand control is retired and blank Sessions keep their own view cluster', () => {
+  /* Shadow the shipped expand control through the slot registry rather than
+     retaining a hidden native button or its hover surface. */
   for (const rule of [...actions, ...conversation, ...newSession]) {
     assert.ok(!rule.selector.includes('data-sidebar-right-expand'), rule.selector);
   }
@@ -235,8 +234,11 @@ test('the corner seat is retired without a control left behind', () => {
   const corner = conversation.filter(rule => rule.selector.endsWith('.ST7X_W_headerCorner'));
   assert.equal(corner.length, 1);
   assert.match(corner[0]?.body ?? '', /margin:\s*0;/u);
-  /* A blank page renders neither the utilities group nor a corner control, so
-     that row needs no rule of its own. */
+  const blank = actions.find(rule => rule.selector.includes('.ST7X_W_headerBlank .ST7X_W_headerCorner:has(.ccd-blank-header-actions)'));
+  assert.match(blank?.body ?? '', /margin-left:\s*auto;/u);
+  const active = actions.find(rule => rule.selector.includes('.ST7X_W_header:not(.ST7X_W_headerBlank) .ST7X_W_headerCorner'));
+  assert.match(active?.body ?? '', /display:\s*none;/u);
+  /* New-session layout needs no separate override for the shared header. */
   assert.ok(!newSession.some(rule => rule.selector.includes('data-conversation-header-corner')));
 });
 

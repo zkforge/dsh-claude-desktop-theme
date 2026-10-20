@@ -92,7 +92,7 @@ export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, o
       {groups.map(group => <div key={group.id}><div className="ccd-model-provider">{group.name}</div>{group.models.map(model => {
         const chosen = state.current?.provider === group.id && state.current.model === model.id;
         return <PricingHint key={model.id} provider={group.id} model={model.id}><button type="button" data-model-option aria-pressed={chosen} disabled={disabled}
-          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name"><span className="ccd-model-name-text">{model.name}</span><PriceMark provider={group.id} model={model.id} compact /></span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button></PricingHint>;
+          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name"><span className="ccd-model-name-text">{model.name}</span><PriceMark provider={group.id} model={model.id} badge /></span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button></PricingHint>;
       })}</div>)}
     </div>
   </div>;

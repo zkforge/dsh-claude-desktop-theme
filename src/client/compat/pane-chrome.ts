@@ -15,6 +15,7 @@ export interface PaneChromeOptions {
   readonly onCloseGroup?: () => void;
   readonly closeTabs: readonly string[];
   readonly terminals: readonly { id: string; title: string; selected: boolean }[];
+  readonly browsers: readonly { id: string; title: string; selected: boolean }[];
   readonly files: readonly { id: string; title: string; path: string; selected: boolean }[];
   readonly panel: HTMLElement;
 }
@@ -38,13 +39,12 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   let menu: HTMLElement | null = null;
   let form: HTMLFormElement | null = null;
   let wait: HTMLElement | null = null;
-  /** The wait layer's own line, and the placeholder this module last wrote:
-   *  both outlive `update()`'s rebuild, so a language change rewrites them
-   *  where they stand rather than waiting for the node to be replaced. */
+  /** Keep waiting text and original placeholders across chrome rebuilds. */
   let waitText: HTMLElement | null = null;
-  let fallbackPlaceholder = '';
+  const placeholders = new Map<HTMLInputElement, { original: string; drawn: string }>();
   let menuAnchor: HTMLElement | null = null;
   let addressSlot: HTMLElement | null = null;
+  let navigation: HTMLElement | null = null;
   const paths = new Map<HTMLElement, HTMLElement>();
   const headerFill = title.nextElementSibling instanceof HTMLElement ? title.nextElementSibling : null;
   headerFill?.setAttribute('data-ccd-browser-header-fill', '');
@@ -67,7 +67,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     if (close.hasAttribute('data-ccd-close-tab') || !options) return;
     // Files owns both its tree and every retained preview. Closing the card
     // must remove the whole group, otherwise the previous file resurfaces.
-    if (!options.filesRoot && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
+    if (!options.filesRoot && options.kind !== 'browser' && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (options.onCloseGroup) { options.onCloseGroup(); return; }
     const { closeTabs, onClose } = options;
@@ -175,10 +175,6 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     }
   };
   const addressResize = typeof ResizeObserver === 'function' ? new ResizeObserver(syncAddress) : null;
-  const address = () => {
-    dismiss(); syncAddress();
-    const input = form?.querySelector('input'); input?.focus(); input?.select();
-  };
   const browserMenus = mountBrowserMenus(node, { popup, dismiss, notice });
   const nativeNavigation = (index: number) => form?.querySelectorAll<HTMLButtonElement>(':scope > button')[index] ?? null;
   const refreshNative = () => {
@@ -244,21 +240,18 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     if (next !== form) {
       clearAddress(form);
       form = next;
-      if (form) {
-        form.setAttribute('data-ccd-browser-toolbar', '');
-        const input = form.querySelector('input');
-        /* The host's own field usually carries its own localised placeholder;
-           this one is the fallback for a field that has none, and it follows
-           the document's language like every other word here. */
-        if (input !== null && (input.placeholder === '' || input.placeholder === fallbackPlaceholder)) {
-          input.placeholder = labels.browser.enterAddress;
-          fallbackPlaceholder = labels.browser.enterAddress;
-        }
-      }
+      form?.setAttribute('data-ccd-browser-toolbar', '');
+    }
+    const input = form?.querySelector('input');
+    for (const field of placeholders.keys()) if (!field.isConnected) placeholders.delete(field);
+    if (input && input.placeholder !== labels.browser.enterAddress) {
+      const held = placeholders.get(input);
+      placeholders.set(input, { original: held?.original ?? input.placeholder, drawn: labels.browser.enterAddress });
+      input.placeholder = labels.browser.enterAddress;
     }
     syncAddress();
     for (const [attribute, index] of [['data-ccd-browser-back', 0], ['data-ccd-browser-forward', 1], ['data-ccd-browser-reload', 2]] as const) {
-      const control = controls.querySelector<HTMLButtonElement>(`[${attribute}]`);
+      const control = navigation?.querySelector<HTMLButtonElement>(`[${attribute}]`);
       const original = nativeNavigation(index);
       if (control && control.disabled !== (original?.disabled ?? true)) control.disabled = original?.disabled ?? true;
     }
@@ -331,7 +324,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     const kept = tabCells.get(tab.id);
     if (kept !== undefined) return kept;
     const cell = document.createElement('span');
-    cell.setAttribute(options.kind === 'terminal' ? 'data-ccd-terminal-tab' : 'data-ccd-file-tab', '');
+    cell.setAttribute(options.kind === 'browser' ? 'data-ccd-browser-tab' : options.kind === 'terminal' ? 'data-ccd-terminal-tab' : 'data-ccd-file-tab', '');
     const select = document.createElement('button');
     select.type = 'button';
     select.setAttribute('role', 'tab');
@@ -340,7 +333,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     select.addEventListener('keydown', event => {
       /* The group is read when the key arrives: a reused cell must answer for
          the tabs it is shown beside now, not the ones it was built beside. */
-      const live = options.kind === 'terminal' ? options.terminals : options.files;
+      const live = options.kind === 'browser' ? options.browsers : options.kind === 'terminal' ? options.terminals : options.files;
       const index = live.findIndex(item => item.id === tab.id);
       if (event.key === 'Delete') { event.preventDefault(); options.onClose(tab.id); return; }
       const target = event.key === 'ArrowRight' ? (index + 1) % live.length
@@ -353,7 +346,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       });
     });
     cell.append(select);
-    const remove = button(cell, labels.chrome.closeTab, options.kind === 'terminal' ? 'data-ccd-terminal-close' : 'data-ccd-file-close', 'X', () => options.onClose(tab.id));
+    const remove = button(cell, labels.chrome.closeTab, options.kind === 'browser' ? 'data-ccd-browser-close' : options.kind === 'terminal' ? 'data-ccd-terminal-close' : 'data-ccd-file-close', 'X', () => options.onClose(tab.id));
     remove.tabIndex = -1;
     const created: TabCell = { cell, select, remove, title: '' };
     tabCells.set(tab.id, created);
@@ -389,24 +382,31 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
        and the card's own title are rewritten in place by the cells that hold
        them, so a group of T cards does not rebuild T tabs each time one is
        selected. */
-    const value = `${paneLanguage(document)}|${next.kind}|${next.zoomed}|${hidden}|${next.filesRoot === null}|${next.terminals.length > 1}|${next.terminals.map(tab => tab.id).join(',')}|${next.files.map(file => file.id).join(',')}`;
-    if (value === signature) { updateTabs(next.kind === 'terminal' ? next.terminals : next.files); updateName(next); refreshNative(); return; }
+    const value = `${paneLanguage(document)}|${next.kind}|${next.zoomed}|${hidden}|${next.filesRoot === null}|${next.terminals.length > 1}|${next.terminals.map(tab => tab.id).join(',')}|${next.files.map(file => file.id).join(',')}|${next.browsers.map(tab => tab.id).join(',')}`;
+    if (value === signature) { updateTabs(next.kind === 'browser' ? next.browsers : next.kind === 'terminal' ? next.terminals : next.files); updateName(next); refreshNative(); return; }
     signature = value;
-    dismiss(); addressResize?.disconnect(); addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
+    dismiss(); addressResize?.disconnect(); navigation?.remove(); navigation = null; addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
     tabCells.clear(); tabList = null; nameSpan = null; nameText = '';
     node.setAttribute('data-ccd-pane-kind', next.kind);
     if (next.kind === 'browser') {
-      const globe = button(caption, labels.chrome.address, 'data-ccd-browser-address', 'Globe', address);
-      globe.addEventListener('contextmenu', event => { event.preventDefault(); dismiss(); address(); });
+      const tabs = document.createElement('span');
+      tabs.setAttribute('data-ccd-browser-tabs', '');
+      tabs.setAttribute('role', 'tablist');
+      tabs.setAttribute('aria-label', labels.browser.tabs);
+      caption.append(tabs); tabList = tabs; updateTabs(next.browsers);
+      button(caption, labels.browser.newTab, 'data-ccd-browser-add', 'Add', next.onNew);
+      navigation = document.createElement('div');
+      navigation.setAttribute('data-ccd-browser-navigation', '');
+      grip.append(navigation);
+      button(navigation, labels.chrome.back, 'data-ccd-browser-back', 'ArrowLeft', () => nativeNavigation(0)?.click());
+      button(navigation, labels.chrome.forward, 'data-ccd-browser-forward', 'ArrowRight', () => nativeNavigation(1)?.click());
+      button(navigation, labels.chrome.reload, 'data-ccd-browser-reload', 'ArrowClockwise', () => nativeNavigation(2)?.click());
       addressSlot = document.createElement('span');
       addressSlot.setAttribute('data-ccd-browser-address-slot', '');
-      caption.append(addressSlot);
+      navigation.append(addressSlot);
       addressResize?.observe(addressSlot);
-      button(controls, labels.chrome.back, 'data-ccd-browser-back', 'CaretLeft', () => nativeNavigation(0)?.click());
-      button(controls, labels.chrome.forward, 'data-ccd-browser-forward', 'CaretRight', () => nativeNavigation(1)?.click());
-      const pick = button(controls, labels.chrome.pick, 'data-ccd-browser-pick', 'Cursor', anchor => notice(anchor, labels.chrome.pickNotice));
+      const pick = button(navigation, labels.chrome.pick, 'data-ccd-browser-pick', 'Cursor', anchor => notice(anchor, labels.chrome.pickNotice));
       pick.setAttribute('aria-disabled', 'true');
-      button(controls, labels.chrome.reload, 'data-ccd-browser-reload', 'ArrowClockwise', () => nativeNavigation(2)?.click());
     } else {
       if (next.filesRoot) {
         const toggle = button(caption, hidden ? labels.files.show : labels.files.hide, 'data-ccd-files-switch', 'Files', () => next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
@@ -439,8 +439,10 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   };
   return { update, release() {
     close.removeEventListener('click', closeGroup, true);
-    observer.disconnect(); addressResize?.disconnect(); browserMenus.release(); dismiss(); wait?.remove(); caption.remove(); controls.remove(); closeIcon.remove();
-    waitText = null; fallbackPlaceholder = '';
+    observer.disconnect(); addressResize?.disconnect(); browserMenus.release(); dismiss(); wait?.remove(); caption.remove(); controls.remove(); navigation?.remove(); closeIcon.remove();
+    waitText = null;
+    for (const [input, held] of placeholders) if (input.placeholder === held.drawn) input.placeholder = held.original;
+    placeholders.clear();
     for (const attribute of ['data-ccd-pane-chrome', 'data-ccd-pane-kind']) node.removeAttribute(attribute);
     clearAddress(form);
     for (const [source, label] of paths) { source.parentElement?.querySelector('[data-ccd-markdown-toggle]')?.remove(); source.removeAttribute('data-ccd-preview-path-source'); label.remove(); }

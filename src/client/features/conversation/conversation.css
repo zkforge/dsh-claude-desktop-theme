@@ -337,13 +337,12 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities {
  *
  * That single cell's shipped occupant is `ui-sidebar-right`'s collapsed-panel
  * expand control, which this interface does not draw; the plugin shadows it with
- * an entry that renders nothing (`features/conversation/header-actions/entries.ts`)
- * and keeps the expand action in the Session menu instead. So the seat has no
+ * the blank page's view buttons and keeps the expand action in the Session menu
+ * instead. On active Sessions the corner is hidden, so the seat has no
  * box of its own to place — its own gap in front of the utilities would be 2px
  * of trailing space after the last control, and the reference measures the
- * cluster's inset from the header's own padding. A Blank Session renders the
- * same empty seat, which is why the host's `margin-left: auto` for that row
- * needs no answer here: there is nothing left in the corner to place either way.
+ * cluster's inset from the header's own padding. Blank Sessions place their
+ * three view buttons at the trailing edge through `header-actions.css`.
  */
 html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
   margin: 0;

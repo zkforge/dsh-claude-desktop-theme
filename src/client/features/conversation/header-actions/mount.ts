@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client';
 import type { FeatureEnvironment } from '../../../contracts/feature.ts';
@@ -7,28 +8,14 @@ import { headerLabels } from '../../../compat/header-labels.ts';
 import { mountSessionMenuRow } from '../../../compat/session-menu.ts';
 import { DSH_SLOTS } from '../../../compat/slots.ts';
 import { HeaderActionButton } from './HeaderActionButton.tsx';
+import { BlankHeaderActions } from './BlankHeaderActions.tsx';
 import { CORNER_ENTRY, VIEWS, cornerRetirement, sidebarExpandRow, utilitiesEntry } from './entries.ts';
 import { openView, resolveSidebarRight, resolveSidebarTabs } from './sidebar-view.ts';
 import css from './header-actions.css';
 import menuCss from './header-menus.css';
 
 /**
- * A seat entry that renders nothing.
- *
- * The slot registry has one way to keep a shipped occupant out of a single
- * cell — registering below its rank — and this is the component such an entry
- * uses, so the cell is retired rather than filled with a control hidden in
- * place.
- *
- * @returns nothing, by design.
- */
-function renderNothing(): null {
-  return null;
-}
-
-/**
- * Add the right panel's views to the conversation header — the project folder
- * first, then terminal and browser, all in the utilities group — and move the
+ * Add terminal, browser and project folder to the conversation header, and move the
  * collapsed panel's re-entry action into the Session menu.
  *
  * The header's trailing group is a native list slot — `ui-open-in-app`,
@@ -40,9 +27,9 @@ function renderNothing(): null {
  *
  * The corner seat is different, and deliberately so. It is a *single* cell whose
  * shipped occupant is `ui-sidebar-right`'s collapsed-panel expand control; the
- * reference draws nothing there, so the plugin shadows that occupant with an
- * entry that renders nothing and puts the expand action into the Session menu's
- * own ⋮ list (`compat/session-menu.ts`), where it appears only while the panel
+ * plugin shadows that occupant with the blank page's three view buttons,
+ * visible only under the host's headerBlank state, and puts the expand action
+ * into the Session menu's ⋮ list (`compat/session-menu.ts`), only while the panel
  * is collapsed. Nothing about the panel's own state changes hands: the menu row
  * calls the panel's own service method.
  *
@@ -91,10 +78,25 @@ export function mountHeaderActions(ctx: Context, environment: FeatureEnvironment
       DSH_SLOTS.sessionHeaderUtilities,
       () => scope.slots.register(utilitiesEntry(view, labels, openKind), HeaderActionButton),
     );
-    /** The single corner cell, taken by an entry that renders nothing. */
+    const subscribeViews = (listener: () => void) => typeof tabs.subscribe === 'function'
+      ? tabs.subscribe(listener) : () => {};
+    // A primitive snapshot stays stable between registry changes.
+    const viewSnapshot = () => VIEWS.map(view => tabs.get(view.kind) === undefined ? '' : view.kind).join(',');
+    const useAvailableViews = () => {
+      const kinds = useSyncExternalStore(subscribeViews, viewSnapshot).split(',');
+      return VIEWS.filter(view => kinds.includes(view.kind));
+    };
+    /** The corner remains available when the host hides blank-session utilities. */
     const takeCorner = () => scope.slots.inject(
       DSH_SLOTS.sessionHeaderCorner,
-      () => scope.slots.register(cornerRetirement(), renderNothing),
+      () => scope.slots.register({
+        ...cornerRetirement(),
+        inject: sessionId => ({
+          labels,
+          useAvailableViews,
+          open: (kind: (typeof VIEWS)[number]['kind']) => { openKind(kind, sessionId); },
+        }),
+      }, BlankHeaderActions),
     );
     const sync = () => {
       for (const view of VIEWS) {
