@@ -23,6 +23,88 @@ html[data-dsh-ccd-style="true"] .ZogL4G_trigger[data-collapsed="true"] {
   height: var(--ccd-account-trigger-height);
 }
 
+/* Keep the feedback action outside the host's account button. */
+html[data-dsh-ccd-style="true"] :has(> [data-ccd-plugin-feedback]) {
+  position: relative;
+}
+
+html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"]):has(+ [data-ccd-plugin-feedback]) {
+  width: fit-content;
+  max-width: calc(100% - 38px);
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-end: auto;
+}
+
+html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"]):has(+ [data-ccd-plugin-feedback]) .ZogL4G_label {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"]):has(+ [data-ccd-plugin-feedback])::after {
+  margin-inline-start: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback] {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ccd-radius-row);
+  background: transparent;
+  color: var(--ccd-text-muted);
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback] svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.65;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-tooltip] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 6px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-effort-shadow);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback-tooltip][hidden] {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback]:hover {
+  color: var(--ccd-text);
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-feedback]:focus-visible {
+  outline: 1px solid var(--ccd-text-muted);
+  outline-offset: 1px;
+}
+
+html[data-dsh-ccd-style="true"] [data-collapsed="true"] + [data-ccd-plugin-feedback] {
+  display: none;
+}
+
 /* The expanded launcher ends in the reference's small downward chevron,
    including while its menu is open. Keep a fixed icon seat after the label so
    long names ellipsize before it; the collapsed rail only shows the avatar. */
