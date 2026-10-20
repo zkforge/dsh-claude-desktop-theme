@@ -5,6 +5,7 @@ import {
   contextBreakdown, mcpServer, type ContextBreakdown, type ContextEntry,
 } from '../../shared/context.ts';
 import { hostAnchors, hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /**
  * The context ring's breakdown panel, driven instead of replaced.
@@ -331,7 +332,7 @@ export function createContextPanelDriver(
   };
 
   try {
-    tree = new MutationObserver(schedule);
+    tree = new MutationObserver(records => { if (!recordsInTranscript(records)) schedule(); });
     tree.observe(document.body, { childList: true, subtree: true });
     /* Only a frame that actually moved this session's reading wakes the card;
        the list notifies for every session it carries. A session with no

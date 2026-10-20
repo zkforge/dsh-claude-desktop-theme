@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Measured hero row width, also reserved in the Composer tools group. */
 export const HERO_CHIP_WIDTH_PROPERTY = '--ccd-workspace-seat';
@@ -54,7 +55,7 @@ export function mountHeroChips(document: Document, report: (error: unknown) => v
 
   try {
     sizes = new ResizeObserver(() => { measure(); });
-    mutations = new MutationObserver(() => { sync(); });
+    mutations = new MutationObserver(records => { if (!recordsInTranscript(records)) sync(); });
     mutations.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     sync();
   } catch (error) {

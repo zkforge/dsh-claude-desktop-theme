@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { HOST, hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /**
  * The Session header's own ⋮ menu, extended with one row.
@@ -177,7 +178,8 @@ export function mountSessionMenuRow(
     /* The list appears and disappears with the menu and the trigger's
        `aria-expanded` is the host's own statement of which state it is in, so
        both halves of the row's lifetime ride one observer. */
-    observer = new MutationObserver(() => {
+    observer = new MutationObserver(records => {
+      if (recordsInTranscript(records)) return;
       try {
         sync();
       } catch (error) {

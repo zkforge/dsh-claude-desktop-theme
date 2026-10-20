@@ -218,7 +218,7 @@ export function apply(ctx: Context): void {
             error => logger.error('sidebar: search field could not be placed', error),
           ));
           if (next.view.groupByStatus) {
-            scope.add(mountStatusGroups(document, ctx, next.view.showEmptyGroups,
+            scope.add(mountStatusGroups(document, ctx,
               error => logger.error('sidebar: status grouping failed', error)));
           }
           /* The browsing region's one header line: the state its stylesheet

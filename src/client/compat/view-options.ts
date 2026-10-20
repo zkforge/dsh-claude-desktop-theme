@@ -2,6 +2,7 @@ import type {
   ViewOptionsGroup, ViewOptionsGroupRead, ViewOptionsPort, ViewOptionsRead, ViewOptionsSnapshot, ViewOptionsSettingsPort,
 } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /**
  * The sidebar's view-options menu, driven instead of replaced.
@@ -352,7 +353,7 @@ export function createViewOptionsDriver(
   };
 
   try {
-    tree = new MutationObserver(schedule);
+    tree = new MutationObserver(records => { if (!recordsInTranscript(records)) schedule(); });
     tree.observe(document.body, { childList: true, subtree: true });
     sync();
   } catch (error) {

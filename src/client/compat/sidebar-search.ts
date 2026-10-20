@@ -29,6 +29,39 @@ export function mountSidebarSearch(document: Document, report: (error: unknown) 
   let disposed = false;
   let resize: ResizeObserver | undefined;
   const observed = new WeakSet<Element>();
+  const placeholders = new Map<HTMLInputElement, { original: string; drawn: string }>();
+  let shortcut: HTMLElement | null = null;
+
+  const decorate = (searchSlot: HTMLElement) => {
+    const input = searchSlot.querySelector<HTMLInputElement>('input');
+    if (input) {
+      const previous = placeholders.get(input);
+      const drawn = document.documentElement.lang.toLowerCase().startsWith('zh') ? '搜索' : 'Search';
+      const original = previous?.drawn === input.placeholder ? previous.original : input.placeholder;
+      placeholders.set(input, { original, drawn });
+      if (input.placeholder !== drawn) input.placeholder = drawn;
+    }
+    const search = searchSlot.querySelector<HTMLElement>(host.browserSearch);
+    const aria = search?.querySelector('[aria-keyshortcuts]')?.getAttribute('aria-keyshortcuts');
+    if (!search || !aria) { shortcut?.remove(); shortcut = null; return; }
+    const keys = aria.split(' ')[0]!.split('+').map(key => ({
+      Meta: '⌘', Control: 'Ctrl', Alt: '⌥', Shift: '⇧',
+    })[key] ?? key.toUpperCase());
+    if (!shortcut) {
+      shortcut = document.createElement('span');
+      shortcut.className = 'ccd-sidebar-search-shortcut';
+      shortcut.setAttribute('aria-hidden', 'true');
+    }
+    if (shortcut.textContent !== keys.join('')) {
+      shortcut.replaceChildren(...keys.map(key => {
+        const badge = document.createElement('kbd');
+        badge.textContent = key;
+        return badge;
+      }));
+    }
+    if (shortcut.parentElement !== search) search.append(shortcut);
+    for (const node of placeholders.keys()) if (!node.isConnected) placeholders.delete(node);
+  };
 
   const clearMark = () => {
     marked?.removeAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE);
@@ -37,6 +70,8 @@ export function mountSidebarSearch(document: Document, report: (error: unknown) 
 
   const clearSlot = () => {
     if (slot === null) return;
+    shortcut?.remove();
+    shortcut = null;
     slot.style.removeProperty('--ccd-sidebar-search-top');
     slot.style.removeProperty('--ccd-sidebar-search-left');
     slot.style.removeProperty('--ccd-sidebar-search-width');
@@ -71,6 +106,7 @@ export function mountSidebarSearch(document: Document, report: (error: unknown) 
       clearSlot();
       slot = nextSlot;
     }
+    decorate(nextSlot);
     for (const element of [nextRoot, newSession, nextSlot]) {
       if (observed.has(element) || resize === undefined) continue;
       observed.add(element);
@@ -105,13 +141,14 @@ export function mountSidebarSearch(document: Document, report: (error: unknown) 
   let observer: MutationObserver | undefined;
   try {
     observer = new MutationObserver(records => {
-      if (recordsTouch(records, root) || recordsIntroduce(records, host.sidebarRoot)) schedule();
+      if (recordsTouch(records, root) || recordsIntroduce(records, host.sidebarRoot)
+        || records.some(record => record.attributeName === 'lang')) schedule();
     });
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ['class', 'placeholder', 'aria-keyshortcuts', 'lang'],
     });
     resize = new ResizeObserver(schedule);
     win?.addEventListener('resize', schedule);
@@ -133,6 +170,10 @@ export function mountSidebarSearch(document: Document, report: (error: unknown) 
     win?.removeEventListener('resize', schedule);
     clearSlot();
     clearMark();
+    for (const [input, { original, drawn }] of placeholders) {
+      if (input.placeholder === drawn) input.placeholder = original;
+    }
+    placeholders.clear();
     root = null;
   };
 }

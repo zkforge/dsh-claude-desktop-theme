@@ -1,6 +1,7 @@
 import type { PersonalizationConfig } from '../../shared/config.ts';
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /** The greeting follows the interface language and never includes an account name. */
 export function claudeGreeting(language = ''): string {
@@ -46,7 +47,7 @@ export function mountHeroGreeting(document: Document, config: PersonalizationCon
       titles.set(heading, title);
     }
   };
-  const observer = new MutationObserver(sync);
+  const observer = new MutationObserver(records => { if (!recordsInTranscript(records)) sync(); });
   observer.observe(document.body, {
     childList: true, subtree: true,
     attributes: true, attributeFilter: ['lang'],

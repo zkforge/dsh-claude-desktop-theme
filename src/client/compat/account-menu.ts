@@ -2,6 +2,8 @@ import type { Disposer, ThemePreferencePort } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { mountAccountMore } from './account-more.ts';
 import { mountAccountTheme } from './account-theme.ts';
+import { mountAccountBalance, type AccountBalanceCache } from './account-balance.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Marks the portalled account menu for the stylesheet. */
 export const ACCOUNT_MENU_ATTRIBUTE = 'data-ccd-account-menu';
@@ -13,6 +15,7 @@ export const ACCOUNT_MENU_ATTRIBUTE = 'data-ccd-account-menu';
  * stylesheet paints it with `content: var(--ccd-account-name, "")`.
  */
 export const ACCOUNT_NAME_PROPERTY = '--ccd-account-name';
+const MENU_GEOMETRY_PROPERTIES = ['--ccd-account-menu-width', '--ccd-account-menu-left'] as const;
 
 /**
  * One account name as a complete CSS string token.
@@ -72,6 +75,8 @@ export function mountAccountMenu(
   const host = hostSelectors(document);
   const marked = new Set<HTMLElement>();
   const additions = new Map<HTMLElement, Disposer>();
+  let balanceAccount = '';
+  let balanceCache: AccountBalanceCache = {};
   let trigger: HTMLElement | null = null;
   let scheduled = 0;
 
@@ -81,6 +86,7 @@ export function mountAccountMenu(
     for (const menu of marked) {
       menu.removeAttribute(ACCOUNT_MENU_ATTRIBUTE);
       menu.style.removeProperty(ACCOUNT_NAME_PROPERTY);
+      for (const property of MENU_GEOMETRY_PROPERTIES) menu.style.removeProperty(property);
     }
     marked.clear();
   };
@@ -98,15 +104,29 @@ export function mountAccountMenu(
       if (getComputedStyle(candidate).position === 'fixed') target = candidate;
     }
     if (target === null) return;
+    const rect = trigger?.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    if (rect && viewportWidth > 0) {
+      // A collapsed rail keeps the regular menu width; expanded accounts match
+      // their actual hit area rather than the old fixed 236px card width.
+      const width = Math.min(rect.width >= 160 ? rect.width : 236, viewportWidth - 16);
+      target.style.setProperty('--ccd-account-menu-width', `${width}px`);
+      target.style.setProperty('--ccd-account-menu-left', `${Math.max(8, Math.min(rect.left, viewportWidth - width - 8))}px`);
+    }
     for (const [menu, dispose] of additions) {
       if (menu === target) continue;
       dispose();
       additions.delete(menu);
       menu.removeAttribute(ACCOUNT_MENU_ATTRIBUTE);
       menu.style.removeProperty(ACCOUNT_NAME_PROPERTY);
+      for (const property of MENU_GEOMETRY_PROPERTIES) menu.style.removeProperty(property);
       marked.delete(menu);
     }
     const name = trigger?.querySelector(host.accountLabel)?.textContent?.trim() ?? '';
+    if (name !== balanceAccount) {
+      balanceAccount = name;
+      balanceCache = {};
+    }
     target.setAttribute(ACCOUNT_MENU_ATTRIBUTE, '');
     /* The stylesheet reads this back as `content`, so it is written as one
        *quoted* CSS string token even when the name carries spaces or quotes. */
@@ -115,7 +135,8 @@ export function mountAccountMenu(
     if (!additions.has(target)) {
       const disposeMore = mountAccountMore(target);
       const disposeTheme = mountAccountTheme(target, theme);
-      additions.set(target, () => { disposeTheme(); disposeMore(); });
+      const disposeBalance = mountAccountBalance(target, balanceCache);
+      additions.set(target, () => { disposeBalance(); disposeTheme(); disposeMore(); });
     }
   };
 
@@ -134,13 +155,17 @@ export function mountAccountMenu(
   let tree: MutationObserver | undefined;
   let attributes: MutationObserver | undefined;
   let attached: HTMLElement | null = null;
+  const resize = new ResizeObserver(schedule);
   try {
-    tree = new MutationObserver(() => {
+    tree = new MutationObserver(records => {
+      if (recordsInTranscript(records)) return;
       const found = document.querySelector<HTMLElement>(host.accountTrigger);
       if (found !== attached) {
         attributes?.disconnect();
         attached = found;
         trigger = found;
+        resize.disconnect();
+        if (found !== null) resize.observe(found);
         if (found !== null) {
           attributes = new MutationObserver(schedule);
           attributes.observe(found, { attributes: true, attributeFilter: ['aria-expanded'] });
@@ -153,13 +178,16 @@ export function mountAccountMenu(
     if (initial !== null) {
       attached = initial;
       trigger = initial;
+      resize.observe(initial);
       attributes = new MutationObserver(schedule);
       attributes.observe(initial, { attributes: true, attributeFilter: ['aria-expanded'] });
     }
     sync();
+    document.defaultView?.addEventListener('resize', schedule);
   } catch (error) {
     tree?.disconnect();
     attributes?.disconnect();
+    resize.disconnect();
     clear();
     report(error);
     return () => {};
@@ -169,6 +197,8 @@ export function mountAccountMenu(
     scheduled = 0;
     tree?.disconnect();
     attributes?.disconnect();
+    resize.disconnect();
+    document.defaultView?.removeEventListener('resize', schedule);
     clear();
   };
 }

@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /**
  * The workspace picker's add row, printed the way the reference prints it.
@@ -170,7 +171,8 @@ export function mountWorkspaceMenu(document: Document, report: (error: unknown) 
   let contents: MutationObserver | undefined;
   let attached: HTMLElement | null = null;
   try {
-    tree = new MutationObserver(() => {
+    tree = new MutationObserver(records => {
+      if (recordsInTranscript(records)) return;
       const found = document.querySelector<HTMLElement>(host.heroWorkspaceChip);
       if (found !== attached) {
         attributes?.disconnect();

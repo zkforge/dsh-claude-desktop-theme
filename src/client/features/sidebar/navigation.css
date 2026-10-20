@@ -50,6 +50,11 @@ html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .icon-
   opacity: 0;
 }
 
+/* Match the New Session row's selected state, including without hover. */
+html[data-dsh-ccd-style="true"]:has(.ST7X_W_root[data-phase="hero"]) ._3WPZCG_root:not(._3WPZCG_collapsed) [data-ccd-nav="newSession"] .icon-disc {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand, .icon-disc) {
     transition: none;

@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Keep the browsing toolbar's localized title in sync with its list. */
 
@@ -93,7 +94,7 @@ export function mountBrowserHeader(document: Document, report: (error: unknown) 
   };
 
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => { if (!recordsInTranscript(records)) schedule(); });
     observer.observe(document.body, {
       childList: true,
       subtree: true,

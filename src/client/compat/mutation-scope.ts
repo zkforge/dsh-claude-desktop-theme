@@ -1,3 +1,5 @@
+import { ANCHOR } from './host-dom.ts';
+
 /**
  * Whether a mutation batch can concern one region of the page.
  *
@@ -84,4 +86,36 @@ export function recordsIntroduce(records: readonly MutationRecord[], selector: s
     }
   }
   return false;
+}
+
+/**
+ * Whether every record in a batch stayed inside the transcript's chat seats.
+ *
+ * While a reply streams, nearly every batch is text and markup growing inside
+ * one `[data-chat-flow-kind]` seat. A module that only dresses the sidebar,
+ * the Composer, a menu or a dialog cannot be affected by those writes, and a
+ * document-wide `querySelectorAll` per streamed batch is the largest cost this
+ * plugin adds to the host's own rendering. Such a module returns early on
+ * these batches; a seat being inserted or removed is written on its parent,
+ * outside every seat, so structural changes still reach it.
+ *
+ * The answer is conservative: a missing or empty batch, or a target that cannot answer
+ * `closest`, is not confined, and the module looks again as it always did.
+ *
+ * @param records - the observer's batch.
+ * @returns true when the batch can be skipped by a module outside the transcript.
+ */
+export function recordsInTranscript(records: readonly MutationRecord[]): boolean {
+  if (!records || records.length === 0) return false;
+  let previous: Node | null = null;
+  for (const record of records) {
+    const target = record.target;
+    // Streaming writes many records against one parent in a row.
+    if (target === previous) continue;
+    const element = target.nodeType === 1 ? target as Element : target.parentElement;
+    if (element == null || typeof element.closest !== 'function') return false;
+    if (element.closest(ANCHOR.chatFlowItem) === null) return false;
+    previous = target;
+  }
+  return true;
 }

@@ -5,6 +5,7 @@ import {
 } from '../shared/config.ts';
 import { mountStatistics } from './stats/service.ts';
 import { mountContextBreakdown } from './context/service.ts';
+import { mountDeepSeekBalance } from './balance.ts';
 
 /** Same shapes the client normalizer accepts, so both boundaries agree. */
 const HEX_COLOUR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})?$/;
@@ -137,4 +138,5 @@ export function apply(ctx: Context, config: unknown): void {
   const host = (typeof config === 'object' && config !== null ? config : {}) as HostConfig;
   mountStatistics(ctx, () => readValue(host.enabled, false) === true);
   mountContextBreakdown(ctx, () => readValue(host.enabled, false) === true);
+  mountDeepSeekBalance(ctx, () => readValue(host.enabled, false) === true);
 }

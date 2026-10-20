@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /* Keep the host context ring's accessible name free of its hidden percentage.
  * Voice controls retain their React-owned parent; composer.css positions their
@@ -65,7 +66,7 @@ export function mountComposerStatusOrder(document: Document, report: (error: unk
 
   let observer: MutationObserver | undefined;
   try {
-    observer = new MutationObserver(schedule);
+    observer = new MutationObserver(records => { if (!recordsInTranscript(records)) schedule(); });
     observer.observe(document.body, {
       childList: true, subtree: true, attributes: true, attributeFilter: ['aria-label'],
     });

@@ -1,4 +1,5 @@
 import type { Disposer } from '../contracts/ports.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const SOURCE = '[data-voice-activity="recording"] > svg:not([data-ccd-voice-waveform])';
@@ -93,7 +94,7 @@ export function mountVoiceWaveform(document: Document, report: (error: unknown) 
     }
   };
 
-  const observer = new MutationObserver(sync);
+  const observer = new MutationObserver(records => { if (!recordsInTranscript(records)) sync(); });
   observer.observe(document.body, { subtree: true, childList: true });
   sync();
   return () => {

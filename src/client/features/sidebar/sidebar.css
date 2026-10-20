@@ -393,6 +393,39 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_s
   color: var(--ccd-text-muted);
 }
 
+/* The persistent search field does not need the host's clear/collapse action. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_clearButton {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-search-shortcut {
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+  margin-left: 4px;
+  opacity: 0;
+  pointer-events: none;
+  color: var(--ccd-text-muted);
+}
+
+html[data-dsh-ccd-style="true"] ._7514NG_search:is(:hover, :focus-within) .ccd-sidebar-search-shortcut {
+  opacity: 1;
+}
+
+html[data-dsh-ccd-style="true"] .ccd-sidebar-search-shortcut kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 18px;
+  box-sizing: border-box;
+  padding: 0 3px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+}
+
 /* Searching normally hides these native actions; keep View options available. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_headerActions {
   max-width: none;
@@ -624,6 +657,8 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow.jJkEga_menuOpen {
 }
 
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow {
+  --ccd-session-action-inset: 3px;
+  position: relative;
   height: 28px;
 }
 
@@ -633,8 +668,36 @@ html[data-dsh-ccd-style="true"] :has(> .jJkEga_hoverContent > .jJkEga_hoverStatu
   display: none;
 }
 
-/* Keep the leading cell and use a compact 6px mark; replace the host spinner with a
-   breathing circle whose centre fades between hollow and solid. */
+/* The status mark shares the 22px overflow button seat. Keep the button in
+   flow to reserve the title width, then swap the mark for it on interaction. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot:has(> [data-state="ongoing"]),
+html[data-dsh-ccd-style="true"] [data-ccd-status-order] > .jJkEga_slot {
+  position: absolute;
+  right: var(--ccd-session-action-inset);
+  top: 50%;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:is(:hover, :focus-within, .jJkEga_menuOpen) > .jJkEga_slot:has(> [data-state="ongoing"]),
+html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within, .jJkEga_menuOpen) > .jJkEga_slot {
+  visibility: hidden;
+}
+
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(> .jJkEga_slot > [data-state="ongoing"]) .jJkEga_title,
+html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
+  margin-left: 0;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-status-group="ended"] > .jJkEga_slot:has(> [data-state]),
+html[data-dsh-ccd-style="true"] [data-ccd-status-order] > .jJkEga_slot:has(> div[data-slot="sidebar.session.row.leading"]:empty) {
+  display: none;
+}
+
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot > svg[data-state="ongoing"] {
   width: 6px;
   height: 6px;
@@ -1044,7 +1107,7 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions > span {
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(.jJkEga_rowActions) {
   box-sizing: border-box;
   min-width: 0;
-  padding-inline-end: 3px;
+  padding-inline-end: var(--ccd-session-action-inset);
 }
 
 /* The reference keeps the trigger highlighted while its popup is open. */
@@ -1151,6 +1214,10 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-list] > * {
 html[data-dsh-ccd-style="true"] [data-ccd-status-wrapper] {
   display: contents;
 }
+html[data-dsh-ccd-style="true"] [data-ccd-status-list] ._7514NG_emptyState,
+html[data-dsh-ccd-style="true"] [data-ccd-status-list] ._7514NG_empty {
+  display: none;
+}
 html[data-dsh-ccd-style="true"] [data-ccd-status-order] {
   order: var(--ccd-status-order);
   flex-shrink: 0;
@@ -1170,10 +1237,12 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
 }
 /* Reserve the native overflow button's seat so hovering a long title does not
    change its measure. Focusing the row also exposes its real menu control. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(> .jJkEga_slot > [data-state="ongoing"]) .jJkEga_rowActions,
 html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_rowActions {
   display: inline-flex;
   visibility: hidden;
 }
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(> .jJkEga_slot > [data-state="ongoing"]):is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions,
 html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions {
   visibility: visible;
 }

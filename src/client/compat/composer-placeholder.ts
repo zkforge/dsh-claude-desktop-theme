@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /* DSH 0.2.0-rc.2 ui-conversation/locales: placeholder.hero → placeholder.default.
    Match only the shipped default hero copy; workspace, blocked and command
@@ -40,7 +41,7 @@ export function mountComposerPlaceholder(document: Document, report: (error: unk
       active.aria = true;
     }
   };
-  const observer = new MutationObserver(sync);
+  const observer = new MutationObserver(records => { if (!recordsInTranscript(records)) sync(); });
   try {
     observer.observe(document.body, {
       childList: true, subtree: true, characterData: true, attributes: true,

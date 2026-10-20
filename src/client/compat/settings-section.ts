@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type { ReactElement } from 'react';
 import type { Disposer } from '../contracts/ports.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /**
  * Public list slot declared by ui-settings-general's SettingsRoot.
@@ -66,7 +67,7 @@ export function mountSettingsSectionIcon(document: Document, labels: readonly st
       marked.add(button);
     }
   };
-  const observer = new MutationObserver(update);
+  const observer = new MutationObserver(records => { if (!recordsInTranscript(records)) update(); });
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   update();
   return () => {

@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Names the preset a tagged row switches to; `theme/menus.css` keys the two-line cell off it. */
 export const PERMISSION_MODE_ATTRIBUTE = 'data-ccd-permission-mode';
@@ -390,7 +391,8 @@ function mountChoiceMenu(
        the one write that is a text change rather than a mount, so the chip
        carries an observer of its own; it is re-attached whenever the host
        replaces the control. */
-    tree = new MutationObserver(() => {
+    tree = new MutationObserver(records => {
+      if (recordsInTranscript(records)) return;
       const found = agent ? null : document.querySelector<HTMLElement>(host.permissionSelectTrigger);
       if (found !== attached) {
         contents?.disconnect();

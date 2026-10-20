@@ -136,7 +136,7 @@ for (const platform of ['darwin', 'win32']) for (const rootStatus of [true, fals
     f.doc.documentElement.dataset.platform = platform;
     const errors: unknown[] = [];
     try {
-      const dispose = mountStatusGroups(f.doc, f.ctx, false, error => errors.push(error));
+      const dispose = mountStatusGroups(f.doc, f.ctx, error => errors.push(error));
       assert.deepEqual(errors, []);
       assert.equal(a.dataset.ccdStatusGroup, 'working');
       assert.equal(b.dataset.ccdStatusGroup, 'ended');
@@ -152,7 +152,7 @@ for (const platform of ['darwin', 'win32']) for (const rootStatus of [true, fals
       await Promise.resolve();
       assert.equal(b.dataset.ccdStatusGroup, 'input');
       assert.ok(Number(b.dataset.ccdStatusOrder) < Number(a.dataset.ccdStatusOrder));
-      assert.equal(list.children.filter(node => node.className === 'ccd-status-heading').length, 2);
+      assert.equal(list.children.filter(node => node.className === 'ccd-status-heading').length, 3);
       statuses.set('b', {});
       pending.setAttribute('data-state', 'done');
       arrive();
@@ -182,7 +182,7 @@ test('a batch from another pane does not touch the flat list', async () => {
   } as unknown as typeof MutationObserver;
   const errors: unknown[] = [];
   try {
-    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => errors.push(error));
+    const dispose = mountStatusGroups(f.doc, f.ctx, error => errors.push(error));
     /* A write that lands nowhere near the list cannot change a row's group; a
        pass would walk every row and write every marker again. */
     const before = JSON.stringify([f.a.dataset, f.b.dataset, f.a.style.values, f.b.style.values]);
@@ -208,7 +208,7 @@ test('an unchanged pass writes nothing and reads no layout', async () => {
     disconnect() {}
   } as unknown as typeof MutationObserver;
   try {
-    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => { throw error; });
+    const dispose = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
     /* Native churn inside the list that changes no status: the wrapper's
        classes are rewritten, the row is touched. The plan is identical, so the
        pass must stop before it reads a rect or writes a marker. */
@@ -240,7 +240,7 @@ for (const mode of ['reduced motion', 'hidden window']) test(`changed status ski
   let reads = 0, unchangedWrites = 0;
   for (const row of [f.a, f.b]) row.getBoundingClientRect = () => { reads++; return { top: 0, left: 0, height: 28 }; };
   try {
-    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => { throw error; });
+    const dispose = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
     const set = f.a.style.setProperty.bind(f.a.style);
     f.a.style.setProperty = (key, value) => { unchangedWrites++; set(key, value); };
     f.statuses.set('b', { pendingInteraction: { kind: 'approval' } });
@@ -253,6 +253,36 @@ for (const mode of ['reduced motion', 'hidden window']) test(`changed status ski
   } finally { globalThis.MutationObserver = original; }
 });
 
+test('all three headings remain when the list is empty or only contains a provisional session', async () => {
+  const original = globalThis.MutationObserver;
+  const f = fixture(true);
+  globalThis.MutationObserver = class {
+    constructor(callback: (records?: MutationRecord[]) => void) { f.setNotify(callback); }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  f.wrapper.remove(); f.b.remove();
+  try {
+    const dispose = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
+    const headings = () => f.list.children.filter(node => node.className === 'ccd-status-heading');
+    assert.deepEqual(headings().map(node => node.textContent), ['需要输入', '处理中', '空闲']);
+    assert.deepEqual(headings().map(node => node.style.order), ['0', '2', '4']);
+    const blank = new Element();
+    blank.setAttribute('data-row-key', 'session:blank');
+    blank.setAttribute('data-ccd-blank-session', '');
+    f.list.append(blank);
+    f.mutation(batch('childList', f.list));
+    await Promise.resolve();
+    assert.equal(headings().length, 3);
+    assert.equal(blank.hasAttribute('data-ccd-status-group'), false);
+    f.doc.documentElement.lang = 'en';
+    f.mutation(batch('attributes', f.list));
+    await Promise.resolve();
+    assert.deepEqual(headings().map(node => node.textContent), ['Needs input', 'Working', 'Idle']);
+    dispose();
+    assert.deepEqual(f.list.children, [blank]);
+  } finally { globalThis.MutationObserver = original; }
+});
+
 test('unchanged groups release detached wrappers and restore removed headings', async () => {
   const original = globalThis.MutationObserver;
   const f = fixture(true);
@@ -261,7 +291,7 @@ test('unchanged groups release detached wrappers and restore removed headings', 
     observe() {} disconnect() {}
   } as unknown as typeof MutationObserver;
   try {
-    const dispose = mountStatusGroups(f.doc, f.ctx, false, error => { throw error; });
+    const dispose = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
     f.wrapper.children = [];
     f.wrapper.remove();
     f.list.append(f.a);
@@ -276,7 +306,7 @@ test('unchanged groups release detached wrappers and restore removed headings', 
     f.mutation(batch('childList', f.list));
     await Promise.resolve();
     assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), true, 'replacement wrappers receive layout markers');
-    assert.equal(f.list.children.filter(node => node.className === 'ccd-status-heading').length, 2);
+    assert.equal(f.list.children.filter(node => node.className === 'ccd-status-heading').length, 3);
     dispose();
     assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), false);
   } finally { globalThis.MutationObserver = original; }

@@ -1,4 +1,5 @@
 import type { Disposer } from '../contracts/ports.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Identify the two shared Claude actions; unknown/localized actions keep host art. */
 export function mountSidebarSessionIcons(document: Document): Disposer {
@@ -36,7 +37,7 @@ export function mountSidebarSessionIcons(document: Document): Disposer {
       else if (row.getAttribute(attribute) !== icon) row.setAttribute(attribute, icon);
     }
   };
-  const observer = new MutationObserver(sync);
+  const observer = new MutationObserver(records => { if (!recordsInTranscript(records)) sync(); });
   observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   sync();
   return () => {

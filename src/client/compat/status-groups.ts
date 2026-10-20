@@ -27,7 +27,7 @@ const GROUPS = ['input', 'working', 'ended'] as const;
  * uiSession.sessionStatus is the root observable provided by ui-session in the
  * pinned app.asar; it does not acquire or activate any listed Session.
  */
-export function mountStatusGroups(document: Document, ctx: Context, showEmpty: boolean,
+export function mountStatusGroups(document: Document, ctx: Context,
   report: (error: unknown) => void): Disposer {
   const status = (ctx as Context & { uiSession?: { sessionStatus?: StatusStore } }).uiSession?.sessionStatus;
   if (!ctx.sessions?.list) return () => {};
@@ -127,7 +127,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       const statuses = status?.getSnapshot();
       const childrenOf = readChildren(catalog);
       const zh = document.documentElement.lang.toLowerCase().startsWith('zh');
-      const labels = zh ? ['需要输入', '进行中', '已结束'] : ['Needs input', 'Working', 'Ended'];
+      const labels = zh ? ['需要输入', '处理中', '空闲'] : ['Needs input', 'Working', 'Idle'];
       const rows = [...list.querySelectorAll<HTMLElement>('[data-row-key^="session:"]')]
         .filter(row => !row.hasAttribute('data-ccd-blank-session'));
       /* Plan every row before touching the document. The plan is a pure
@@ -191,9 +191,7 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       if (!changed) {
         for (const [index, group] of GROUPS.entries()) {
           const heading = boxes.get(group);
-          if (counts[index] || showEmpty) {
-            if (heading === undefined || heading.textContent !== labels[index]) { changed = true; break; }
-          } else if (heading !== undefined) { changed = true; break; }
+          if (heading === undefined || heading.textContent !== labels[index]) { changed = true; break; }
         }
       }
       if (!changed) {
@@ -257,17 +255,15 @@ export function mountStatusGroups(document: Document, ctx: Context, showEmpty: b
       }
       for (const [index, group] of GROUPS.entries()) {
         let heading = boxes.get(group);
-        if (counts[index] || showEmpty) {
-          if (!heading) {
-            layoutChanged = true;
-            heading = document.createElement('div');
-            heading.className = 'ccd-status-heading'; heading.dataset.ccdStatusOwned = group;
-            heading.setAttribute('role', 'presentation');
-            owned.add(heading); list.append(heading);
-          }
-          if (heading.style.order !== String(index * stride)) heading.style.order = String(index * stride);
-          if (heading.textContent !== labels[index]) heading.textContent = labels[index]!;
-        } else if (heading) { layoutChanged = true; owned.delete(heading); heading.remove(); }
+        if (!heading) {
+          layoutChanged = true;
+          heading = document.createElement('div');
+          heading.className = 'ccd-status-heading'; heading.dataset.ccdStatusOwned = group;
+          heading.setAttribute('role', 'presentation');
+          owned.add(heading); list.append(heading);
+        }
+        if (heading.style.order !== String(index * stride)) heading.style.order = String(index * stride);
+        if (heading.textContent !== labels[index]) heading.textContent = labels[index]!;
       }
       const liveIds = new Set(rows.map(row => `children:${row.dataset.rowKey!.slice(8)}`));
       for (const node of owned) if (node.dataset.ccdStatusOwned?.startsWith('children:')

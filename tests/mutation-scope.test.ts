@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { recordsIntroduce, recordsTouch } from '../src/client/compat/mutation-scope.ts';
+import { recordsInTranscript, recordsIntroduce, recordsTouch } from '../src/client/compat/mutation-scope.ts';
 
 /** A node as the DOM answers the questions these predicates ask of it. */
 function node(connected = true) {
@@ -100,4 +100,17 @@ test('a selector match is worth a pass wherever the batch inserted it', () => {
   assert.equal(recordsIntroduce([insertion(page, [{ nodeType: 3 }])], '[data-phase="hero"]'), false);
   /* A stand-in that cannot answer the selector helpers is treated as a match. */
   assert.equal(recordsIntroduce([insertion(page, [{ nodeType: 1 }])], '[data-phase="hero"]'), true);
+});
+
+test('a batch confined to chat seats is in the transcript; anything outside is not', () => {
+  const seat = { nodeType: 1, closest: (selector: string) => selector === '[data-chat-flow-kind]' ? seat : null };
+  const sidebar = { nodeType: 1, closest: () => null };
+  const text = { nodeType: 3, parentElement: seat };
+  const streamed = (target: object): MutationRecord => ({
+    type: 'characterData', target, addedNodes: [], removedNodes: [],
+  } as unknown as MutationRecord);
+  assert.equal(recordsInTranscript([streamed(text), streamed(text), insertion(seat, [])]), true);
+  assert.equal(recordsInTranscript([streamed(text), attribute(sidebar)]), false);
+  assert.equal(recordsInTranscript([]), false, 'an empty batch is not skipped');
+  assert.equal(recordsInTranscript([attribute({})]), false, 'a target that cannot answer is not skipped');
 });

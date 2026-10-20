@@ -40,6 +40,8 @@ html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"])::af
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-menu] {
   box-sizing: border-box;
+  left: var(--ccd-account-menu-left) !important;
+  right: auto !important;
   width: var(--ccd-account-menu-width);
   min-width: var(--ccd-account-menu-width);
   max-width: var(--ccd-account-menu-width);
@@ -117,10 +119,40 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-menu] [role="menuitem"] > span
   transform: scale(0.875);
 }
 
+html[data-dsh-ccd-style="true"] [data-ccd-account-balance] {
+  appearance: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  font-family: inherit;
+  font-weight: 400;
+  text-align: start;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-account-balance] svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-balance-amount] {
+  margin-inline-start: auto;
+  color: var(--ccd-text);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-account-more] {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-more] > [data-ccd-account-more-original] {

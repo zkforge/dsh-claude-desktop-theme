@@ -23,6 +23,8 @@ Host 依赖 shared 与 Host 运行库；客户端各层通过 contracts、core�
 
 ## 界面模块
 
+左下角账号菜单的「余额」由 `compat/account-balance.ts` 插入独立菜单项，打开时读取 `/api/ccd-deepseek-balance`，每分钟后台刷新并支持点击重试，重新打开保留同一账户的上次读数，不显示查询中文案；关闭菜单或卸载时中止请求和定时器。`host/balance.ts` 复用启用的 `dsh-llm-deepseek-api-key` 的凭据引用，只向固定的 DeepSeek 官方余额接口发起请求；自定义端点不参与。Key 和上游错误正文留在 Host，客户端仅收到人民币余额与查询状态。接口说明见 [DeepSeek 官方文档](https://api-docs.deepseek.com/zh-cn/api/get-user-balance/)。
+
 | 模块 | 内容 | 默认 |
 | --- | --- | --- |
 | shell | 窗口骨架、分栏样式与右侧栏浮动卡片 | 开启 |
