@@ -30,7 +30,7 @@ function subscribe(listener: () => void) {
 }
 const snapshot = () => now;
 const noopSubscribe = () => () => {};
-function chinese() { return (document.documentElement.lang || navigator.language).toLowerCase().startsWith('zh'); }
+function chinese() { return (document.documentElement.lang || globalThis.navigator?.language || '').toLowerCase().startsWith('zh'); }
 
 /** Menu badges spell out the period; the Composer keeps its compact trend glyph. */
 export function PriceMark({ provider, model, compact = false, badge = false }: { provider: string | undefined; model: string | undefined; compact?: boolean; badge?: boolean }) {

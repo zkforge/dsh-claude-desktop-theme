@@ -8,7 +8,7 @@ export function mountAccountMore(menu: HTMLElement): Disposer {
   if (!contact || !view) return () => {};
   // Keep React-owned cells in place; hide them while our More cells are shown.
   const original = [...contact.children];
-  const zh = (document.documentElement.lang || view.navigator.language).toLowerCase().startsWith('zh');
+  const zh = (document.documentElement.lang || view.navigator?.language || '').toLowerCase().startsWith('zh');
   const title = zh ? '更多' : 'More';
   const feedbackLabel = contact.textContent?.trim() || (zh ? '意见反馈' : 'Feedback');
   const panel = document.createElement('div');

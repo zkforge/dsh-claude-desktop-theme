@@ -236,7 +236,8 @@ test('the separate browsing toolbar and compact project actions support both bui
               'the search field shares New Session’s width');
             assert(Math.abs(geometry.searchSlot.bottom + 5 - geometry.newSession.y) < 0.5,
               'the search field sits the shared 5px section gap above New Session');
-            assert.equal(geometry.label.display, 'block');
+            // The section title is hidden; the row keeps only its trailing actions.
+            assert.equal(geometry.label.display, 'none');
             assert.equal(geometry.plus.width, 22);
             assert.equal(geometry.plus.height, 22);
             assert.equal(geometry.searchButton.width, 22);

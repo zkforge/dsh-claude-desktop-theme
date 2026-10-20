@@ -114,6 +114,9 @@ function fakeElement(tag) {
     setAttribute: (name, value) => elementAttributes.set(name, value),
     hasAttribute: name => elementAttributes.has(name),
     removeAttribute: name => elementAttributes.delete(name),
+    // Controls the plugin creates up front (the account row's feedback button) bind listeners at mount.
+    addEventListener() {},
+    removeEventListener() {},
     append: (...nodes) => children.push(...nodes),
     remove() {
       styles.delete(element);

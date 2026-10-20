@@ -5,7 +5,7 @@ export function mountAccountTheme(menu: HTMLElement, theme: ThemePreferencePort 
   const anchor = menu.firstElementChild;
   if (theme === null || !anchor) return () => {};
   const document = menu.ownerDocument;
-  const zh = (document.documentElement.lang || document.defaultView?.navigator.language || '').toLowerCase().startsWith('zh');
+  const zh = (document.documentElement.lang || document.defaultView?.navigator?.language || '').toLowerCase().startsWith('zh');
   const row = document.createElement('div');
   row.setAttribute('data-ccd-account-theme', '');
   const group = document.createElement('span');

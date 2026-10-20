@@ -84,7 +84,7 @@ export function mountAccountMenu(
   const bug = document.createElement('button');
   bug.type = 'button';
   bug.setAttribute('data-ccd-plugin-feedback', '');
-  const zh = (document.documentElement.lang || document.defaultView?.navigator.language || '').toLowerCase().startsWith('zh');
+  const zh = (document.documentElement.lang || document.defaultView?.navigator?.language || '').toLowerCase().startsWith('zh');
   const bugLabel = zh ? '插件 UI Bug 反馈' : 'Report a plugin UI bug';
   bug.setAttribute('aria-label', bugLabel);
   bug.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 12)"><path d="M8 9h8v7a4 4 0 0 1-8 0V9Zm2 0V6a2 2 0 0 1 4 0v3M12 10v9M6 4l3 3m6 0 3-3M4 10l4 2m8 0 4-2M3 16h5m8 0h5M6 22l3-3m6 0 3 3"/></g></svg>';

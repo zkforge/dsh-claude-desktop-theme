@@ -168,21 +168,23 @@ test('the card’s search cell is a bare line, not a box', () => {
     + Math.abs(inlineOf(search, 'margin')));
 });
 
-test('the search cell paints no ring and no hint text', () => {
+test('the search cell paints no ring, and its hint text is muted', () => {
   /* §七's ring is what turned this cell into a blue frame: the panel focuses
      the field the moment the card opens. The user's rule replaces it with the
      caret, so no outline may reach the field under either focus spelling. */
-  const focus = controls.filter(rule => rule.selector.includes('.ccd-model-search:'));
+  const focus = controls.filter(rule => /\.ccd-model-search:focus/u.test(rule.selector));
   assert.equal(focus.length, 1, 'one rule states the field’s focus');
   for (const state of [':focus', ':focus-visible']) {
     assert.ok(focus[0]?.selector.includes(`.ccd-model-search${state}`), focus[0]?.selector ?? '');
   }
   assert.match(focus[0]?.body ?? '', /outline:\s*none/u);
-  /* No placeholder rule survives, and the component writes no attribute for
-     one to paint: the host's string stays as the field's accessible name. */
-  assert.deepEqual(controls.filter(rule => rule.selector.includes('::placeholder')), []);
+  /* The empty field shows the host's search string as a muted hint (added
+     with the pricing hints), and the same string stays its accessible name. */
+  const hints = controls.filter(rule => rule.selector.includes('::placeholder'));
+  assert.deepEqual(hints.map(rule => rule.selector), ['.ccd-model-search::placeholder']);
+  assert.match(hints[0]?.body ?? '', /color:\s*var\(--ccd-text-placeholder\)/u);
   const component = read('../src/client/features/model-controls/ModelControls.tsx');
-  assert.ok(!/\bplaceholder=/u.test(component), 'the search field carries no hint text');
+  assert.match(component, /placeholder=\{t\('search\.placeholder'\)\}/u);
   assert.match(component, /aria-label=\{t\('search\.placeholder'\)\}/u);
 });
 
@@ -210,8 +212,10 @@ test('the chosen row is the mark alone: no rule fills the selected state', () =>
      `aria-pressed` React writes, not the selected step, not a font weight. */
   assert.deepEqual(controls.filter(rule => /aria-pressed/u.test(rule.selector)), []);
   assert.deepEqual(controls.filter(rule => /--ccd-selected/u.test(rule.body)), []);
+  /* No weight on any row; the peak/off-peak badge's 500 is a label of its own,
+     not a selection state, and is the one rule allowed one. */
   const weights = controls.filter(rule => /font-weight/u.test(rule.body));
-  assert.deepEqual(weights, []);
+  assert.deepEqual(weights.map(rule => rule.selector), ['.ccd-price-badge']);
 });
 
 test('the card’s model names keep the chosen-value ink through the row’s cascade', () => {

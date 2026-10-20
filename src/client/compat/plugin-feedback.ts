@@ -44,7 +44,7 @@ function environment(document: Document): FeedbackEnvironment {
     ['Plugin', typeof __CCD_PLUGIN_VERSION__ === 'string' ? __CCD_PLUGIN_VERSION__ : 'dev'],
     ['DSH build', `${status.build.id} (${status.state})`],
     ['Platform', document.documentElement.dataset.platform ?? view?.navigator.platform ?? ''],
-    ['Language', document.documentElement.lang || view?.navigator.language || ''],
+    ['Language', document.documentElement.lang || view?.navigator?.language || ''],
     ['Appearance', document.documentElement.dataset.theme ?? (dark ? 'dark' : 'light')],
     ['Window', view ? `${view.innerWidth}×${view.innerHeight} @${view.devicePixelRatio}x` : ''],
     ['User agent', view?.navigator.userAgent ?? ''],
@@ -63,7 +63,7 @@ function environment(document: Document): FeedbackEnvironment {
  * @returns disposer that closes and removes the dialog.
  */
 export function openPluginFeedback(document: Document): () => void {
-  const zh = (document.documentElement.lang || document.defaultView?.navigator.language || '').toLowerCase().startsWith('zh');
+  const zh = (document.documentElement.lang || document.defaultView?.navigator?.language || '').toLowerCase().startsWith('zh');
   const dialog = document.createElement('dialog');
   dialog.setAttribute('data-ccd-plugin-feedback-dialog', '');
   dialog.setAttribute('aria-labelledby', 'ccd-plugin-feedback-title');

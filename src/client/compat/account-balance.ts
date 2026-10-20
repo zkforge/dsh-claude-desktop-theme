@@ -12,7 +12,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
   const document = menu.ownerDocument;
   const anchor = menu.querySelector('button[role="menuitem"]');
   if (!anchor) return () => {};
-  const zh = (document.documentElement.lang || document.defaultView?.navigator.language || '').toLowerCase().startsWith('zh');
+  const zh = (document.documentElement.lang || document.defaultView?.navigator?.language || '').toLowerCase().startsWith('zh');
   const row = document.createElement('button');
   row.type = 'button';
   row.setAttribute('role', 'menuitem');
