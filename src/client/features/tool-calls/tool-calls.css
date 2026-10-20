@@ -67,60 +67,61 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member="open"]:is([data-ccd
 
 /* The list names each call by its real description. Details, links, output,
    error tones, approvals and native keyboard/pointer handlers stay intact. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-disclosure-row], [data-sample="bash"], [data-tool="skill"] > div:first-child) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-disclosure-row], [data-sample="bash"], [data-tool="skill"] > div:first-child) {
   gap: 0;
   height: auto;
   min-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is(.Q2dzhW_root, [data-sample="bash"]):has(:is(.Q2dzhW_summary, .Q2dzhW_fileLink, .-gRAhq_summary):not(:empty)) :is(.Q2dzhW_leading, .Q2dzhW_sep, .-gRAhq_leading, .-gRAhq_sep),
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-kind="command"] :is(.Q2dzhW_root, [data-sample="bash"]):has(:is(.Q2dzhW_summary, .Q2dzhW_fileLink, .-gRAhq_summary):not(:empty)) :is(.Q2dzhW_title, .-gRAhq_title) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is(.Q2dzhW_root, [data-sample="bash"]):has(:is(.Q2dzhW_summary, .Q2dzhW_fileLink, .-gRAhq_summary):not(:empty)) :is(.Q2dzhW_leading, .Q2dzhW_sep, .-gRAhq_leading, .-gRAhq_sep),
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-kind="command"] :is(.Q2dzhW_root, [data-sample="bash"]):has(:is(.Q2dzhW_summary, .Q2dzhW_fileLink, .-gRAhq_summary):not(:empty)) :is(.Q2dzhW_title, .-gRAhq_title),
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="bash"], [data-tool="pwsh"], [data-sample="bash"]):has(:is(.Q2dzhW_summary, .-gRAhq_summary):not(:empty)) :is(.Q2dzhW_title, .-gRAhq_title) {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is(.Q2dzhW_title, .Q2dzhW_summary, .Q2dzhW_fileLink, .-gRAhq_summary) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is(.Q2dzhW_title, .Q2dzhW_summary, .Q2dzhW_fileLink, .-gRAhq_summary) {
   flex: 0 1 auto;
   font-size: var(--dsh-content-font-size, 14px);
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] .Q2dzhW_title {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] .Q2dzhW_title {
   margin-inline-end: 6px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] .Q2dzhW_fileLink {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] .Q2dzhW_fileLink {
   color: var(--ccd-text);
   text-decoration: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] .Q2dzhW_fileLink:hover {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] .Q2dzhW_fileLink:hover {
   text-decoration: underline;
 }
 
 /* SkillRow has its own chrome, outside ToolRow. Its first child is the native
    disclosure; the decoration separates its title and name in TextShimmer.
    Keep both text nodes and the host's click/keyboard handlers in place. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"] > div:first-child > span:first-child,
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"] > div:first-child [data-shimmer-decoration] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] > div:first-child > span:first-child,
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] > div:first-child [data-shimmer-decoration] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"] > div:first-child :is(span:has(+ [data-shimmer-decoration]), [data-shimmer-decoration] + span) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] > div:first-child :is(span:has(+ [data-shimmer-decoration]), [data-shimmer-decoration] + span) {
   flex: 0 1 auto;
   font-size: var(--dsh-content-font-size, 14px);
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"] > div:first-child span:has(+ [data-shimmer-decoration]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] > div:first-child span:has(+ [data-shimmer-decoration]) {
   flex: none;
   margin-inline-end: 6px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"][data-state="ok"] > div:first-child [data-shimmer-decoration] + span {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"][data-state="ok"] > div:first-child [data-shimmer-decoration] + span {
   color: var(--ccd-text);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-disclosure-row], [data-sample="bash"], [data-tool="skill"] > div:first-child)[aria-expanded]::after {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-disclosure-row], [data-sample="bash"], [data-tool="skill"] > div:first-child)[aria-expanded]::after {
   content: '';
   flex: none;
   width: 6px;
@@ -131,18 +132,18 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-disclosur
   transform: rotate(45deg);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-disclosure-row], [data-sample="bash"], [data-tool="skill"] > div:first-child)[aria-expanded="true"]::after {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-disclosure-row], [data-sample="bash"], [data-tool="skill"] > div:first-child)[aria-expanded="true"]::after {
   transform: translateY(-2px) rotate(135deg);
 }
 
 /* PresentRow and CordisDefineRow share the primitive's stable disclosure hook.
    TextShimmer's content seat contains the title followed by native metadata. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="present"], [data-tool="cordis_define"]) [data-disclosure-row] > span:first-child,
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="cordis_define"] [data-disclosure-row] > span:last-child > span:first-child > span[aria-hidden="true"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="present"], [data-tool="cordis_define"]) [data-disclosure-row] > span:first-child,
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="cordis_define"] [data-disclosure-row] > span:last-child > span:first-child > span[aria-hidden="true"] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="present"], [data-tool="cordis_define"]) [data-disclosure-row] > span:last-child > span:first-child > span:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="present"], [data-tool="cordis_define"]) [data-disclosure-row] > span:last-child > span:first-child > span:first-child {
   flex: none;
   margin-inline-end: 6px;
   color: var(--ccd-text-secondary);
@@ -151,29 +152,29 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="pre
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="present"] [data-disclosure-row] > span:last-child > span:first-child > span:nth-child(2),
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="cordis_define"] [data-disclosure-row] span[aria-hidden="true"] + span {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="present"] [data-disclosure-row] > span:last-child > span:first-child > span:nth-child(2),
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="cordis_define"] [data-disclosure-row] span[aria-hidden="true"] + span {
   flex: 0 1 auto;
   font-size: var(--dsh-content-font-size, 14px);
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="present"][data-state="ok"] [data-disclosure-row] > span:last-child > span:first-child > span:nth-child(2) > span:last-child,
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="cordis_define"][data-state="ok"] [data-disclosure-row] span[aria-hidden="true"] + span {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="present"][data-state="ok"] [data-disclosure-row] > span:last-child > span:first-child > span:nth-child(2) > span:last-child,
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="cordis_define"][data-state="ok"] [data-disclosure-row] span[aria-hidden="true"] + span {
   color: var(--ccd-text);
 }
 
 /* These Cordis rows expose inspection/actions rather than a disclosure. Keep
    their real controls and status; do not add an inert expand affordance. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child {
   min-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child > :is(span:first-child, span[aria-hidden="true"]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child > :is(span:first-child, span[aria-hidden="true"]) {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child > span:nth-child(2) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child > span:nth-child(2) {
   margin-inline-end: 6px;
   color: var(--ccd-text-secondary);
   font-size: var(--dsh-content-font-size, 14px);
@@ -181,7 +182,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="cor
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child > span:nth-child(4) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-tool="cordis_run"], [data-tool="cordis_stop"], [data-tool="cordis_undefine"]) > div:first-child > span:nth-child(4) {
   flex: 0 1 auto;
   font-size: var(--dsh-content-font-size, 14px);
   line-height: 20px;
@@ -189,7 +190,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-tool="cor
 
 /* A created task's overlay button retains full-row navigation. Flatten only
    the grouped card's chrome; frequency, status and raw failures stay native. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedule_create"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="schedule_create"] {
   gap: 4px;
   padding: 0;
   border: 0;
@@ -197,22 +198,22 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedul
   background: transparent;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedule_create"] > div:first-of-type {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="schedule_create"] > div:first-of-type {
   gap: 6px;
   min-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedule_create"] > div:first-of-type > :is(span:first-child, button) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="schedule_create"] > div:first-of-type > :is(span:first-child, button) {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedule_create"] > div:first-of-type > span:nth-child(2) > span:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="schedule_create"] > div:first-of-type > span:nth-child(2) > span:first-child {
   font-size: var(--dsh-content-font-size, 14px);
   font-weight: 400;
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedule_create"]:has(> button[aria-label]) > div:first-of-type::after {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="schedule_create"]:has(> button[aria-label]) > div:first-of-type::after {
   content: '';
   flex: none;
   width: 6px;
@@ -225,7 +226,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="schedul
 
 /* Expanded details use the host's real terminal/read primitives. Stable data
    hooks and direct children avoid introducing another build-specific hash. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-read], [data-search="paths"]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-read], [data-search="paths"]) {
   box-sizing: border-box;
   min-width: 0;
   margin: 6px 0 2px;
@@ -236,7 +237,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal]
 }
 
 /* Only the command has a box; terminal output sits directly on the list. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] {
   --dsl-terminal-font: 13px/18px var(--ccd-font-code);
   --dsl-terminal-line-height: 18px;
   --dsl-terminal-output-max-height: 360px;
@@ -245,7 +246,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] {
   overflow: visible;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] > div:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] > div:first-child {
   align-items: flex-start;
   gap: 10px;
   margin: 0;
@@ -258,29 +259,29 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] > d
 
 /* Keep the native state label accessible. The outer row already shows the
    state; reserve no extra terminal gutter for the duplicated status dot. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] > div:first-child > div:first-child > div > :is(svg, span[data-state="done"]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] > div:first-child > div:first-child > div > :is(svg, span[data-state="done"]) {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] > div:first-child > div:first-child > div {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] > div:first-child > div:first-child > div {
   gap: 8px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] > div:first-child > div:first-child > div > span[data-state] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] > div:first-child > div:first-child > div > span[data-state] {
   position: static;
   align-self: center;
   transform: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-command-text][data-ccd-command-source] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-command-text][data-ccd-command-source] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] span:has(+ [data-command-text][data-ccd-command-source]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] span:has(+ [data-command-text][data-ccd-command-source]) {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-command-highlight] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-command-highlight] {
   display: block;
   min-width: 0;
   white-space: pre-wrap;
@@ -288,25 +289,25 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-command-h
   color: var(--ccd-text-secondary);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-command-highlight]::before {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-command-highlight]::before {
   content: '$ ';
   color: var(--ccd-text-secondary);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-command-tone="command"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-command-tone="command"] {
   color: var(--ccd-command-name);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-command-tone="argument"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-command-tone="argument"] {
   color: var(--ccd-command-argument);
 }
 
 /* Copy the command itself and show confirmation after clipboard success. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-search="paths"]) > div:first-child > button[data-ccd-native-copy] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-search="paths"]) > div:first-child > button[data-ccd-native-copy] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-search="paths"]) > div:first-child > button {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-search="paths"]) > div:first-child > button {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -324,7 +325,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal]
   cursor: pointer;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-search="paths"]) > div:first-child > button::after {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-search="paths"]) > div:first-child > button::after {
   content: '';
   width: 14px;
   height: 14px;
@@ -332,26 +333,26 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal]
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.3'%3E%3Crect x='2.5' y='2.5' width='8' height='8' rx='1'/%3E%3Cpath d='M10.5 5.5h2a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-search="paths"]) > div:first-child > button:hover {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-search="paths"]) > div:first-child > button:hover {
   background: var(--ccd-hover);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-search="paths"]) > div:first-child > button[data-ccd-copy-state="copied"]::after {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-search="paths"]) > div:first-child > button[data-ccd-copy-state="copied"]::after {
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m3 8 3.2 3.2L13 4.5' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-terminal] > div + div {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-terminal] > div + div {
   padding: 10px 0 0;
   font: var(--dsl-terminal-font);
 }
 
 /* Path and actions sit outside the code frame; the file's numbered source
    retains the host's highlighter, copy/wrap controls and real line numbers. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] {
   font: 13px/18px var(--ccd-font-code);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] {
   gap: 8px;
   padding: 2px 0 7px;
   border-radius: 0;
@@ -359,23 +360,23 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data
   font: inherit;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] > div:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] > div:first-child {
   flex: 1;
   min-width: 0;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] > div:first-child > span:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] > div:first-child > span:first-child {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] [title] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] [title] {
   color: var(--ccd-text-secondary);
   font: 13px/20px var(--ccd-font-ui);
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read] > [data-code-block-banner] + div, [data-search="paths"] > div + div, [data-ccd-skill-content]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-read] > [data-code-block-banner] + div, [data-search="paths"] > div + div, [data-ccd-skill-content]) {
   position: relative;
   padding: 5px 9px 9px;
   border: 1px solid var(--ccd-border);
@@ -384,18 +385,18 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read] > [
   font: 13px/18px var(--ccd-font-code);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] + div > div > span[aria-hidden="true"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] + div > div > span[aria-hidden="true"] {
   margin-inline-end: 16px;
   color: var(--ccd-text-secondary);
 }
 
 /* The status reports the tool's returned window, not a paging control. The
    preview scrolls all returned lines; it never fetches or changes the file. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] > div:last-child > span:not(:has(button)) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] > div:last-child > span:not(:has(button)) {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"], [class*="_ioCard"]) {
   max-height: min(320px, 50vh);
   overflow: auto;
   overscroll-behavior: contain;
@@ -405,75 +406,41 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][dat
   scrollbar-color: auto;
 }
 
-/* Quiet grey pills for source previews. Inset the painted thumb at both ends
-   while retaining the native proportional sizing and full drag target. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"])::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"])::-webkit-scrollbar-track {
-  margin: 6px;
-  background: transparent;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"])::-webkit-scrollbar-thumb {
-  min-height: 28px;
-  min-width: 28px;
-  border: solid transparent;
-  border-width: 8px 1px;
-  border-radius: 999px;
-  background: var(--ccd-text-muted);
-  background-clip: padding-box;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"])::-webkit-scrollbar-thumb:horizontal {
-  border-width: 1px 8px;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"])::-webkit-scrollbar-thumb:hover {
-  background-color: var(--ccd-text-secondary);
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > [data-code-block-banner] + div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"])::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read][data-ccd-read-scroll] > div > button[aria-expanded="true"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read][data-ccd-read-scroll] > div > button[aria-expanded="true"] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-read][data-ccd-read-scroll] > div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"]):focus-visible {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-read][data-ccd-read-scroll] > div, [data-search="paths"][data-ccd-read-scroll] > div + div, [data-ccd-skill-content], [class*="_root"]:has(> ul[class*="_list"]) > ul[class*="_list"], [class*="_ioCard"]):focus-visible {
   outline: 1px solid var(--ccd-text-muted);
   outline-offset: -2px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-read], [data-search="paths"]) button:focus-visible {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-read], [data-search="paths"]) button:focus-visible {
   outline: 2px solid var(--ccd-text-muted);
   outline-offset: 2px;
 }
 
 /* Match the file-copy icon's quiet seat instead of a browser focus frame.
    Keyboard focus remains visible through the same background as hover. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] :is([data-terminal], [data-search="paths"]) > div:first-child > button:is([data-ccd-command-copy], [data-ccd-paths-copy]):is(:focus, :focus-visible) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-terminal], [data-search="paths"]) > div:first-child > button:is([data-ccd-command-copy], [data-ccd-paths-copy]):is(:focus, :focus-visible) {
   outline: none;
   box-shadow: none;
   background: var(--ccd-hover);
 }
 
 @media (hover: hover) {
-  html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read] > [data-code-block-banner] > div:last-child {
+  html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read] > [data-code-block-banner] > div:last-child {
     opacity: 0;
   }
 
-  html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-read]:is(:hover, :focus-within) > [data-code-block-banner] > div:last-child {
+  html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-read]:is(:hover, :focus-within) > [data-code-block-banner] > div:last-child {
     opacity: 1;
   }
 }
 
 /* Skill output uses the same numbered, scrollable source frame as file reads.
    Keep the host's original text node for React updates and restore on release. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"] section:has([data-ccd-skill-source]) {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] section:has([data-ccd-skill-source]) {
   margin: 6px 0 2px;
   padding: 0;
   border: 0;
@@ -483,24 +450,24 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"]
   overflow: visible;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"] section:has([data-ccd-skill-source]) > div:first-child:not([data-ccd-skill-content]),
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-skill-source] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] section:has([data-ccd-skill-source]) > div:first-child:not([data-ccd-skill-content]),
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-skill-source] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-skill-content] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-skill-content] {
   margin: 0;
   font: 13px/18px var(--ccd-font-code);
   color: var(--ccd-text);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-skill-content] > div {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-skill-content] > div {
   display: flex;
   min-height: 18px;
   white-space: pre-wrap;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-skill-content] > div > span:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-skill-content] > div > span:first-child {
   flex: none;
   min-width: 3ch;
   margin-inline-end: 16px;
@@ -509,18 +476,18 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-skill-con
   user-select: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-ccd-skill-content] > div > span:last-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-ccd-skill-content] > div > span:last-child {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-tool="skill"][data-state="error"] [data-ccd-skill-content] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"][data-state="error"] [data-ccd-skill-content] {
   color: var(--dsw-alias-state-error-primary);
 }
 
 /* Glob keeps the host's path rows and truncation metadata. Expand returned
    excerpts into the same bounded source viewport used by reads and skills. */
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"] {
   margin: 6px 0 2px;
   padding: 0;
   border: 0;
@@ -529,7 +496,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths
   font: 13px/18px var(--ccd-font-code);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"] > div:first-child {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"] > div:first-child {
   align-items: center;
   gap: 8px;
   padding: 2px 0 7px;
@@ -537,17 +504,17 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths
   font: 12px/20px var(--ccd-font-ui);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"] > div + div {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"] > div + div {
   counter-reset: ccd-path-line;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"] > div + div > div {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"] > div + div > div {
   display: flex;
   min-height: 18px;
   counter-increment: ccd-path-line;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"] > div + div > div::before {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"] > div + div > div::before {
   content: counter(ccd-path-line);
   flex: none;
   min-width: 3ch;
@@ -557,7 +524,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths
   user-select: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"] > div + div > div > div {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"] > div + div > div > div {
   min-width: 0;
   min-height: 18px;
   padding: 0;
@@ -565,7 +532,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths
   overflow-wrap: anywhere;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-search="paths"][data-ccd-read-scroll] > div > button[aria-expanded="true"] {
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-search="paths"][data-ccd-read-scroll] > div > button[aria-expanded="true"] {
   display: none;
 }
 
@@ -609,4 +576,212 @@ html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool] [c
 
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool] [class*="_root"]:has(> :is(ul[class*="_list"], p[class*="_empty"])) dt {
   color: var(--ccd-text-secondary);
+}
+
+/* Live calls use the same description/chevron as expanded completed calls.
+   Keep approval, failure and stop controls native and visible. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"]:not([data-ccd-tool-group-member]) {
+  animation: ccd-tool-enter 180ms ease-out both;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is([data-disclosure-row], [data-sample="bash"]):has([data-shimmer]):not([aria-expanded="true"]) {
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-chevron],
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [aria-expanded]::after {
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-toggle] {
+  animation: ccd-tool-enter 180ms ease-out both;
+}
+
+@keyframes ccd-tool-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Group disclosure changes display immediately, moving the following response
+   once. No delayed display transition or member entry animation. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] :is([data-chat-flow-kind="tool-call"], [data-ccd-tool-group-toggle], [data-ccd-tool-group-chevron], [data-ccd-tool-group-member]),
+  html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [aria-expanded]::after {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Reasoning stays a separate chronological disclosure, using the same quiet
+   label and trailing chevron as the tool summaries. Native streaming and
+   independent open state remain owned by the host. */
+html[data-dsh-ccd-style="true"] [data-variant="think"] {
+  color: var(--ccd-text-secondary);
+  font: 14px/24px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"]:not([data-expanded]) {
+  contain: layout;
+  height: auto;
+  min-height: 28px;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row] {
+  gap: 0;
+  width: fit-content;
+  max-width: 100%;
+  height: auto;
+  min-height: 24px;
+  padding: 2px 0;
+  font: inherit;
+  color: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row] > span:first-child,
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row] [data-shimmer-decoration] {
+  display: none;
+}
+
+/* Keep the live summary available while generating; settled rows use only the
+   title. Expanding still renders the full host-provided Markdown. */
+html[data-dsh-ccd-style="true"] [data-variant="think"][data-state="ok"] [data-disclosure-row] span[data-shimmer-decoration] + span {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row] > span:last-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row] > span:last-child > span:first-child > span:first-child {
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"][data-state="running"] [data-disclosure-row] span[data-shimmer-decoration] + span {
+  margin-inline-start: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row]::after {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 9px 3px;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-row][aria-expanded="true"]::after {
+  transform: translateY(-2px) rotate(135deg);
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-header] + div {
+  box-sizing: border-box;
+  margin: 6px 0 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 9px;
+  background: var(--ccd-card);
+  color: var(--ccd-text-secondary);
+  font: 13px/20px var(--ccd-font-ui);
+  max-height: min(320px, 50vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
+html[data-dsh-ccd-style="true"] [data-variant="think"] [data-disclosure-header] + div [data-markdown-variant="compact"] {
+  color: inherit;
+  font: inherit;
+}
+
+/* Within a mixed process group, reasoning is one list row like each tool. */
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-variant="think"],
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-variant="think"]:not([data-expanded]) {
+  min-height: 20px;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-variant="think"] [data-disclosure-row] {
+  min-height: 20px;
+  padding-block: 0;
+}
+
+/* Generic tools such as working_directory render raw input/output rather than
+   a specialized card. Cover the fallback itself, not individual tool names. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] {
+  box-sizing: border-box;
+  margin: 6px 0 2px;
+  padding: 0;
+  border: 1px solid var(--ccd-border);
+  border-radius: 9px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  font: 13px/18px var(--ccd-font-code);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 14px;
+  padding: 8px 10px;
+  max-height: none;
+  overflow: visible;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] > div > span:first-child {
+  position: static;
+  color: var(--ccd-text-secondary);
+  font: 12px/18px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] > div > span:last-child {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] > div > span:last-child:not([data-error]) {
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] > span[aria-hidden="true"] {
+  height: 1px;
+  background: var(--ccd-border);
+}
+
+/* One clipped line persists across consecutive live calls. Only decorative
+   text layers move; host call nodes retain their parents and handlers. */
+html[data-dsh-ccd-style="true"] [data-ccd-tool-roll] {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: 24px;
+  overflow: hidden;
+  text-align: start;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-tool-roll-label],
+html[data-dsh-ccd-style="true"] [data-ccd-tool-roll-out] {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 24px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-tool-roll-out] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-tool-group-toggle][data-ccd-tool-live] {
+  color: var(--ccd-text);
 }

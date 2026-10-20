@@ -86,6 +86,7 @@ test('detail enhancement keeps native command nodes, follows updates and restore
   body.connectedRoot = true;
   const group = new ElementFixture(), terminal = new ElementFixture(), source = new ElementFixture();
   group.setAttribute('data-ccd-tool-group-member', 'open');
+  group.setAttribute('data-chat-flow-kind', 'tool-call');
   terminal.setAttribute('data-terminal', '');
   source.setAttribute('data-command-text', 'true');
   source.textContent = 'git status --short';
@@ -111,10 +112,12 @@ test('detail enhancement keeps native command nodes, follows updates and restore
     await notifyChange(terminal);
     assert.equal(view.children[0], token);
     group.removeAttribute('data-ccd-tool-group-member');
+    group.removeAttribute('data-chat-flow-kind');
     await notifyChange(group);
     assert.equal(source.nextElementSibling, null);
     assert.equal(source.attrs.has('data-ccd-command-source'), false);
     group.setAttribute('data-ccd-tool-group-member', 'open');
+  group.setAttribute('data-chat-flow-kind', 'tool-call');
     await notifyChange(group);
     assert.equal(terminal.children[1]?.textContent, 'pwd');
     assert.deepEqual(errors, []);
@@ -141,6 +144,7 @@ test('file previews reveal every returned line once, become keyboard scrollable 
   const group = new ElementFixture(), read = new ElementFixture(), banner = new ElementFixture();
   const content = new ElementFixture(), expand = new ElementFixture();
   group.setAttribute('data-ccd-tool-group-member', 'open');
+  group.setAttribute('data-chat-flow-kind', 'tool-call');
   read.setAttribute('data-read', '');
   content.setAttribute('tabindex', '-1');
   expand.tagName = 'BUTTON';
@@ -194,6 +198,7 @@ test('skill previews number the unchanged source, retain blank lines, follow upd
   const section = new ElementFixture(), source = new ElementFixture();
   body.connectedRoot = true;
   group.setAttribute('data-ccd-tool-group-member', 'open');
+  group.setAttribute('data-chat-flow-kind', 'tool-call');
   skill.setAttribute('data-tool', 'skill');
   source.tagName = 'PRE';
   const text = '<skill_content>\n\n# 中文技能\n</skill_content>\n';
@@ -238,6 +243,7 @@ test('command copy writes the actual command, confirms only success and restores
   const header = new ElementFixture(), nativeCopy = new ElementFixture(), source = new ElementFixture();
   body.connectedRoot = true;
   group.setAttribute('data-ccd-tool-group-member', 'open');
+  group.setAttribute('data-chat-flow-kind', 'tool-call');
   terminal.setAttribute('data-terminal', '');
   source.setAttribute('data-command-text', '');
   source.textContent = 'git status --short';
@@ -313,6 +319,7 @@ test('glob expands all returned paths into a scroll region and copies paths with
   const content = new ElementFixture(), expand = new ElementFixture();
   body.connectedRoot = true;
   group.setAttribute('data-ccd-tool-group-member', 'open');
+  group.setAttribute('data-chat-flow-kind', 'tool-call');
   search.setAttribute('data-search', 'paths');
   summary.textContent = 'Showing 100 of 285 paths';
   nativeCopy.tagName = 'BUTTON';

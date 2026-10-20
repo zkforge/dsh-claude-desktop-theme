@@ -182,8 +182,8 @@ test('colour arithmetic is deterministic and stays in range', () => {
   assert.deepEqual(parseColour(derivePalette('not-a-colour', '').canvas), parseColour(BUILT_IN_SURFACES.canvas));
 });
 
-test('an unconfigured plugin publishes the built-in pair for every host token', () => {
-  const tokens = resolveThemeTokens(resolveConfig());
+test('empty font overrides preserve the built-in palette and font stacks', () => {
+  const tokens = resolveThemeTokens(resolveConfig({ fonts: { uiLatin: '', uiCjk: '', code: '' } }));
   assert.deepEqual(tokens['--dsw-alias-bg-base'], { light: '#fcfcfb', dark: BUILT_IN_DARK.canvas });
   assert.deepEqual(tokens['--dsw-specific-sidebar-fill'], { light: '#fbfbf9', dark: BUILT_IN_DARK.sidebar });
   assert.deepEqual(tokens['--dsw-alias-border-l3'], { light: '#e3e3e1', dark: BUILT_IN_DARK.border });
@@ -247,7 +247,7 @@ test('typefaces compose in fallback order and reach both host tokens in both sch
 });
 
 test('one configured family still composes a complete stack', () => {
-  const tokens = resolveThemeTokens(adoptConfig({ fonts: { uiCjk: '思源黑体' } }));
+  const tokens = resolveThemeTokens(adoptConfig({ fonts: { uiLatin: '', uiCjk: '思源黑体', code: '' } }));
   assert.deepEqual(tokens['--dsw-font-family'], {
     light: '"思源黑体", var(--ccd-font-fallback)',
     dark: '"思源黑体", var(--ccd-font-fallback)',
@@ -258,7 +258,7 @@ test('one configured family still composes a complete stack', () => {
 test('both configuration sections travel in one override layer', () => {
   const tokens = resolveThemeTokens(adoptConfig({
     appearance: { canvas: '#101418', sidebar: '#0c1014' },
-    fonts: { code: 'Fira Code' },
+    fonts: { uiLatin: '', uiCjk: '', code: 'Fira Code' },
   }));
   assert.deepEqual(tokens['--ccd-sidebar'], { light: '#0c1014', dark: BUILT_IN_DARK.sidebar });
   assert.deepEqual(tokens['--dsw-alias-bg-base'], { light: '#101418', dark: BUILT_IN_DARK.canvas });

@@ -11,7 +11,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 let chrome;
 try { chrome = findChrome(); } catch { /* Local Chrome enables browser coverage. */ }
 
-test('model scrollbar allows a delayed grab, then hides without dismissing the popup', {
+test('model native scrollbar reaches both ends and preserves popup interaction', {
   skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage',
   timeout: 30000,
 }, async () => {
@@ -62,15 +62,15 @@ test('model scrollbar allows a delayed grab, then hides without dismissing the p
       assert.equal(await isOpen(), true, 'host focus handoff must not dismiss the menu');
       const geometry = await page.evaluate(`(()=>{
         const el=document.querySelector('.ccd-model-options'), r=el.getBoundingClientRect();
-        return {x:r.right-5, y:r.top+12, top:r.top, bottom:r.bottom, height:el.clientHeight, gutter:el.offsetWidth-el.clientWidth,
-          ink:getComputedStyle(el,'::-webkit-scrollbar-thumb').getPropertyValue('--ccd-model-scroll-ink').trim()};
+        return {x:r.right-3, y:r.top+12, top:r.top, bottom:r.bottom, height:el.clientHeight, gutter:el.offsetWidth-el.clientWidth,
+          ink:getComputedStyle(el,'::-webkit-scrollbar-thumb').backgroundColor};
       })()`);
-      assert.equal(geometry.gutter, 10, 'the actual native track has a 10px hit area');
-      assert.equal(geometry.ink, 'transparent', 'thumb starts hidden');
+      assert.equal(geometry.gutter, 6, 'the native track uses the shared 6px width');
+      assert.equal(geometry.ink, 'rgba(0, 0, 0, 0)', 'thumb starts hidden');
       await page.evaluate(`document.querySelector('.ccd-model-options').scrollTop=1`);
       await settle();
-      assert.notEqual(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-model-options'),'::-webkit-scrollbar-thumb').getPropertyValue('--ccd-model-scroll-ink').trim()`),
-        'transparent', 'scrolling reveals the thumb');
+      assert.notEqual(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-model-options'),'::-webkit-scrollbar-thumb').backgroundColor`),
+        'rgba(0, 0, 0, 0)', 'scrolling reveals the thumb');
       await page.send('Input.dispatchMouseEvent', {type:'mousePressed',x:geometry.x,y:geometry.y,button:'left',clickCount:1});
       await page.send('Input.dispatchMouseEvent', {type:'mouseMoved',x:geometry.x,y:geometry.y+180,button:'left',buttons:1});
       await page.send('Input.dispatchMouseEvent', {type:'mouseReleased',x:geometry.x,y:geometry.y+180,button:'left',clickCount:1});
@@ -78,7 +78,7 @@ test('model scrollbar allows a delayed grab, then hides without dismissing the p
       assert.equal(await isOpen(), true, 'native thumb drag keeps the popup open');
       assert.ok(await page.evaluate(`document.querySelector('.ccd-model-options').scrollTop > 0`), 'native thumb drag scrolls the model list');
       assert.equal(await page.evaluate('!!window.selected'), false, 'scrollbar drag does not select a model');
-      // The short visible thumb must still drag the complete content range.
+      // The native thumb must drag the complete content range.
       await page.evaluate(`document.querySelector('.ccd-model-options').scrollTop=0`);
       await settle();
       await page.send('Input.dispatchMouseEvent', {type:'mousePressed',x:geometry.x,y:geometry.y,button:'left',clickCount:1});
@@ -88,7 +88,6 @@ test('model scrollbar allows a delayed grab, then hides without dismissing the p
       assert.equal(await page.evaluate(`(()=>{
         const list=document.querySelector('.ccd-model-options'), last=list.querySelector('[data-model-option]:last-child');
         return Math.abs(list.scrollTop-(list.scrollHeight-list.clientHeight))<1
-          && list.style.getPropertyValue('--ccd-model-scroll-progress')==='1'
           && last.getBoundingClientRect().bottom<=list.getBoundingClientRect().bottom+1;
       })()`), true, 'drag reaches the bottom and fully exposes the last model');
       await page.send('Input.dispatchMouseEvent', {type:'mousePressed',x:geometry.x,y:geometry.bottom-12,button:'left',clickCount:1});
@@ -97,15 +96,12 @@ test('model scrollbar allows a delayed grab, then hides without dismissing the p
       await settle();
       assert.equal(await page.evaluate(`(()=>{
         const list=document.querySelector('.ccd-model-options');
-        return list.scrollTop===0 && list.style.getPropertyValue('--ccd-model-scroll-progress')==='0';
-      })()`), true, 'drag reaches the top and resets the short thumb position');
+        return list.scrollTop===0;
+      })()`), true, 'drag reaches the top and aligns the thumb with the track start');
       await page.send('Input.dispatchMouseEvent', {type:'mouseMoved',x:400,y:30});
       await page.evaluate('new Promise(resolve=>setTimeout(resolve,900))');
-      assert.notEqual(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-model-options'),'::-webkit-scrollbar-thumb').getPropertyValue('--ccd-model-scroll-ink').trim()`),
-        'transparent', 'thumb stays visible after the global idle timeout');
-      await page.evaluate('new Promise(resolve=>setTimeout(resolve,1500))');
-      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-model-options'),'::-webkit-scrollbar-thumb').getPropertyValue('--ccd-model-scroll-ink').trim()`),
-        'transparent', 'thumb hides after the extended model idle timeout');
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-model-options'),'::-webkit-scrollbar-thumb').backgroundColor`),
+        'rgba(0, 0, 0, 0)', 'thumb hides after the shared idle timeout');
       await page.evaluate(`document.querySelector('.ccd-model-search').focus()`);
       await page.send('Input.dispatchKeyEvent', {type:'keyDown',key:'Escape',code:'Escape'});
       await settle();

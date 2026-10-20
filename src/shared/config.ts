@@ -39,7 +39,7 @@ export interface PersonalizationConfig {
   readonly greetingName: string;
 }
 export const DEFAULT_PERSONALIZATION: PersonalizationConfig = Object.freeze({
-  petStyle: 'whale', runningStyle: 'whale', replySignatureStyle: 'whale', greetingStyle: 'explore', greetingName: '',
+  petStyle: 'claude', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: '',
 });
 
 export function normalizeGreetingName(value: unknown): string {
@@ -59,10 +59,10 @@ function personalization(input: Partial<Record<keyof PersonalizationConfig, unkn
     throw new TypeError('personalization.greetingName must be a string');
   }
   return Object.freeze({
-    petStyle: petStyle === 'claude' ? 'claude' : 'whale',
-    runningStyle: runningStyle === 'claude' ? 'claude' : 'whale',
-    replySignatureStyle: replySignatureStyle === 'claude' ? 'claude' : 'whale',
-    greetingStyle: greetingStyle === 'claude' ? 'claude' : 'explore',
+    petStyle: petStyle === 'whale' || petStyle === 'claude' ? petStyle : DEFAULT_PERSONALIZATION.petStyle,
+    runningStyle: runningStyle === 'whale' || runningStyle === 'claude' ? runningStyle : DEFAULT_PERSONALIZATION.runningStyle,
+    replySignatureStyle: replySignatureStyle === 'whale' || replySignatureStyle === 'claude' ? replySignatureStyle : DEFAULT_PERSONALIZATION.replySignatureStyle,
+    greetingStyle: greetingStyle === 'explore' || greetingStyle === 'claude' ? greetingStyle : DEFAULT_PERSONALIZATION.greetingStyle,
     greetingName: normalizeGreetingName(input.greetingName),
   });
 }
@@ -93,23 +93,23 @@ export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
   'new-session': true,
   conversation: true,
   'tool-calls': true,
-  statistics: false,
+  statistics: true,
   'composer-pet': true,
   'composer-stats': false,
   'context-panel': true,
   'hero-ripples': true,
 });
 
-/** Empty strings keep the built-in palette and the system font stack in charge. */
+/** Empty colours keep the built-in palette in charge. */
 export const DEFAULT_APPEARANCE: AppearanceConfig = Object.freeze({
   canvas: '',
   sidebar: '',
 });
 
 export const DEFAULT_FONTS: FontsConfig = Object.freeze({
-  uiLatin: '',
-  uiCjk: '',
-  code: '',
+  uiLatin: 'Anthropic Sans Web',
+  uiCjk: 'Anthropic Serif Web',
+  code: 'SF Mono',
 });
 
 /**

@@ -27,6 +27,18 @@ test('live calls and new turns never disappear inside an earlier collapsed group
   ]).map(run => run.map(item => item.value)), [['done'], ['after'], ['next-turn']]);
 });
 
+test('reasoning joins consecutive tools without inflating tool counts or crossing replies', () => {
+  const kinds: ToolGroupEntry<string>[] = [
+    entry('thought-1', 'reasoning'), entry('tool-1', 'tool'), entry('thought-2', 'reasoning'),
+    entry('read', 'read'), entry('reply', 'barrier'), entry('shell'),
+  ];
+  assert.deepEqual(consecutiveToolGroups(kinds).map(run => run.map(item => item.value)), [
+    ['thought-1', 'tool-1', 'thought-2', 'read'], ['shell'],
+  ]);
+  assert.equal(toolGroupLabel(['reasoning', 'tool', 'reasoning', 'tool']), 'Thought, used 2 tools');
+  assert.equal(toolGroupLabel(['reasoning', 'read', 'command']), 'Thought, read a file, ran a command');
+});
+
 /** Minimal DOM double: assert identity and ownership without launching a browser. */
 class ElementDouble {
   readonly nodeType = 1;
@@ -88,6 +100,63 @@ function call(name = 'bash', state = 'ok') {
   return { flow, atomic, row };
 }
 
+test('DOM mixed groups retain native reasoning and leave streaming or mixed response seats visible', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify: (records: MutationRecord[]) => void = () => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {}
+    disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true;
+  body.append(parent);
+  const thinking = () => {
+    const flow = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'reasoning', 'data-chat-turn': '1' });
+    const row = node({ 'data-variant': 'think', 'data-state': 'ok' });
+    flow.append(row);
+    return { flow, row };
+  };
+  const first = thinking(), second = thinking(), command = call(), read = call('read');
+  const response = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'response', 'data-chat-turn': '1' });
+  // Even a response with a reasoning descendant must never be hidden as thought.
+  response.append(node({ 'data-variant': 'think', 'data-state': 'ok' }));
+  const last = thinking();
+  parent.append(first.flow, command.flow, second.flow, read.flow, response, last.flow);
+  const errors: unknown[] = [];
+  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const deliver = async (target: ElementDouble) => {
+    notify([{ target, addedNodes: [], type: 'attributes' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  try {
+    const toggle = parent.querySelectorAll('[data-ccd-tool-group-toggle]')[0]!;
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 1);
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Thought, read a file, ran a command');
+    assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(response.hasAttribute('data-ccd-tool-group-member'), false);
+    assert.equal(last.flow.hasAttribute('data-ccd-tool-group-member'), false);
+    toggle.click();
+    assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    assert.equal(first.row.parentElement, first.flow);
+    assert.equal(first.flow.parentElement, parent);
+    second.row.setAttribute('data-state', 'running');
+    await deliver(second.row);
+    assert.equal(second.flow.hasAttribute('data-ccd-tool-group-member'), false);
+    second.row.setAttribute('data-state', 'ok');
+    await deliver(second.row);
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 1);
+    assert.deepEqual(errors, []);
+  } finally {
+    dispose();
+    globalThis.MutationObserver = nativeObserver;
+  }
+  assert.equal(first.flow.hasAttribute('data-ccd-tool-group-member'), false);
+  assert.equal(first.row.parentElement, first.flow);
+});
+
 test('DOM grouping preserves native parents, toggles independently, follows updates and fully cleans up', async () => {
   const nativeObserver = globalThis.MutationObserver;
   let notify: (records: MutationRecord[]) => void = () => {};
@@ -114,9 +183,10 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   };
   try {
     const toggles = parent.querySelectorAll('[data-ccd-tool-group-toggle]');
-    assert.deepEqual(toggles.map(button => button.children[0]?.textContent), ['Ran 3 commands', 'Read 1 file']);
+    assert.deepEqual(toggles.map(button => button.children[0]?.children[0]?.textContent), ['Ran 3 commands', 'bash']);
     assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
-    assert.equal(live.flow.getAttribute('data-ccd-tool-group-member'), null, 'running and approval surfaces stay visible');
+    assert.equal(live.flow.getAttribute('data-ccd-tool-group-member'), 'closed', 'live calls share the single rolling disclosure');
+    assert.equal(toggles[1]!.hasAttribute('data-ccd-tool-live'), true);
     toggles[0]!.click();
     assert.equal(third.flow.getAttribute('data-ccd-tool-group-member'), 'open');
     assert.equal(fourth.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
@@ -125,14 +195,14 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
 
     live.row.setAttribute('data-state', 'ok');
     await deliver(live.row);
-    assert.equal(toggles[1]!.children[0]!.textContent, 'Read a file, ran a command');
+    assert.equal(toggles[1]!.children[0]!.children[0]!.textContent, 'Read a file, ran a command');
     assert.equal(toggles[0]!.getAttribute('aria-expanded'), 'true', 'unrelated settlement retains the reader’s open state');
 
     // A newly inserted reply splits an existing run and gives the later calls their own disclosure.
     const inserted = node({ 'data-chat-flow-kind': 'assistant-step' });
     parent.insertBefore(inserted, second.flow);
     await deliver(parent);
-    assert.deepEqual(parent.querySelectorAll('[data-ccd-tool-group-toggle]').map(button => button.children[0]?.textContent),
+    assert.deepEqual(parent.querySelectorAll('[data-ccd-tool-group-toggle]').map(button => button.children[0]?.children[0]?.textContent),
       ['Ran 1 command', 'Ran 2 commands', 'Read a file, ran a command']);
     second.row.setAttribute('data-state', 'error');
     await deliver(second.row);
@@ -148,7 +218,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
     childRow.setAttribute('data-state', 'ok');
     await deliver(childRow);
     assert.equal(third.flow.getAttribute('data-ccd-tool-group-member'), 'open');
-    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]')[1]!.children[0]!.textContent, 'Ran 2 commands', 'nested calls are not counted twice');
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]')[1]!.children[0]!.children[0]!.textContent, 'Ran 2 commands', 'nested calls are not counted twice');
 
     const specialParent = node();
     const present = call('present');
@@ -165,14 +235,14 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
     assert.ok(observedAttributes.includes('data-cordis-status'));
     cordis.row.setAttribute('data-cordis-status', 'idle');
     await deliver(cordis.row);
-    assert.equal(specialParent.querySelectorAll('[data-ccd-tool-group-toggle]')[0]!.children[0]!.textContent, 'Used 2 tools');
+    assert.equal(specialParent.querySelectorAll('[data-ccd-tool-group-toggle]')[0]!.children[0]!.children[0]!.textContent, 'Used 2 tools');
     const openTask = node({ 'aria-label': 'Open created task' });
     openTask.tagName = 'BUTTON';
     let opened = 0;
     openTask.addEventListener('click', () => { opened++; });
     schedule.row.append(openTask);
     await deliver(schedule.row);
-    assert.equal(specialParent.querySelectorAll('[data-ccd-tool-group-toggle]')[0]!.children[0]!.textContent, 'Used 3 tools');
+    assert.equal(specialParent.querySelectorAll('[data-ccd-tool-group-toggle]')[0]!.children[0]!.children[0]!.textContent, 'Used 3 tools');
     openTask.click();
     assert.equal(opened, 1, 'the host task-navigation handler is retained');
     assert.equal(openTask.parentElement, schedule.row);
@@ -193,4 +263,61 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   assert.equal(parent.querySelectorAll('[data-ccd-tool-group-member]').length, 0);
   assert.equal(parent.querySelectorAll('[data-ccd-tool-group-kind]').length, 0);
   assert.equal(first.flow.parentElement, parent);
+});
+
+test('consecutive live tools reuse one rolling line, animate vertically and retain native details', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true; body.append(parent);
+  const first = call('bash', 'running'); first.row.textContent = 'Checking git status';
+  const second = call('read', 'running'); second.row.textContent = 'Reading README.md';
+  parent.append(first.flow);
+  const motions: { frames: Keyframe[]; cancelled: boolean; onfinish?: () => void }[] = [];
+  const errors: unknown[] = [];
+  const document = { body, createElement: () => Object.assign(node(), {
+    animate(frames: Keyframe[]) {
+      const motion = { frames, cancelled: false, cancel() { this.cancelled = true; } };
+      motions.push(motion);
+      return motion;
+    },
+  }) } as unknown as Document;
+  const deliver = async () => {
+    notify([{ target: parent, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  const release = mountToolCallGroups(document, error => errors.push(error));
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Checking git status');
+    first.row.setAttribute('data-state', 'ok');
+    parent.append(second.flow);
+    await deliver();
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 1);
+    assert.equal(parent.querySelector('[data-ccd-tool-group-toggle]'), toggle);
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Reading README.md');
+    assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(first.flow.parentElement, parent);
+    assert.equal(second.row.parentElement, second.atomic);
+    assert.equal(motions[0]!.frames[1]!.transform, 'translateY(-100%)');
+    assert.equal(motions[1]!.frames[0]!.transform, 'translateY(100%)');
+    second.row.setAttribute('data-state', 'ok');
+    await deliver();
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Read a file, ran a command');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
+    assert.equal(motions[0]!.cancelled, true, 'new switches cancel earlier in-flight layers');
+    toggle.click();
+    assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
+  assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 0);
+  assert.ok(motions.every(motion => motion.cancelled));
+  assert.equal(first.flow.hasAttribute('data-ccd-tool-group-member'), false);
+  assert.equal(second.row.parentElement, second.atomic);
 });

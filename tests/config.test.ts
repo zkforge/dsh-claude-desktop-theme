@@ -59,7 +59,7 @@ test('a default configuration keeps every built-in', () => {
   assert.deepEqual(config.appearance, DEFAULT_APPEARANCE);
   assert.deepEqual(config.fonts, DEFAULT_FONTS);
   assert.equal(config.features.sidebar, true);
-  assert.equal(config.features.statistics, false);
+  assert.equal(config.features.statistics, true);
   assert.equal(config.features['composer-stats'], false);
   /* The context breakdown panel is on out of the box: it is the ring's own
      reading, and the ring is DSH's control rather than one this plugin adds. */

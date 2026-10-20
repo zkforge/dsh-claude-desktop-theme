@@ -12,7 +12,8 @@ export function runningPhase(root: Element): RunningPhase {
   if (root.querySelector('[data-state="awaiting-approval"], [data-cordis-status="awaiting-approval"]')) return 'approval';
   if (root.querySelector('[data-chat-flow-kind="tool-call"] :is([data-state="running"], [data-state="preparing"], [data-cordis-status="running"], [data-cordis-status="client-pending"])')) return 'tool';
   if (root.querySelector('[data-variant="think"][data-state="running"]')) return 'thinking';
-  if (root.querySelector('[data-chat-flow-kind="assistant-step"] [data-streaming]:not([data-variant="think"]):not(:empty)')) return 'responding';
+  if ([...root.querySelectorAll('[data-chat-flow-kind="assistant-step"] [data-streaming]')]
+    .some(element => !element.closest('[data-variant="think"]') && element.textContent?.trim())) return 'responding';
   return 'waiting';
 }
 
@@ -59,6 +60,7 @@ export function mountRunningStatus(document: Document, style: PersonalizationCon
           seat.setAttribute('data-ccd-running-style', 'claude');
           seat.append(view);
         }
+        if (state.view.parentElement !== seat) seat.append(state.view);
         // Read only the native content sibling, never our own clock text.
         const native = [...seat.children].find(child => child !== state.view && child.querySelector('svg'));
         const duration = runningDuration(native?.textContent ?? '');

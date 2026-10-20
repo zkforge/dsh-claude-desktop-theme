@@ -6,13 +6,13 @@ import { claudeGreeting, mountHeroGreeting } from '../src/client/compat/hero-gre
 import { claudePose, CLAUDE_REACTION_MS } from '../src/client/features/composer-pet/claude-motion.ts';
 import { CLAUDE_IDLE, CLAUDE_TRACK, CLAUDE_FRAMES } from '../src/client/features/composer-pet/claude-frames.ts';
 
-test('existing installs keep their whale and native greeting; choices are independent', () => {
+test('missing personalization uses Claude defaults; explicit choices are independent', () => {
   assert.deepEqual(adoptConfig({}).personalization, DEFAULT_PERSONALIZATION);
-  assert.deepEqual(resolveConfig({ personalization: { petStyle: 'claude' } }).personalization,
-    { petStyle: 'claude', replySignatureStyle: 'whale', greetingStyle: 'explore', greetingName: '' });
+  assert.deepEqual(resolveConfig({ personalization: { petStyle: 'whale' } }).personalization,
+    { petStyle: 'whale', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: '' });
   assert.deepEqual(adoptConfig({ personalization: {
     greetingStyle: 'claude', greetingName: '  Kai\n  Zou  ',
-  } }).personalization, { petStyle: 'whale', replySignatureStyle: 'whale', greetingStyle: 'claude', greetingName: 'Kai Zou' });
+  } }).personalization, { petStyle: 'claude', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: 'Kai Zou' });
 });
 
 test('invalid stored variants fall back, strict writes are rejected', () => {
@@ -23,7 +23,7 @@ test('invalid stored variants fall back, strict writes are rejected', () => {
   assert.throws(() => resolveConfig({ personalization: { replySignatureStyle: 'unknown' } }), /replySignatureStyle/);
   assert.throws(() => resolveConfig({ personalization: { greetingStyle: 'unknown' } }), /greetingStyle/);
   const schema = Config as unknown as (input: unknown) => unknown;
-  assert.doesNotThrow(() => schema({ personalization: { petStyle: 'claude', replySignatureStyle: 'whale', greetingStyle: 'claude', greetingName: 'Kai' } }));
+  assert.doesNotThrow(() => schema({ personalization: { petStyle: 'claude', runningStyle: 'whale', replySignatureStyle: 'whale', greetingStyle: 'claude', greetingName: 'Kai' } }));
   assert.throws(() => schema({ personalization: { petStyle: 'unknown' } }), /petStyle/);
   assert.throws(() => schema({ personalization: { replySignatureStyle: 'unknown' } }), /replySignatureStyle/);
   assert.doesNotThrow(() => schema({ personalization: { replySignatureStyle: 'claude' } }));

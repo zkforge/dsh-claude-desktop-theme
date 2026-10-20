@@ -102,29 +102,29 @@ export function mountToolCallDetails(document: Document, report: (error: unknown
     if (released) return;
     try {
       for (const [terminal, state] of copies) {
-        if (terminal.isConnected && terminal.closest('[data-ccd-tool-group-member]') && terminal.children[0] === state.header) continue;
+        if (terminal.isConnected && terminal.closest('[data-chat-flow-kind="tool-call"]') && terminal.children[0] === state.header) continue;
         releaseCopy(state);
         copies.delete(terminal);
       }
       for (const [source, state] of commands) {
-        if (source.isConnected && source.closest('[data-ccd-tool-group-member]')) continue;
+        if (source.isConnected && source.closest('[data-chat-flow-kind="tool-call"]')) continue;
         state.view.remove();
         source.removeAttribute('data-ccd-command-source');
         commands.delete(source);
       }
       for (const [source, state] of skills) {
-        if (source.isConnected && source.closest('[data-ccd-tool-group-member]')) continue;
+        if (source.isConnected && source.closest('[data-chat-flow-kind="tool-call"]')) continue;
         state.view.remove();
         source.removeAttribute('data-ccd-skill-source');
         skills.delete(source);
       }
       for (const [read, state] of reads) {
-        if (read.isConnected && read.closest('[data-ccd-tool-group-member]') && read.children[1] === state.body) continue;
+        if (read.isConnected && read.closest('[data-chat-flow-kind="tool-call"]') && read.children[1] === state.body) continue;
         restoreRead(read, state);
         reads.delete(read);
       }
       for (const terminal of dirty) {
-        if (!terminal.isConnected || !terminal.closest('[data-ccd-tool-group-member]')) continue;
+        if (!terminal.isConnected || !terminal.closest('[data-chat-flow-kind="tool-call"]')) continue;
         const paths = terminal.getAttribute('data-search') === 'paths';
         if (terminal.getAttribute('data-tool') === 'skill') {
           for (const source of terminal.querySelectorAll<HTMLElement>('pre')) {

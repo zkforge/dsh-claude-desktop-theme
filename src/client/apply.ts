@@ -171,7 +171,7 @@ export function apply(ctx: Context): void {
            switches that draw one of those surfaces. */
         scope.add(mountScrollPills(
           document,
-          error => logger.error('scrollbars: pill observer failed', error),
+          error => logger.error('scrollbars: activity listener failed', error),
         ));
         /* The Files pane's filter field, tree control, tab mark and empty
            column are nodes the host has no counterpart for, so they are

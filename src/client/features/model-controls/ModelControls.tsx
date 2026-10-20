@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ModelSelectInjected } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import type { ModelDirectoryState } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
@@ -75,21 +75,6 @@ export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, o
 }) {
   const { panel, position } = usePopup(anchor, onClose);
   const [query, setQuery] = useState('');
-  const options = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const list = options.current;
-    if (!list) return;
-    const update = () => {
-      const range = list.scrollHeight - list.clientHeight;
-      const progress = range > 0 ? Math.max(0, Math.min(1, list.scrollTop / range)) : 0;
-      list.style.setProperty('--ccd-model-scroll-progress', String(progress));
-    };
-    update();
-    list.addEventListener('scroll', update, { passive: true });
-    const resize = new ResizeObserver(update);
-    resize.observe(list);
-    return () => { list.removeEventListener('scroll', update); resize.disconnect(); };
-  }, [query, state.groups]);
   const groups = state.groups.map(group => ({ ...group, models: group.models.filter(model => `${model.name} ${model.id} ${group.name}`.toLowerCase().includes(query.toLowerCase())) })).filter(group => group.models.length > 0);
   return <div ref={panel} className="ccd-model-panel" role="dialog" aria-label={t('menu.model')} style={position}>
     <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} placeholder={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
@@ -98,7 +83,7 @@ export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, o
     {state.error && <div role="alert" className="ccd-model-note">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
     {state.failures.map(failure => <div key={failure.id} role="status" className="ccd-model-note">{failure.name}: {failure.message}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>)}
     {groups.length === 0 && state.status !== 'loading' && <p className="ccd-model-note">{query ? t('search.empty') : t('empty.models')}</p>}
-    <div ref={options} className="ccd-model-options" onKeyDown={event => {
+    <div className="ccd-model-options" onKeyDown={event => {
       const targets = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
       const index = targets.indexOf(document.activeElement as HTMLButtonElement);
       const next = event.key === 'ArrowDown' ? (index + 1) % targets.length : event.key === 'ArrowUp' ? (index - 1 + targets.length) % targets.length : event.key === 'Home' ? 0 : event.key === 'End' ? targets.length - 1 : undefined;

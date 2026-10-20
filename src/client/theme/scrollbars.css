@@ -1,287 +1,76 @@
-/*
- * Scrollbars (DESIGN.md §三, §四).
- *
- * DSH paints its own scrollbars. `ui-theme/src/styles/scrollbar.css` declares
- * five tokens on `body` — the thumb, its hover step, the thumb's transparent
- * border, the track's end margin and the track's width — and one un-scoped
- * `::-webkit-scrollbar` family paints them, so every scroller in the window
- * takes the same bar.
- *
- * Three of those five are geometry this sheet must not touch. The transcript's
- * `scrollbar-gutter: stable` reserves the track's width; the sidebar tree's
- * rows are padded by `--dsh-session-list-scrollbar-width` (5px, the host's own
- * value); the settings dialog's column and the menu cards widen their track to
- * 9px and 6px and inset the thumb inside it. Every one of those is measured
- * against the host's own width, so the interface keeps the host's track and
- * changes what is painted in it.
- *
- * What is painted is nothing, most of the time. The reference interface's
- * scrollbars are the platform's overlay scrollers: they appear while the reader
- * is moving something and fade again, so a window at rest carries no bar at
- * all — and the platform's own scroller, which `scrollbar-color` cannot reach,
- * is a grey pill the width of the system's. So the ink is ours and it is
- * published, not permanent: `compat/scroll-pill.ts` marks a surface
- * `data-ccd-scrolling` while it moves, and the two rules at the bottom of this
- * sheet are the whole of the state — transparent at rest, this interface's ink
- * while it is moving or while the pointer is on the bar itself.
- *
- * The five page-level surfaces the same module tracks go one step further and
- * carry no ink at all: `data-ccd-scroll-pill` takes the painted thumb out of
- * the picture and a floating pill takes its place. The painted thumb's length
- * is the content's share of the track — a short conversation, a panel with one
- * page of content, paints a bar as tall as its own viewport — while the pill is
- * a fixed short capsule that only slides. `.ccd-scroll-pill`'s own rules are at
- * the end of this sheet; the module owns its geometry.
- *
- * The reset is the half that is easy to miss. The standard `scrollbar-width`
- * and `scrollbar-color` properties *suppress* the `::-webkit-scrollbar` rules
- * whenever either is set to anything but `auto`, so one document-wide
- * `scrollbar-width: thin` — which the other skin installed beside this plugin
- * in this window makes, and which any page-global stylesheet may make — hands
- * every scroller in the window back to the platform. Stating `auto` puts the
- * host's painter back; in a document that declares neither property it is a
- * no-op. It is stated on the scrolling element itself rather than on an
- * ancestor, because the host declares the same properties on `body` and an
- * inherited value would otherwise be the one in force.
- *
- * The scope is the interface's own scroll surfaces rather than `*`. The host
- * hides the scrollbar on several horizontal rails — the draft-attachment rail,
- * the turn-nav popover, the breadcrumb trail, the dock strip and the tab strips
- * all declare `scrollbar-width: none` — and a blanket reset would give every
- * one of them a bar it does not want. This sheet adds no scrollbar anywhere, it
- * only repaints the ones the interface already shows. (The ink token does
- * inherit into whatever sits inside a scoped scroller — a custom property
- * inherits and cannot be scoped away — but a rail that hides its scrollbar
- * paints nothing to read it, and `scrollbar-width` is not inherited, so a
- * descendant keeps the value it was given.)
- *
- * The reset reaches into five of those surfaces and no more. Two of the host's
- * rails live *inside* the first list's members: `ConversationRoot` renders the
- * Composer's seat inside the page's scrolling body, and `ChatView` renders the
- * turn navigator beside the transcript column rather than inside it. A blanket
- * descendant form would reach both and put a bar on each, so the second list
- * names only the surfaces that hold scrollers of their own: the transcript
- * column (whose fenced code blocks and wide tables scroll inside it), the host's
- * popup cards (whose scrolling viewport is a child of the card) and this
- * plugin's own two. The two lists are written out in each of the three rules
- * below, because the reset, the absent ink and its reveal have to land on the
- * same elements and CSS has no way to name a set once.
- */
-
-/* The surfaces themselves, and the five whose contents scroll on their own. */
+/* One native scrollbar painter for the whole themed window. No floating
+   replacement, cropped thumb, or end padding: native geometry maps the full
+   content range to the full track, including both endpoints. Keep intentionally
+   hidden host rails hidden by resetting standard properties only on known
+   scrolling surfaces, never on every element in the document. */
 html[data-dsh-ccd-style="true"] :is(
-  /* The Conversation page's scroller, and the transcript column inside it. */
-  [data-conversation-scroll],
-  .icaHSq_scroll,
-  /* The sidebar's session/workspace tree, and the Files pane's. */
-  ._7514NG_list,
-  [data-files-body],
-  /* The agent-team panel's body, the Composer's textarea, the settings
-     dialog's two columns. */
-  ._2tNPVa_body,
-  .yhfFVG_scroll,
-  .Dws9Sa_options,
-  .Dws9Sa_navList,
-  /* The host's popup cards. */
-  [data-menu-material],
-  /* This plugin's own panels and cards. */
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort,
-  .ccd-context-detail,
-  .ccd-settings-menu-list
+  [data-conversation-scroll], .icaHSq_scroll, ._7514NG_list,
+  [data-files-body], ._2tNPVa_body, .yhfFVG_scroll,
+  .Dws9Sa_options, .Dws9Sa_navList, [data-menu-material],
+  [class^="ccd-"], [class*=" ccd-"]
 ),
 html[data-dsh-ccd-style="true"] :is(
-  .icaHSq_scroll,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort
+  .icaHSq_scroll, [data-menu-material], .ccd-model-panel, .ccd-model-error,
+  .ccd-effort, [data-chat-flow-kind="tool-call"], [data-variant="think"]
 ) * {
   scrollbar-width: auto;
   scrollbar-color: auto;
-  /* The thumb the host's own rule paints, in this interface's ink. Stated on
-     the scroller and on everything inside one, so it also wins on the surfaces
-     that rebind `--dsh-scrollbar-thumb` for themselves — a menu card, the
-     settings panel and the dockkit panes all point it at another host alias,
-     and an element's own declaration is the one that reaches the scroller
-     there. */
   --dsh-scrollbar-thumb: var(--ccd-scrollbar-thumb);
   --dsh-scrollbar-thumb-hover: var(--ccd-scrollbar-thumb-hover);
 }
 
-/* A surface at rest carries no ink. */
-html[data-dsh-ccd-style="true"] :is(
-  [data-conversation-scroll],
-  .icaHSq_scroll,
-  ._7514NG_list,
-  [data-files-body],
-  ._2tNPVa_body,
-  .yhfFVG_scroll,
-  .Dws9Sa_options,
-  .Dws9Sa_navList,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort,
-  .ccd-context-detail,
-  .ccd-settings-menu-list
-)::-webkit-scrollbar-thumb,
-html[data-dsh-ccd-style="true"] :is(
-  .icaHSq_scroll,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort
-) *::-webkit-scrollbar-thumb {
-  background: transparent;
+/* Important geometry beats the host's individually styled code blocks and
+   settings panes. Hidden rails still keep scrollbar-width:none/display:none. */
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
 }
 
-/*
- * The two states the ink has: while the surface moves (the module's mark, which
- * it clears again once the surface has been still), and while the pointer is on
- * the bar itself — the grab a reader makes without moving anything first.
- */
-html[data-dsh-ccd-style="true"] :is(
-  [data-conversation-scroll],
-  .icaHSq_scroll,
-  ._7514NG_list,
-  [data-files-body],
-  ._2tNPVa_body,
-  .yhfFVG_scroll,
-  .Dws9Sa_options,
-  .Dws9Sa_navList,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort,
-  .ccd-context-detail,
-  .ccd-settings-menu-list
-)[data-ccd-scrolling]::-webkit-scrollbar-thumb,
-html[data-dsh-ccd-style="true"] :is(
-  .icaHSq_scroll,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort
-) *[data-ccd-scrolling]::-webkit-scrollbar-thumb,
-html[data-dsh-ccd-style="true"] :is(
-  [data-conversation-scroll],
-  .icaHSq_scroll,
-  ._7514NG_list,
-  [data-files-body],
-  ._2tNPVa_body,
-  .yhfFVG_scroll,
-  .Dws9Sa_options,
-  .Dws9Sa_navList,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort,
-  .ccd-context-detail,
-  .ccd-settings-menu-list
-)::-webkit-scrollbar-thumb:hover,
-html[data-dsh-ccd-style="true"] :is(
-  .icaHSq_scroll,
-  [data-menu-material],
-  .ccd-model-panel,
-  .ccd-model-error,
-  .ccd-effort
-) *::-webkit-scrollbar-thumb:hover {
-  background: var(--ccd-scrollbar-thumb);
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-track,
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-track-piece {
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-/* Keep the native hit area. The half-length capsule moves within the thumb
-   with scroll progress, so its ends reach the track's top and bottom in turn.
-   The cap offsets account for background-position's image-size subtraction. */
-html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar {
-  width: 10px;
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-thumb {
+  min-width: 24px !important;
+  min-height: 24px !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  background-clip: content-box !important;
+  box-shadow: none !important;
 }
 
-html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar-thumb {
-  min-height: 32px;
-  border: solid transparent;
-  border-width: 8px 3px;
-  border-radius: 999px;
-  --ccd-model-scroll-ink: transparent;
-  --ccd-model-scroll-progress: inherit;
-  background: transparent;
-  background-image:
-    radial-gradient(circle, var(--ccd-model-scroll-ink) 2px, transparent 2px),
-    linear-gradient(var(--ccd-model-scroll-ink), var(--ccd-model-scroll-ink)),
-    radial-gradient(circle, var(--ccd-model-scroll-ink) 2px, transparent 2px);
-  background-size: 4px 4px, 4px calc(50% - 4px), 4px 4px;
-  background-position:
-    center calc(var(--ccd-model-scroll-progress, 0) * 50% + var(--ccd-model-scroll-progress, 0) * 2px),
-    center calc(var(--ccd-model-scroll-progress, 0) * 100% + 2px - var(--ccd-model-scroll-progress, 0) * 4px),
-    center calc((var(--ccd-model-scroll-progress, 0) + 1) * 50% + (var(--ccd-model-scroll-progress, 0) - 1) * 2px);
-  background-repeat: no-repeat;
-  background-clip: padding-box;
-  background-origin: padding-box;
+/* Only inset across the track. Insets along the scroll axis cut off the caps
+   and make short thumbs square while moving their visible ends off the track. */
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-thumb:vertical {
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
 }
 
-html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options[data-ccd-scrolling]::-webkit-scrollbar-thumb {
-  --ccd-model-scroll-ink: var(--ccd-scrollbar-thumb);
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-thumb:horizontal {
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
 }
 
-html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar-thumb:hover,
-html[data-dsh-ccd-style="true"] .ccd-model-panel .ccd-model-options::-webkit-scrollbar-thumb:active {
-  --ccd-model-scroll-ink: var(--ccd-scrollbar-thumb-hover);
+html[data-dsh-ccd-style="true"] [data-ccd-scrolling]::-webkit-scrollbar-thumb {
+  background-color: var(--ccd-scrollbar-thumb) !important;
 }
 
-/*
- * The five pill surfaces keep no ink at all — the floating capsule speaks for
- * them. They are named by the module's own mark rather than by the two lists,
- * so the sheet never has to know which of the surfaces those are. The module
- * leaves them out of the moving mark, and the two selectors that repeat it here
- * are the belt to that brace: the bar under the pointer and the bar during a
- * drag both stay empty.
- */
-html[data-dsh-ccd-style="true"] [data-ccd-scroll-pill]::-webkit-scrollbar-thumb,
-html[data-dsh-ccd-style="true"] [data-ccd-scroll-pill][data-ccd-scrolling]::-webkit-scrollbar-thumb,
-html[data-dsh-ccd-style="true"] [data-ccd-scroll-pill]::-webkit-scrollbar-thumb:hover {
-  background: transparent;
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-thumb:hover,
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-thumb:active {
+  background-color: var(--ccd-scrollbar-thumb-hover) !important;
 }
 
-/*
- * The pill: one fixed layer for the whole window, one absolutely positioned
- * capsule per tracked surface, moved with a transform the module computes. It
- * takes no pointer events — the host's own thumb is still laid out under it, and
- * the capsule is sized and centred to sit inside it, so a drag that starts on
- * the pill grabs that bar.
- */
-[data-ccd-scroll-layer] {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-corner {
+  background: transparent !important;
 }
 
-/* The macOS host excludes body > :not(#root) from native window dragging.
-   This full-window decoration matches that rule even with pointer-events:
-   none, so reset its app-region to avoid erasing the header's drag surface.
-   Repeat :not(#root) to outrank the host's ID specificity; other portals keep
-   their no-drag regions. */
-html[data-dsh-ccd-style="true"][data-platform="darwin"] body > [data-ccd-scroll-layer]:not(#root) {
-  -webkit-app-region: initial;
-}
-
-[data-ccd-scroll-thumb] {
-  position: absolute;
-  top: 0;
-  left: 0;
-  box-sizing: border-box;
-  width: 4px;
-  border-radius: 999px;
-  background: var(--ccd-scrollbar-thumb);
-  opacity: 0;
-  transition: opacity 140ms ease-out;
-}
-
-[data-ccd-scroll-thumb][data-ccd-scrolling] {
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-ccd-scroll-thumb] { transition: none; }
+html[data-dsh-ccd-style="true"] *::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }

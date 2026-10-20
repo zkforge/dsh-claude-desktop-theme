@@ -261,20 +261,9 @@ html[data-dsh-ccd-style="true"] {
   --ccd-browser-canvas: #f7f7f7;
   --ccd-browser-dot: #d1d0ce;
 
-  /* Scrollbar ink. The host paints the scrollbars themselves
-     (`ui-theme/src/styles/scrollbar.css`: a 5px track and a pill thumb read
-     from `--dsh-scrollbar-thumb`), and this interface keeps that geometry —
-     the transcript's stable gutter, the sidebar's
-     `--dsh-session-list-scrollbar-width` padding and the dockkit panes are all
-     measured against the host's own width — so these two tokens are the ink
-     alone, bound in theme/scrollbars.css.
-     The ink is near-black by decision rather than by measurement: the bar is
-     5px wide and carries no surface of its own, so none of this palette's
-     surface steps — 5% to 14% black — reads at that size, and the interface
-     this one follows draws a dark scrollbar. Hover goes one step further down,
-     the direction the host's own hover step takes. */
-  --ccd-scrollbar-thumb: #333331;
-  --ccd-scrollbar-thumb-hover: #171716;
+  /* Unified grey native scrollbar ink; track geometry lives in scrollbars.css. */
+  --ccd-scrollbar-thumb: #8f8f8a;
+  --ccd-scrollbar-thumb-hover: #6f6f6a;
 
   /* Text */
   --ccd-text: #1f1f1d;
@@ -658,8 +647,8 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
      chrome that has to read as raised, so it sits above every surface step
      here and lightens on hover — the mirror of the light palette, whose ink
      sits below every surface and darkens. */
-  --ccd-scrollbar-thumb: #5c5b57;
-  --ccd-scrollbar-thumb-hover: #75746f;
+  --ccd-scrollbar-thumb: #918f89;
+  --ccd-scrollbar-thumb-hover: #b4b1ab;
 
   /* Text */
   --ccd-text: #f0efec;

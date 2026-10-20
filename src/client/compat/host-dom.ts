@@ -364,6 +364,7 @@ export const ANCHOR = Object.freeze({
   /** ChatNodeSeat / ToolCallTree: immutable transcript seats and atomic calls. */
   chatFlowItem: '[data-chat-flow-kind]',
   toolFlow: '[data-chat-flow-kind="tool-call"]',
+  reasoningFlow: '[data-chat-group-part="reasoning"]',
   toolCall: '[data-chat-call-id]',
 
   /** ui-chat TurnProcessNodeView / ChatGroupSeat: process containers, not leaf details. */
