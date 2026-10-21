@@ -31,31 +31,25 @@
 
 ## 界面预览
 
-截图为 macOS、默认配色与 Geist 字体，统计卡片开启，状态栏统计读数保持默认关闭。两种宠物的点击回应与 Effort 拉到底的动效见下一节。
+以下展示 macOS 浅色与深色主题的完整窗口。首页使用 Claude 像素宠物与问候样式，开启水波纹和统计卡片；会话页展示工具调用摘要与文件栏。两种宠物的点击回应与 Effort 拉到底的动效见下一节。
 
 | 界面 | 浅色 | 深色 |
 | --- | --- | --- |
-| 新会话页 | ![新会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-light.webp) | ![新会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/new-session-dark.webp) |
+| 新会话页 | ![新会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp) | ![新会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-dark.webp) |
 | 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
+| 模型选单展开 | ![模型选单完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-light.webp) | ![模型选单完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-dark.webp) |
 | 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
-
-### 完整窗口展示
-
-以下为 macOS 完整窗口截图，使用 Claude 像素宠物与首页问候样式，开启主页水波纹，保留统计卡片。
-
-| 界面 | 浅色 | 深色 |
-| --- | --- | --- |
-| 新会话页 · 完整窗口 | ![新会话页完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp) | ![新会话页完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-dark.webp) |
-| 模型选单展开 · 完整窗口 | ![模型选单完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-light.webp) | ![模型选单完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-dark.webp) |
 
 ### 组件特写
 
 | 组件 | 浅色 | 深色 |
 | --- | --- | --- |
 | 模型选择器 | ![模型选择器 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-picker-light.webp) | ![模型选择器 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-picker-dark.webp) |
+| 模型参考价与峰谷提示 | ![模型参考价 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-pricing-light.webp) | ![模型参考价 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-pricing-dark.webp) |
+| DeepSeek 余额 | ![余额组件 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/account-balance-light.webp) | ![余额组件 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/account-balance-dark.webp) |
 | 上下文圆环与分解面板 | ![上下文圆环与分解面板 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-light.webp) | ![上下文圆环与分解面板 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-dark.webp) |
 
-模型选择器与上下文分解面板均为组件局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项，可选模型和 Effort 档位以 DSH 实际提供的目录为准；上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
+以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标、当前选中项与峰谷标签，价格悬浮卡片展示官方人民币参考价和切换倒计时；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，入口位于左下角账号菜单，悬停可查看充值与赠金明细，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
 
 ## 细节动效
 
