@@ -169,7 +169,8 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] ._3WPZCG_root:not(._3WPZ
   border-radius: var(--ccd-radius-row);
   background: transparent;
   color: var(--ccd-text);
-  font-size: var(--ccd-font-size-body);
+  /* The reference sets navigation labels at the session rows' size. */
+  font-size: var(--ccd-font-size-muted);
   font-weight: 400;
 }
 
@@ -246,7 +247,7 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_p
   padding: 3px 8px;
   border-radius: var(--ccd-radius-row);
   color: var(--ccd-text-nav);
-  font-size: var(--ccd-font-size-body);
+  font-size: var(--ccd-font-size-muted);
   line-height: 20px;
 }
 
@@ -662,10 +663,10 @@ html[data-dsh-ccd-style="true"] :has(> .jJkEga_hoverContent > .jJkEga_hoverStatu
   display: none;
 }
 
-/* The status mark shares the 22px overflow button seat. Keep the button in
-   flow to reserve the title width, then swap the mark for it on interaction. */
-html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot:has(> [data-state="ongoing"]),
-html[data-dsh-ccd-style="true"] [data-ccd-status-order] > .jJkEga_slot {
+/* In every grouping mode, the status mark shares the 22px overflow button
+   seat. Keep the button in flow to reserve the title width, then swap the mark
+   for it on interaction. Idle and completed marks stay hidden. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot {
   position: absolute;
   right: var(--ccd-session-action-inset);
   top: 50%;
@@ -677,18 +678,17 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order] > .jJkEga_slot {
   pointer-events: none;
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:is(:hover, :focus-within, .jJkEga_menuOpen) > .jJkEga_slot:has(> [data-state="ongoing"]),
-html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within, .jJkEga_menuOpen) > .jJkEga_slot {
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:is(:hover, :focus-within, .jJkEga_menuOpen) > .jJkEga_slot {
   visibility: hidden;
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(> .jJkEga_slot > [data-state="ongoing"]) .jJkEga_title,
-html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_title {
   margin-left: 0;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-status-group="ended"] > .jJkEga_slot:has(> [data-state]),
-html[data-dsh-ccd-style="true"] [data-ccd-status-order] > .jJkEga_slot:has(> div[data-slot="sidebar.session.row.leading"]:empty) {
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot:has(> [data-state="done"]),
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow > .jJkEga_slot:has(> div[data-slot="sidebar.session.row.leading"]:empty) {
   display: none;
 }
 
@@ -1234,13 +1234,11 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
 }
 /* Reserve the native overflow button's seat so hovering a long title does not
    change its measure. Focusing the row also exposes its real menu control. */
-html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(> .jJkEga_slot > [data-state="ongoing"]) .jJkEga_rowActions,
-html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_rowActions {
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions {
   display: inline-flex;
   visibility: hidden;
 }
-html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:has(> .jJkEga_slot > [data-state="ongoing"]):is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions,
-html[data-dsh-ccd-style="true"] [data-ccd-status-order]:is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions {
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:is(:hover, :focus-within, .jJkEga_menuOpen) .jJkEga_rowActions {
   visibility: visible;
 }
 html[data-dsh-ccd-style="true"] .ccd-status-heading {
@@ -1300,7 +1298,11 @@ html[data-dsh-ccd-style="true"] .ccd-status-heading:focus-visible {
 html[data-dsh-ccd-style="true"] [data-ccd-status-order][data-ccd-status-hidden] {
   display: none;
 }
-html[data-dsh-ccd-style="true"] .ccd-status-heading:nth-child(1 of .ccd-status-heading) {
+/* A section with no Sessions has no heading. */
+html[data-dsh-ccd-style="true"] .ccd-status-heading[hidden] {
+  display: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-status-heading:nth-child(1 of .ccd-status-heading:not([hidden])) {
   /* The Recents toolbar provides the shared 5px section gap. */
   padding-top: 0;
 }

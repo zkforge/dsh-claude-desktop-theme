@@ -163,7 +163,9 @@ export function mountStatusGroups(document: Document, ctx: Context,
         const group = sessionGroup({ ...ownStatus,
           running: (ownStatus?.running ?? summary?.running ?? false) || runningChild,
         }, false);
-        return { row, id, group, children };
+        // A folded section still shows the Session the main panel is on.
+        const hidden = collapsed.has(group) && !row.matches(host.sessionRowSelected);
+        return { row, id, group, children, hidden };
       });
       const counts = [0, 0, 0];
       const stride = (rows.length + 1) * 2;
@@ -185,12 +187,12 @@ export function mountStatusGroups(document: Document, ctx: Context,
         }
       }
       let changed = false;
-      for (const { row, group, order } of orderedRows) {
+      for (const { row, group, order, hidden } of orderedRows) {
         if (row.dataset.ccdStatusOrder !== String(order)
           || row.dataset.ccdStatusGroup !== group
           || row.style.getPropertyValue('--ccd-status-order') !== String(order)
           || row.getAttribute('tabindex') !== '0'
-          || row.hasAttribute('data-ccd-status-hidden') !== collapsed.has(group)) { changed = true; break; }
+          || row.hasAttribute('data-ccd-status-hidden') !== hidden) { changed = true; break; }
         for (let parent = row.parentElement; parent && parent !== list; parent = parent.parentElement) {
           if (!parent.hasAttribute('data-ccd-status-wrapper')) { changed = true; break; }
         }
@@ -205,6 +207,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
         for (const [index, group] of GROUPS.entries()) {
           const heading = boxes.get(group);
           if (heading === undefined || heading.textContent !== labels[index]
+            || heading.hasAttribute('hidden') !== (counts[index] === 0)
             || heading.getAttribute('aria-expanded') !== String(!collapsed.has(group))) { changed = true; break; }
         }
       }
@@ -221,7 +224,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
       let layoutChanged = false;
       remember(list, 'data-ccd-status-list', '');
       const ordered: HTMLElement[] = [];
-      for (const { row, id, group, order, children } of orderedRows) {
+      for (const { row, id, group, order, children, hidden } of orderedRows) {
         if (row.dataset.ccdStatusOrder !== String(order)) layoutChanged = true;
         remember(row, 'data-ccd-status-order', String(order));
         remember(row, 'data-ccd-status-group', group);
@@ -238,8 +241,8 @@ export function mountStatusGroups(document: Document, ctx: Context,
           row.style.setProperty('--ccd-status-order', String(order));
         }
         remember(row, 'tabindex', '0');
-        if (row.hasAttribute('data-ccd-status-hidden') !== collapsed.has(group)) layoutChanged = true;
-        remember(row, 'data-ccd-status-hidden', collapsed.has(group) ? '' : null);
+        if (row.hasAttribute('data-ccd-status-hidden') !== hidden) layoutChanged = true;
+        remember(row, 'data-ccd-status-hidden', hidden ? '' : null);
         ordered.push(row);
         const childKey = `children:${id}`;
         let childBox = boxes.get(childKey);
@@ -253,8 +256,8 @@ export function mountStatusGroups(document: Document, ctx: Context,
             owned.add(childBox); list.append(childBox);
           }
           if (childBox.style.order !== String(order + 1)) childBox.style.order = String(order + 1);
-          if (childBox.hasAttribute('hidden') !== collapsed.has(group)) {
-            if (collapsed.has(group)) childBox.setAttribute('hidden', ''); else childBox.removeAttribute('hidden');
+          if (childBox.hasAttribute('hidden') !== hidden) {
+            if (hidden) childBox.setAttribute('hidden', ''); else childBox.removeAttribute('hidden');
           }
           const childLabel = zh ? '子任务' : 'Subagents';
           if (childBox.getAttribute('aria-label') !== childLabel) childBox.setAttribute('aria-label', childLabel);
@@ -283,6 +286,11 @@ export function mountStatusGroups(document: Document, ctx: Context,
         }
         if (heading.style.order !== String(index * stride)) heading.style.order = String(index * stride);
         if (heading.textContent !== labels[index]) heading.textContent = labels[index]!;
+        // A section without Sessions has nothing to fold or show.
+        if (heading.hasAttribute('hidden') !== (counts[index] === 0)) {
+          layoutChanged = true;
+          if (counts[index] === 0) heading.setAttribute('hidden', ''); else heading.removeAttribute('hidden');
+        }
         const expanded = String(!collapsed.has(group));
         if (heading.getAttribute('aria-expanded') !== expanded) heading.setAttribute('aria-expanded', expanded);
       }

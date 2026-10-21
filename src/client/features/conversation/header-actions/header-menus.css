@@ -220,19 +220,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [aria-haspopup] [data-ccd
   transform: rotate(-90deg);
 }
 
-/* The destructive row rests in the host's red ink. Only the pointer or the
- * keyboard walk fills it: the red fill with white ink, the shortcut included, the
- * same as the host's danger rows (`menus.css`). */
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive] { color: var(--ccd-header-menu-danger); }
-
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:hover,
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:focus-visible {
-  background: var(--ccd-menu-danger);
-  color: var(--ccd-menu-danger-ink);
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:hover [data-ccd-menu-mark],
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-menu-destructive]:focus-visible [data-ccd-menu-mark] { color: inherit; }
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] hr {
   height: 1px;
   margin: 4px 8px;

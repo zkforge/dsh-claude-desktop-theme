@@ -13,7 +13,6 @@ const HEADER_MENU_ICONS: Readonly<Record<string, string>> = {
   '重命名': '<path d="M3 10.5 2.5 14l3.5-.5L14 5.5 10.5 2 3 10.5ZM9 3.5l3.5 3.5"/>',
   '创建分支': '<circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="13" r="1.5"/><path d="M5 4.5v7M11 5.5V7a3 3 0 0 1-3 3H5"/>',
   '归档': '<rect x="1.5" y="2.5" width="13" height="3" rx=".75"/><path d="M2.5 5.5v8h11v-8M6 8h4"/>',
-  '删除': '<path d="M2 4.5h12M6 4.5V2h4v2.5M3.5 4.5l1 9h7l1-9"/>',
 };
 
 /** Add reference menus beside the native title without moving React-owned nodes. */
@@ -182,8 +181,6 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
       row(menu, '创建分支', () => run(() => actions.fork(id)), 'F');
       separator(menu);
       row(menu, '归档', () => run(() => actions.archive(id)), 'A');
-      const deletion = unavailable(menu, '删除', 'DSH 暂未提供删除会话的公开接口；可使用归档，此项仅还原外观。', 'D');
-      deletion.setAttribute('data-ccd-menu-destructive', '');
     } else {
       sub(menu, '复制', content => {
         const copy = (value: string) => run(() => window.navigator.clipboard.writeText(value));

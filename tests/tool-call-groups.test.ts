@@ -46,7 +46,9 @@ class ElementDouble {
   readonly attrs = new Map<string, string>();
   readonly children: ElementDouble[] = [];
   parentElement: ElementDouble | null = null;
-  textContent = '';
+  private text = '';
+  get textContent(): string { return this.text + this.children.map(child => child.textContent).join(''); }
+  set textContent(value: string) { for (const child of [...this.children]) child.remove(); this.text = value; }
   type = '';
   connectedRoot = false;
   readonly listeners = new Map<string, () => void>();
@@ -61,6 +63,8 @@ class ElementDouble {
   removeAttribute(key: string) { this.attrs.delete(key); }
   matches(selector: string): boolean {
     return selector.split(',').some(part => {
+      const contains = part.trim().match(/^\[([^\]]+)\*="([^"]*)"\]$/);
+      if (contains) return this.getAttribute(contains[1]!)?.includes(contains[2]!) === true;
       const match = part.trim().match(/^\[([^=\]]+)(?:="([^"]*)")?\]$/);
       return !!match && (match[2] === undefined ? this.hasAttribute(match[1]!) : this.getAttribute(match[1]!) === match[2]);
     });
@@ -78,6 +82,7 @@ class ElementDouble {
     this.children.splice(before === null ? this.children.length : this.children.indexOf(before), 0, child);
     child.parentElement = this;
   }
+  after(child: ElementDouble) { this.parentElement!.insertBefore(child, this.nextElementSibling); }
   remove() {
     if (this.parentElement) this.parentElement.children.splice(this.parentElement.children.indexOf(this), 1);
     this.parentElement = null;
@@ -320,4 +325,65 @@ test('consecutive live tools reuse one rolling line, animate vertically and reta
   assert.ok(motions.every(motion => motion.cancelled));
   assert.equal(first.flow.hasAttribute('data-ccd-tool-group-member'), false);
   assert.equal(second.row.parentElement, second.atomic);
+});
+
+test('file groups use native header metadata, update totals and restore titles without replacing controls', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify: (records: MutationRecord[]) => void = () => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {}
+    disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true;
+  body.append(parent);
+  const file = call('write'), command = call();
+  const header = node({ 'data-disclosure-row': '', 'aria-expanded': 'false' });
+  const title = node({ class: 'host_title' }), link = node({ class: 'host_fileLink' });
+  const added = node({ class: 'host_diffAdded' }), removed = node({ class: 'host_diffRemoved' });
+  title.textContent = '写入'; link.textContent = 'test.txt';
+  added.textContent = '+2'; removed.textContent = '-0';
+  header.append(title, link, added, removed);
+  file.row.append(header);
+  parent.append(file.flow, command.flow);
+  const errors: unknown[] = [];
+  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const deliver = async () => {
+    notify([{ target: file.row, addedNodes: [] }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Wrote test.txt, Ran 1 command+2−0');
+    assert.equal(file.row.querySelector('[data-ccd-file-action]')?.textContent, 'Wrote');
+    assert.equal(title.textContent, '写入');
+    assert.equal(title.getAttribute('data-ccd-file-title-source'), '');
+    assert.equal(link.parentElement, header);
+    toggle.click();
+    assert.equal(header.getAttribute('aria-expanded'), 'false');
+    added.textContent = '+15';
+    await deliver();
+    assert.ok(toggle.children[0]!.children[0]!.textContent.endsWith('+15−0'));
+    assert.equal(file.row.querySelectorAll('[data-ccd-file-action]').length, 1);
+    file.row.setAttribute('data-tool', 'edit');
+    await deliver();
+    assert.equal(file.row.querySelector('[data-ccd-file-action]')?.textContent, 'Edited');
+    file.row.setAttribute('data-state', 'error');
+    await deliver();
+    assert.equal(file.row.hasAttribute('data-ccd-file-row'), false);
+    assert.equal(title.hasAttribute('data-ccd-file-title-source'), false);
+    assert.equal(file.row.querySelector('[data-ccd-file-action]'), null);
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    file.row.setAttribute('data-state', 'ok');
+    await deliver();
+    assert.equal(file.row.hasAttribute('data-ccd-file-row'), true);
+  } finally {
+    dispose();
+    globalThis.MutationObserver = nativeObserver;
+  }
+  assert.equal(title.hasAttribute('data-ccd-file-title-source'), false);
+  assert.equal(file.row.hasAttribute('data-ccd-file-row'), false);
+  assert.equal(link.parentElement, header);
+  assert.deepEqual(errors, []);
 });

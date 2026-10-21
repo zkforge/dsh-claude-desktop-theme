@@ -15,17 +15,19 @@ html[data-dsh-ccd-style="true"] [data-ccd-nav] .ccd-nav-glyph {
   pointer-events: none;
 }
 
+/* Measured on the reference at @2x: the toolbox and clock inks are about 12px
+   wide, the plus disc about 17px — 15px and 17px boxes on the 24-unit artwork. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root [data-ccd-nav] .ccd-nav-glyph > svg {
   flex: none;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   margin: 0;
   overflow: visible;
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root [data-ccd-nav="newSession"] .ccd-nav-glyph > svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand) {

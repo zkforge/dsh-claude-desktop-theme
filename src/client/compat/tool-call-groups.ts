@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { ANCHOR } from './host-dom.ts';
+import { fileSummaryParts, toolFileSummary, type ToolFileSummary } from './tool-file-summary.ts';
 
 export type ToolGroupKind = 'read' | 'command' | 'tool' | 'reasoning';
 
@@ -8,6 +9,7 @@ export interface ToolGroupEntry<T> {
   readonly kind: ToolGroupKind | 'barrier';
   readonly turn: string | null;
   readonly settled: boolean;
+  readonly file?: ToolFileSummary | undefined;
   readonly live?: boolean;
   readonly description?: string;
   readonly failed: boolean;
@@ -53,6 +55,7 @@ interface Group {
   failed: boolean;
   outgoing?: HTMLElement;
   animations?: Animation[];
+  renderKey?: string;
 }
 
 /**
@@ -63,6 +66,14 @@ interface Group {
 export function mountToolCallGroups(document: Document, report: (error: unknown) => void): Disposer {
   const groups = new Map<HTMLElement, Map<HTMLElement, Group>>();
   const dirty = new Set<HTMLElement>();
+  const fileTitles = new Map<Element, { title: Element; label: HTMLElement }>();
+  const restoreFileTitle = (row: Element) => {
+    const state = fileTitles.get(row);
+    state?.title.removeAttribute('data-ccd-file-title-source');
+    state?.label.remove();
+    row.removeAttribute('data-ccd-file-row');
+    fileTitles.delete(row);
+  };
   let released = false;
   let pending = false;
 
@@ -123,12 +134,32 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
         || ['running', 'client-pending'].includes(child.getAttribute('data-cordis-status') ?? '')));
     const description = row?.querySelector('[class*="_summary"]')?.textContent
       || row?.querySelector('[data-disclosure-row]')?.textContent || row?.textContent || name;
+    const file = row ? toolFileSummary(row) : null;
+    if (row) {
+      const title = row.querySelector('[data-disclosure-row]')?.querySelector('[class*="_title"]');
+      let previous = fileTitles.get(row);
+      if (previous && (!file || previous.title !== title)) { restoreFileTitle(row); previous = undefined; }
+      if (file && previous) {
+        const text = file.action === 'edit' ? 'Edited' : 'Wrote';
+        if (previous.label.textContent !== text) previous.label.textContent = text;
+      }
+      if (file && title && !previous) {
+        const label = document.createElement('span');
+        label.setAttribute('data-ccd-file-action', '');
+        label.textContent = file.action === 'edit' ? 'Edited' : 'Wrote';
+        title.setAttribute('data-ccd-file-title-source', '');
+        title.after(label);
+        row.setAttribute('data-ccd-file-row', '');
+        fileTitles.set(row, { title, label });
+      }
+    }
     const command = ['bash', 'pwsh', 'exec_command', 'write_stdin'].includes(name);
     return {
       value: element,
       kind: element.matches(ANCHOR.toolFlow) && row
         ? command ? 'command' : ['read', 'read_image'].includes(name) ? 'read' : 'tool' : 'barrier',
       turn: element.getAttribute('data-chat-turn'),
+      file: file ?? undefined,
       live: active && !blocked && !nestedActive && name !== 'schedule_create',
       description: description?.replace(/\s+/gu, ' ').trim(),
       settled: !active && (state === 'ok' || state === 'error' || state === 'stopped'),
@@ -184,13 +215,26 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       const live = [...run].reverse().find(item => item.live);
       if (live) group.button.setAttribute('data-ccd-tool-live', '');
       else group.button.removeAttribute('data-ccd-tool-live');
+      const files = run.flatMap(item => item.file ? [item.file] : []);
+      const otherKinds = run.filter(item => !item.file).map(item => item.kind);
+      const remaining = toolGroupLabel(otherKinds as ToolGroupKind[]);
+      const others = remaining ? [remaining] : [];
+      const parts = !live && files.length ? fileSummaryParts(files, others) : null;
       const text = live?.description || toolGroupLabel(run.map(item => item.kind as ToolGroupKind));
-      if (group.label.textContent !== text) {
+      const renderKey = JSON.stringify(parts ?? text);
+      if (group.renderKey !== renderKey) {
+        group.renderKey = renderKey;
         const oldText = group.label.textContent;
         group.animations?.forEach(animation => animation.cancel());
         group.outgoing?.remove();
         delete group.outgoing;
-        group.label.textContent = text;
+        group.label.textContent = parts ? '' : text;
+        if (parts) for (const part of parts) {
+          const span = document.createElement('span');
+          span.setAttribute('data-ccd-file-summary-tone', part.tone);
+          span.textContent = part.text;
+          group.label.append(span);
+        }
         if (oldText && group.label.animate && !document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches) {
           const outgoing = document.createElement('span');
           outgoing.textContent = oldText;
@@ -225,6 +269,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     pending = false;
     if (released) return;
     try {
+      for (const row of fileTitles.keys()) if (!row.isConnected || !row.closest(ANCHOR.toolFlow)) restoreFileTitle(row);
       for (const parent of groups.keys()) if (!parent.isConnected) dirty.add(parent);
       const parents = [...dirty];
       dirty.clear();
@@ -269,5 +314,6 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     dirty.clear();
     for (const parent of groups.values()) for (const group of parent.values()) disposeGroup(group);
     groups.clear();
+    for (const row of fileTitles.keys()) restoreFileTitle(row);
   };
 }

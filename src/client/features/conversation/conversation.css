@@ -12,7 +12,13 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root {
 /* ChangedFiles is the host's completed-turn summary, separate from explicitly
    delivered files and the tool calls that performed the edits. */
 html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] {
-  display: none;
+  display: flex;
+  margin-top: 12px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 10px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  overflow: hidden;
 }
 
 /* Keep message clocks and actions quiet, including the latest reply that the
@@ -1217,4 +1223,210 @@ html[data-dsh-ccd-style="true"] .ccd-running-star::before {
 
 @media (prefers-reduced-motion: reduce) {
   html[data-dsh-ccd-style="true"] .ccd-running-star::before { animation: none; }
+}
+
+/* Completed-turn file summary. The host owns file previews, review navigation,
+   localized counts and its list fold; the footer forwards the native header. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] button[class*="_header"] {
+  height: auto;
+  min-height: 32px;
+  padding: 6px 12px;
+  background: transparent;
+  gap: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [class*="_title"] {
+  font: 400 13px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files]:not([data-single="true"]) button[class*="_header"] :is([class*="_tile"], [class*="_stat"]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] > ul {
+  padding: 4px 0 0;
+  border-top: 1px solid var(--ccd-border);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] ul button[class*="_row"] {
+  width: calc(100% - 6px);
+  margin-inline: 3px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  gap: 8px;
+  color: var(--ccd-text);
+  font: 14px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] ul [class*="_path"] {
+  flex: 1;
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] :is([data-ccd-changes-icon], [class*="_tile"]) {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] :is([data-ccd-changes-icon], [class*="_tile"]) svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] :is([class*="_counts"], [class*="_statCounts"]) {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  font: 12px/20px var(--ccd-font-code);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  box-sizing: border-box;
+  width: calc(100% - 6px);
+  min-height: 28px;
+  margin: 0 3px 3px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 14px/20px var(--ccd-font-ui);
+  text-align: start;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review]:hover:not(:disabled) {
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review]:focus-visible {
+  outline: 2px solid var(--ccd-text-muted);
+  outline-offset: -3px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review]:disabled {
+  cursor: progress;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files][data-single="true"] [class*="_titles"] {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files][data-single="true"] [class*="_stat"] {
+  margin-inline-start: auto;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [class*="_previewHint"] {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] :is(ul button[class*="_row"], [data-ccd-changes-review]) {
+    min-height: 44px;
+  }
+}
+
+/* Single-file summaries share the same heading / file row / footer layout.
+   The original header remains the file row, preserving its hover preview. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-heading] {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--ccd-border);
+  color: var(--ccd-text);
+  font: 400 13px/20px var(--ccd-font-ui);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files][data-ccd-changes-single] button[class*="_header"] {
+  width: calc(100% - 6px);
+  min-height: 28px;
+  margin: 4px 3px 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files][data-ccd-changes-single] button[class*="_header"] > [class*="_titles"] {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-single-name] {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 14px/20px var(--ccd-font-ui);
+}
+
+/* The reference footer has an inset hover seat and a short, arrowless hint.
+   Its accessible description is supplied alongside the visual text. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review]::after {
+  content: attr(data-ccd-changes-tooltip);
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  max-width: calc(100% - 16px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  box-shadow: var(--ccd-dialog-shadow);
+  font: 13px/20px var(--ccd-font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 100ms ease, visibility 100ms ease;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review]:is(:hover, :focus-visible):not(:disabled)::after {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 300ms;
+}
+
+/* File rows use the same inset rounded hover seat as the review footer. Native
+   row buttons and their hover-preview wrappers retain the original handlers. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] ul button[class*="_row"]:is(:hover, :focus-visible):not(:disabled),
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files][data-ccd-changes-single] button[class*="_header"]:is(:hover, :focus-visible):not(:disabled) {
+  background: var(--ccd-hover);
+}
+
+@media (pointer: coarse) {
+  html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files][data-ccd-changes-single] button[class*="_header"] {
+    min-height: 44px;
+  }
+}
+
+/* ChangedFiles hover comparisons are portaled under body, outside the summary.
+   Hide both their content and outer surface so no empty floating card remains. */
+html[data-dsh-ccd-style="true"] [data-changes-hover-preview],
+html[data-dsh-ccd-style="true"] body > div:has(> [data-changes-hover-preview]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-changed-files] [data-ccd-changes-title-source] {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-changed-files] [data-ccd-changes-title] {
+  font: 400 13px/20px var(--ccd-font-ui);
 }

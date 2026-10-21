@@ -124,8 +124,8 @@ export function mountAccountMenu(
     const rect = (expanded ? sidebar : trigger)?.getBoundingClientRect();
     const viewportWidth = document.documentElement.clientWidth;
     if (rect && viewportWidth > 0) {
-      // The compact account button must not determine the expanded card width.
-      const width = Math.min(expanded ? rect.width : 236, viewportWidth - 16);
+      // Keep the card width fixed across sidebar sizes; only clamp to the viewport.
+      const width = Math.min(266, viewportWidth - 16);
       target.style.setProperty('--ccd-account-menu-width', `${width}px`);
       target.style.setProperty('--ccd-account-menu-left', `${Math.max(8, Math.min(rect.left, viewportWidth - width - 8))}px`);
     }

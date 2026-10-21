@@ -1380,3 +1380,55 @@ html[data-dsh-ccd-style="true"] [data-ccd-markdown-toggle] svg {
   width: 16px;
   height: 16px;
 }
+
+/* Turn-review file toolbar: compact glyphs and a horizontal overflow trigger.
+   Keep the native menu button and its keyboard/pointer handlers. If no menu is
+   available, retain the host's direct-open action instead of an inert ellipsis. */
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-review-tool],
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-open-path] button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-review-tool] svg,
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-open-path] :is(svg, img) {
+  width: 12px;
+  height: 12px;
+}
+
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-open-path] {
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-open-path]:has([data-open-path-more]) [data-open-path-open],
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-open-path-more] svg {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-changes-review] [data-open-path-more]::before {
+  content: '';
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  mask: var(--ccd-icon-more) center / contain no-repeat;
+  transform: rotate(90deg);
+}
+
+html[data-dsh-ccd-style="true"] [data-changes-review] :is([data-review-tool], [data-open-path] button):is(:hover, :focus-visible):not(:disabled) {
+  background: var(--ccd-hover);
+}

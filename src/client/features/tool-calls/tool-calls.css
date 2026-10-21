@@ -786,3 +786,172 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-roll-out] {
 html[data-dsh-ccd-style="true"] [data-ccd-tool-group-toggle][data-ccd-tool-live] {
   color: var(--ccd-text);
 }
+
+/* File operations keep native links/disclosures. Only the completed title is
+   replaced by a plugin-owned sibling; byte counts remain in native details. */
+html[data-dsh-ccd-style="true"] [data-ccd-file-title-source],
+html[data-dsh-ccd-style="true"] [data-ccd-file-row] [data-disclosure-row] [class*="_summarySuffix"]:not([class*="_diffStat"]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-file-action] {
+  flex: none;
+  margin-inline-end: 6px;
+  color: var(--ccd-text-secondary);
+  font-size: var(--dsh-content-font-size, 14px);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-file-summary-tone="file"] {
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-file-row] [data-disclosure-row] [class*="_diffStat"] {
+  display: inline-flex;
+  gap: 0;
+  margin-inline-start: 7px;
+  white-space: nowrap;
+}
+
+html[data-dsh-ccd-style="true"] :is([data-ccd-file-summary-tone="added"], [data-ccd-file-summary-tone="removed"], [data-ccd-file-row] [data-disclosure-row] [class*="_diffAdded"], [data-ccd-file-row] [data-disclosure-row] [class*="_diffRemoved"]) {
+  display: inline-block;
+  padding: 1px 4px;
+  font: 11px/16px var(--ccd-font-code);
+  vertical-align: baseline;
+}
+
+html[data-dsh-ccd-style="true"] :is([data-ccd-file-summary-tone="added"], [data-ccd-file-row] [data-disclosure-row] [class*="_diffAdded"]) {
+  margin-inline-start: 7px;
+  border-radius: 4px 0 0 4px;
+  color: var(--dsw-alias-state-success-primary);
+  background: color-mix(in srgb, var(--dsw-alias-state-success-primary) 17%, transparent);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-file-row] [data-disclosure-row] [class*="_diffAdded"] {
+  margin-inline-start: 0;
+}
+
+html[data-dsh-ccd-style="true"] :is([data-ccd-file-summary-tone="removed"], [data-ccd-file-row] [data-disclosure-row] [class*="_diffRemoved"]) {
+  border-radius: 0 4px 4px 0;
+  color: var(--dsw-alias-state-error-primary);
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 17%, transparent);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-file-summary-tone="file"] {
+  display: inline-block;
+  max-width: min(30ch, 40vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+
+/* DiffBlock exposes plain local fragments, without original file line numbers.
+   Paint a frame across its native rows; path rows stay outside each file frame.
+   No React-owned text, copy payloads or folding/wrapping handlers are replaced. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] {
+  position: relative;
+  min-width: 0;
+  margin: 6px 0 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  font: 13px/18px var(--ccd-font-code);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > [data-code-block-banner] {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  inset-inline-end: 2px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > [data-code-block-banner] > div:first-child {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > [data-code-block-banner] + div {
+  padding: 0;
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > [class*="_path"] {
+  margin-top: 8px;
+  padding: 2px 0 7px;
+  color: var(--ccd-text-secondary);
+  font: 13px/20px var(--ccd-font-ui);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > [class*="_path"]:first-child {
+  margin-top: 0;
+  padding-inline-end: 64px;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > :not([class*="_path"]) {
+  box-sizing: border-box;
+  min-height: 18px;
+  padding: 0 10px;
+  border-inline: 1px solid var(--ccd-border);
+  border-radius: 0;
+  background: var(--ccd-card);
+  box-shadow: none;
+  color: var(--ccd-text);
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > [class*="_path"] + :not([class*="_path"]) {
+  padding-top: 5px;
+  border-top: 1px solid var(--ccd-border);
+  border-start-start-radius: 9px;
+  border-start-end-radius: 9px;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > :not([class*="_path"]):is(:last-child, :has(+ [class*="_path"])) {
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--ccd-border);
+  border-end-start-radius: 9px;
+  border-end-end-radius: 9px;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > [class*="_add"] {
+  background: color-mix(in srgb, var(--dsw-alias-state-success-primary) 10%, var(--ccd-card));
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > [class*="_del"] {
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, var(--ccd-card));
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > :is([class*="_add"], [class*="_del"], [class*="_context"])::before {
+  display: inline-block;
+  width: 2ch;
+  color: var(--ccd-text-secondary);
+  user-select: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] > div + div > :is(button, [class*="_gap"]) {
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-diff] button:focus-visible {
+  outline: 2px solid var(--ccd-text-muted);
+  outline-offset: 2px;
+}
+
+/* English presentation labels leave host text nodes and disclosure handlers intact. */
+html[data-dsh-ccd-style="true"] [data-ccd-english-source] {
+  display: none !important;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="skill"] [data-ccd-english-label] {
+  flex: none;
+  margin-inline-end: 6px;
+  font-size: var(--dsh-content-font-size, 14px);
+  line-height: 20px;
+}

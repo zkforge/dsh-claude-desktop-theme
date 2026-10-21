@@ -46,7 +46,7 @@ test('sidebar navigation survives host rerenders, locales and rail mode, then re
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 0);
         await page.evaluate(`document.querySelector('[data-slot=sidebar]').append(window.nativeSidebar)`);
         await settle();
-        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('button')).map(el=>el.getAttribute('aria-label'))`), ['新建', '插件', '例程', '其他插件']);
+        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('button')).map(el=>el.getAttribute('aria-label'))`), ['新建', '自定义', '定时任务', '其他插件']);
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 3);
         assert.equal(await page.evaluate(`document.querySelector('#other').hasAttribute('data-ccd-nav')`), false);
         assert.equal(await page.evaluate(`document.querySelector('#new').getAttribute('aria-keyshortcuts')`), 'Meta+N');
@@ -66,7 +66,7 @@ test('sidebar navigation survives host rerenders, locales and rail mode, then re
         assert.match(await page.evaluate(`getComputedStyle(document.querySelector('.routine-long-hand')).transform`), /0\.707107/);
         await page.evaluate(`const tip=document.createElement('div');tip.setAttribute('role','tooltip');tip.textContent='自动化任务';document.body.append(tip)`);
         await settle();
-        assert.equal(await page.evaluate(`document.querySelector('[role=tooltip]').textContent`), '例程');
+        assert.equal(await page.evaluate(`document.querySelector('[role=tooltip]').textContent`), '定时任务');
         await page.evaluate(`document.querySelector('[role=tooltip]').remove()`);
         if (buildInfo === PINNED_BUILD) {
           await mkdir(join(root, 'artifacts'), { recursive: true });
@@ -87,15 +87,15 @@ test('sidebar navigation survives host rerenders, locales and rail mode, then re
         await page.evaluate(`document.querySelector('#new [data-ccd-nav-glyph]').remove();document.querySelector('#new span span span:not([data-ccd-nav-glyph])').firstChild.data='新会话';document.getElementById('routines').setAttribute('aria-label','自动化任务');document.getElementById('routines').lastElementChild.firstChild.data='自动化任务';`);
         await settle();
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 3);
-        assert.equal(await page.evaluate(`document.getElementById('routines').lastElementChild.textContent`), '例程');
+        assert.equal(await page.evaluate(`document.getElementById('routines').lastElementChild.textContent`), '定时任务');
         await page.evaluate(`document.documentElement.lang='en';document.getElementById('plugins').setAttribute('aria-label','Plugins');document.getElementById('plugins').lastElementChild.firstChild.data='Plugins';document.getElementById('routines').setAttribute('aria-label','Automation tasks');document.getElementById('routines').lastElementChild.firstChild.data='Automation tasks';document.querySelector('#new span span span:not([data-ccd-nav-glyph])').firstChild.data='New';document.getElementById('new').setAttribute('aria-label','New session');`);
         await settle();
-        assert.equal(await page.evaluate(`document.getElementById('routines').getAttribute('aria-label')`), 'Routines');
-        assert.equal(await page.evaluate(`document.getElementById('plugins').lastElementChild.textContent`), 'Plugins');
+        assert.equal(await page.evaluate(`document.getElementById('routines').getAttribute('aria-label')`), 'Scheduled tasks');
+        assert.equal(await page.evaluate(`document.getElementById('plugins').lastElementChild.textContent`), 'Customize');
         await page.evaluate(`document.querySelector('[data-slot=sidebar]>div').classList.add(${JSON.stringify(aliasHostClasses('_3WPZCG_collapsed', buildInfo))});document.querySelector('#new span span span:not([data-ccd-nav-glyph])').remove();document.querySelectorAll('nav button').forEach(button=>button.lastElementChild.remove());document.querySelector('#new [data-ccd-nav-glyph]').remove();`);
         await settle();
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav-glyph]').length`), 3);
-        assert.equal(await page.evaluate(`document.getElementById('routines').getAttribute('aria-label')`), 'Routines');
+        assert.equal(await page.evaluate(`document.getElementById('routines').getAttribute('aria-label')`), 'Scheduled tasks');
         await page.evaluate('window.releaseNavigation()');
         await settle();
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-nav], [data-ccd-nav-glyph]').length`), 0);

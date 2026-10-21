@@ -63,9 +63,9 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         const key = value => page.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', {key:${JSON.stringify(value)},bubbles:true}))`);
         const geometry = selector => page.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)});const r=node.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,rows:[...node.querySelectorAll('button')].map(row=>row.getBoundingClientRect().height)}})()`);
         await click('[data-ccd-session-trigger]');
-        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${menu} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['打开方式', '重命名', '创建分支', '归档', '删除']);
+        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${menu} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['打开方式', '重命名', '创建分支', '归档']);
         const session = await geometry(menu);
-        assert.equal(session.w, 160); assert.equal(session.h, 148); assert.deepEqual(session.rows, Array(5).fill(24));
+        assert.equal(session.w, 160); assert.equal(session.h, 124); assert.deepEqual(session.rows, Array(4).fill(24));
         const trigger = await geometry('[data-ccd-session-trigger]');
         assert.equal(session.x, trigger.x); assert.equal(session.y, trigger.y + trigger.h + 6);
         assert.equal(await page.evaluate(`document.querySelector('${menu}').matches(':popover-open')`), true);
@@ -103,9 +103,10 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         assert.deepEqual(await page.evaluate('calls.slice(1)'), [['fork', 's1'], ['archive', 's1']]);
         await click('[data-ccd-session-trigger]'); await choose(menu, '打开方式'); await choose('[data-ccd-header-menu="打开方式"]', 'VS Code');
         assert.equal(await page.evaluate('calls.at(-1)'), 'open');
-        await click('[data-ccd-session-trigger]'); await choose(menu, '删除');
-        assert.match(await page.evaluate(`document.querySelector('dialog').textContent`), /删除会话的公开接口/u);
-        await page.evaluate(`document.querySelector('dialog').close()`);
+        await click('[data-ccd-session-trigger]'); await key('d');
+        assert.equal(await page.evaluate(`document.querySelector('dialog')`), null);
+        assert.equal(await page.evaluate(`document.querySelector('${menu}').matches(':popover-open')`), true);
+        await key('Escape');
         await click('[data-ccd-project-trigger]');
         assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['复制', '在终端中打开']);
         assert.equal(await page.evaluate(`document.querySelectorAll('${project} [data-ccd-header-row-icon]').length`), 0);

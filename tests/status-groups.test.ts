@@ -73,6 +73,7 @@ class Element {
     walk(this); return result;
   }
   matches(selector: string) {
+    if (selector.startsWith('.')) return this.className.split(' ').includes(selector.slice(1));
     return selector.startsWith('[') && selector.endsWith(']')
       ? this.hasAttribute(selector.slice(1, -1)) : false;
   }
@@ -253,7 +254,7 @@ for (const mode of ['reduced motion', 'hidden window']) test(`changed status ski
   } finally { globalThis.MutationObserver = original; }
 });
 
-test('all three headings remain when the list is empty or only contains a provisional session', async () => {
+test('headings of sections without Sessions are hidden, including a list holding only a provisional session', async () => {
   const original = globalThis.MutationObserver;
   const f = fixture(true);
   globalThis.MutationObserver = class {
@@ -266,6 +267,7 @@ test('all three headings remain when the list is empty or only contains a provis
     const headings = () => f.list.children.filter(node => node.className === 'ccd-status-heading');
     assert.deepEqual(headings().map(node => node.textContent), ['需要输入', '处理中', '空闲']);
     assert.deepEqual(headings().map(node => node.style.order), ['0', '2', '4']);
+    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true]);
     const blank = new Element();
     blank.setAttribute('data-row-key', 'session:blank');
     blank.setAttribute('data-ccd-blank-session', '');
@@ -273,7 +275,13 @@ test('all three headings remain when the list is empty or only contains a provis
     f.mutation(batch('childList', f.list));
     await Promise.resolve();
     assert.equal(headings().length, 3);
+    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true]);
     assert.equal(blank.hasAttribute('data-ccd-status-group'), false);
+    f.list.append(f.b);
+    f.mutation(batch('childList', f.list));
+    await Promise.resolve();
+    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, false], 'the first Session reveals its section');
+    f.b.remove();
     f.doc.documentElement.lang = 'en';
     f.mutation(batch('attributes', f.list));
     await Promise.resolve();
@@ -346,6 +354,14 @@ test('a heading collapses its section, persists the choice and expands again', a
     assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), true);
     assert.equal(f.a.hasAttribute('data-ccd-status-hidden'), false);
     assert.equal(stored.get('ccd-status-collapsed'), '["ended"]');
+    f.b.className = 'jJkEga_sessionRow jJkEga_selected';
+    f.mutation(batch('attributes', f.b));
+    await Promise.resolve();
+    assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), false, 'the Session on screen stays in its folded section');
+    f.b.className = 'jJkEga_sessionRow';
+    f.mutation(batch('attributes', f.b));
+    await Promise.resolve();
+    assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), true, 'leaving it folds it away with the rest');
     dispose();
     assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), false, 'restore clears the plugin marker');
     const again = mountStatusGroups(f.doc, f.ctx, error => { throw error; });

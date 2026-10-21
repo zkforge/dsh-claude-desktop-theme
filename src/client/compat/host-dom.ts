@@ -171,6 +171,9 @@ export const HOST = Object.freeze({
   /** StateDot's stable state attributes, used when root sessionStatus is absent. */
   sessionNeedsInput: '[aria-hidden="true"][data-state="warning"]',
   sessionWorking: '[aria-hidden="true"][data-state="ongoing"]',
+  /** Rows.module.css: the Session row the main panel is showing. A folded
+      status section keeps this one row visible. */
+  sessionRowSelected: '.jJkEga_selected',
   /** Rows.module.css: one Workspace's row, the line the merged header shares,
       and its trailing action group (`sidebar.css` parks both). */
   workspaceRow: '.jJkEga_projectRow',

@@ -132,7 +132,7 @@ html[data-dsh-ccd-style="true"] {
      one down to this size. The permission control draws no glyph at all — it is
      its text (composer.css). */
   --ccd-row-icon-size: 14px;
-  --ccd-account-menu-width: 236px;
+  --ccd-account-menu-width: 266px;
   --ccd-account-menu-padding: 5px;
   --ccd-account-row-height: 28px;
   --ccd-account-trigger-height: 30px;
@@ -152,7 +152,6 @@ html[data-dsh-ccd-style="true"] {
   --ccd-header-trailing-inset: 12px;
   --ccd-header-menu-border: #d6d6d6;
   --ccd-header-menu-separator: #e2e2e2;
-  --ccd-header-menu-danger: #b4262b;
   --ccd-menu-danger: #c04742;
   --ccd-menu-danger-ink: #ffffff;
   --ccd-header-trigger-hover: #f0f0ef;
@@ -595,7 +594,6 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-dialog-focus-ring: var(--ccd-accent);
   --ccd-header-menu-border: var(--ccd-border);
   --ccd-header-menu-separator: var(--ccd-border-soft);
-  --ccd-header-menu-danger: #f08080;
   --ccd-menu-danger: #c04742;
   --ccd-menu-danger-ink: #ffffff;
   --ccd-header-trigger-hover: var(--ccd-hover);

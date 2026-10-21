@@ -14,8 +14,9 @@ export const SIDEBAR_NAV_ATTRIBUTE = 'data-ccd-nav';
  * Source: ui-sidebar/SidebarRoot.tsx, ui-plugin-manager and ui-schedule locales.
  * Unknown/third-party panels keep their own glyphs and labels. */
 function panelKind(name: string): Kind | null {
-  if (name === '插件' || name === 'Plugins') return 'plugins';
-  if (name === '自动化任务' || name === 'Automation tasks' || name === '例程' || name === 'Routines') return 'routines';
+  if (name === '插件' || name === 'Plugins' || name === '自定义' || name === 'Customize') return 'plugins';
+  if (name === '自动化任务' || name === 'Automation tasks' || name === '定时任务' || name === 'Scheduled tasks'
+    || name === '例程' || name === 'Routines') return 'routines';
   return null;
 }
 
@@ -33,8 +34,8 @@ export function mountSidebarNavigation(
   let language: MutationObserver | undefined;
 
   const copy = () => (document.documentElement.lang || globalThis.navigator?.language || '').toLowerCase().startsWith('zh')
-    ? { newSession: '新建', routines: '例程' }
-    : { newSession: 'New session', routines: 'Routines' };
+    ? { newSession: '新建', plugins: '自定义', routines: '定时任务' }
+    : { newSession: 'New session', plugins: 'Customize', routines: 'Scheduled tasks' };
 
   const attribute = (element: Element, name: string, value: string) => {
     const current = element.getAttribute(name);
@@ -91,16 +92,15 @@ export function mountSidebarNavigation(
       const kind = panelKind(row.getAttribute('aria-label') ?? row.querySelector(host.sidebarPanelTitle)?.textContent?.trim() ?? '');
       if (!kind) continue;
       decorate(row, row.querySelector(host.sidebarPanelGlyph), kind);
-      if (kind === 'routines') {
-        label(row.querySelector(host.sidebarPanelTitle), names.routines);
-        attribute(row, 'aria-label', names.routines);
-      }
+      label(row.querySelector(host.sidebarPanelTitle), names[kind]);
+      attribute(row, 'aria-label', names[kind]);
     }
     // Tooltip uses the host's original localized label, independent of aria-label.
     const tooltipOwner = root?.querySelector<HTMLElement>('[data-ccd-nav]:hover, [data-ccd-nav]:focus-visible');
     const tooltipKind = tooltipOwner?.getAttribute(SIDEBAR_NAV_ATTRIBUTE);
     for (const tooltip of tooltipOwner ? document.querySelectorAll('[role="tooltip"]') : []) {
       const name = tooltip.textContent?.trim();
+      if (tooltipKind === 'plugins' && (name === '插件' || name === 'Plugins')) label(tooltip, names.plugins);
       if (tooltipKind === 'routines' && (name === '自动化任务' || name === 'Automation tasks')) label(tooltip, names.routines);
       if (tooltipKind === 'newSession' && (name === '新会话' || name === '新建会话' || name === 'New session')) label(tooltip, names.newSession);
     }

@@ -203,8 +203,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
  * the rest of this sheet names) rests in the host's red ink. Hover and the
  * keyboard walk fill it with the red and white ink, label and shortcut included.
  * It sits after the hover rule above and is more specific, so the host's own
- * danger hover tint loses to it. The header session menu's Delete row takes the
- * same fill in `features/conversation/header-actions/header-menus.css`. */
+ * danger hover tint loses to it. */
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]._danger_4ub78_226:hover:not(:disabled),
 html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"]._danger_4ub78_226:focus-visible:not(:disabled) {
   background: var(--ccd-menu-danger);
