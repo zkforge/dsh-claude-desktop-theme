@@ -1,8 +1,10 @@
 [
-  "assets/screenshots/new-session-light.webp",
-  "assets/screenshots/new-session-dark.webp",
+  "assets/screenshots/fullscreen-light.webp",
+  "assets/screenshots/fullscreen-dark.webp",
   "assets/screenshots/chat-light.webp",
   "assets/screenshots/chat-dark.webp",
-  "assets/screenshots/settings-light.webp",
-  "assets/screenshots/settings-dark.webp"
+  "assets/screenshots/model-picker-light.webp",
+  "assets/screenshots/model-picker-dark.webp",
+  "assets/screenshots/account-balance-light.webp",
+  "assets/screenshots/account-balance-dark.webp"
 ]
