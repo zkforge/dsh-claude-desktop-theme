@@ -1,5 +1,5 @@
 import {
-  GIT_BRANCHES_PATH, GIT_CHECKOUT_PATH, readGitBranchView, readGitCheckoutResult, type GitBranchView, type GitCheckoutResult,
+  GIT_BRANCHES_PATH, readGitBranchView, type GitBranchView,
 } from '../../shared/git.ts';
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
@@ -16,13 +16,18 @@ export const MENU_SEARCH_ATTRIBUTE = 'data-ccd-menu-search';
 /** A row the current query hides. */
 export const FILTERED_ATTRIBUTE = 'data-ccd-filtered';
 
-/** How long a switch runs before the card says so, in ms. */
-const PROGRESS_DELAY = 250;
-
 const CHEVRON = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5"/></svg>';
 
 /** Last listing per Workspace, so a reopened card shows its branch at once. */
 export type BranchCache = Map<string, GitBranchView>;
+
+/** A worktree base is staged in the new session; it never checks out the source. */
+export interface WorkspaceBranchChoice {
+  enabled(): boolean;
+  selected(): string | undefined;
+  select(branch: string): void;
+  subscribe(listener: () => void): Disposer;
+}
 
 interface Copy {
   readonly branch: string;
@@ -34,10 +39,7 @@ interface Copy {
   readonly detached: string;
   readonly truncated: string;
   readonly states: Readonly<Record<Exclude<GitBranchView['state'], 'ready'>, string>>;
-  readonly switching: (branch: string) => string;
-  readonly carried: (count: number) => string;
-  readonly busy: string;
-  readonly outcomes: Readonly<Record<Exclude<GitCheckoutResult['state'], 'switched'>, string>>;
+
 }
 
 const ZH: Copy = {
@@ -47,16 +49,7 @@ const ZH: Copy = {
     'not-repo': '不是 Git 仓库', 'no-git': '未找到 git 命令',
     'unknown-workspace': '无法识别当前工作区', error: '读取分支失败',
   },
-  switching: branch => `正在切换到 ${branch}…`,
-  carried: count => `已切换，带上 ${count} 个未提交改动`,
-  busy: '该工作区有会话正在运行，结束后再切换',
-  outcomes: {
-    conflict: '本地改动会被覆盖，请先提交或暂存',
-    'in-worktree': '该分支已在其他工作树中检出',
-    'invalid-branch': '分支已不存在，请重新打开选单',
-    'unknown-workspace': '无法识别当前工作区',
-    error: '切换失败',
-  },
+
 };
 
 const EN: Copy = {
@@ -66,16 +59,7 @@ const EN: Copy = {
     'not-repo': 'Not a Git repository', 'no-git': 'git command not found',
     'unknown-workspace': 'Workspace not recognised', error: 'Could not read branches',
   },
-  switching: branch => `Switching to ${branch}…`,
-  carried: count => `Switched, carrying ${count} uncommitted ${count === 1 ? 'change' : 'changes'}`,
-  busy: 'A session in this workspace is running; switch when it ends',
-  outcomes: {
-    conflict: 'Local changes would be overwritten; commit or stash them first',
-    'in-worktree': 'Branch is checked out in another worktree',
-    'invalid-branch': 'Branch no longer exists; reopen the menu',
-    'unknown-workspace': 'Workspace not recognised',
-    error: 'Could not switch branches',
-  },
+
 };
 
 /** Host-language copy, following the `<html lang>` the rest of the picker reads. */
@@ -116,15 +100,9 @@ function rowClasses(card: HTMLElement): RowClasses {
 /**
  * The picker card's branch row and its side card.
  *
- * The row names the selected Workspace's current branch; the side card lists
- * the repository's local branches with the current one checked, and choosing
- * another one checks it out through the Host (`host/git.ts`). The picker only
- * opens on the new-session page, so no conversation of this session is under
- * way; another session of the same Workspace may be, and while one runs or waits
- * for input the switch is refused, since it would change the files under that
- * agent. There is no confirmation: git itself refuses a switch that would
- * overwrite local changes, and changes it carries over are reported in one line
- * at the foot of the card.
+ * The row shows the current or staged base branch. Choosing a branch only
+ * updates the new worktree's base; the source checkout is never changed.
+ * Without an enabled worktree choice the row stays read-only.
  *
  * Both are the plugin's own nodes: the row in a group after the host's pinned
  * footer, the side card nested in the host card as a manual popover, so the
@@ -135,12 +113,12 @@ function rowClasses(card: HTMLElement): RowClasses {
  * @param card - the open picker card (the portalled host `Menu`).
  * @param workspaceId - selected Workspace; the Host resolves its directory.
  * @param cache - listings retained across openings.
- * @param busy - whether another session of this Workspace is running or waiting.
  * @param report - sink for unexpected failures.
+ * @param choice - optional staged worktree base; absent means read-only.
  * @returns disposer that aborts the read and removes every node.
  */
 export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cache: BranchCache,
-  busy: () => boolean, report: (error: unknown) => void): Disposer {
+  report: (error: unknown) => void, choice?: WorkspaceBranchChoice): Disposer {
   const document = card.ownerDocument;
   const window = document.defaultView;
   const host = hostSelectors(document);
@@ -178,11 +156,6 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   let submenu: HTMLElement | null = null;
   /** The side card's parts that outlive one fill of its rows. */
   let parts: { readonly search: HTMLInputElement; readonly list: HTMLElement; readonly note: HTMLElement } | null = null;
-  /** The one line under the list: progress, carried changes, or why a switch failed. */
-  let notice: { readonly text: string; readonly tone: 'info' | 'error' } | null = null;
-  let switchingTo: string | null = null;
-  /** Whether the running switch has outlasted {@link PROGRESS_DELAY}. */
-  let showProgress = false;
   /** The side card's top, kept while its height changes so the card does not jump. */
   let placedTop: number | null = null;
   let disposed = false;
@@ -193,10 +166,11 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   let stale = false;
 
   const render = () => {
-    const ready = view?.state === 'ready' && view.current !== null;
+    const ready = view?.state === 'ready' && view.current !== null && (choice?.enabled() ?? false);
     value.textContent = stale ? copy.restart : view === undefined ? copy.loading
-      : view.state === 'ready' ? (view.current ?? '—') : copy.states[view.state];
+      : view.state === 'ready' ? (choice?.selected() ?? view.current ?? '—') : copy.states[view.state];
     row.title = stale ? `${copy.states.error} · ${copy.restart}`
+      : !choice?.enabled() ? (menuCopy(document).zh ? '开启工作树后可选择基准分支' : 'Enable worktree to select a base branch')
       : view?.state === 'ready' && view.detached ? `${copy.detached} · ${view.current}` : '';
     if (ready) {
       row.removeAttribute('aria-disabled');
@@ -241,7 +215,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
 
   /**
    * Bring the side card's rows to the current listing in place. While the card
-   * is open its rows keep the order they opened in: a switch moves only the
+   * is open its rows keep the order they opened in: a selection moves only the
    * check, so the row under the pointer never changes and nothing is rebuilt.
    * Branches that appeared are appended, branches that vanished are removed.
    */
@@ -274,7 +248,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
       rows.set(name, item);
     }
     for (const [name, item] of rows) {
-      const current = name === view.current;
+      const current = name === (choice?.selected() ?? view.current);
       const check = item.querySelector('[data-ccd-branch-check]');
       if (current && check === null) {
         const mark = card.querySelector(host.menuItemCheck)?.cloneNode(true);
@@ -285,14 +259,10 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
       } else if (!current) check?.remove();
       setAttribute(item, 'aria-current', current ? 'true' : null);
       setAttribute(item, 'title', current && view.detached ? copy.detached : null);
-      // Rows stop taking clicks at once; only a switch that outlasts the delay looks busy.
-      setAttribute(item, 'aria-disabled', switchingTo !== null ? 'true' : null);
-      setAttribute(item, 'aria-busy', showProgress && name === switchingTo ? 'true' : null);
     }
-    const text = notice?.text ?? (view.truncated ? copy.truncated : '');
+    const text = view.truncated ? copy.truncated : '';
     if (parts.note.textContent !== text) parts.note.textContent = text;
     parts.note.hidden = text === '';
-    parts.note.setAttribute('data-tone', notice?.tone ?? 'info');
     filter();
     position();
   }
@@ -303,58 +273,12 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
     else if (node.getAttribute(name) !== value) node.setAttribute(name, value);
   }
 
-  /** Check out one branch, then re-read the listing the Host now reports. */
-  async function switchTo(branch: string): Promise<void> {
-    if (switchingTo !== null) return;
-    if (busy()) {
-      notice = { text: copy.busy, tone: 'error' };
-      fill();
-      return;
-    }
-    switchingTo = branch;
-    /* A local switch usually lands within tens of milliseconds; announcing it
-       at once would flash a progress line and dimmed rows for one frame. */
-    const progress = setTimeout(() => {
-      if (switchingTo !== branch || disposed) return;
-      showProgress = true;
-      notice = { text: copy.switching(branch), tone: 'info' };
-      fill();
-    }, PROGRESS_DELAY);
-    fill();
-    let result: GitCheckoutResult;
-    let missing = false;
-    try {
-      const response = await fetch(GIT_CHECKOUT_PATH, {
-        method: 'POST', credentials: 'same-origin', cache: 'no-store',
-        headers: { accept: 'application/json', 'content-type': 'application/json' },
-        body: JSON.stringify({ workspace: workspaceId, branch }),
-      });
-      missing = response.status === 404;
-      result = readGitCheckoutResult(response.ok ? await response.json() : null);
-    } catch (error) {
-      report(error);
-      result = readGitCheckoutResult(null);
-    }
-    clearTimeout(progress);
-    switchingTo = null;
-    showProgress = false;
-    // The tree may have moved even when this card is gone: never show the old listing again.
-    cache.delete(workspaceId);
-    if (disposed) return;
-    if (result.state === 'switched') {
-      notice = result.carried > 0 ? { text: copy.carried(result.carried), tone: 'info' } : null;
-      if (view?.state === 'ready') {
-        // Move only the check; the next opening lists the Host's own order.
-        view = { ...view, current: branch, detached: false,
-          branches: view.branches.includes(branch) ? view.branches : [...view.branches, branch] };
-      }
-    } else {
-      const reason = missing ? copy.restart : copy.outcomes[result.state];
-      notice = { text: result.message === '' ? reason : `${reason}：${result.message}`, tone: 'error' };
-    }
+  /** Stage a base branch; filesystem changes belong to worktree creation. */
+  function selectBase(branch: string): void {
+    if (!choice?.enabled()) return;
+    choice.select(branch);
     render();
     fill();
-    void load();
   }
 
   function closeSubmenu(): void {
@@ -363,12 +287,11 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
     submenu = null;
     parts = null;
     placedTop = null;
-    notice = null;
     if (row.hasAttribute('aria-haspopup')) row.setAttribute('aria-expanded', 'false');
   }
 
   const openSubmenu = (focus: boolean) => {
-    if (view?.state !== 'ready' || view.current === null) return;
+    if (view?.state !== 'ready' || view.current === null || !(choice?.enabled() ?? false)) return;
     if (submenu !== null) {
       if (focus) submenu.querySelector<HTMLInputElement>(`[${MENU_SEARCH_ATTRIBUTE}]`)?.focus();
       return;
@@ -389,7 +312,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
     const note = document.createElement('div');
     note.setAttribute('role', 'status');
     note.setAttribute('data-ccd-menu-note', '');
-    note.setAttribute('data-ccd-branch-notice', '');
+    note.setAttribute('data-ccd-branch-summary', '');
     const empty = document.createElement('div');
     empty.setAttribute('role', 'presentation');
     empty.setAttribute('data-ccd-menu-note', '');
@@ -405,7 +328,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
       const item = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-ccd-branch-name]') : null;
       const name = item?.getAttribute('data-ccd-branch-name');
       if (item === null || name == null || item.getAttribute('aria-disabled') === 'true') return;
-      if (name !== view?.current || view.detached) void switchTo(name);
+      if (name !== (choice?.selected() ?? view?.current) || view?.detached) selectBase(name);
     });
     node.addEventListener('keydown', event => {
       const items = [search, ...[...list.querySelectorAll<HTMLElement>('[data-ccd-branch-name]')]
@@ -455,7 +378,8 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   const withdraw = (event: Event) => {
     const target = event.target instanceof Element ? event.target : null;
     if (target === null || submenu?.contains(target) || row.contains(target)) return;
-    if (target.closest(host.menuItem) !== null || target.closest(`[${MENU_SEARCH_ATTRIBUTE}]`) !== null) closeSubmenu();
+    if (target.closest(`${host.menuItem}, [role="menuitemcheckbox"]`) !== null
+      || target.closest(`[${MENU_SEARCH_ATTRIBUTE}]`) !== null) closeSubmenu();
   };
   card.addEventListener('pointerover', withdraw);
   card.addEventListener('focusin', withdraw);
@@ -490,9 +414,11 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   }
 
   render();
+  const unsubscribe = choice?.subscribe(() => { render(); fill(); });
   void load();
 
   return () => {
+    unsubscribe?.();
     disposed = true;
     read.abort();
     card.removeEventListener('pointerover', withdraw);

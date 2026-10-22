@@ -111,7 +111,7 @@ test('the name, the sentence and the mark are placed by hand', () => {
      settle on the widest *name*. */
   assert.match(description, /white-space:\s*nowrap/u);
   assert.match(description, /text-overflow:\s*ellipsis/u);
-  const check = ruleFor(menus, '[data-ccd-permission-mode] > ._check_4ub78_179').body;
+  const check = ruleFor(menus.filter(rule => !rule.selector.includes('data-ccd-plan-active')), '[data-ccd-permission-mode] > ._check_4ub78_179').body;
   assert.match(check, /grid-area:\s*1 \/ 2/u);
   assert.match(check, /align-self:\s*center/u);
   /* Ink only: `theme/tokens.css` owns the check's colour and this cell must not
@@ -120,7 +120,7 @@ test('the name, the sentence and the mark are placed by hand', () => {
 });
 
 test('the badge is the reference’s pill, on the rows and not on the chip', () => {
-  const badge = menus.filter(rule => rule.selector.includes('.wXeviG_badge'));
+  const badge = menus.filter(rule => rule.selector.includes('.wXeviG_badge') && rule.selector.includes('data-ccd-permission-menu'));
   assert.equal(badge.length, 1, 'one rule draws the badge');
   const rule = badge[0] as Rule;
   /* The chip in the status bar wears the same class and is the same control the
@@ -164,7 +164,7 @@ test('the group’s name sits above the rows, in the host’s own heading row', 
 
 test('every rule the card adds is scoped to the tag and to the popup family', () => {
   const added = menus.filter(rule => rule.selector.includes('data-ccd-permission'));
-  assert.equal(added.length, 9, 'the permission block includes card width and the shortcut column');
+  assert.equal(added.length, 13, 'the permission block includes card width and the shortcut column');
   for (const rule of added) {
     assert.ok(rule.selector.startsWith(MARKER), rule.selector);
     assert.ok(rule.selector.includes('[data-menu-material]'), rule.selector);
@@ -210,34 +210,18 @@ test('the table is one entry per preset, and every entry says something', () => 
   }
 });
 
-test('the host’s wording is kept wherever DSH already names the mode in Chinese', () => {
-  const copy = permissionCopy(languageDouble('zh-CN'));
-  for (const preset of copy.presets) {
-    /* Three of the four rows draw exactly what DSH renders, because the same
-       mode is named on the chip, in the settings page and in the trigger's own
-       `title`: a card that renamed one would be the odd surface out. */
-    const expected = preset.value === 'auto' ? '自动审查' : preset.name;
-    assert.equal(preset.label, expected, preset.value);
+test('reference labels retain host identities and describe the read-only limit', () => {
+  for (const [language, labels] of [
+    ['zh-CN', ['手动', '接受编辑', '跳过权限确认', '自动']],
+    ['en', ['Manual', 'Accept edits', 'Bypass permissions', 'Auto']],
+  ] as const) {
+    const copy = permissionCopy(languageDouble(language));
+    assert.deepEqual(copy.presets.map(preset => preset.label), [...labels]);
+    assert.match(copy.presets[0]!.description, /只读|Read-only/u);
+    assert.equal(copy.presets.find(preset => preset.value === 'auto')?.badge?.host, 'EXP');
   }
-  /* The one preset DSH leaves in English in its Chinese dictionary, and the
-     badge it marks that preset with. */
-  const auto = copy.presets.find(preset => preset.value === 'auto');
-  assert.equal(auto?.name, 'Auto review');
-  assert.deepEqual(auto?.badge, { host: 'EXP', text: '实验' });
-  assert.equal(copy.heading, '模式');
-  for (const preset of copy.presets) {
-    if (preset.value !== 'auto') assert.equal(preset.badge, undefined, preset.value);
-  }
-});
-
-test('the English table restates the host’s names, so no rewrite is a silent edit', () => {
-  const copy = permissionCopy(languageDouble('en'));
-  for (const preset of copy.presets) {
-    assert.equal(preset.label, preset.name, preset.value);
-  }
-  assert.equal(copy.heading, 'Mode');
-  assert.deepEqual(copy.presets.find(preset => preset.value === 'auto')?.badge,
-    { host: 'EXP', text: 'EXP' });
+  assert.deepEqual(permissionCopy(languageDouble('zh-CN')).presets[3]?.badge,
+    { host: 'EXP', text: '实验' });
 });
 
 test('a document that is not Chinese takes the English table', () => {

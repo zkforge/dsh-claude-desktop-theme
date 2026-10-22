@@ -711,6 +711,40 @@ html[data-dsh-ccd-style="true"] [data-ccd-tool-group-member] [data-variant="thin
   padding-block: 0;
 }
 
+/* Question transcripts share the other detail cards' surface and spacing.
+   Scope local class fragments to the native tool hook for both host builds;
+   answered, skipped and unanswered records keep their original content. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="ask_user_question"] [class*="_card"] {
+  box-sizing: border-box;
+  gap: 12px;
+  margin: 6px 0 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 9px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  font: 13px/20px var(--ccd-font-ui);
+  max-height: min(320px, 50vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="ask_user_question"] [class*="_card"] :is(dt, dd, p, li) {
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="ask_user_question"] [class*="_card"] :is(dt, li) {
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="ask_user_question"] [class*="_card"] :is(dd, p) {
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="ask_user_question"] [class*="_card"] [class*="_skipped"] {
+  color: var(--ccd-text-muted);
+}
+
 /* Generic tools such as working_directory render raw input/output rather than
    a specialized card. Cover the fallback itself, not individual tool names. */
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [class*="_ioCard"] {

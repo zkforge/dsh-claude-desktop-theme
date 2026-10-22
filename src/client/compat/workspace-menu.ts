@@ -2,6 +2,7 @@ import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { recordsInTranscript } from './mutation-scope.ts';
 import type { WorkspacePickerPort } from './workspace-picker-port.ts';
+import { mountWorktreeToggle } from './workspace-worktree.ts';
 import {
   createMenuSearch, FILTERED_ATTRIBUTE, menuCopy, mountWorkspaceBranch, WORKSPACE_EXTRA_ATTRIBUTE, type BranchCache,
 } from './workspace-branch.ts';
@@ -67,7 +68,7 @@ export function openFolderLabel(text: string, zh: boolean): string | null {
  * commit that mounts it and never shows the host's glyph first.
  *
  * @param document - renderer document carrying the hero chip and the portal.
- * @param port - Workspace order and per-Workspace session activity.
+ * @param port - Workspace order and new-worktree choices.
  * @param report - sink for observer failures; the native label stays untouched.
  * @returns disposer that disconnects every observer and restores each label.
  */
@@ -139,7 +140,7 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
     if (menu === null || !['ArrowDown', 'ArrowUp'].includes(event.key)) return;
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('[popover]') != null) return;
-    const items = [...menu.querySelectorAll<HTMLElement>(`input, button${host.menuItem}`)].filter(item =>
+    const items = [...menu.querySelectorAll<HTMLElement>(`input, button${host.menuItem}, button[role="menuitemcheckbox"]`)].filter(item =>
       item.closest('[popover]') === null && item.closest(`[${FILTERED_ATTRIBUTE}]`) === null
       && !(item instanceof HTMLButtonElement && item.disabled));
     if (items.length === 0) return;
@@ -232,7 +233,16 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
       menu.append(placed);
     }
     if (branch === null && workspaceId !== undefined && rows.length === port.workspaceIds().length) {
-      branch = { workspaceId, dispose: mountWorkspaceBranch(menu, workspaceId, branches, () => port.busy(workspaceId), report) };
+      const worktrees = port.worktrees;
+      const releaseBranch = mountWorkspaceBranch(menu, workspaceId, branches, report,
+        worktrees === undefined ? undefined : {
+          enabled: () => { const session = worktrees.session(); return session !== undefined && worktrees.selected(session); },
+          selected: () => { const session = worktrees.session(); return session === undefined ? undefined : worktrees.base(session); },
+          select: name => { const session = worktrees.session(); if (session !== undefined) worktrees.setBase(session, name); },
+          subscribe: listener => worktrees.subscribe(listener),
+        });
+      const releaseWorktree = port.worktrees === undefined ? () => {} : mountWorktreeToggle(menu, workspaceId, port.worktrees);
+      branch = { workspaceId, dispose: () => { releaseWorktree(); releaseBranch(); } };
     }
   };
 
@@ -279,7 +289,17 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
   let attributes: MutationObserver | undefined;
   let contents: MutationObserver | undefined;
   let attached: HTMLElement | null = null;
+  // The host passes only getAnchorRect to this portalled Menu, so its outside
+  // pointer handler considers the chip outside, closes on pointerdown, then the
+  // chip's click toggles it open again. Let the existing click perform one toggle.
+  const keepTriggerToggle = (event: PointerEvent) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (trigger?.getAttribute('aria-expanded') === 'true' && target !== null && trigger.contains(target)) {
+      event.stopImmediatePropagation();
+    }
+  };
   try {
+    document.addEventListener('pointerdown', keepTriggerToggle, true);
     tree = new MutationObserver(records => {
       if (recordsInTranscript(records)) return;
       const found = document.querySelector<HTMLElement>(host.heroWorkspaceChip);
@@ -304,6 +324,7 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
     }
     sync();
   } catch (error) {
+    document.removeEventListener('pointerdown', keepTriggerToggle, true);
     tree?.disconnect();
     attributes?.disconnect();
     contents?.disconnect();
@@ -313,6 +334,7 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
   }
 
   return () => {
+    document.removeEventListener('pointerdown', keepTriggerToggle, true);
     scheduled = 0;
     tree?.disconnect();
     attributes?.disconnect();

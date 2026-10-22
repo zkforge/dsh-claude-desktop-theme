@@ -36,34 +36,3 @@ export function readGitBranchView(value: unknown): GitBranchView {
     detached: view['detached'] === true, truncated: view['truncated'] === true,
   };
 }
-
-/** Branch checkout for the same row, offered on the new-session page only. */
-export const GIT_CHECKOUT_PATH = '/api/ccd-git-checkout';
-
-export type GitCheckoutState =
-  | 'switched' | 'conflict' | 'in-worktree' | 'invalid-branch' | 'unknown-workspace' | 'error';
-
-/** What the Host reports after one checkout attempt. */
-export interface GitCheckoutResult {
-  readonly state: GitCheckoutState;
-  /** Tracked files still modified after a switch: the changes git carried over. */
-  readonly carried: number;
-  /** First line of git's own message, for `error` only. */
-  readonly message: string;
-}
-
-const CHECKOUT_STATES: readonly GitCheckoutState[] =
-  ['switched', 'conflict', 'in-worktree', 'invalid-branch', 'unknown-workspace', 'error'];
-
-/** Accept only a well-formed result; anything else reads as an error. */
-export function readGitCheckoutResult(value: unknown): GitCheckoutResult {
-  const record = value && typeof value === 'object' ? value as Record<string, unknown> : {};
-  const state = CHECKOUT_STATES.find(state => state === record['state']) ?? 'error';
-  const carried = record['carried'];
-  const message = record['message'];
-  return {
-    state,
-    carried: state === 'switched' && typeof carried === 'number' && Number.isInteger(carried) && carried > 0 ? carried : 0,
-    message: state === 'error' && typeof message === 'string' ? message.slice(0, 300) : '',
-  };
-}

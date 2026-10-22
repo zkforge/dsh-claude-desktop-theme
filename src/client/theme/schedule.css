@@ -1,0 +1,621 @@
+/* TaskManagerPage annotations are owned by compat/schedule-page.ts. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule] {
+  color: var(--ccd-text);
+  background: var(--ccd-card);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="content"] {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  /* The 32px search field may overflow this 26px track symmetrically;
+     opening it must not resize the toolbar or push the content below. */
+  grid-template-rows: auto 26px;
+  gap: 24px 0;
+  max-width: none;
+  padding: 54px 32px 40px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="heading"] {
+  display: contents;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="heading"] h1 {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -.6px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="heading"] > div {
+  display: contents;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="new"] {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  gap: 5px;
+  min-height: 26px;
+  height: 26px;
+  padding: 0 8px;
+  line-height: 20px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 7px;
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  font-size: 13px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="new"] > span:has(svg) {
+  display: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 14px;
+  min-width: 0;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-tabs {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar button {
+  border: 0;
+  background: transparent;
+  color: var(--ccd-text-muted);
+  border-radius: 6px;
+  padding: 0 8px;
+  height: 26px;
+  min-height: 0;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar button[aria-pressed="true"],
+html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar button:hover,
+html[data-dsh-ccd-style="true"] .ccd-schedule-template:hover {
+  color: var(--ccd-text);
+  background: var(--ccd-hover);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar .ccd-schedule-tool {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  color: var(--ccd-text);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-tool svg { width: 18px; height: 18px; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] {
+  display: none;
+  position: fixed;
+  inset: auto;
+  z-index: 1100;
+  box-sizing: border-box;
+  width: 224px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 13px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-dialog-shadow);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-filter-open] [data-ccd-schedule-part="filters"] { display: block; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-filter-title {
+  padding: 3px 7px 6px;
+  color: var(--ccd-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] > [role="group"] {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] button {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  height: 30px;
+  padding: 4px 30px 4px 7px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text);
+  font-size: 14px;
+  line-height: 22px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] button:hover,
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] button:focus-visible { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] button[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 9px;
+  width: 10px;
+  height: 6px;
+  border-left: 1.6px solid var(--ccd-accent);
+  border-bottom: 1.6px solid var(--ccd-accent);
+  transform: rotate(-45deg);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-tool[aria-expanded="true"] { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"] {
+  display: none;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
+  width: min(480px, calc(100% - 140px));
+  z-index: 1;
+  min-width: 0;
+  height: 32px;
+  margin: 0 44px 0 0;
+  padding: 0 5px 0 10px;
+  gap: 6px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 8px;
+  color: var(--ccd-text-secondary);
+  background: var(--ccd-card);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-search-open] [data-ccd-schedule-part="search"] { display: flex; }
+html[data-dsh-ccd-style="true"] [data-ccd-search-open] .ccd-schedule-tool[aria-label="搜索任务"] { visibility: hidden; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"]:focus-within {
+  border-color: var(--ccd-accent);
+  box-shadow: 0 0 0 1px var(--ccd-accent);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"] input { width: 100%; min-width: 0; color: var(--ccd-text); font: inherit; font-size: 14px; outline: none; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"] > button:not(.ccd-schedule-search-close) { display: none; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"] .ccd-schedule-search-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-search-close svg { width: 18px; height: 18px; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] { grid-column: 1 / -1; grid-row: 4; margin: 0; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="empty"] {
+  min-height: 246px;
+  gap: 0;
+  padding: 38px 0 22px;
+  justify-content: flex-start;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="empty"] > svg { display: none; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-stopwatch { display: block; width: 86px; height: 94px; color: var(--ccd-text-strong); margin-bottom: 24px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-stopwatch svg { display: block; width: 100%; height: 100%; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="empty"] h2 { color: var(--ccd-text-muted); font-size: 13px; font-weight: 400; margin: 0 0 14px; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="empty"] button {
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  min-height: 26px;
+  height: 26px;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0 8px;
+  line-height: 20px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+/* Keep both create actions in their theme colors over the host button hover. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="new"]:hover,
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="empty"] button:hover {
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-templates {
+  grid-column: 1 / -1;
+  grid-row: 5;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 40px;
+  border-top: 2px solid var(--ccd-border-soft);
+  padding-top: 48px;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-template {
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  gap: 13px;
+  padding: 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  color: var(--ccd-text);
+  font: inherit;
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--ccd-hover);
+  color: var(--ccd-text-secondary);
+  font-size: 25px;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 13px; line-height: 20px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-name { font-weight: 600; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-description { color: var(--ccd-text-secondary); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-frequency {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-frequency-clock,
+html[data-dsh-ccd-style="true"] .ccd-schedule-frequency-clock svg {
+  display: block;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] [data-ccd-schedule-part="list"],
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] [data-ccd-schedule-part="search"],
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-tool { display: none; }
+/* Occupy the next grid row: leaving the hidden search row between the tabs
+ * and this grid used to add an extra 24px gap on the template page. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-templates {
+  grid-row: 3;
+  gap: 16px 40px;
+  border: 0;
+  padding-top: 4px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-template {
+  gap: 12px;
+  padding: 4px 8px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-template-icon {
+  flex-basis: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-template-icon svg {
+  width: 20px;
+  height: 20px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-template-body { gap: 2px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-preview {
+  width: min(480px, calc(100vw - 48px));
+  padding: 24px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 14px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-composer-shadow);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-preview h2 { margin: 0; font-size: 20px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-preview p { color: var(--ccd-text-secondary); font-size: 13px; line-height: 1.6; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-preview textarea { box-sizing: border-box; width: 100%; min-height: 130px; resize: vertical; padding: 12px; border: 1px solid var(--ccd-border); border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 13px; line-height: 1.6; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-preview button { margin: 16px 8px 0 0; padding: 6px 12px; border: 1px solid var(--ccd-border); border-radius: 7px; color: inherit; background: var(--ccd-hover); cursor: pointer; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar button:focus-visible,
+html[data-dsh-ccd-style="true"] .ccd-schedule-template:focus-visible { outline: 2px solid var(--ccd-text-muted); outline-offset: 2px; }
+@media (max-width: 850px) {
+  html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="content"] { padding: 40px 24px 32px; }
+  html[data-dsh-ccd-style="true"] .ccd-schedule-templates { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-icon svg { width: 22px; height: 22px; }
+/* A repeated shallow wave separates the native list from suggestions. */
+html[data-dsh-ccd-style="true"] .ccd-schedule-templates { position: relative; border-top: 0; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-templates::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--ccd-border-soft);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='6' viewBox='0 0 20 6'%3E%3Cpath d='M0 3Q5 -1 10 3T20 3' fill='none' stroke='currentColor' stroke-width='1.4'/%3E%3C/svg%3E") repeat-x;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-templates::before { display: none; }
+
+/* The create affordance keeps the artwork's seat and never changes card size. */
+html[data-dsh-ccd-style="true"] .ccd-schedule-template-icon { position: relative; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-template:is(:hover, :focus-visible) {
+  background: var(--ccd-hover);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-template:is(:hover, :focus-visible) .ccd-schedule-template-icon {
+  background: var(--ccd-border);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-template:is(:hover, :focus-visible) .ccd-schedule-template-icon svg {
+  visibility: hidden;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-template:is(:hover, :focus-visible) .ccd-schedule-template-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(currentColor, currentColor) center / 14px 1.5px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1.5px 14px no-repeat;
+}
+
+/* The task page is canvas, while its menus and template icons are surfaces. */
+html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] [data-ccd-schedule] {
+  background: var(--ccd-canvas);
+}
+
+/* Populated catalog: two outlined cards per row, as in the task reference.
+   Match the native list structure rather than build-specific module hashes;
+   the host button continues to own navigation and keyboard activation. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"]:has(> ul > li) {
+  grid-row: 3;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul:has(> li) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li {
+  min-width: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more) {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 112px;
+  padding: 14px 16px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ccd-text);
+  text-align: left;
+  align-items: flex-start;
+  white-space: normal;
+}
+/* Cards stay a plain surface on hover and press; the detail is a full page. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more):is(:hover, :active, [aria-expanded="true"]) {
+  background: var(--ccd-card);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more):focus-visible {
+  outline: 2px solid var(--ccd-accent);
+  outline-offset: 2px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more) > svg {
+  display: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more) > span > span:first-child {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more) > span {
+  min-width: 0;
+  width: 100%;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-card-prompt {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--ccd-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more) > span > span:not(.ccd-schedule-card-prompt) + span {
+  margin-top: 6px;
+  color: var(--ccd-text-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule="mine"]:has([data-ccd-schedule-part="list"] > ul > li) .ccd-schedule-templates {
+  display: none;
+}
+@media (max-width: 850px) {
+  html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Card actions are siblings of the native navigation button. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li { position: relative; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more) { padding-right: 48px; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-card-more {
+  opacity: 0;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ccd-track);
+  color: var(--ccd-text);
+  font: 22px/1 var(--ccd-font-ui);
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] li:hover .ccd-schedule-card-more,
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-card-more:is(:focus-visible, [aria-expanded="true"]) { opacity: 1; }
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-card-more:is(:hover, [aria-expanded="true"]) { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-more:focus-visible,
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-menu button:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 128px;
+  padding: 4px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 12px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-effort-shadow);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ccd-menu-danger);
+  font: 13px/20px var(--ccd-font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-menu button:is(:hover, :focus-visible) { background: var(--ccd-menu-danger); color: var(--ccd-menu-danger-ink); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-menu svg { width: 18px; height: 18px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-card-error { display: block; margin-top: 6px; color: var(--ccd-menu-danger); font-size: 13px; }
+
+/* Direct card deletion: a centered confirmation, without opening task details. */
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-dialog {
+  box-sizing: border-box;
+  width: min(400px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 24px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 12px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-dialog-shadow);
+  font: 14px/20px var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-dialog::backdrop { background: var(--ccd-dialog-mask); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-dialog h2 { margin: 0 0 4px; font: 500 16px/22px var(--ccd-font-ui); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-dialog p { margin: 0; color: var(--ccd-text-secondary); overflow-wrap: anywhere; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-dialog p[role]:not(:empty) { margin-top: 12px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-dialog p[role="alert"] { color: var(--ccd-menu-danger); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-actions button {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 8px;
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-dialog-button-shadow);
+  font: inherit;
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-actions .ccd-schedule-delete-confirm { border-color: var(--ccd-dialog-danger); background: var(--ccd-dialog-danger); color: var(--ccd-menu-danger-ink); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-confirm:hover:not(:disabled) { border-color: var(--ccd-dialog-danger-hover); background: var(--ccd-dialog-danger-hover); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-actions button:focus-visible { outline: 2px solid var(--ccd-dialog-focus-ring); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-delete-actions button:disabled { opacity: .55; cursor: default; }
+
+/* Full-page task detail owned by compat/schedule-detail.ts. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-detail] > :not(.ccd-schedule-detail) { display: none; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  box-sizing: border-box;
+  /* The breadcrumb shares the title-bar row with the window controls. */
+  padding: 15px 44px 40px;
+  color: var(--ccd-text);
+  font: 14px/22px var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 36px -18px;
+  font-size: 14px;
+  -webkit-app-region: no-drag;
+  line-height: 22px;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs button {
+  flex: none;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text);
+  font: inherit;
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs button:hover { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs > span[aria-hidden] { color: var(--ccd-text-muted); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs > span[aria-current] {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-header {
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--ccd-border-soft);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-header h1 {
+  margin: 0 0 12px;
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -.6px;
+  overflow-wrap: anywhere;
+  outline: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-header p { margin: 0; color: var(--ccd-text-muted); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 38%);
+  gap: 52px;
+  padding-top: 28px;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-field h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-field p { margin: 0; color: var(--ccd-text); overflow-wrap: anywhere; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-aside .ccd-schedule-detail-field {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ccd-border-soft);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-aside .ccd-schedule-detail-field + .ccd-schedule-detail-field { padding-top: 18px; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-aside .ccd-schedule-detail-field:last-child { border-bottom: 0; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-prompt { white-space: pre-wrap; }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-history {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-history li {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--ccd-text);
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-history li:hover { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-history .ccd-schedule-detail-empty {
+  padding: 15px;
+  border-radius: 12px;
+  background: var(--ccd-hover);
+  color: var(--ccd-text-secondary);
+  text-align: center;
+}
+html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs button:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+@media (max-width: 850px) {
+  html[data-dsh-ccd-style="true"] .ccd-schedule-detail { padding-inline: 24px; }
+  html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs { margin-left: 0; }
+  html[data-dsh-ccd-style="true"] .ccd-schedule-detail-body { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  html[data-dsh-ccd-style="true"] .ccd-schedule-detail-aside { order: -1; }
+}

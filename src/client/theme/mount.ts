@@ -6,6 +6,8 @@ import menuCss from './menus.css';
 import dialogCss from './dialogs.css';
 import scrollbarCss from './scrollbars.css';
 import tokenCss from './tokens.css';
+import scheduleCss from './schedule.css';
+import navigationHistoryCss from './navigation-history.css';
 
 /**
  * Plugin-scoped presentation base: the root activation marker, the design
@@ -26,6 +28,8 @@ export function mountTheme(environment: FeatureEnvironment, scope: CleanupScope)
   scope.add(environment.dom.mountStyles(menuCss));
   scope.add(environment.dom.mountStyles(dialogCss));
   scope.add(environment.dom.mountStyles(scrollbarCss));
+  scope.add(environment.dom.mountStyles(scheduleCss));
+  scope.add(environment.dom.mountStyles(navigationHistoryCss));
   const tokens = resolveThemeTokens(environment.config);
   if (Object.keys(tokens).length > 0) {
     scope.add(environment.host.theme.overrideTokens(THEME_OVERRIDE_SOURCE, tokens));

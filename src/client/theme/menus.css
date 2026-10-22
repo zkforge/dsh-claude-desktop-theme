@@ -176,6 +176,75 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="o
   height: 14px;
 }
 
+/* The slash picker keeps the host's candidates and keyboard cursor. The add
+ * launcher has its own short list, so commands need neither section headings
+ * nor a second localized name beside the token. Reference rows are untouched. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-command-menu] {
+  width: min(240px, calc(100vw - 24px));
+  padding: 4px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-command-menu] [role="listbox"] > [role="presentation"],
+html[data-dsh-ccd-style="true"] [data-ccd-command-menu] [role="option"][id^="dsh-slash-option-command-"] > :not([data-ccd-command-token]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-command-menu] [role="option"] {
+  min-height: 24px;
+  padding: 2px 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-command-token] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ccd-text-strong);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-add-menu] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: 178px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  padding: 4px;
+  color: var(--ccd-text-strong);
+  font-family: inherit;
+  outline: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-add-menu] [role="menuitem"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-add-menu] svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* One fill for the row's states.
  *
  * The pointer gets the fill every other control in this palette gets — one
@@ -267,10 +336,17 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
 
 /* The full-window reference places a ~280px card beside a 770px Composer.
  * Keep that width when Chinese summaries are shorter than the English copy. */
-html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu],
-html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] {
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] {
   width: 280px;
   min-width: 0;
+  max-width: calc(100vw - 24px);
+}
+
+/* Permission copy sets its own width, with the reference's compact floor. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] {
+  --ccd-choice-label-size: 14px;
+  width: max-content;
+  min-width: 202px;
   max-width: calc(100vw - 24px);
 }
 
@@ -322,7 +398,7 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-agent-menu] [role=
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [role="menuitem"][data-ccd-permission-mode] > ._itemLabel_4ub78_190 {
   grid-area: 1 / 1;
   color: var(--ccd-text-strong);
-  font-size: 12px;
+  font-size: var(--ccd-choice-label-size, 12px);
   font-weight: 400;
   line-height: 20px;
 }
@@ -470,6 +546,71 @@ html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-menu-note]:not([h
   line-height: 20px;
 }
 
+/* The worktree checkbox shares the row rhythm, with a compact trailing switch. */
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 24px;
+  padding-block: 2px;
+  border-radius: var(--ccd-table-radius);
+  outline: none;
+  box-shadow: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row]:hover,
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row]:focus-visible {
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-switch] {
+  display: inline-flex;
+  flex: none;
+  box-sizing: border-box;
+  width: 26px;
+  height: 16px;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--dsw-alias-border-l3);
+  transition: background 120ms ease;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-switch] > span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--dsw-alias-switch-thumb);
+  transition: transform 120ms ease;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row][aria-checked="true"] [data-ccd-worktree-switch] {
+  background: var(--ccd-view-menu-accent);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row][aria-checked="true"] [data-ccd-worktree-switch] > span {
+  transform: translateX(10px);
+  background: var(--dsw-alias-label-primary-foreground);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row][aria-disabled="true"] {
+  opacity: .5;
+  cursor: default;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-status]:not([hidden]) {
+  margin-left: auto;
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-status]:not([hidden]) + [data-ccd-worktree-switch] {
+  margin-left: 2px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row][aria-disabled="true"] {
+  color: var(--ccd-text-secondary);
+}
+
 /* The branch row: label, the current branch in the secondary ink, a chevron. */
 html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row] {
   width: 100%;
@@ -492,8 +633,9 @@ html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row] > [da
   color: var(--ccd-text-secondary);
 }
 
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row][aria-disabled="true"] > [data-ccd-menu-chevron] {
-  visibility: hidden;
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row][aria-disabled="true"] > span,
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row][aria-disabled="true"] svg {
+  color: var(--ccd-text-placeholder);
 }
 
 /* The side card is a manual popover nested in the host card: the UA's centred
@@ -518,18 +660,8 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [da
   overscroll-behavior: contain;
 }
 
-/* While a switch runs every row waits; the one being checked out dims last. */
-html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] [data-ccd-branch-name][aria-disabled="true"] {
-  cursor: default;
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] [data-ccd-branch-name][aria-busy="true"] {
-  color: var(--ccd-text-secondary);
-}
-
-/* The foot line: progress and carried changes in the secondary ink, a refusal
- * in the menu's danger red. It wraps rather than widening the card. */
-html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [data-ccd-branch-notice] {
+/* The read-only listing may report that the branch list was truncated. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [data-ccd-branch-summary] {
   max-width: 280px;
   margin-top: 4px;
   border-top: 1px solid var(--ccd-border-soft);
@@ -537,6 +669,43 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [da
   overflow-wrap: anywhere;
 }
 
-html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-branch-menu] > [data-ccd-branch-notice][data-tone="error"] {
-  color: var(--ccd-menu-danger);
+/* Plan is a collaboration state; the host still owns the permission selection. */
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu][data-ccd-plan-active] [data-ccd-permission-mode] > ._check_4ub78_179 {
+  visibility: hidden;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-mode="plan"][aria-pressed="true"]::after {
+  content: '✓';
+  grid-area: 1 / 2;
+  color: var(--ccd-accent);
+  text-align: center;
+}
+
+html[data-dsh-ccd-style="true"] .wXeviG_trigger[data-ccd-plan-label]:has(.wXeviG_triggerIcon) > .wXeviG_triggerLabel,
+html[data-dsh-ccd-style="true"] [data-ccd-plan-label] .wXeviG_badge {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plan-label]::before {
+  content: attr(data-ccd-plan-label);
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-plan-error] {
+  padding: 4px 8px;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-permission-menu] [data-ccd-permission-mode][hidden] {
+  display: none;
+}
+
+/* The unified mode trigger already shows Plan; withdraw the host's second seat. */
+html[data-dsh-ccd-style="true"] [data-conversation-session]:has(.wXeviG_trigger[data-ccd-plan-label]) button:is([aria-label="计划模式已开启，按下关闭"], [aria-label="Plan mode on, press to turn off"]) {
+  display: none;
+}
+
+/* Successful mode switches are already reflected by the Composer trigger. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="command"][data-ccd-plan-notice] {
+  display: none;
 }

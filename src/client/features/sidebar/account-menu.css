@@ -23,6 +23,20 @@ html[data-dsh-ccd-style="true"] .ZogL4G_trigger[data-collapsed="true"] {
   height: var(--ccd-account-trigger-height);
 }
 
+/* Match the reference's compact identity: 20px avatar, 13px name and a 6px
+   gap. Keep the collapsed rail's own avatar geometry. */
+html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"]) {
+  gap: 6px;
+  color: var(--ccd-text-secondary);
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"]) .ZogL4G_avatar {
+  width: 20px;
+  height: 20px;
+}
+
 /* Keep the feedback action outside the host's account button. */
 html[data-dsh-ccd-style="true"] :has(> [data-ccd-plugin-feedback]) {
   position: relative;
@@ -89,12 +103,12 @@ html[data-dsh-ccd-style="true"] [data-collapsed="true"] + [data-ccd-plugin-feedb
    long names ellipsize before it; the collapsed rail only shows the avatar. */
 html[data-dsh-ccd-style="true"] .ZogL4G_trigger:not([data-collapsed="true"])::after {
   content: "";
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   flex: none;
   margin-inline-start: auto;
   background: var(--ccd-text-muted);
-  mask: var(--ccd-icon-chevron-right) center / 16px 16px no-repeat;
+  mask: var(--ccd-icon-chevron-right) center / 12px 12px no-repeat;
   transform: rotate(90deg);
   pointer-events: none;
 }

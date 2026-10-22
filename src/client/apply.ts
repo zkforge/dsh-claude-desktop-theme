@@ -4,8 +4,17 @@ import type { Logger } from './contracts/ports.ts';
 import { adoptConfig } from '../shared/config.ts';
 import { ENTRY_ID, PLUGIN_ID } from '../shared/identity.ts';
 import { createHostServices } from './compat/adapter.ts';
+import { mountScheduleDraft } from './compat/schedule-draft.ts';
+import { mountSchedulePage } from './compat/schedule-page.ts';
+import { mountScheduleCardMenus } from './compat/schedule-card-menu.ts';
+import { scheduleDeletePort } from './compat/schedule-delete-port.ts';
+import { mountScheduleDetail } from './compat/schedule-detail.ts';
+import { scheduleDetailPort } from './compat/schedule-detail-port.ts';
+import { mountNavigationHistory } from './compat/navigation-history-controls.ts';
+import { navigationHistoryPort } from './compat/navigation-history-port.ts';
 import { mountBrowserHeader } from './compat/browser-header.ts';
 import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
+import { mountComposerCommandMenu } from './compat/composer-command-menu.ts';
 import { mountEmptyGroups } from './compat/empty-groups.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
@@ -13,10 +22,13 @@ import { mountHeroChips } from './compat/hero-chips.ts';
 import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
 import { mountVoiceWaveform } from './compat/voice-waveform.ts';
+import { mountPlanNotices } from './compat/plan-notices.ts';
+import { permissionPlanPort } from './compat/permission-plan-port.ts';
 import { mountPermissionConfirmation } from './compat/permission-confirmation.ts';
 import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-menu.ts';
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { workspacePickerPort } from './compat/workspace-picker-port.ts';
+import { mountWorktreeSupport } from './compat/workspace-worktree-port.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountFilesPane } from './compat/files-pane.ts';
 import { mountRightPanes } from './compat/right-panes.ts';
@@ -57,7 +69,7 @@ const FEATURES = [
  * a service that is not declared here, so the dependency is named rather than
  * discovered at the point of use.
  */
-export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession'];
+export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession', 'remote', 'remote.commands', 'remote.schedule', 'layout'];
 
 /**
  * The only assembly point allowed to import multiple feature domains.
@@ -110,6 +122,14 @@ export function apply(ctx: Context): void {
       const scope = new CleanupScope(error => logger.error('cleanup failed', error));
       try {
         mountTheme(environment, scope);
+        if (next.features.shell) {
+          scope.add(mountNavigationHistory(document, navigationHistoryPort(ctx), error => logger.error('navigation history: operation failed', error)));
+        }
+        const scheduleDraft = mountScheduleDraft(ctx, document, error => logger.error('schedule: draft preparation failed', error));
+        scope.add(scheduleDraft.dispose);
+        scope.add(mountSchedulePage(document, error => logger.error('schedule: page enhancement failed', error), scheduleDraft.prepare));
+        scope.add(mountScheduleCardMenus(document, scheduleDeletePort(ctx), error => logger.error('schedule: card menu failed', error)));
+        scope.add(mountScheduleDetail(document, scheduleDetailPort(ctx), error => logger.error('schedule: task detail failed', error)));
         /* Composer menus are placed from the assembly layer: the rule spans both
            pages that render the Composer, and the theme layer may not reach the
            compatibility layer. */
@@ -117,6 +137,7 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: menu placement observer failed', error),
         ));
+        scope.add(mountComposerCommandMenu(document, error => logger.error('composer: command menu failed', error)));
         /* The row's readouts are the configuration's to keep or drop, and the
            module that mirrors them also publishes the row's width budget, so it
            mounts either way and reads the switch as an argument. */
@@ -147,10 +168,12 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: placeholder observer failed', error),
         ));
+        scope.add(mountPlanNotices(document, error => logger.error('composer: plan notices failed', error)));
         /* Both pickers share two-line rows, headings and numeric shortcuts. */
         scope.add(mountPermissionMenu(
           document,
           error => logger.error('composer: permission card observer failed', error),
+          permissionPlanPort(ctx),
         ));
         scope.add(mountPermissionConfirmation(
           document,
@@ -163,9 +186,11 @@ export function apply(ctx: Context): void {
         /* The workspace picker's labels come from the host's own locale namespace,
            so the add row is rewritten in the rendered text nodes; the search line
            and the branch row are the plugin's own nodes in that card. */
+        const worktrees = mountWorktreeSupport(ctx, document, error => logger.error('worktree: preparation failed', error));
+        scope.add(worktrees.dispose);
         scope.add(mountWorkspaceMenu(
           document,
-          workspacePickerPort(ctx),
+          workspacePickerPort(ctx, worktrees.choices),
           error => logger.error('workspace menu: picker extension failed', error),
         ));
         /* The window's scrollbars span every feature the plugin draws — the

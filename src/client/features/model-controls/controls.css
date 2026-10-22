@@ -124,6 +124,8 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * that row rather than resting on a grey it had all along.
  */
 .ccd-model-options button:hover, .ccd-model-options button:focus-visible { background: var(--ccd-hover); }
+/* The dark reference keeps the current model visible on the popup surface. */
+html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .ccd-model-options button[aria-pressed="true"] { background: var(--ccd-hover); }
 /*
  * The row's leading seat (the user's one exception to §6.7's flat cell): a
  * 16px box that carries the provider's mark, or the provider's initial when

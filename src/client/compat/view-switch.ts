@@ -178,7 +178,9 @@ export function mountViewSwitch(
       && document.documentElement?.dataset?.platform === 'darwin'
       && document.querySelector(anchors.sidebarCollapsed) === null) {
       const box = column.getBoundingClientRect();
-      if (box.width >= tablist.getBoundingClientRect().width + 2 * VIEW_DOCK_INSET) {
+      const history = document.querySelector<HTMLElement>('[data-ccd-navigation-history]');
+      const leading = history?.getBoundingClientRect().right ?? 0;
+      if (box.width >= tablist.getBoundingClientRect().width + leading + 2 * VIEW_DOCK_INSET) {
         /* Viewport coordinates: neither the frame nor either column creates a
            transform or layout-containment context in the pinned build, so a
            fixed box resolves against the window (the plugin's conversation

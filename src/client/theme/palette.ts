@@ -53,18 +53,18 @@ export const BUILT_IN_SURFACES = Object.freeze({
  * every surface pair.
  */
 export const BUILT_IN_DARK: Palette = Object.freeze({
-  canvas: '#151515',
+  canvas: '#141414',
   sidebar: '#111111',
-  card: '#30302e',
-  track: '#1f1e1d',
-  raised: '#2f2f2d',
-  hover: '#313130',
-  hoverStrong: '#474743',
-  selected: '#3a3a37',
-  border: '#3e3e3b',
-  borderStrong: '#474743',
-  borderSoft: '#343431',
-  tableHeadLine: '#4a4a46',
+  card: '#222222',
+  track: '#1e1e1e',
+  raised: '#2c2c2c',
+  hover: '#303030',
+  hoverStrong: '#484848',
+  selected: '#353535',
+  border: '#383838',
+  borderStrong: '#484848',
+  borderSoft: '#303030',
+  tableHeadLine: '#484848',
 });
 
 const WHITE: Rgb = Object.freeze({ r: 255, g: 255, b: 255 });

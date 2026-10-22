@@ -301,6 +301,15 @@ html[data-dsh-ccd-style="true"][data-ccd-context-open] .y0jqnG_panel {
   pointer-events: none;
 }
 
+/* The intercepted click leaves the host Tooltip's own open state unchanged.
+   Its bubble is a sibling of the ring; hide it synchronously with our panel's
+   trigger marker, including a delayed bubble mounted after the click. The host
+   writes visibility inline when positioning it, so this override must win. */
+html[data-dsh-ccd-style="true"] .y0jqnG_trigger[data-ccd-context-panel] ~ [role="tooltip"] {
+  visibility: hidden !important;
+  pointer-events: none;
+}
+
 /* Empty context has a reading of zero and no disclosure column. */
 .ccd-context-panel[data-ccd-context-empty='true'] .ccd-context-head {
   grid-template-columns: minmax(0, 1fr) auto;

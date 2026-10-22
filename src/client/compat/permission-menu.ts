@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
+import type { PermissionPlanPort } from './permission-plan-port.ts';
 import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Names the preset a tagged row switches to; `theme/menus.css` keys the two-line cell off it. */
@@ -14,8 +15,9 @@ export interface PermissionPresetCopy {
   readonly value: string;
   /** The name DSH renders, which is what a row is recognised by. */
   readonly name: string;
-  /** The name to draw — the same wording wherever the host's is already the one to use. */
+  /** Reference label drawn in the menu and the Composer chip. */
   readonly label: string;
+  readonly aliases?: readonly string[];
   /** The preset's trailing badge: the word DSH prints, and the word to print instead. */
   readonly badge?: { readonly host: string; readonly text: string };
   /** The row's second line, saying what the mode does. */
@@ -29,49 +31,30 @@ export interface PermissionCopy {
   readonly presets: readonly PermissionPresetCopy[];
 }
 
-/**
- * The card in Simplified Chinese.
- *
- * Three of the four names are DSH's own dictionary's, and they are kept
- * deliberately: the same mode is named on the chip, in the settings page and in
- * the `title` the trigger carries, and a card that renamed one of them would be
- * the odd surface out. `Auto review` is the exception — DSH's Chinese
- * dictionary is the one place it leaves a name in English — and it is restated
- * here together with its badge, so the card reads as one language.
- *
- * The descriptions are this plugin's own, and they say what the mode does in
- * DSH's terms rather than what it is called: the file sandbox's three modes
- * (`read-only` refuses file changes, `workspace-write` allows them under the
- * session workspace, `danger-full-access` drops the restriction) and the
- * experimental per-call review that runs over the last of them.
- */
+/** Reference labels over DSH identities; descriptions preserve sandbox semantics. */
 const ZH: PermissionCopy = {
   heading: '模式',
   presets: [
-    { value: 'read-only', name: '仅可查看', label: '仅可查看', description: '修改文件前询问' },
-    { value: 'workspace-write', name: '工作区内修改', label: '工作区内修改', description: '自动批准工作区内的文件修改' },
-    { value: 'danger-full-access', name: '完全权限', label: '完全权限', description: '允许访问所有文件和运行命令' },
+    { value: 'read-only', name: '仅可查看', label: '手动', description: '只读访问，修改文件需另行批准' },
+    { value: 'workspace-write', name: '工作区内修改', label: '接受编辑', description: '自动接受工作区内的文件编辑' },
+    { value: 'danger-full-access', name: '完全权限', label: '跳过权限确认', description: '接受所有权限' },
     {
-      value: 'auto', name: 'Auto review', label: '自动审查',
+      value: 'auto', name: 'Auto review', label: '自动', aliases: ['自动审查'],
       badge: { host: 'EXP', text: '实验' },
       description: '由模型审查并批准工具调用',
     },
   ],
 };
 
-/**
- * The card in English — DSH's own four names, which are the ones the rows are
- * recognised by, so `label` restates them and the badge keeps the host's
- * abbreviation.
- */
+/** English reference labels over the same host identities. */
 const EN: PermissionCopy = {
   heading: 'Mode',
   presets: [
-    { value: 'read-only', name: 'Read Only', label: 'Read Only', description: 'Ask before making file changes' },
-    { value: 'workspace-write', name: 'Workspace Write', label: 'Workspace Write', description: 'Automatically accept edits within the workspace' },
-    { value: 'danger-full-access', name: 'Full access', label: 'Full access', description: 'Allow access to all files and command execution' },
+    { value: 'read-only', name: 'Read Only', label: 'Manual', description: 'Read-only access; edits require approval' },
+    { value: 'workspace-write', name: 'Workspace Write', label: 'Accept edits', description: 'Automatically accept workspace file edits' },
+    { value: 'danger-full-access', name: 'Full access', label: 'Bypass permissions', description: 'Accept all permissions' },
     {
-      value: 'auto', name: 'Auto review', label: 'Auto review',
+      value: 'auto', name: 'Auto review', label: 'Auto',
       badge: { host: 'EXP', text: 'EXP' },
       description: 'Let the model review and approve tool calls',
     },
@@ -121,62 +104,23 @@ interface Drawn {
   readonly drawn: string;
 }
 
-/**
- * The permission picker's card, drawn the way the reference draws it.
- *
- * DSH's card is four flat rows of a preset's name — `仅可查看` / `工作区内修改`
- * / `完全权限` / `Auto review` — one 20px line each, and the only thing that
- * tells them apart is the name itself. The reference draws the same four
- * choices as two-line cells: the mode's name over a sentence saying what the
- * mode does, with the one flagged preset carrying a badge beside its name. The
- * names are the host's and stay the host's; what this module adds is the second
- * line, and its home is a node the host never renders — `optionDescription`
- * exists in the permission catalog, but the picker passes it to the trigger's
- * `title` and prints nothing in the row.
- *
- * So this is the one compat module that *writes* copy rather than rewriting
- * what the host rendered, and the copy is this plugin's own: see
- * `permissionCopy` above. It is kept in one table per document language, so a
- * wording change is one edit in one place.
- *
- * Three facts decide how the permission rows are reached, and each is worth stating:
- *
- * - **A row is recognised by its name.** `Menu` rows carry no identity of their
- *   own — no id, no data attribute, and the preset's own glyph is a thing this
- *   plugin removes (`theme/menus.css` hides the icon seat) — so the name the
- *   host localised is the only handle there is. That is the same fact
- *   `compat/workspace-menu.ts` reads for its own row, and it fails safe: a
- *   deployment that configured its own preset names matches nothing, and its
- *   card keeps the host's single-line rows exactly as they are.
- * - **The card is recognised by its rows.** The picker's trigger carries no
- *   `aria-expanded` (unlike the account trigger and the hero chips), so the
- *   portalled card cannot be tied back to the control that opened it; the card
- *   a recognised row sits in is therefore the card this module tags. A card
- *   none of whose rows is recognised is left whole — its heading with it, since
- *   a heading over four unrecognised rows names nothing.
- * - **Nothing here reorders a row.** The second line is inserted as the label's
- *   next sibling and the heading as the row group's first child, so the
- *   primitive's own keyboard walk — which collects `button`s out of the group,
- *   not its children — steps over both, and every click target, focus order and
- *   accessible name the host built is left where it was. The row keeps its own
- *   name too: the inserted line widens what a screen reader reads out of the
- *   row, which is the point of the sentence.
- *
- * The host mounts the card afresh on every open, so every pass is idempotent
- * and every write is undone on release: a disabled plugin leaves DSH's own card
- * on screen.
- *
- * @param document - renderer document carrying the status bar and the portal.
- * @param report - sink for observer failures; the native card stays untouched.
- * @returns disposer that disconnects the observers and takes every write back.
- */
-export function mountPermissionMenu(document: Document, report: (error: unknown) => void): Disposer {
-  return mountChoiceMenu(document, report, permissionCopy(document));
+/** Keep native permission actions, with the host's independent /plan command. */
+export function mountPermissionMenu(
+  document: Document, report: (error: unknown) => void, plan?: PermissionPlanPort,
+): Disposer {
+  const copy = permissionCopy(document);
+  const order = ['auto', 'read-only', 'workspace-write', 'plan', 'danger-full-access'];
+  const zh = copy === ZH;
+  const presets = [...copy.presets, ...(plan === undefined ? [] : [{
+    value: 'plan', name: zh ? '计划' : 'Plan', label: zh ? '计划' : 'Plan',
+    description: zh ? '在进行更改前制定计划' : 'Make a plan before making changes',
+  }])].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
+  return mountChoiceMenu(document, report, { ...copy, presets }, false, plan);
 }
 
 /** Shared two-line rows, heading, numeric selection and reversible DOM writes. */
 function mountChoiceMenu(
-  document: Document, report: (error: unknown) => void, copy: PermissionCopy, agent = false,
+  document: Document, report: (error: unknown) => void, copy: PermissionCopy, agent = false, plan?: PermissionPlanPort,
 ): Disposer {
   const host = hostSelectors(document);
   const modeAttribute = agent ? 'data-ccd-agent-mode' : PERMISSION_MODE_ATTRIBUTE;
@@ -190,9 +134,21 @@ function mountChoiceMenu(
   let trigger: HTMLElement | null = null;
   let attached: HTMLElement | null = null;
   let scheduled = 0;
+  let disposed = false;
+  let busy = false;
+  let forwarding = false;
+  const orders = new Map<HTMLElement, Element[]>();
+  const recognised = new WeakMap<Element, PermissionPresetCopy>();
+  const sessionId = () => trigger?.closest('[data-conversation-session]')
+    ?.getAttribute('data-conversation-session') ?? null;
+  const planState = () => {
+    const id = sessionId();
+    return id === null ? null : plan?.read(id) ?? null;
+  };
 
   /** Drop the records of a card the host has already unmounted. */
   const prune = () => {
+    for (const viewport of orders.keys()) if (!viewport.isConnected) orders.delete(viewport);
     for (let index = drawn.length - 1; index >= 0; index -= 1) {
       if (!drawn[index]!.node.isConnected) drawn.splice(index, 1);
     }
@@ -214,11 +170,17 @@ function mountChoiceMenu(
       }
     }
     drawn.length = 0;
+    trigger?.removeAttribute('data-ccd-plan-label');
+    for (const [viewport, children] of orders) {
+      for (const child of children) if (child.parentElement === viewport) viewport.append(child);
+    }
+    orders.clear();
     for (const node of added) node.remove();
     added.length = 0;
     for (const node of marked) {
       node.removeAttribute(modeAttribute);
       node.removeAttribute(menuAttribute);
+      node.removeAttribute('data-ccd-plan-active');
     }
     marked.length = 0;
   };
@@ -263,12 +225,17 @@ function mountChoiceMenu(
   /** The preset a control is showing, by the name it draws. */
   const presetOf = (label: Element): PermissionPresetCopy | undefined => {
     const name = nameOf(label);
-    return copy.presets.find(preset => preset.name === name || preset.label === name);
+    const previous = recognised.get(label);
+    const preset = copy.presets.find(preset => preset.name === name || preset.aliases?.includes(name))
+      ?? (previous?.label === name ? previous : undefined);
+    if (preset) recognised.set(label, preset);
+    return preset;
   };
 
   /** Write one control's own words: its name, and the badge beside it. */
   const drawName = (label: Element, badge: Element | null, preset: PermissionPresetCopy) => {
     replace(label, preset.name, preset.label);
+    for (const alias of preset.aliases ?? []) replace(label, alias, preset.label);
     if (badge !== null && preset.badge !== undefined) {
       replace(badge, preset.badge.host, preset.badge.text);
     }
@@ -341,12 +308,48 @@ function mountChoiceMenu(
   const sync = () => {
     scheduled = 0;
     prune();
-    if (trigger !== null) drawTrigger(trigger);
+    if (trigger !== null) {
+      drawTrigger(trigger);
+      const label = planState()?.active ? (copy.presets.find(preset => preset.value === 'plan')?.label ?? '') : '';
+      if (label) trigger.setAttribute('data-ccd-plan-label', label);
+      else trigger.removeAttribute('data-ccd-plan-label');
+    }
     /* The rows exist only while the card is open, and `[role="menu"]` is absent
        from the tree at every other moment — so one query keeps the whole row
        scan off the streaming transcript's mutation traffic. */
     if (document.querySelector(host.menu) === null) return;
     for (const row of document.querySelectorAll<HTMLElement>(host.menuItem)) drawRow(row);
+    if (agent) return;
+    for (const card of document.querySelectorAll<HTMLElement>(`[${menuAttribute}]`)) {
+      const viewport = card.querySelector<HTMLElement>(host.menuViewport);
+      if (viewport === null) continue;
+      if (!orders.has(viewport)) orders.set(viewport, [...viewport.children]);
+      const state = planState();
+      let row = viewport.querySelector<HTMLButtonElement>('[data-ccd-permission-mode="plan"]');
+      if (state !== null && row === null) {
+        const sample = viewport.querySelector<HTMLElement>(host.menuItem);
+        const sampleLabel = sample?.querySelector<HTMLElement>(host.menuItemLabel);
+        if (sample && sampleLabel) {
+          row = document.createElement('button');
+          row.type = 'button';
+          row.className = sample.className;
+          row.setAttribute('role', 'menuitem');
+          const label = document.createElement('span');
+          label.className = sampleLabel.className;
+          label.textContent = copy.presets.find(preset => preset.value === 'plan')!.label;
+          row.append(label);
+          viewport.append(row);
+          added.push(row);
+          drawRow(row);
+        }
+      }
+      if (row) { row.hidden = state === null; row.setAttribute('aria-pressed', String(state?.active ?? false)); }
+      card.toggleAttribute('data-ccd-plan-active', state?.active ?? false);
+      const rows = [...viewport.querySelectorAll<HTMLElement>(`[${modeAttribute}]`)];
+      const sorted = [...rows].sort((a, b) => copy.presets.findIndex(p => p.value === a.getAttribute(modeAttribute))
+        - copy.presets.findIndex(p => p.value === b.getAttribute(modeAttribute)));
+      if (rows.some((item, index) => item !== sorted[index])) for (const item of sorted) viewport.append(item);
+    }
   };
 
   /**
@@ -369,7 +372,7 @@ function mountChoiceMenu(
   const onKey = (event: KeyboardEvent) => {
     if (event.defaultPrevented || event.repeat || event.isComposing
       || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    const index = /^[1-4]$/u.test(event.key) ? Number(event.key) - 1 : -1;
+    const index = /^[1-9]$/u.test(event.key) ? Number(event.key) - 1 : -1;
     const preset = copy.presets[index];
     if (preset === undefined) return;
     const card = document.querySelector<HTMLElement>(`[${menuAttribute}]`);
@@ -377,12 +380,52 @@ function mountChoiceMenu(
     const target = event.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
     const row = card.querySelector<HTMLButtonElement>(`[${modeAttribute}="${preset.value}"]`);
-    if (row === null || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
+    if (row === null || row.hidden || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
     event.preventDefault();
     event.stopPropagation();
     row.click();
   };
 
+  // A native permission selection leaves plan mode before forwarding its click.
+  const onClick = (event: MouseEvent) => {
+    if (agent || !plan || forwarding) return;
+    const row = (event.target as Element | null)?.closest<HTMLButtonElement>(`[${modeAttribute}]`);
+    const id = sessionId();
+    if (!row || !id || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
+    if (busy) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    const entering = row.getAttribute(modeAttribute) === 'plan';
+    if (!entering && !planState()?.active) return;
+    event.preventDefault();
+    event.stopPropagation();
+    busy = true;
+    const selectedTrigger = trigger;
+    void plan.set(id, entering).then(() => {
+      if (disposed || sessionId() !== id || trigger !== selectedTrigger) return;
+      if (entering) selectedTrigger?.click();
+      else if (row.isConnected) {
+        forwarding = true;
+        try { row.click(); } finally { forwarding = false; }
+      }
+    }).catch(error => {
+      report(error);
+      if (!disposed && row.isConnected) {
+        let status = row.parentElement?.querySelector<HTMLElement>('[data-ccd-plan-error]');
+        if (!status) {
+          status = document.createElement('div');
+          status.setAttribute('data-ccd-plan-error', '');
+          status.setAttribute('role', 'alert');
+          row.parentElement?.append(status);
+          added.push(status);
+        }
+        status.textContent = error instanceof Error ? error.message : String(error);
+      }
+    }).finally(() => { busy = false; });
+  };
+  let unsubscribe: Disposer | undefined;
   let tree: MutationObserver | undefined;
   let contents: MutationObserver | undefined;
   try {
@@ -415,7 +458,12 @@ function mountChoiceMenu(
     }
     sync();
     document.addEventListener('keydown', onKey, true);
+    document.addEventListener('click', onClick, true);
+    unsubscribe = plan?.subscribe(schedule);
   } catch (error) {
+    unsubscribe?.();
+    document.removeEventListener('keydown', onKey, true);
+    document.removeEventListener('click', onClick, true);
     tree?.disconnect();
     contents?.disconnect();
     restore();
@@ -424,7 +472,10 @@ function mountChoiceMenu(
   }
 
   return () => {
+    disposed = true;
     scheduled = 0;
+    unsubscribe?.();
+    document.removeEventListener('click', onClick, true);
     document.removeEventListener('keydown', onKey, true);
     tree?.disconnect();
     contents?.disconnect();

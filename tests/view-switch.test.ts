@@ -83,6 +83,7 @@ interface FixtureOptions {
   collapsed?: boolean;
   columnWidth?: number;
   narrowTabs?: number;
+  historyRight?: number;
 }
 
 function fixture(options: FixtureOptions = {}) {
@@ -104,6 +105,9 @@ function fixture(options: FixtureOptions = {}) {
     ['.ST7X_W_tabs', tabs],
     ['._6Qf49G_sidebarCol', column],
   ]);
+  if (options.historyRight !== undefined) {
+    lookups.set('[data-ccd-navigation-history]', element(box(120, options.historyRight - 120), ''));
+  }
   const document = {
     documentElement: { dataset: { platform: options.platform ?? 'darwin' } } as { dataset: Record<string, string> },
     body: {},
@@ -308,6 +312,14 @@ test('other platforms, a collapsed sidebar and a rail-sized column all leave the
     const f = fixture(options);
     assert.equal(f.tabs.getAttribute(VIEW_DOCK_ATTRIBUTE), null, JSON.stringify(options));
     assert.equal(f.tabs.style.getPropertyValue(VIEW_DOCK_RIGHT_PROPERTY), '', JSON.stringify(options));
+    f.dispose();
+  }
+});
+
+test('navigation arrows leave enough space before docking the view switcher', () => {
+  for (const [columnWidth, expected] of [[240, null], [264, 'sidebar']] as const) {
+    const f = fixture({ columnWidth, historyRight: 180 });
+    assert.equal(f.tabs.getAttribute(VIEW_DOCK_ATTRIBUTE), expected);
     f.dispose();
   }
 });
