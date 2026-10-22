@@ -17,8 +17,8 @@ import { paneLabels, paneLanguage } from '../src/client/compat/pane-labels.ts';
  * Two facts are asserted beyond the copy itself:
  * - the rule is the one `compat/header-labels.ts` and the permission card
  *   follow: a Chinese document takes Chinese, everything else takes English;
- * - the English table keeps the reference's wording verbatim, because
- *   DESIGN.md quotes those strings as the reference's own.
+ * - the English table follows DESIGN.md, with file search copy limited to
+ *   the name filtering the pane actually supports.
  */
 
 const read = (path: string): string =>
@@ -31,7 +31,7 @@ const FILES_KEYS = [
   'title', 'filter', 'filterLabel', 'clear', 'hide', 'show', 'noMatch', 'emptyTitle', 'emptyBody',
 ] as const;
 const CHROME_KEYS = [
-  'more', 'expand', 'restore', 'search', 'reload', 'back', 'forward', 'pick', 'pickNotice', 'address',
+  'more', 'expand', 'restore', 'search', 'reload', 'back', 'forward', 'address',
   'terminal', 'terminals', 'newTerminal', 'closeTab', 'refresh', 'openFolder', 'hideSidebar', 'close',
 ] as const;
 const BROWSER_KEYS = ['newTab', 'tabs', 'saveScreenshot', 'awaitingServer', 'enterAddress'] as const;
@@ -73,10 +73,10 @@ test('both tables are complete, and no entry is empty or a leftover', () => {
   }
 });
 
-test('the English table restates the reference’s words, so nothing drifts silently', () => {
+test('the English table follows the design and supported file search capability', () => {
   const labels = paneLabels('en');
   assert.equal(labels.files.title, 'Files');
-  assert.equal(labels.files.filter, 'Filter, or ? to search in files');
+  assert.equal(labels.files.filter, 'Search file names…');
   assert.equal(labels.files.emptyTitle, 'Open files appear here');
   assert.equal(labels.files.emptyBody, 'Pick a file in the tree, or click a file path in the conversation.');
   assert.equal(labels.browser.saveScreenshot, 'Save screenshot');
@@ -102,7 +102,7 @@ test('the Chinese table translates every English word, not just the visible ones
   assert.equal(zh.chrome.terminal, '终端');
   assert.equal(zh.chrome.terminals, '终端');
   /* The placeholders use no ASCII word, so no stray `Filter` can survive. */
-  assert.equal(zh.files.filter, '过滤文件，或按 ? 在文件内容中搜索');
+  assert.equal(zh.files.filter, '搜索文件名…');
 });
 
 test('the whole right panel reads its words from this table', () => {

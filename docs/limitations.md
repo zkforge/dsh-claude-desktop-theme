@@ -21,7 +21,7 @@ Open in、Rename、Fork、Transcript view、Archive、复制目录路径／名�
 | 打开本地文件 | 同上 |
 | Servers / Files / Settings 三项配置 | 没有对应接口 |
 | 独立窗口 | 宿主暂无接口；按钮按需求隐藏 |
-| 页面元素选取 | 保留按钮外观，点击说明限制 |
+| 页面元素选取 | 宿主暂无接口；按钮按需求隐藏 |
 | Save screenshot | 桌面 webview 可用；空页或无接口时禁用 |
 
 ## Files 面板

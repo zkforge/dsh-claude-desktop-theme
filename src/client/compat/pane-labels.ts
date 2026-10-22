@@ -42,9 +42,6 @@ export interface PaneChromeLabels {
   readonly reload: string;
   readonly back: string;
   readonly forward: string;
-  /** The element-picking control, and the notice it answers with. */
-  readonly pick: string;
-  readonly pickNotice: string;
   /** The globe that focuses the address field. */
   readonly address: string;
   /** The word before a terminal's workspace name, and the tab group's own name. */
@@ -79,7 +76,7 @@ export interface PaneLabels {
 const ZH: PaneLabels = {
   files: {
     title: '文件',
-    filter: '过滤文件，或按 ? 在文件内容中搜索',
+    filter: '搜索文件名…',
     filterLabel: '过滤文件',
     clear: '清除过滤',
     hide: '收起文件树',
@@ -96,8 +93,6 @@ const ZH: PaneLabels = {
     reload: '刷新',
     back: '后退',
     forward: '前进',
-    pick: '选取元素 — DSH 暂不支持网页元素选取',
-    pickNotice: 'DSH 暂不支持选取浏览器页面元素。',
     address: '编辑地址',
     terminal: '终端',
     terminals: '终端',
@@ -120,7 +115,7 @@ const ZH: PaneLabels = {
 const EN: PaneLabels = {
   files: {
     title: 'Files',
-    filter: 'Filter, or ? to search in files',
+    filter: 'Search file names…',
     filterLabel: 'Filter files',
     clear: 'Clear filter',
     hide: 'Hide file tree',
@@ -137,8 +132,6 @@ const EN: PaneLabels = {
     reload: 'Reload',
     back: 'Back',
     forward: 'Forward',
-    pick: 'Select element — DSH does not support page picking',
-    pickNotice: 'DSH does not support picking browser page elements yet.',
     address: 'Edit address',
     terminal: 'Terminal',
     terminals: 'Terminals',

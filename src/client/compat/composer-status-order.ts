@@ -9,7 +9,7 @@ import { recordsInTranscript } from './mutation-scope.ts';
 /** One percentage reading, with the spacing the host copy puts around it. */
 const PERCENT_READING = /\s*\d+(?:[.,]\d+)?\s*%/u;
 
-/** Name context rings and suppress the host's portaled dictation hint. */
+/** Name context rings and suppress redundant composer tooltips. */
 export function mountComposerStatusOrder(document: Document, report: (error: unknown) => void): Disposer {
   const host = hostSelectors(document);
   /** The host's own accessible name per ring trigger. */
@@ -44,10 +44,15 @@ export function mountComposerStatusOrder(document: Document, report: (error: unk
     // withdrawing the pointer cannot reveal the bubble during its exit.
     for (const tooltip of tooltips) if (!tooltip.isConnected) tooltips.delete(tooltip);
     if (!document.querySelector('[data-slot="conversation.input.activity"] button')) return;
-    for (const tooltip of document.querySelectorAll('[role="tooltip"][data-portal]')) {
+    for (const tooltip of document.querySelectorAll('[role="tooltip"]')) {
       const label = tooltip.textContent?.trim();
-      if (label !== '听写' && label !== 'Dictate') continue;
-      tooltip.setAttribute('data-ccd-dictation-tooltip', '');
+      const attribute = label === '听写' || label === 'Dictate'
+        ? 'data-ccd-dictation-tooltip'
+        : label === '发信息' || label === '发送消息' || label === 'Send message'
+          ? 'data-ccd-send-tooltip'
+          : null;
+      if (attribute === null) continue;
+      tooltip.setAttribute(attribute, '');
       tooltips.add(tooltip);
     }
   };
@@ -80,7 +85,10 @@ export function mountComposerStatusOrder(document: Document, report: (error: unk
   return () => {
     observer?.disconnect();
     restoreLabels();
-    for (const tooltip of tooltips) tooltip.removeAttribute('data-ccd-dictation-tooltip');
+    for (const tooltip of tooltips) {
+      tooltip.removeAttribute('data-ccd-dictation-tooltip');
+      tooltip.removeAttribute('data-ccd-send-tooltip');
+    }
     tooltips.clear();
   };
 }

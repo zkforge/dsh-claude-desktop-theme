@@ -2,6 +2,9 @@
  * Colours are centralized here; the dark palette follows the host's body marker.
  */
 html[data-dsh-ccd-style="true"] {
+  --ccd-plugin-installed-bg: #e7f4eb;
+  --ccd-plugin-installed-border: #b7d8c1;
+  --ccd-plugin-installed-text: #24633c;
   --ccd-price-off-peak: #38734f;
   --ccd-price-peak: #996025;
   /* Reference companion and greeting, shared across both theme schemes. */
@@ -28,6 +31,16 @@ html[data-dsh-ccd-style="true"] {
   --ccd-nav-gap: 1px;
   --ccd-radius-row: 8px;
   --ccd-radius-panel: 12px;
+  /* Shared controls on Customize and Scheduled tasks. */
+  --ccd-management-control-height: 26px;
+  --ccd-management-control-radius: 7px;
+  --ccd-management-control-font-size: 13px;
+  --ccd-management-control-line-height: 20px;
+  --ccd-management-search-height: 32px;
+  --ccd-management-action-size: 28px;
+  --ccd-management-icon-size: 18px;
+  --ccd-command-tooltip-fill: #111111;
+  --ccd-command-tooltip-ink: #ffffff;
   /* View-options reference: 20 device px corners at @2x. */
   --ccd-view-menu-radius: 10px;
   /* Assistant table card. The reference crop's corner curve fits a 12-device-px
@@ -574,6 +587,9 @@ html[data-dsh-ccd-style="true"] body {
  * separate; text keeps the light palette's descending tone order.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
+  --ccd-plugin-installed-bg: #193b29;
+  --ccd-plugin-installed-border: #315f43;
+  --ccd-plugin-installed-text: #a1dfb5;
   --ccd-price-off-peak: #a1c9aa;
   --ccd-price-peak: #dfb77d;
   --ccd-hero-ripple-ink: #60bdeb;

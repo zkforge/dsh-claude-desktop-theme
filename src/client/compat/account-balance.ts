@@ -4,7 +4,7 @@ import type { Disposer } from '../contracts/ports.ts';
 /** Last completed display, retained across menu openings for the same account. */
 export interface AccountBalanceCache {
   text?: string;
-  title?: string;
+  description?: string;
 }
 
 /** One usage row in the lower-left account menu; polling lives only while open. */
@@ -24,7 +24,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
   amount.setAttribute('data-ccd-balance-amount', '');
   amount.setAttribute('aria-live', 'polite');
   amount.textContent = cache.text ?? '—';
-  row.title = cache.title ?? (zh ? 'DeepSeek 官方 API 余额（人民币）' : 'DeepSeek API balance (CNY)');
+  row.ariaDescription = cache.description ?? (zh ? 'DeepSeek 官方 API 余额（人民币）' : 'DeepSeek API balance (CNY)');
   row.append(label, amount);
   anchor.after(row);
   let disposed = false;
@@ -58,7 +58,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
         && /^-?\d+(?:\.\d+)?$/.test(value) && Number.isFinite(Number(value));
       if (data.state === 'ready' && balance && [balance.total, balance.granted, balance.toppedUp].every(validAmount)) {
         amount.textContent = `¥${balance.total}`;
-        row.title = zh
+        row.ariaDescription = zh
           ? `DeepSeek 官方 API · 人民币\n总余额 ¥${balance.total}\n充值余额 ¥${balance.toppedUp}\n赠金余额 ¥${balance.granted}\n点击刷新`
           : `DeepSeek API · CNY\nTotal ¥${balance.total}\nTop-up ¥${balance.toppedUp}\nGranted ¥${balance.granted}\nClick to refresh`;
       } else {
@@ -68,7 +68,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
           'no-cny': zh ? '无人民币余额' : 'No CNY balance',
         };
         amount.textContent = messages[data.state] ?? (zh ? '查询失败' : 'Unavailable');
-        row.title = data.state === 'unconfigured'
+        row.ariaDescription = data.state === 'unconfigured'
           ? (zh ? '请在设置 → 模型中配置 DeepSeek 官方 API Key' : 'Configure the official DeepSeek API key in Settings → Models')
           : (zh ? 'DeepSeek 官方 API 余额 · 点击重试' : 'DeepSeek API balance · Click to retry');
       }
@@ -77,7 +77,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
         amount.textContent = zh ? '查询失败 · 重试' : 'Unavailable · Retry';
         const reason = read.signal.aborted ? (zh ? '查询超时' : 'Request timed out')
           : error instanceof Error ? error.message : (zh ? '连接失败' : 'Connection failed');
-        row.title = `${zh ? 'DeepSeek 官方 API 余额' : 'DeepSeek API balance'}\n${reason}\n${zh ? '点击重试' : 'Click to retry'}`;
+        row.ariaDescription = `${zh ? 'DeepSeek 官方 API 余额' : 'DeepSeek API balance'}\n${reason}\n${zh ? '点击重试' : 'Click to retry'}`;
       }
     } finally {
       clearTimeout(deadline);
@@ -85,7 +85,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
       if (controller === read) controller = undefined;
       if (!disposed) {
         cache.text = amount.textContent ?? '';
-        cache.title = row.title;
+        cache.description = row.ariaDescription ?? '';
         row.removeAttribute('aria-busy');
         if (!document.hidden) timer = setTimeout(() => { void refresh(); }, 60_000);
       }

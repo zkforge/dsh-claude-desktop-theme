@@ -131,9 +131,11 @@ test('the built-in dark palette agrees with the dark block it mirrors', () => {
   }
 });
 
-test('surface colours have dark counterparts while companion artwork keeps its reference palette', () => {
+test('surface colours have dark counterparts while artwork and tooltips keep fixed palettes', () => {
   const isColour = (value: string) => /^(?:#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(value);
   const artwork = new Map([
+    // Tooltips deliberately use the same high-contrast palette in both themes.
+    ['ccd-command-tooltip-fill', '#111111'], ['ccd-command-tooltip-ink', '#ffffff'],
     ['ccd-claude-coral', '#d87657'], ['ccd-claude-shade', '#bd6145'],
     ['ccd-claude-eye', '#000000'], ['ccd-claude-laptop', '#888984'],
   ]);

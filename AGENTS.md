@@ -2,6 +2,8 @@
 
 本项目是 DSH Desktop 的 CCD 风格插件。使用说明见 [README.md](README.md)，安装见 [install.md](install.md)，代码结构见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
+每次改动完成后，主动按 [install.md](install.md) 的源码安装流程打包并安装到本地 DSH 的 `desktop` profile，使用唯一 tarball 路径并保留安装目录，无需再次询问确认。
+
 ## 常用命令
 
 ```sh

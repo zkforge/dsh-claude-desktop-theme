@@ -270,7 +270,8 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   assert.equal(first.flow.parentElement, parent);
 });
 
-test('consecutive live tools reuse one rolling line, animate vertically and retain native details', async () => {
+test('live tool labels coalesce rapid updates, settle gently and retain native details', async (context) => {
+  context.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
   const nativeObserver = globalThis.MutationObserver;
   let notify = (_records: MutationRecord[]) => {};
   globalThis.MutationObserver = class {
@@ -304,21 +305,43 @@ test('consecutive live tools reuse one rolling line, animate vertically and reta
     await deliver();
     assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 1);
     assert.equal(parent.querySelector('[data-ccd-tool-group-toggle]'), toggle);
-    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Reading README.md');
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Checking git status', 'keep a readable dwell');
+    second.row.textContent = 'Reading latest README.md';
+    await deliver();
+    context.mock.timers.tick(500);
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Checking git status', 'do not switch at the former fast cadence');
+    context.mock.timers.tick(400);
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Reading latest README.md', 'only the latest state is shown');
     assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
     assert.equal(first.flow.parentElement, parent);
     assert.equal(second.row.parentElement, second.atomic);
-    assert.equal(motions[0]!.frames[1]!.transform, 'translateY(-100%)');
-    assert.equal(motions[1]!.frames[0]!.transform, 'translateY(100%)');
+    assert.equal(motions[0]!.frames[1]!.transform, 'translateY(-5px)');
+    assert.equal(motions[1]!.frames[0]!.transform, 'translateY(6px)');
     second.row.setAttribute('data-state', 'ok');
     await deliver();
+    assert.equal(motions[0]!.cancelled, false, 'rapid updates do not interrupt the current transition');
+    context.mock.timers.tick(900);
     assert.equal(toggle.children[0]!.children[0]!.textContent, 'Read a file, ran a command');
+    assert.equal(motions[2]!.frames[1]!.transform, 'translateY(0)', 'completion only fades');
+    assert.equal(motions[3]!.frames[0]!.transform, 'translateY(0)');
     assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
     assert.equal(motions[0]!.cancelled, true, 'new switches cancel earlier in-flight layers');
     toggle.click();
     assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'open');
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    second.row.setAttribute('data-state', 'running');
+    second.row.textContent = 'Another pending update';
+    await deliver();
+    second.row.setAttribute('data-state', 'error');
+    await deliver();
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'failure details open immediately');
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    second.row.setAttribute('data-state', 'running');
+    await deliver();
+    release();
+    context.mock.timers.tick(1000);
+    assert.equal(parent.querySelector('[data-ccd-tool-group-toggle]'), null, 'disposal cancels pending refresh');
     assert.deepEqual(errors, []);
   } finally { release(); globalThis.MutationObserver = nativeObserver; }
   assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 0);

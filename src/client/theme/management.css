@@ -1,0 +1,151 @@
+/* Customize and Scheduled tasks share the task page's control rhythm. Native
+   switches, configuration fields and destructive actions keep their semantics. */
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-page], [data-ccd-schedule]) {
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-page], [data-ccd-schedule]) :is(button, input, select) {
+  font-family: var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
+  .ccd-schedule-toolbar button,
+  [data-ccd-plugin-part="manager-addPrimary"],
+  [data-ccd-plugin-part="manager-addMore"],
+  [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+) {
+  box-sizing: border-box;
+  height: var(--ccd-management-control-height);
+  min-height: var(--ccd-management-control-height);
+  padding: 0 8px;
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-addPrimary"],
+  [data-ccd-plugin-part="manager-addMore"],
+  [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+):hover:not(:disabled) {
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addMore"] { padding: 0; }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
+  [data-ccd-plugin-part="market-toolbar"] button:not([data-ccd-plugin-part="market-marketButton"]),
+  [data-ccd-plugin-tool], .ccd-schedule-toolbar .ccd-schedule-tool
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--ccd-management-control-height);
+  min-width: var(--ccd-management-control-height);
+  height: var(--ccd-management-control-height);
+  min-height: var(--ccd-management-control-height);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ccd-management-control-radius);
+  background: transparent;
+  color: var(--ccd-text);
+}
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-toolbar"] button,
+  [data-ccd-plugin-part="market-toolbar"] button,
+  .ccd-schedule-tool
+) svg {
+  width: var(--ccd-management-icon-size);
+  height: var(--ccd-management-icon-size);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addMore"] svg { width: 14px; height: 14px; }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-addPrimary"], [data-ccd-plugin-part="manager-addButton"]) {
+  gap: 5px;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-addPrimary"], [data-ccd-plugin-part="manager-addButton"]) svg {
+  width: 14px;
+  height: 14px;
+}
+html[data-dsh-ccd-style="true"] :is(
+  .ccd-plugin-search, [data-ccd-plugin-part="market-search"], [data-ccd-schedule-part="search"]
+) input { font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui); }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-marketButton"] {
+  height: var(--ccd-management-control-height);
+  min-height: var(--ccd-management-control-height);
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-tool],
+  [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part])
+):is(:hover:not(:disabled), [aria-expanded="true"]) { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-toolbar"] button,
+  [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
+  [data-ccd-plugin-part="market-toolbar"] button,
+  [data-ccd-plugin-part="market-cardEnd"] button
+):focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-cardTitle"],
+  [data-ccd-plugin-part="market-cardOpen"]
+) { font: 600 14px/22px var(--ccd-font-ui); }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-cardDesc"],
+  [data-ccd-plugin-part="market-description"],
+  [data-ccd-plugin-part="market-meta"]
+) { font: 400 13px/20px var(--ccd-font-ui); }
+/* Native market/filter/add menus are portaled outside the page. Account menus
+   retain their own layout; multi-line installation entries keep their height. */
+html[data-dsh-ccd-style="true"]:has([data-ccd-plugin-page], [data-ccd-schedule]) [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"] {
+  min-height: 30px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font: 400 13px/20px var(--ccd-font-ui);
+}
+
+/* The native Add menu is portaled. Its own content identifies it without
+   changing the host's anchor, keyboard handling or contributed actions. */
+html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]) {
+  width: 240px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  border-radius: 16px;
+  color: var(--ccd-text-strong);
+  box-shadow: var(--ccd-effort-shadow);
+}
+html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]) [class$="_addMenu"] {
+  width: 100%;
+  max-width: none;
+}
+html[data-dsh-ccd-style="true"]:has([data-ccd-plugin-page]) [data-menu-material]:not([data-ccd-account-menu]):has([class$="_addMenuItem"]) [role="menuitem"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: auto;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--ccd-text-strong);
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]):has([class$="_addMenuItem"]) [role="menuitem"] > ._itemIcon_4ub78_148 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--ccd-management-icon-size);
+  width: var(--ccd-management-icon-size);
+  height: var(--ccd-management-icon-size);
+  color: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]) [role="menuitem"] svg {
+  width: var(--ccd-management-icon-size);
+  height: var(--ccd-management-icon-size);
+}
+html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]) [class$="_addMenuItem"] {
+  display: block;
+  font: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]) :is([class$="_addMenuDescription"], [class$="_description"]) {
+  display: none;
+}

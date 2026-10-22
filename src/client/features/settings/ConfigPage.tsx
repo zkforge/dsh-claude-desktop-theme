@@ -294,7 +294,7 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
               id={`ccd-settings-${field}`}
               label={translate(COLOUR_LABELS[field])}
               value={textOf(field, served.appearance[field])}
-              placeholder={translate('placeholder.colour')}
+              placeholder={translate(field === 'canvas' ? 'placeholder.canvas' : 'placeholder.sidebar')}
               resetLabel={translate('action.reset')}
               {...(failure === undefined ? {} : { error: translate(failure) })}
               onChange={text => { edit(field, text); clearError(field); }}

@@ -85,7 +85,7 @@ const card = `<div class="ccd-effort" id="card" role="dialog" aria-label="Effort
     </div>
     <div class="help-wrap"><button type="button" class="help-button" aria-label="About effort levels" aria-describedby="effort-help">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" /><path d="M9.8 9.2a2.35 2.35 0 0 1 4.55.82c0 1.8-2.35 2.05-2.35 3.7M12 17.2h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-    </button><div class="tooltip" id="effort-help" role="tooltip">Higher effort means more thorough responses, but takes longer and uses your limits faster.</div></div>
+    </button><div class="tooltip" id="effort-help" role="tooltip">思考强度越高，回答越深入，但耗时更长，也会更快消耗余额。</div></div>
   </div>
   <div class="axis" aria-hidden="true"><span>Faster</span><span>Smarter</span></div>
   <div class="track-shell"><div class="track" aria-hidden="true"><div class="track-fill"></div><div class="ultra-fallback"></div><canvas class="pixel-field"></canvas><div class="ticks">${levels.map(() => '<span class="tick" style="opacity: 0"></span>').join('')}</div></div>

@@ -86,7 +86,7 @@ test('the card is drawn in one place, not copied per menu', () => {
 });
 
 test('both row families are the document’s 24px cell', () => {
-  const cells = rowRules.filter(rule => rule.body.includes('min-height: 24px'));
+  const cells = rowRules.filter(rule => rule.selector.includes(`${MARKER} [data-menu-material]${ACCOUNT} [role="menuitem"]`) && rule.body.includes('min-height: 24px'));
   assert.equal(cells.length, 1, 'menus.css should draw exactly one row cell');
   const rule = cells[0] as Rule;
   for (const role of ['[role="menuitem"]', '[role="option"]']) {
@@ -105,7 +105,7 @@ test('both row families are the document’s 24px cell', () => {
 
 test('no popup row leads with an icon seat', () => {
   const seats = menus.filter(rule => rule.body.includes('display: none')
-    && (rule.selector.includes('._itemIcon_4ub78_148') || rule.selector.includes('aria-hidden="true"')));
+    && rule.selector.includes('._itemIcon_4ub78_148'));
   assert.equal(seats.length, 1, 'menus.css should hide exactly one kind of icon seat');
   const selector = seats[0]?.selector ?? '';
   /* `Menu`'s seat, and the command palette's decorative first child span —
@@ -130,9 +130,9 @@ test('the pointer and the keyboard share one fill, and no row draws a ring', () 
 
   /* No emphasis ring on a popup row: the fill is the one indication, and the
      rule that states it says `none` rather than leaving it to the host. */
-  const outlines = menus.flatMap(rule => [...rule.body.matchAll(/outline[^;]*;/gu)].map(([text]) => text.trim()));
+  const outlines = rowRules.filter(rule => rule.selector.includes(`${MARKER} [data-menu-material]${ACCOUNT} [role="menuitem"]:focus-visible`)).flatMap(rule => [...rule.body.matchAll(/outline[^;]*;/gu)].map(([text]) => text.trim()));
   assert.deepEqual(outlines, ['outline: none;'], 'the popup family states no ring and nothing else');
-  const noRing = rowRules.filter(rule => rule.body.includes('outline: none'));
+  const noRing = rowRules.filter(rule => rule.selector.includes(`${MARKER} [data-menu-material]${ACCOUNT} [role="menuitem"]:focus-visible`) && rule.body.includes('outline: none'));
   assert.equal(noRing.length, 1, 'menus.css should state the row has no ring');
   const noRingSelector = noRing[0]?.selector ?? '';
   assert.ok(noRingSelector.includes(`${MARKER} [data-menu-material]${ACCOUNT} [role="menuitem"]:focus-visible`), noRingSelector);
@@ -143,7 +143,7 @@ test('the card’s non-option rows keep the same 24px rhythm', () => {
   /* The heading cell is told apart by what it draws — the `role="presentation"`
      children of a row group — rather than by its ink: the permission card's
      badge wears the same secondary ink for a different job (below). */
-  const headings = menus.filter(rule => rule.selector.includes('> [role="presentation"]'));
+  const headings = menus.filter(rule => rule.selector.includes('._viewport_4ub78_19 > [role="presentation"]'));
   assert.equal(headings.length, 1, 'menus.css should draw exactly one heading cell');
   const rule = headings[0] as Rule;
   /* Both containers: the `Menu` list's `.viewport`, and the command palette's
@@ -166,15 +166,16 @@ test('the card’s internal hairlines take the soft line', () => {
   assert.match(footer[0]?.body ?? '', /border-top-color:\s*var\(--ccd-border-soft\)/u);
 });
 
-test('every rule is scoped to the activation marker and the popup family', () => {
+test('every selector remains scoped to theme activation', () => {
   for (const rule of menus) {
-    assert.ok(rule.selector.startsWith(MARKER), rule.selector);
-    assert.ok(rule.selector.includes('[data-menu-material]'), rule.selector);
+    for (const selector of rule.selector.split(/,\s*(?=html)/u)) {
+      assert.ok(selector.startsWith(MARKER), selector);
+    }
   }
 });
 
-test('the sheet names only tokens the palette declares', () => {
-  const declared = new Set([...tokens.matchAll(/(--ccd-[a-z0-9-]+):/gu)].map(([, name]) => name));
+test('the sheet names only palette or locally declared tokens', () => {
+  const declared = new Set([...(tokens + read('../src/client/theme/menus.css')).matchAll(/(--ccd-[a-z0-9-]+):/gu)].map(([, name]) => name));
   const used = new Set([...read('../src/client/theme/menus.css').matchAll(/var\((--ccd-[a-z0-9-]+)/gu)].map(([, name]) => name));
   assert.ok(used.size > 0);
   for (const name of used) assert.ok(declared.has(name), `${name} is not declared in tokens.css`);

@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
  * under it rather than a framed box — a cell that bleeds to the card's edges,
  * so its inline padding is stated against the rows' rather than on its own.
  * `features/model-controls/controls.css`
- * carries the geometry and this test pins it; the chosen row is the accent
- * mark's ink and no fill of its own, and a tokens.css rule carries that ink, so
+ * carries the geometry and this test pins it; selection uses the accent mark
+ * plus a dark-theme hover fill. A tokens.css rule carries the mark's ink, so
  * the card's two sheets are both pinned here.
  */
 
@@ -116,7 +116,7 @@ test('one row is 24px: a 20px label line with 2px above and below', () => {
 
 test('the pointer’s state is the flat fill and the keyboard’s is the document’s focus ring', () => {
   const fills = controls.filter(rule => /background:\s*var\(--ccd-hover\)/u.test(rule.body)
-    && rule.selector.includes('.ccd-model-options button'));
+    && rule.selector.includes('.ccd-model-options button:hover'));
   assert.equal(fills.length, 1, 'one rule paints the row');
   for (const state of [':hover', ':focus-visible']) {
     assert.ok(fills[0]?.selector.includes(`.ccd-model-options button${state}`), fills[0]?.selector ?? '');
@@ -201,16 +201,12 @@ test('the cells that are not choices wear the rows’ geometry', () => {
   assert.match(retry, /background:\s*none/u);
 });
 
-test('the chosen row is the mark alone: no rule fills the selected state', () => {
-  /* Selection is not a fill in this document: the accent check in the row's
-     trailing seat states which model is in use, the way the host menus this
-     plugin repaints already read (theme/menus.css), and the one fill on the
-     card belongs to the pointer and the keyboard (`--ccd-hover`, pinned
-     above). The card spent a second grey on its current option for a while —
-     the selected step softened six tenths toward the card's own white — and
-     the user took it out, so no rule here may reach the state at all: not the
-     `aria-pressed` React writes, not the selected step, not a font weight. */
-  assert.deepEqual(controls.filter(rule => /aria-pressed/u.test(rule.selector)), []);
+test('selection adds a hover fill only in the dark theme', () => {
+  const selected = controls.filter(rule => /aria-pressed/u.test(rule.selector));
+  assert.deepEqual(selected.map(rule => rule.selector), [
+    'html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .ccd-model-options button[aria-pressed="true"]',
+  ]);
+  assert.equal(selected[0]?.body.trim(), 'background: var(--ccd-hover);');
   assert.deepEqual(controls.filter(rule => /--ccd-selected/u.test(rule.body)), []);
   /* No weight on any row; the peak/off-peak badge's 500 is a label of its own,
      not a selection state, and is the one rule allowed one. */

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Context } from '@deepseek-ai/cordis';
 import { mountScheduleDraft, NEW_SCHEDULE_DRAFT, prefillScheduleDraft } from '../src/client/compat/schedule-draft.ts';
+import { SCHEDULE_TEMPLATES } from '../src/client/compat/schedule-page.ts';
 
 type Input = Parameters<typeof prefillScheduleDraft>[0];
 function inputFixture(draft = '', phase = 'plain', attachmentIds: string[] = []) {
@@ -21,6 +22,17 @@ test('new task seeds the exact requested draft, focuses once and preserves subse
   f.state.draft += '我补充的内容';
   assert.equal(prefillScheduleDraft(f.input), false);
   assert.equal(f.focused, 1);
+});
+
+test('each template prefills its own prompt and preserves an existing draft', () => {
+  for (const template of SCHEDULE_TEMPLATES) {
+    const f = inputFixture();
+    assert.equal(prefillScheduleDraft(f.input, template.prompt), true);
+    assert.equal(f.state.draft, template.prompt);
+    assert.equal(f.focused, 1);
+    assert.equal(prefillScheduleDraft(f.input, NEW_SCHEDULE_DRAFT), false);
+    assert.equal(f.state.draft, template.prompt);
+  }
 });
 
 test('existing drafts, attachments and busy inputs are preserved', () => {
@@ -65,15 +77,19 @@ test('pending task waits for the blank session editor, seeds only once, and stop
   const flush = () => { const run = frame; frame = undefined; run?.(0); };
   const port = mountScheduleDraft(ctx, document, error => errors.push(error));
   try {
-    port.prepare(); flush();
+    const templatePrompt = SCHEDULE_TEMPLATES[1]!.prompt;
+    port.prepare(templatePrompt); flush();
     assert.equal(f.state.draft, '');
     ready = true; blank = false; mutation(); flush();
     assert.equal(f.state.draft, '', 'existing conversation is never seeded');
     blank = true; subscribed(); flush();
-    assert.equal(f.state.draft, NEW_SCHEDULE_DRAFT);
+    assert.equal(f.state.draft, templatePrompt);
     f.state.draft = ''; mutation(); flush();
     assert.equal(f.state.draft, '', 'consumed request does not refill a cleared draft');
-    port.prepare(); port.dispose(); mutation(); flush();
+    port.prepare(); flush();
+    assert.equal(f.state.draft, NEW_SCHEDULE_DRAFT, 'new task resets to the default prompt after a template');
+    f.state.draft = '';
+    port.prepare(templatePrompt); port.dispose(); mutation(); flush();
     assert.equal(f.state.draft, '', 'disposal cancels a pending fill');
     assert.deepEqual(errors, []);
   } finally {

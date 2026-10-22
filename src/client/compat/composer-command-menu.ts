@@ -14,12 +14,12 @@ const GLYPHS = {
 
 /** Split the add launcher from the native command picker without replacing its
  * candidates, filtering, selection, or command dispatch. */
-export function mountComposerCommandMenu(document: Document, report: (error: unknown) => void): Disposer {
+export function mountComposerCommandMenu(document: Document, report: (error: unknown) => void, openSlash?: (id: string) => void): Disposer {
   const host = hostSelectors(document);
   const view = document.defaultView;
   if (!view) return () => {};
   const drawn = new Map<HTMLElement, HTMLSpanElement>();
-  const marked = new Set<HTMLElement>();
+  const suppressed = new Set<Element>();
   let popup: HTMLDivElement | null = null;
   let anchor: HTMLButtonElement | null = null;
   let previousExpanded: string | null = null;
@@ -63,7 +63,11 @@ export function mountComposerCommandMenu(document: Document, report: (error: unk
     if (file && !file.disabled) entries.push({
       label: zh ? '添加文件或照片' : 'Add files or photos', glyph: 'file', run: () => file.click(),
     });
-    entries.push({ label: zh ? '斜杠命令' : 'Slash commands', glyph: 'slash', run: () => nativeMenu(button) });
+    entries.push({ label: zh ? '斜杠命令' : 'Slash commands', glyph: 'slash', run: () => {
+      const id = card?.closest('[data-conversation-session]')?.getAttribute('data-conversation-session');
+      if (id && openSlash) openSlash(id);
+      else nativeMenu(button);
+    } });
     if (plugin) entries.push({ label: zh ? '添加插件' : 'Add plugins', glyph: 'plugin', run: () => plugin.click() });
 
     anchor = button;
@@ -151,12 +155,14 @@ export function mountComposerCommandMenu(document: Document, report: (error: unk
   const sync = () => {
     if (anchor && (!anchor.isConnected || anchor.disabled
       || (session && session.getAttribute('data-conversation-session') !== sessionId))) close();
+    for (const tip of suppressed) if (!tip.isConnected) suppressed.delete(tip);
+    for (const tip of document.querySelectorAll('[role="tooltip"][data-portal]')) {
+      if (!['添加文件或调用指令', 'Add files or run commands'].includes(tip.textContent?.trim() ?? '')) continue;
+      if (!tip.hasAttribute('data-ccd-add-tooltip')) tip.setAttribute('data-ccd-add-tooltip', '');
+      suppressed.add(tip);
+    }
     for (const [row, label] of drawn) if (!row.isConnected) { label.remove(); drawn.delete(row); }
-    for (const menu of marked) if (!menu.isConnected) marked.delete(menu);
     for (const menu of document.querySelectorAll<HTMLElement>(MENU)) {
-      if (!menu.querySelector(COMMAND)) continue;
-      if (!menu.hasAttribute('data-ccd-command-menu')) menu.setAttribute('data-ccd-command-menu', '');
-      marked.add(menu);
       for (const row of menu.querySelectorAll<HTMLElement>(COMMAND)) {
         const token = row.querySelector('[class$="_itemAlias"]')?.textContent?.trim()
           ?? row.querySelector('[class$="_itemName"]')?.textContent?.trim().toLowerCase();
@@ -165,7 +171,6 @@ export function mountComposerCommandMenu(document: Document, report: (error: unk
         if (!label) {
           label = document.createElement('span');
           label.setAttribute('data-ccd-command-token', '');
-          row.append(label);
           drawn.set(row, label);
         }
         if (!row.contains(label)) row.append(label);
@@ -198,8 +203,7 @@ export function mountComposerCommandMenu(document: Document, report: (error: unk
     view.removeEventListener('resize', resize);
     close();
     for (const label of drawn.values()) label.remove();
-    for (const menu of marked) menu.removeAttribute('data-ccd-command-menu');
+    for (const tip of suppressed) tip.removeAttribute('data-ccd-add-tooltip');
     drawn.clear();
-    marked.clear();
   };
 }

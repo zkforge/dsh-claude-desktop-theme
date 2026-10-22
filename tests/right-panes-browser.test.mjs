@@ -290,7 +290,7 @@ test('a restored layout never auto-opens the Files tree; a preview the reader op
 }, "window.add('doc','text','s1','dsh-resource://file/session/s1/repo/README.md')"));
 
 
-test('reference chrome preserves button order and native browser navigation; unavailable actions retain their icons',options,async()=>withFixture(async page=>{
+test('reference chrome preserves button order and native browser navigation; page picking is omitted',options,async()=>withFixture(async page=>{
   await page.evaluate("window.add('t','terminal');window.add('f','files');window.add('w','browser')");await wait(page);
   const readOrder=kind=>page.evaluate(`[...document.querySelector('[data-ccd-pane-kind="${kind}"] [data-ccd-pane-controls]').children].map(node=>[...node.attributes].find(a=>a.name.startsWith('data-ccd-'))?.name)`);
   assert.deepEqual(await readOrder('terminal'),['data-ccd-pane-more','data-ccd-pane-zoom']);
@@ -306,9 +306,7 @@ test('reference chrome preserves button order and native browser navigation; una
   assert.equal(await page.evaluate("document.activeElement===document.querySelector('[data-ccd-browser-toolbar] input')"),true);
   await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-dockkit-tab-title]').textContent='renamed'");await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),'终端 renamed','native rename is reflected by the reference caption');
-  await click(page,'[data-dockkit-content=w] [data-ccd-browser-pick]');await wait(page);
-  assert.match(await page.evaluate("document.querySelector('[data-ccd-pane-menu]').textContent"),/页面元素/);
-  await page.evaluate("document.querySelector('[data-ccd-pane-menu]').hidePopover()");
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-pick]')"),null);
   // Same geometry in dark mode and no invisible seams swallowing body input.
   await page.evaluate("document.body.dataset.dsDarkTheme=''");await wait(page);
   const screenshot=await page.send('Page.captureScreenshot',{format:'png'});await writeFile('/tmp/ccd-sidebar-chrome-dark.png',Buffer.from(screenshot.data,'base64'));
@@ -446,7 +444,7 @@ test('the whole right panel writes its own words in the document’s language',o
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-caption]').textContent"),'文件');
   assert.match(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),/^终端/);
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-search]').getAttribute('aria-label')"),'搜索文件');
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'过滤文件，或按 ? 在文件内容中搜索');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'搜索文件名…');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'等待服务器响应…');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-toolbar] input').placeholder"),'输入 URL');
   await click(page,'[data-dockkit-content=f] [data-ccd-pane-more]');await wait(page);
@@ -458,7 +456,7 @@ test('the whole right panel writes its own words in the document’s language',o
   await page.evaluate("document.documentElement.lang='en'");await wait(page);
   assert.equal(await page.evaluate("document.querySelector('[data-dockkit-content=f] [data-ccd-pane-caption]').textContent"),'Files');
   assert.match(await page.evaluate("document.querySelector('[data-dockkit-content=t] [data-ccd-pane-caption]').textContent"),/^Terminal/);
-  assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'Filter, or ? to search in files');
+  assert.equal(await page.evaluate("document.querySelector('[data-ccd-files-filter] > input').placeholder"),'Search file names…');
   assert.equal(await page.evaluate("document.querySelector('[data-ccd-browser-wait]').textContent"),'Awaiting server…');
   await click(page,'[data-dockkit-content=f] [data-ccd-pane-more]');await wait(page);
   assert.deepEqual(await page.evaluate("[...document.querySelectorAll('[data-ccd-pane-menu] button')].map(node=>node.textContent)"),

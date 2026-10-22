@@ -1051,98 +1051,81 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-terminal-add
   border-radius: var(--ccd-chip-radius);
   background: transparent;
 }
-html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tabs], [data-ccd-file-tabs]) {
+/* All pane tabs use the same cell renderer and surface geometry. An 18px
+   close seat inside a 24px tab leaves 3px above, below and on the right. */
+html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-pane-tabs] {
   display: flex;
   align-items: center;
   flex: 0 1 auto;
   min-width: 0;
   gap: 4px;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
 }
-html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tabs], [data-ccd-file-tabs]) > :is([data-ccd-terminal-tab], [data-ccd-file-tab]) {
+html[data-dsh-ccd-style="true"] [data-ccd-pane-tab] {
+  box-sizing: border-box;
   display: inline-flex;
-  flex: 0 1 auto;
   align-items: center;
-  border-radius: var(--ccd-chip-radius);
+  flex: none;
   min-width: 96px;
-}
-html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]):is([data-selected], :hover, :focus-within) {
-  background: var(--ccd-hover);
-}
-/* Name and close are one tab surface, including hover over either button. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > button:is(:hover, :active, :focus-visible) {
+  max-width: 200px;
+  height: 24px;
+  padding: 3px 3px 3px 4px;
+  border-radius: 6px;
   background: transparent;
-  box-shadow: none;
+  color: var(--ccd-right-panel-tab-ink);
+  font-size: 13px;
+  line-height: 18px;
 }
-html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > [role="tab"] {
-  width: auto !important;
+html[data-dsh-ccd-style="true"] [data-ccd-pane-tab]:is(:hover, :focus-within) {
+  background: var(--ccd-file-tab-hover);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-pane-tab][data-selected] {
+  background: var(--ccd-file-tab-selected);
+  color: var(--ccd-files-ink);
+}
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-pane-tab] > [role="tab"] {
+  width: auto;
   min-width: 0;
   flex: 1;
-  height: 24px !important;
+  height: 18px;
+  padding: 0 4px;
+  border: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0 4px;
-  border: 0;
   background: transparent;
+  box-shadow: none;
+  color: inherit;
   font: inherit;
   text-align: left;
 }
-html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > :is([data-ccd-terminal-close], [data-ccd-file-close]) {
-  width: 20px !important;
-  height: 24px !important;
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-pane-tab-close] {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
   padding: 0;
   border: 0;
-  border-radius: var(--ccd-chip-radius);
-  background: transparent;
-}
-html[data-dsh-ccd-style="true"] :is([data-ccd-terminal-tab], [data-ccd-file-tab]) > :is([data-ccd-terminal-close], [data-ccd-file-close]) svg {
-  width: 10px !important;
-  height: 10px !important;
-}
-/* At @2x the reference's 48px chip holds a 40px square close surface:
-   24px / 20px logical, with a 2px inset rather than a full-height capsule. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > [data-ccd-file-close] {
-  width: 20px !important;
-  height: 20px !important;
   border-radius: 5px;
-}
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > button {
-  height: 20px !important;
+  background: transparent;
+  box-shadow: none;
   color: inherit;
 }
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > [data-ccd-file-close]:is(:hover, :focus-visible) {
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-pane-tab-close]:hover {
   background: var(--ccd-file-close-hover);
-  box-shadow: var(--ccd-shadow-segment);
 }
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-file-tab] > [data-ccd-file-close]:active {
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-pane-tab-close]:active:hover {
   background: var(--ccd-file-close-pressed);
-  box-shadow: none;
 }
-/* Files retain readable names and scroll along the header when space runs out. */
-html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] > [data-ccd-file-tabs] {
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-file-tabs] > [data-ccd-file-tab] {
-  box-sizing: border-box;
-  flex: none;
-  max-width: 200px;
-  height: 24px;
-  padding: 2px 2px 2px 4px;
-  border-radius: 6px;
-  color: var(--ccd-right-panel-tab-ink);
-}
-html[data-dsh-ccd-style="true"] [data-ccd-file-tab]:is(:hover, :focus-within) {
-  background: var(--ccd-file-tab-hover);
-}
-html[data-dsh-ccd-style="true"] [data-ccd-file-tab][data-selected] {
-  background: var(--ccd-file-tab-selected);
-  color: var(--ccd-files-ink);
+html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-pane-tab-close] svg {
+  width: 10px;
+  height: 10px;
 }
 /* Expanded cards cover the conversation but retain the navigation column. */
 html[data-dsh-ccd-style="true"] [data-sidebar-right-panel][data-ccd-pane-expanded] [data-ccd-pane-leading] [data-dockkit-float-grip] {
@@ -1153,8 +1136,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane-caption],
-html[data-dsh-ccd-style="true"] [data-ccd-terminal-tab] > [role="tab"] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane-caption] {
   color: var(--ccd-right-panel-tab-ink);
 }
 html[data-dsh-ccd-style="true"] [data-ccd-terminal-workspace] {
@@ -1198,10 +1180,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-browser-menu] [data-ccd-browser-save-s
 }
 html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-dockkit-float-grip] button[aria-expanded="true"] {
   background: var(--ccd-hover);
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-pick][aria-disabled="true"] {
-  color: var(--ccd-text-muted);
-  opacity: .5;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-browser-wait="idle"] {
   background: var(--ccd-card);
@@ -1279,51 +1257,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-browser-toolbar] input {
 html[data-dsh-ccd-style="true"] [data-ccd-browser-toolbar] button[type="submit"] {
   display: none;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="browser"] [data-ccd-pane-caption] > [data-ccd-browser-tabs] {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-tab] {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-  max-width: 180px;
-  height: 24px;
-  padding-inline: 4px 2px;
-  border-radius: 6px;
-  background: var(--ccd-file-tab-hover);
-  color: var(--ccd-text-secondary);
-  font-size: 13px;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-browser-tab][data-selected] {
-  background: var(--ccd-file-tab-selected);
-  color: var(--ccd-files-ink);
-}
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-browser-tab] > [role="tab"] {
-  width: auto;
-  min-width: 0;
-  max-width: 150px;
-  height: 24px;
-  padding-inline: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: inherit;
-  color: inherit;
-}
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-browser-close] {
-  width: 20px;
-  height: 20px;
-  color: inherit;
-}
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane] [data-dockkit-float-grip] [data-ccd-browser-close] svg {
-  width: 12px;
-  height: 12px;
-}
-
 /* Only the source viewer's code gains weight; its counter stays quiet.
    Markdown prose, code-block banners and the pane toolbar keep host weights. */
 html[data-dsh-ccd-style="true"] [data-ccd-pane-kind="text"] [data-code-preview] pre code {

@@ -4,6 +4,8 @@ import type { Logger } from './contracts/ports.ts';
 import { adoptConfig } from '../shared/config.ts';
 import { ENTRY_ID, PLUGIN_ID } from '../shared/identity.ts';
 import { createHostServices } from './compat/adapter.ts';
+import { mountPluginPage } from './compat/plugin-page.ts';
+import { pluginCatalogPort } from './compat/plugin-catalog.ts';
 import { mountScheduleDraft } from './compat/schedule-draft.ts';
 import { mountSchedulePage } from './compat/schedule-page.ts';
 import { mountScheduleCardMenus } from './compat/schedule-card-menu.ts';
@@ -15,6 +17,8 @@ import { navigationHistoryPort } from './compat/navigation-history-port.ts';
 import { mountBrowserHeader } from './compat/browser-header.ts';
 import { mountComposerMenuPlacement } from './compat/composer-menus.ts';
 import { mountComposerCommandMenu } from './compat/composer-command-menu.ts';
+import { slashMenuOpener } from './compat/slash-menu-port.ts';
+import { mountCommandMenuDetails } from './compat/command-menu-details.ts';
 import { mountEmptyGroups } from './compat/empty-groups.ts';
 import { watchHostBuild } from './compat/host-builds.ts';
 import { mountComposerStats } from './compat/stats-values.ts';
@@ -69,7 +73,7 @@ const FEATURES = [
  * a service that is not declared here, so the dependency is named rather than
  * discovered at the point of use.
  */
-export const inject = ['slots', 'theme', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession', 'remote', 'remote.commands', 'remote.schedule', 'layout'];
+export const inject = ['slots', 'theme', 'locale', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession', 'conversation', 'remote', 'remote.commands', 'remote.schedule', 'remote.pluginManager', 'layout'];
 
 /**
  * The only assembly point allowed to import multiple feature domains.
@@ -122,6 +126,7 @@ export function apply(ctx: Context): void {
       const scope = new CleanupScope(error => logger.error('cleanup failed', error));
       try {
         mountTheme(environment, scope);
+        scope.add(mountPluginPage(document, error => logger.error('plugins: page enhancement failed', error), pluginCatalogPort(ctx)));
         if (next.features.shell) {
           scope.add(mountNavigationHistory(document, navigationHistoryPort(ctx), error => logger.error('navigation history: operation failed', error)));
         }
@@ -137,7 +142,8 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('composer: menu placement observer failed', error),
         ));
-        scope.add(mountComposerCommandMenu(document, error => logger.error('composer: command menu failed', error)));
+        scope.add(mountComposerCommandMenu(document, error => logger.error('composer: command menu failed', error), slashMenuOpener(ctx)));
+        scope.add(mountCommandMenuDetails(document, error => logger.error('composer: command descriptions failed', error)));
         /* The row's readouts are the configuration's to keep or drop, and the
            module that mirrors them also publishes the row's width budget, so it
            mounts either way and reads the switch as an argument. */

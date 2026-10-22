@@ -159,10 +159,9 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:not([data-ccd-account-menu]
   display: none;
 }
 
-/* The add/command menu uses the host's semantic outline icons. Keep their
- * compact 14px seats and let the ink follow the row in both themes. */
+/* Text-only input menus have no leading icon seat. */
 html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="option"] > span[aria-hidden="true"]:first-child {
-  display: inline-flex;
+  display: none;
   flex: none;
   align-items: center;
   justify-content: center;
@@ -176,15 +175,14 @@ html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] [role="o
   height: 14px;
 }
 
-/* The slash picker keeps the host's candidates and keyboard cursor. The add
- * launcher has its own short list, so commands need neither section headings
- * nor a second localized name beside the token. Reference rows are untouched. */
+/* Keep native candidates and keyboard selection, with one token per row and
+ * separate muted headings for commands and skills. */
 html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-command-menu] {
   width: min(240px, calc(100vw - 24px));
   padding: 4px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-command-menu] [role="listbox"] > [role="presentation"],
+html[data-dsh-ccd-style="true"] [data-ccd-command-menu] [role="listbox"] > [role="presentation"]:not([data-ccd-command-heading]),
 html[data-dsh-ccd-style="true"] [data-ccd-command-menu] [role="option"][id^="dsh-slash-option-command-"] > :not([data-ccd-command-token]) {
   display: none;
 }
@@ -243,6 +241,32 @@ html[data-dsh-ccd-style="true"] [data-ccd-add-menu] svg {
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+html[data-dsh-ccd-style="true"] [data-menu-material][data-ccd-command-menu] [data-ccd-command-heading] {
+  padding: 2px 8px;
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-command-tooltip] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--ccd-command-tooltip-fill);
+  color: var(--ccd-command-tooltip-ink);
+  box-shadow: var(--ccd-effort-shadow);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  pointer-events: none;
 }
 
 /* One fill for the row's states.
@@ -707,5 +731,10 @@ html[data-dsh-ccd-style="true"] [data-conversation-session]:has(.wXeviG_trigger[
 
 /* Successful mode switches are already reflected by the Composer trigger. */
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="command"][data-ccd-plan-notice] {
+  display: none;
+}
+
+/* The add launcher keeps its accessible label, without a floating explanation. */
+html[data-dsh-ccd-style="true"] [data-ccd-add-tooltip] {
   display: none;
 }

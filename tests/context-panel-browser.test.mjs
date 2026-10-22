@@ -214,7 +214,7 @@ test('the context panel’s two states measure and dismiss like the reference', 
       await pause();
       await page.evaluate(`document.body.setAttribute('data-ds-dark-theme','')`);
       await open();
-      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-ccd-context-panel]')).backgroundColor`), 'rgb(48, 48, 46)');
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-ccd-context-panel]')).backgroundColor`), 'rgb(34, 34, 34)');
       assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-ccd-context-seg="mcp"]')).backgroundColor`), 'rgb(91, 154, 232)');
       assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-ccd-context-bar]')).backgroundColor`), 'rgb(63, 63, 59)');
     });

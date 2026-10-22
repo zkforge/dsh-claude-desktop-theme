@@ -10,6 +10,7 @@ function fixture() {
     ownerDocument = document;
     textContent = '';
     title = '';
+    ariaDescription = '';
     setAttribute(key: string, value: string) { this.attributes.set(key, value); }
     removeAttribute(key: string) { this.attributes.delete(key); }
     append(...nodes: Element[]) { this.children.push(...nodes); }
@@ -47,10 +48,12 @@ test('reopening retains the last balance while refreshing without a loading flas
   await flush();
   assert.equal(first.children[1]?.textContent, '¥12.34');
   assert.equal(cache.text, '¥12.34');
+  assert.equal(first.title, '');
   dispose();
   dispose = f.mount(cache);
   const reopened = f.menu.children[0]!;
   assert.equal(reopened.children[1]?.textContent, '¥12.34');
+  assert.equal(reopened.title, '');
   complete(ready('12.30'));
   await flush();
   assert.equal(reopened.children[1]?.textContent, '¥12.30');
@@ -58,7 +61,7 @@ test('reopening retains the last balance while refreshing without a loading flas
 
 test('closing before completion does not overwrite the retained balance', async t => {
   const f = fixture();
-  const cache: AccountBalanceCache = { text: '¥8.00', title: 'Previous balance' };
+  const cache: AccountBalanceCache = { text: '¥8.00', description: 'Previous balance' };
   let complete: (response: Response) => void = () => {};
   t.mock.method(globalThis, 'fetch', () => new Promise<Response>(resolve => { complete = resolve; }));
   const dispose = f.mount(cache);
@@ -75,5 +78,5 @@ test('missing host endpoint provides a restart instruction', async t => {
   const dispose = f.mount({});
   t.after(dispose);
   await flush();
-  assert.match(f.menu.children[0]!.title, /接口未就绪，请重启 DSH/);
+  assert.match(f.menu.children[0]!.ariaDescription, /接口未就绪，请重启 DSH/);
 });

@@ -42,7 +42,7 @@ const ICONS = {
 /** Host TaskManagerPage has a stable test id; its four direct content blocks
  * are heading, filters, search and list (verified in shipped ui-schedule).
  * Add siblings and annotations, never move or replace React-owned elements. */
-export function mountSchedulePage(document: Document, report: (error: unknown) => void, prepareNewTask?: () => void): Disposer {
+export function mountSchedulePage(document: Document, report: (error: unknown) => void, prepareNewTask?: (prompt?: string) => void): Disposer {
   let page: HTMLElement | null = null;
   let cleanup: Disposer = () => {};
   const decorations = new Set<Element>();
@@ -168,25 +168,12 @@ export function mountSchedulePage(document: Document, report: (error: unknown) =
         }
         card.append(icon, body);
         card.onclick = () => {
-          const dialog = document.createElement('dialog'); dialog.className = 'ccd-schedule-preview';
-          const title = document.createElement('h2'); title.textContent = template.name; title.id = 'ccd-schedule-preview-title'; dialog.setAttribute('aria-labelledby', title.id);
-          const hint = document.createElement('p'); hint.textContent = '复制提示词后，在新会话中粘贴并发送，确认范围和时间后创建任务。';
-          const prompt = document.createElement('textarea'); prompt.value = template.prompt; prompt.setAttribute('aria-label', '创建任务提示词');
-          const use = document.createElement('button'); use.type = 'button'; use.textContent = '复制并新建会话';
-          const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = '取消'; cancel.onclick = () => dialog.close();
-          use.onclick = async () => {
-            try {
-              const clipboard = document.defaultView?.navigator.clipboard;
-              if (!clipboard || !nativeNew) throw new Error('Task template clipboard or new-session action unavailable');
-              await clipboard.writeText(prompt.value);
-              dialog.close();
-              usingTemplate = true;
-              try { nativeNew.click(); } finally { usingTemplate = false; }
-            }
-            catch (error) { hint.textContent = '复制失败，请手动复制提示词，再点击页面的新建任务。'; report(error); }
-          };
-          dialog.append(title, hint, prompt, cancel, use); document.body.append(dialog); owned.push(dialog);
-          dialog.addEventListener('close', () => dialog.remove(), { once: true }); dialog.showModal();
+          try {
+            if (!nativeNew || !prepareNewTask) throw new Error('Task template new-session action unavailable');
+            prepareNewTask(template.prompt);
+            usingTemplate = true;
+            try { nativeNew.click(); } finally { usingTemplate = false; }
+          } catch (error) { report(error); }
         };
         templates.append(card);
       }

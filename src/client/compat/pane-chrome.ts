@@ -24,8 +24,7 @@ export interface PaneChrome {
   release(): void;
 }
 
-/** Claude's toolbar beside host controls. Page picking keeps its reference
- * silhouette and explains the host limitation; pane windows are omitted. */
+/** Claude's toolbar beside host controls; page picking and pane windows are omitted. */
 export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   const document = node.ownerDocument;
   const grip = node.querySelector<HTMLElement>('[data-dockkit-float-grip]');
@@ -324,6 +323,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     const kept = tabCells.get(tab.id);
     if (kept !== undefined) return kept;
     const cell = document.createElement('span');
+    cell.setAttribute('data-ccd-pane-tab', '');
     cell.setAttribute(options.kind === 'browser' ? 'data-ccd-browser-tab' : options.kind === 'terminal' ? 'data-ccd-terminal-tab' : 'data-ccd-file-tab', '');
     const select = document.createElement('button');
     select.type = 'button';
@@ -347,6 +347,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     });
     cell.append(select);
     const remove = button(cell, labels.chrome.closeTab, options.kind === 'browser' ? 'data-ccd-browser-close' : options.kind === 'terminal' ? 'data-ccd-terminal-close' : 'data-ccd-file-close', 'X', () => options.onClose(tab.id));
+    remove.setAttribute('data-ccd-pane-tab-close', '');
     remove.tabIndex = -1;
     const created: TabCell = { cell, select, remove, title: '' };
     tabCells.set(tab.id, created);
@@ -391,6 +392,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     if (next.kind === 'browser') {
       const tabs = document.createElement('span');
       tabs.setAttribute('data-ccd-browser-tabs', '');
+      tabs.setAttribute('data-ccd-pane-tabs', '');
       tabs.setAttribute('role', 'tablist');
       tabs.setAttribute('aria-label', labels.browser.tabs);
       caption.append(tabs); tabList = tabs; updateTabs(next.browsers);
@@ -405,8 +407,6 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       addressSlot.setAttribute('data-ccd-browser-address-slot', '');
       navigation.append(addressSlot);
       addressResize?.observe(addressSlot);
-      const pick = button(navigation, labels.chrome.pick, 'data-ccd-browser-pick', 'Cursor', anchor => notice(anchor, labels.chrome.pickNotice));
-      pick.setAttribute('aria-disabled', 'true');
     } else {
       if (next.filesRoot) {
         const toggle = button(caption, hidden ? labels.files.show : labels.files.hide, 'data-ccd-files-switch', 'Files', () => next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
@@ -416,6 +416,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       if ((next.kind === 'terminal' && next.terminals.length > 1) || next.files.length > 0) {
         const terminal = next.kind === 'terminal';
         const tabs = document.createElement('span'); tabs.setAttribute(terminal ? 'data-ccd-terminal-tabs' : 'data-ccd-file-tabs', '');
+        tabs.setAttribute('data-ccd-pane-tabs', '');
         tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', terminal ? labels.chrome.terminals : labels.files.title); caption.append(tabs);
         tabList = tabs;
         updateTabs(terminal ? next.terminals : next.files);

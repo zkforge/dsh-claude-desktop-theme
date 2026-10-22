@@ -1,0 +1,464 @@
+/* Host nodes annotated by compat/plugin-page.ts; no build-specific hashes. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] {
+  --ccd-management-search-height: var(--ccd-management-control-height);
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-content: start;
+  align-items: start;
+  gap: 28px 16px;
+  padding: 54px 40px 40px;
+  color: var(--ccd-text);
+  background: var(--ccd-canvas);
+  container: ccd-plugins / inline-size;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] > * {
+  grid-column: 1 / -1;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+/* Match the task detail's title-bar breadcrumb and content inset. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] {
+  padding: 15px 44px 40px;
+  font: 400 14px/22px var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detail"] {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 12px 8px;
+}
+/* Let the native header wrappers share one grid without moving React nodes. */
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-detailTop"],
+  [data-ccd-plugin-part="manager-detailHead"],
+  [data-ccd-plugin-part="manager-detailMain"]
+) {
+  display: contents;
+  padding-top: 0;
+  margin: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"] {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  margin: 0 -4px 24px -22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 400 14px/22px var(--ccd-font-ui);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:hover { background: var(--ccd-hover); color: var(--ccd-text); }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumbIcon"] { display: none; }
+html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current {
+  grid-column: 2 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 24px -18px;
+  color: var(--ccd-text);
+  font: 400 14px/22px var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current > [aria-hidden] { color: var(--ccd-text-muted); }
+html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current > [aria-current] {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailHead"] > [data-ccd-plugin-part="manager-cardIcon"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailActions"] {
+  grid-column: 3;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  -webkit-app-region: no-drag;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailMain"] > * {
+  grid-column: 2 / -1;
+  min-width: 0;
+  margin: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailMain"] > [data-ccd-plugin-part="manager-titleRow"] {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detail"] > :not([data-ccd-plugin-part="manager-detailTop"], [data-ccd-plugin-part="manager-detailMain"]) {
+  grid-column: 1 / -1;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageHead"],
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageHeading"] {
+  display: contents;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTitle"] {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: -.6px;
+}
+/* Keep the host's explanatory tooltip available to keyboard and pointer users. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageIntro"] {
+  grid-column: 1 / -1;
+  margin: -24px 0 -12px;
+  font-size: 12px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-toolbar"] {
+  grid-column: 3;
+  grid-row: 3;
+  align-self: start;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--ccd-management-control-height);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabs"] {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: start;
+  margin: 0;
+}
+/* Both tabs anchor controls to the top of the same row. Discover's second
+   toolbar line must not shift the tabs or Add button. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabList"] {
+  display: flex;
+  width: max-content;
+  min-width: 0;
+  padding: 0;
+  gap: 2px;
+  border: 0;
+  border-radius: var(--ccd-management-control-radius);
+  background: transparent;
+}
+/* Native Tabs animates a separate bordered indicator behind the buttons.
+   Selection is painted on each button, just like the task toolbar. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabList"] > :not([role="tab"]) {
+  display: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabList"] [role="tab"] {
+  box-sizing: border-box;
+  height: var(--ccd-management-control-height);
+  min-height: var(--ccd-management-control-height);
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  text-decoration: none;
+  color: var(--ccd-text-muted);
+  font: inherit;
+  font-size: var(--ccd-management-control-font-size);
+  font-weight: 400;
+  line-height: var(--ccd-management-control-line-height);
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabList"] [role="tab"]:is([aria-selected="true"], :hover) {
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+  box-shadow: none;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-addPrimary"], [data-ccd-plugin-part="manager-addButton"], [data-ccd-plugin-part="manager-addMore"]) {
+  height: var(--ccd-management-control-height);
+  border-radius: var(--ccd-management-control-radius);
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  font-size: var(--ccd-management-control-font-size);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addPrimary"] {
+  border-radius: var(--ccd-management-control-radius) 0 0 var(--ccd-management-control-radius);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addMore"] {
+  width: var(--ccd-management-control-height);
+  border-radius: 0 var(--ccd-management-control-radius) var(--ccd-management-control-radius) 0;
+}
+/* Discover and its tabpanel stay in place, while their children share the page
+   grid. This aligns native search/menus with tabs and Add without reparenting. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-tabPanel"]:has(> [data-plugin-tab="discover"]),
+html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"]:not(:has([data-market-detail])) {
+  display: contents;
+}
+html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] { grid-column: 1 / -1; min-width: 0; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"] {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"]::before {
+  content: '';
+  order: 9;
+  flex-basis: 100%;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-marketButton"] {
+  order: 10;
+  max-width: 100%;
+  margin: 2px 0 0 auto;
+  color: var(--ccd-text-secondary);
+  font-size: 12px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"],
+html[data-dsh-ccd-style="true"] .ccd-plugin-search {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+  height: var(--ccd-management-search-height);
+  min-height: var(--ccd-management-search-height);
+  padding: 0 10px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 8px;
+  background: var(--ccd-card);
+  color: var(--ccd-text-muted);
+  box-shadow: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"] {
+  flex: 1 1 120px;
+}
+html[data-dsh-ccd-style="true"] .ccd-plugin-search {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  width: min(100%, 280px);
+  justify-self: end;
+}
+html[data-dsh-ccd-style="true"] .ccd-plugin-search > svg { width: 16px; height: 16px; flex: none; }
+html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search, [data-ccd-plugin-part="market-search"]) input {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: var(--ccd-management-control-line-height);
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ccd-text);
+  font: inherit;
+  font-size: var(--ccd-management-control-font-size);
+  line-height: var(--ccd-management-control-line-height);
+}
+html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search, [data-ccd-plugin-part="market-search"]):focus-within {
+  border-color: var(--ccd-accent);
+  box-shadow: 0 0 0 1px var(--ccd-accent);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-tool] {
+  width: var(--ccd-management-control-height);
+  min-width: var(--ccd-management-control-height);
+  height: var(--ccd-management-control-height);
+  padding: 0;
+  gap: 0;
+  font-size: 0;
+  color: var(--ccd-text-secondary);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-tool="sort"] > svg { display: none; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-tool="sort"]::after {
+  content: '';
+  width: var(--ccd-management-icon-size);
+  height: var(--ccd-management-icon-size);
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 20V4m-4 4 4-4 4 4m6-4v16m-4-4 4 4 4-4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-installedPanel"] { gap: 30px; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-group"] { gap: 0; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupHead"] { margin-bottom: 12px; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupTitle"] {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cards"], [data-ccd-plugin-part="market-cards"]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ccd-border-soft);
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-card"], [data-ccd-plugin-part="market-card"]) {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ccd-border-soft);
+  border-radius: 8px;
+  background: transparent;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-card"], [data-ccd-plugin-part="market-card"]):hover {
+  background: var(--ccd-hover);
+  border-bottom-color: transparent;
+}
+/* A hovered row has a continuous rounded fill, without a separator cutting
+   across its top or bottom edge. Its transparent border keeps rows stationary. */
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cards"], [data-ccd-plugin-part="market-cards"]):has(> :first-child:hover) { border-top-color: transparent; }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-card"], [data-ccd-plugin-part="market-card"]):has(+ :hover) { border-bottom-color: transparent; }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardTitle"], [data-ccd-plugin-part="market-cardOpen"])::after { border-radius: 8px; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-cardHead"],
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-card"] {
+  display: grid;
+  grid-template-columns: 24px minmax(0, calc(38% - 36px)) minmax(0, 1fr) 100px;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+html[data-dsh-ccd-style="true"] .ccd-plugin-list-heading {
+  display: grid;
+  grid-template-columns: 38% minmax(0, 1fr) 100px;
+  column-gap: 12px;
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 8px 12px;
+  align-items: center;
+  color: var(--ccd-text-secondary);
+  font: 500 13px/20px var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardIcon"], [data-ccd-plugin-part="market-icon"]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  grid-row: 1;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ccd-border-soft);
+  border-radius: 6px;
+  background: var(--ccd-card);
+  color: var(--ccd-text-muted);
+  box-shadow: var(--ccd-shadow-segment);
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardIcon"], [data-ccd-plugin-part="market-icon"]) :is(svg, img) { width: 16px; height: 16px; object-fit: contain; }
+html[data-dsh-ccd-style="true"] [data-plugin-group="basic"] [data-ccd-plugin-part="manager-cardHead"] { grid-template-columns: 24px minmax(0, calc(38% - 36px)) minmax(0, 1fr); }
+html[data-dsh-ccd-style="true"] .ccd-plugin-list-heading-basic { grid-template-columns: 38% minmax(0, 1fr); }
+html[data-dsh-ccd-style="true"] .ccd-plugin-list-heading-basic > :last-child { display: none; }
+html[data-dsh-ccd-style="true"] .ccd-plugin-version { flex: none; color: var(--ccd-text-muted); font: 400 12px/20px var(--ccd-font-ui); }
+/* Keep the native More action beside its section title and preserve navigation. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupHead"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: var(--ccd-management-control-height);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--ccd-management-control-radius);
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
+  cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:hover { opacity: .85; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"], [data-ccd-plugin-part="market-main"]) { display: contents; }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"] > [data-ccd-plugin-part="manager-titleRow"], [data-ccd-plugin-part="market-main"] > [data-ccd-plugin-part="market-titleRow"], [data-ccd-plugin-part="manager-cardMain"] > [data-ccd-plugin-part="manager-cardTitle"]) {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardDesc"], [data-ccd-plugin-part="market-description"]) { grid-column: 3; grid-row: 1; min-width: 0; margin: 0; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-meta"] { grid-column: 3; grid-row: 2; }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardTitle"], [data-ccd-plugin-part="market-cardOpen"]) {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardDesc"], [data-ccd-plugin-part="market-description"]) {
+  -webkit-line-clamp: 1;
+  color: var(--ccd-text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-meta"] {
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardEnd"], [data-ccd-plugin-part="market-cardEnd"]) {
+  align-self: center;
+  grid-column: 4;
+  grid-row: 1;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  min-width: 0;
+}
+/* Distinguish the install action from the completed installation state. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] button {
+  min-height: var(--ccd-management-control-height);
+  padding: 0 8px;
+  border-radius: var(--ccd-management-control-radius);
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
+  border: 1px solid var(--ccd-border);
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-dialog-button-shadow);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"] {
+  border-color: var(--ccd-text-strong);
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"]:hover:not(:disabled) { opacity: .85; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-installed="true"] {
+  border-color: var(--ccd-plugin-installed-border);
+  background: var(--ccd-plugin-installed-bg);
+  color: var(--ccd-plugin-installed-text);
+  box-shadow: none;
+  opacity: 1;
+}
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-detailTitle"], [data-ccd-plugin-part="market-detailTitle"]) {
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: 600;
+}
+html[data-dsh-ccd-style="true"] .ccd-plugin-search-empty {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--ccd-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search[hidden], .ccd-plugin-search-empty[hidden], [data-ccd-plugin-search-hidden="true"]) { display: none; }
+/* Details and empty/error states span the same grid as populated catalogs. */
+html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] > :not([data-ccd-plugin-part="market-toolbar"]) { grid-column: 1 / -1; }
+@container ccd-plugins (max-width: 760px) {
+  html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardHead"], [data-ccd-plugin-part="market-card"]) { grid-template-columns: 24px minmax(0, calc(38% - 36px)) minmax(0, 1fr) 60px; }
+  html[data-dsh-ccd-style="true"] .ccd-plugin-list-heading:not(.ccd-plugin-list-heading-basic) { grid-template-columns: 38% minmax(0, 1fr) 60px; }
+  html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"] { grid-column: 1 / -1; grid-row: 4; }
+}
+@media (max-width: 800px) {
+  html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] { padding: 40px 24px 32px; column-gap: 10px; }
+  html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] { padding: 15px 24px 40px; }
+  html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"] { margin-left: -4px; }
+  html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current { margin-left: 0; }
+}

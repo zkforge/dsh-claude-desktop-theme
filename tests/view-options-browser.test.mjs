@@ -152,8 +152,8 @@ test('view-options flyouts support pointer crossing, clicks and one-step keyboar
       await page.evaluate(`document.body.setAttribute('data-ds-dark-theme','')`);
       await open();
       await move(await point('[data-ccd-view-row="2"]'));
-      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-ccd-view-row="2"]')).color`), 'rgb(240, 239, 236)');
-      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-view-submenu')).backgroundColor`), 'rgb(48, 48, 46)');
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-ccd-view-row="2"]')).color`), 'rgb(232, 232, 230)');
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.ccd-view-submenu')).backgroundColor`), 'rgb(34, 34, 34)');
     });
   } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
 });

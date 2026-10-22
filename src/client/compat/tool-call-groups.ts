@@ -56,6 +56,9 @@ interface Group {
   outgoing?: HTMLElement;
   animations?: Animation[];
   renderKey?: string;
+  shownAt?: number;
+  shownLive?: boolean;
+  refreshTimer?: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -95,6 +98,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     paint(group);
   };
   const disposeGroup = (group: Group) => {
+    clearTimeout(group.refreshTimer);
     group.animations?.forEach(animation => animation.cancel());
     group.outgoing?.remove();
     group.button.remove();
@@ -222,8 +226,23 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       const parts = !live && files.length ? fileSummaryParts(files, others) : null;
       const text = live?.description || toolGroupLabel(run.map(item => item.kind as ToolGroupKind));
       const renderKey = JSON.stringify(parts ?? text);
-      if (group.renderKey !== renderKey) {
+      const reducedMotion = document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const canAnimate = !!group.label.animate && !reducedMotion;
+      // Re-read the host when the dwell expires: intermediate streamed states
+      // are coalesced, never queued to play after they have become stale.
+      clearTimeout(group.refreshTimer);
+      delete group.refreshTimer;
+      const remainingDwell = group.shownAt !== undefined && canAnimate && (live || group.shownLive) && !failed
+        ? Math.max(0, 900 - (Date.now() - (group.shownAt ?? 0))) : 0;
+      if (group.renderKey !== renderKey && remainingDwell > 0) {
+        group.refreshTimer = setTimeout(() => {
+          if (released) return;
+          try { syncParent(parent); } catch (error) { report(error); }
+        }, remainingDwell);
+      } else if (group.renderKey !== renderKey) {
         group.renderKey = renderKey;
+        group.shownAt = Date.now();
+        group.shownLive = !!live;
         const oldText = group.label.textContent;
         group.animations?.forEach(animation => animation.cancel());
         group.outgoing?.remove();
@@ -235,17 +254,20 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
           span.textContent = part.text;
           group.label.append(span);
         }
-        if (oldText && group.label.animate && !document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (oldText && canAnimate) {
           const outgoing = document.createElement('span');
           outgoing.textContent = oldText;
           outgoing.setAttribute('data-ccd-tool-roll-out', '');
           outgoing.setAttribute('aria-hidden', 'true');
           group.label.parentElement!.append(outgoing);
           group.outgoing = outgoing;
-          const options = { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' };
+          // Settling into the final summary only fades; live activity keeps a
+          // small directional cue without rolling through an entire line. The
+          // gentler acceleration leaves time to perceive the change itself.
+          const options = { duration: 380, easing: 'cubic-bezier(.25, .1, .25, 1)' };
           const exit = outgoing.animate([{ transform: 'translateY(0)', opacity: 1 },
-            { transform: 'translateY(-100%)', opacity: 0 }], options);
-          group.animations = [exit, group.label.animate([{ transform: 'translateY(100%)', opacity: 0 },
+            { transform: live ? 'translateY(-5px)' : 'translateY(0)', opacity: 0 }], { ...options, duration: 220, fill: 'forwards' });
+          group.animations = [exit, group.label.animate([{ transform: live ? 'translateY(6px)' : 'translateY(0)', opacity: 0 },
             { transform: 'translateY(0)', opacity: 1 }], options)];
           exit.onfinish = () => outgoing.remove();
         }
@@ -257,6 +279,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     for (const [first, group] of previous) {
       // Membership was already cleared above; a joined run may now own it.
       if (!next.has(first)) {
+        clearTimeout(group.refreshTimer);
         group.animations?.forEach(animation => animation.cancel());
         group.outgoing?.remove();
         group.button.remove();

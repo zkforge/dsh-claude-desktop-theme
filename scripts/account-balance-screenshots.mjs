@@ -57,7 +57,7 @@ await withPage({url:'about:blank',width:1392,height:932,scale:2,profile:join(wor
     })()`);
     assert.equal(facts.amount, '余额¥128.50');
     assert.equal(facts.busy, false);
-    assert.ok(facts.title.includes('充值余额 ¥100.00') && facts.title.includes('赠金余额 ¥28.50'));
+    assert.equal(facts.title, '');
     const shot = await page.send('Page.captureScreenshot',{format:'png',clip:facts.clip});
     const png=join(work,`account-balance-${theme}.png`);
     await writeFile(png,Buffer.from(shot.data,'base64'));

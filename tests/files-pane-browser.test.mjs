@@ -250,7 +250,7 @@ test('the Files pane carries the reference’s filter, tree control, marks and l
       assert.equal(field.borderColor, BORDER, 'a hairline outline');
       assert.equal(field.background, CARD_SURFACE, 'on the card’s own surface');
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-filter] > input').placeholder`),
-        '过滤文件，或按 ? 在文件内容中搜索', 'the field leads with this plugin’s own copy, in the document’s language');
+        '搜索文件名…', 'the field leads with this plugin’s own copy, in the document’s language');
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-toggle]').getAttribute('aria-label')`),
         '收起文件树', 'and the tree control is named the same way');
       assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('[data-files-path]')).display`), 'none',
@@ -405,7 +405,7 @@ test('the Files pane carries the reference’s filter, tree control, marks and l
       await page.evaluate(`document.documentElement.lang='en'`);
       await pause();
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-filter] > input').placeholder`),
-        'Filter, or ? to search in files', 'a language change rewrites the field in place');
+        'Search file names…', 'a language change rewrites the field in place');
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-files-toggle]').getAttribute('aria-label')`),
         'Hide file tree');
       assert.equal(await page.evaluate(`document.querySelector('[data-dockkit-empty] [data-ccd-files-empty-title]').textContent`),

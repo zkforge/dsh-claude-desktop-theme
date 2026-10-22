@@ -1,7 +1,7 @@
 /* TaskManagerPage annotations are owned by compat/schedule-page.ts. */
 html[data-dsh-ccd-style="true"] [data-ccd-schedule] {
   color: var(--ccd-text);
-  background: var(--ccd-card);
+  background: var(--ccd-canvas);
 }
 html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="content"] {
   position: relative;
@@ -128,7 +128,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] button {
   border-radius: 6px;
   background: transparent;
   color: var(--ccd-text);
-  font-size: 14px;
+  font-size: var(--ccd-management-control-font-size);
   line-height: 22px;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="filters"] button:hover,
@@ -154,7 +154,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"] {
   width: min(480px, calc(100% - 140px));
   z-index: 1;
   min-width: 0;
-  height: 32px;
+  height: var(--ccd-management-search-height);
   margin: 0 44px 0 0;
   padding: 0 5px 0 10px;
   gap: 6px;
@@ -291,19 +291,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-te
   height: 20px;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-schedule="templates"] .ccd-schedule-template-body { gap: 2px; }
-html[data-dsh-ccd-style="true"] .ccd-schedule-preview {
-  width: min(480px, calc(100vw - 48px));
-  padding: 24px;
-  border: 1px solid var(--ccd-border);
-  border-radius: 14px;
-  background: var(--ccd-card);
-  color: var(--ccd-text);
-  box-shadow: var(--ccd-composer-shadow);
-}
-html[data-dsh-ccd-style="true"] .ccd-schedule-preview h2 { margin: 0; font-size: 20px; }
-html[data-dsh-ccd-style="true"] .ccd-schedule-preview p { color: var(--ccd-text-secondary); font-size: 13px; line-height: 1.6; }
-html[data-dsh-ccd-style="true"] .ccd-schedule-preview textarea { box-sizing: border-box; width: 100%; min-height: 130px; resize: vertical; padding: 12px; border: 1px solid var(--ccd-border); border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 13px; line-height: 1.6; }
-html[data-dsh-ccd-style="true"] .ccd-schedule-preview button { margin: 16px 8px 0 0; padding: 6px 12px; border: 1px solid var(--ccd-border); border-radius: 7px; color: inherit; background: var(--ccd-hover); cursor: pointer; }
 html[data-dsh-ccd-style="true"] .ccd-schedule-toolbar button:focus-visible,
 html[data-dsh-ccd-style="true"] .ccd-schedule-template:focus-visible { outline: 2px solid var(--ccd-text-muted); outline-offset: 2px; }
 @media (max-width: 850px) {
@@ -344,10 +331,7 @@ html[data-dsh-ccd-style="true"] .ccd-schedule-template:is(:hover, :focus-visible
     linear-gradient(currentColor, currentColor) center / 1.5px 14px no-repeat;
 }
 
-/* The task page is canvas, while its menus and template icons are surfaces. */
-html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] [data-ccd-schedule] {
-  background: var(--ccd-canvas);
-}
+/* The task page follows the configured canvas in both color schemes. */
 
 /* Populated catalog: two outlined cards per row, as in the task reference.
    Match the native list structure rather than build-specific module hashes;
@@ -434,17 +418,25 @@ html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-ca
   position: absolute;
   top: 10px;
   right: 10px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ccd-management-action-size);
+  height: var(--ccd-management-action-size);
   padding: 0;
   border: 0;
   border-radius: 8px;
   background: var(--ccd-track);
   color: var(--ccd-text);
-  font: 22px/1 var(--ccd-font-ui);
+  font-size: 0;
   cursor: pointer;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-card-more::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  mask: var(--ccd-icon-more) center / contain no-repeat;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] li:hover .ccd-schedule-card-more,
 html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] .ccd-schedule-card-more:is(:focus-visible, [aria-expanded="true"]) { opacity: 1; }

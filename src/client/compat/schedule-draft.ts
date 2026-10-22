@@ -7,10 +7,10 @@ import { frameScheduler } from './frame.ts';
 export const NEW_SCHEDULE_DRAFT = '帮我设置一个定时任务。问我它应该做什么、多久运行一次以及在什么时间运行,然后创建它。';
 
 /** Write through the host input machine, without sending or replacing a draft. */
-export function prefillScheduleDraft(input: Pick<SessionInput, 'state' | 'setDraft' | 'focus'>): boolean {
+export function prefillScheduleDraft(input: Pick<SessionInput, 'state' | 'setDraft' | 'focus'>, prompt = NEW_SCHEDULE_DRAFT): boolean {
   const state = input.state.getSnapshot();
   if (state.draft !== '' || state.attachmentIds.length > 0 || state.phase !== 'plain') return false;
-  input.setDraft(NEW_SCHEDULE_DRAFT);
+  input.setDraft(prompt);
   input.focus();
   return true;
 }
@@ -18,15 +18,15 @@ export function prefillScheduleDraft(input: Pick<SessionInput, 'state' | 'setDra
 /** Arm before the native new-task handler navigates. Wait for its blank session
  * and editor to mount, then seed that session's public input facade once. */
 export function mountScheduleDraft(ctx: Context, document: Document, report: (error: unknown) => void): {
-  prepare(): void;
+  prepare(prompt?: string): void;
   dispose: Disposer;
 } {
-  let pending = false;
+  let pending: string | undefined;
   let active = true;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let conversation: ConversationController | undefined;
   const clear = () => {
-    pending = false;
+    pending = undefined;
     clearTimeout(timer); timer = undefined;
   };
   const frames = frameScheduler(() => {
@@ -38,8 +38,9 @@ export function mountScheduleDraft(ctx: Context, document: Document, report: (er
     if (!binding || !ctx.sessions.list.getSnapshot().byId[id]?.blank) return;
     try {
       const input = conversation.input.for(binding.ctx);
+      const prompt = pending;
       clear();
-      prefillScheduleDraft(input);
+      prefillScheduleDraft(input, prompt);
     } catch (error) { clear(); report(error); }
   }, document.defaultView);
   const registration = ctx.inject(['conversation'], scope => {
@@ -54,9 +55,9 @@ export function mountScheduleDraft(ctx: Context, document: Document, report: (er
   });
   const stop = ctx.sessions.list.subscribe(() => { if (pending) frames.schedule(); });
   return {
-    prepare() {
+    prepare(prompt = NEW_SCHEDULE_DRAFT) {
       if (!active) return;
-      clear(); pending = true;
+      clear(); pending = prompt;
       timer = setTimeout(clear, 30_000);
       frames.schedule();
     },
