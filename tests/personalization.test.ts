@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Config } from '../src/host/index.ts';
 import { adoptConfig, DEFAULT_PERSONALIZATION, resolveConfig } from '../src/shared/config.ts';
+import { mountReplySignature } from '../src/client/compat/reply-signature.ts';
 import { claudeGreeting, mountHeroGreeting } from '../src/client/compat/hero-greeting.ts';
 import { claudePose, CLAUDE_REACTION_MS } from '../src/client/features/composer-pet/claude-motion.ts';
 import { CLAUDE_IDLE, CLAUDE_TRACK, CLAUDE_FRAMES } from '../src/client/features/composer-pet/claude-frames.ts';
@@ -13,6 +14,22 @@ test('missing personalization uses Claude defaults; explicit choices are indepen
   assert.deepEqual(adoptConfig({ personalization: {
     greetingStyle: 'claude', greetingName: '  Kai\n  Zou  ',
   } }).personalization, { petStyle: 'claude', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: 'Kai Zou' });
+});
+
+test('off choices survive strict config, stored config and host schema independently', () => {
+  const schema = Config as unknown as (input: unknown) => unknown;
+  for (const field of ['petStyle', 'replySignatureStyle', 'greetingStyle'] as const) {
+    const personalization = { [field]: 'none' };
+    const expected = { ...DEFAULT_PERSONALIZATION, [field]: 'none' };
+    assert.deepEqual(resolveConfig({ personalization }).personalization, expected);
+    assert.deepEqual(adoptConfig({ personalization }).personalization, expected);
+    assert.doesNotThrow(() => schema({ personalization }));
+  }
+});
+
+test('disabled reply signature never queries the document or starts an observer', () => {
+  const release = mountReplySignature({} as Document, () => assert.fail('unexpected error'), 'none');
+  assert.doesNotThrow(release);
 });
 
 test('invalid stored variants fall back, strict writes are rejected', () => {
@@ -85,6 +102,13 @@ test('greeting is optional personalization and original heading nodes survive mo
     assert.deepEqual(heading.children, [originalText]);
     assert.equal(heading.attributes.has('data-ccd-greeting-style'), false);
     assert.equal(disconnected, true);
+    const releaseOff = mountHeroGreeting(document, { ...DEFAULT_PERSONALIZATION, greetingStyle: 'none' });
+    sync();
+    assert.equal(heading.attributes.get('data-ccd-greeting-style'), 'none');
+    assert.deepEqual(heading.children, [originalText], 'off preserves the native heading for restoration');
+    releaseOff();
+    assert.equal(heading.attributes.has('data-ccd-greeting-style'), false);
+    assert.deepEqual(heading.children, [originalText]);
   } finally { globalThis.MutationObserver = original; }
 });
 

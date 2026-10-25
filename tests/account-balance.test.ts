@@ -48,6 +48,7 @@ test('reopening retains the last balance while refreshing without a loading flas
   await flush();
   assert.equal(first.children[1]?.textContent, '¥12.34');
   assert.equal(cache.text, '¥12.34');
+  assert.deepEqual(cache.balance, { total: '12.34', toppedUp: '12.34', granted: '0' });
   assert.equal(first.title, '');
   dispose();
   dispose = f.mount(cache);
@@ -79,4 +80,17 @@ test('missing host endpoint provides a restart instruction', async t => {
   t.after(dispose);
   await flush();
   assert.match(f.menu.children[0]!.ariaDescription, /接口未就绪，请重启 DSH/);
+});
+
+test('an unsuccessful refresh clears cached breakdown amounts', async t => {
+  const f = fixture();
+  const cache: AccountBalanceCache = {
+    text: '¥12.34', balance: { total: '12.34', toppedUp: '10.00', granted: '2.34' },
+  };
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ state: 'unauthorized' }));
+  const dispose = f.mount(cache);
+  t.after(dispose);
+  await flush();
+  assert.equal(cache.balance, undefined);
+  assert.equal(cache.text, 'API Key 无效');
 });

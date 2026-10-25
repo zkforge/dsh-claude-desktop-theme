@@ -48,5 +48,8 @@ test('plan chrome hides the unwrapped native button and successful notices only'
       await page.evaluate('window.disposeNotices()');
       assert.notEqual(await display('off'), 'none', 'cleanup restores notices');
     });
-  } finally { await rm(profile, { recursive: true, force: true }); }
+  } finally {
+    // Chrome can still be flushing its profile after receiving the teardown signal.
+    await rm(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  }
 });

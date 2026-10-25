@@ -29,6 +29,7 @@ export function mountAccountMore(menu: HTMLElement): Disposer {
     return span;
   };
   const moreIcon = icon('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>');
+  const linkIcon = () => icon('<path d="M14 3h7v7M21 3l-10 10M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/>');
   const label = document.createElement('span');
   label.textContent = title;
   const chevron = icon('<path d="m9 6 6 6-6 6"/>');
@@ -76,7 +77,9 @@ export function mountAccountMore(menu: HTMLElement): Disposer {
   const feedback = document.createElement('button');
   feedback.type = 'button';
   feedback.setAttribute('role', 'menuitem');
-  feedback.textContent = feedbackLabel;
+  const feedbackText = document.createElement('span');
+  feedbackText.textContent = feedbackLabel;
+  feedback.append(feedbackText, linkIcon());
   feedback.addEventListener('click', () => {
     close();
     forwarding = true;
@@ -86,17 +89,18 @@ export function mountAccountMore(menu: HTMLElement): Disposer {
   const separator = document.createElement('div');
   separator.setAttribute('role', 'separator');
   panel.append(separator);
-  for (const [text, url] of [
+  for (const [index, [text, url]] of [
     [zh ? 'DeepSeek 网页聊天' : 'DeepSeek Chat', 'https://chat.deepseek.com/'],
     ['API Platform', 'https://platform.deepseek.com/'],
     [zh ? '插件 GitHub · 求 Star ☆' : 'Plugin GitHub · Star us ☆', 'https://github.com/zkforge/dsh-claude-desktop-theme'],
-  ]) {
+  ].entries()) {
+    if (index === 2) panel.append(separator.cloneNode());
     const button = document.createElement('button');
     button.type = 'button';
     button.setAttribute('role', 'menuitem');
     const textNode = document.createElement('span');
     textNode.textContent = text ?? '';
-    button.append(textNode, icon('<path d="M14 3h7v7M21 3l-10 10M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/>'));
+    button.append(textNode, linkIcon());
     button.addEventListener('click', () => {
       view.open(url, '_blank', 'noopener,noreferrer');
       close();

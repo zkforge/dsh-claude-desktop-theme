@@ -45,8 +45,8 @@ import { paneLabels, paneLanguage, type FilesPaneLabels, type PaneLanguage } fro
  *
  * Everything written here lands on host nodes as `data-ccd-files-*` markers or
  * as plugin-owned nodes beside them, and the disposer takes all of it back.
- * The module is unconditional: the right panel exists in both DSH builds and
- * behind every feature switch.
+ * The module shares the right-panel feature lifetime with its stylesheet,
+ * so disabling that feature removes every enhancement before its styles.
  */
 
 /** The state of the tree, written on the Files root: `hidden` or absent. */

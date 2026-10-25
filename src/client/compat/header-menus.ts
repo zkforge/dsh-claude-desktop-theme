@@ -7,7 +7,7 @@ const CHEVRON = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" str
 // Reference: rounded screen above a wider, shallow base with rounded ends.
 const LAPTOP = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5v-6A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v6"/><rect x="1.5" y="10.5" width="13" height="2.5" rx=".65"/></svg>';
 
-/** Static artwork for session menu actions; project menus use text only. */
+/** Static artwork for session menu actions. */
 const HEADER_MENU_ICONS: Readonly<Record<string, string>> = {
   '打开方式': '<rect x="5" y="2" width="9" height="9" rx="1"/><path d="M11 11v3H2V5h3"/>',
   '重命名': '<path d="M3 10.5 2.5 14l3.5-.5L14 5.5 10.5 2 3 10.5ZM9 3.5l3.5 3.5"/>',
@@ -30,7 +30,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   let editing: { seat: Seat; input: HTMLInputElement; finish: (restoreFocus?: boolean) => void } | null = null;
   const seats = new Map<HTMLElement, Seat>();
   let headers: HTMLElement[] = [];
-  interface Seat { header: HTMLElement; nav: HTMLElement; icon: HTMLElement; trigger: HTMLButtonElement; project: HTMLButtonElement; id: string; releaseTitle: () => void }
+  interface Seat { header: HTMLElement; nav: HTMLElement; icon: HTMLElement; trigger: HTMLButtonElement; id: string; releaseTitle: () => void }
 
   const button = (label: string) => {
     const node = document.createElement('button');
@@ -55,7 +55,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
     const width = popup.getBoundingClientRect().width;
     const height = popup.getBoundingClientRect().height;
     popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`;
-    popup.style.top = `${Math.max(8, Math.min(rect.bottom + (anchor.hasAttribute('data-ccd-project-trigger') ? 5 : 6), window.innerHeight - height - 8))}px`;
+    popup.style.top = `${Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - height - 8))}px`;
     if (submenu !== null && subAnchor !== null) {
       const row = subAnchor.getBoundingClientRect();
       const menu = popup.getBoundingClientRect();
@@ -68,7 +68,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   const surface = (kind: string) => {
     const node = document.createElement('div');
     node.setAttribute('data-ccd-header-menu', kind);
-    node.setAttribute('role', 'menu'); node.setAttribute('aria-label', kind === 'session' ? '会话操作' : kind === 'project' ? '项目操作' : kind);
+    node.setAttribute('role', 'menu'); node.setAttribute('aria-label', kind === 'session' ? '会话操作' : kind);
     node.setAttribute('popover', 'manual');
     document.body.append(node); node.showPopover();
     return node;
@@ -165,41 +165,27 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
     seat.nav.setAttribute('data-ccd-session-editing', ''); seat.nav.insertBefore(input, seat.trigger);
     input.focus(); input.select();
   };
-  const show = (seat: Seat, trigger: HTMLButtonElement, kind: 'session' | 'project', keyboard = false) => {
+  const show = (seat: Seat, trigger: HTMLButtonElement, keyboard = false) => {
     if (anchor === trigger) { close(true); return; }
     close(); anchor = trigger; owner = seat; trigger.setAttribute('aria-expanded', 'true');
     const id = seat.id;
-    const menu = surface(kind); popup = menu;
-    if (kind === 'session') {
-      sub(menu, '打开方式', content => {
-        const target = seat.header.querySelector<HTMLButtonElement>(host.openTargetMain);
-        if (target !== null && !target.disabled) row(content, target.getAttribute('aria-label') ?? '默认应用', () => run(() => target.click()));
-        else unavailable(content, '默认应用', 'DSH 当前没有可用的外部应用打开入口。');
-      });
-      separator(menu);
-      row(menu, '重命名', () => rename(seat, id), 'R');
-      row(menu, '创建分支', () => run(() => actions.fork(id)), 'F');
-      separator(menu);
-      row(menu, '归档', () => run(() => actions.archive(id)), 'A');
-    } else {
-      sub(menu, '复制', content => {
-        const copy = (value: string) => run(() => window.navigator.clipboard.writeText(value));
-        const current = actions.read(id);
-        row(content, '文件夹路径', () => copy(current?.path ?? ''));
-        row(content, '文件夹名称', () => copy(current?.folder ?? ''));
-      });
-      const terminal = seat.header.querySelector<HTMLButtonElement>('[data-ccd-header-view="terminal"]');
-      if (terminal !== null && !terminal.disabled) {
-        separator(menu);
-        row(menu, '在终端中打开', () => run(() => terminal.click()));
-      }
-    }
+    const menu = surface('session'); popup = menu;
+    sub(menu, '打开方式', content => {
+      const target = seat.header.querySelector<HTMLButtonElement>(host.openTargetMain);
+      if (target !== null && !target.disabled) row(content, target.getAttribute('aria-label') ?? '默认应用', () => run(() => target.click()));
+      else unavailable(content, '默认应用', 'DSH 当前没有可用的外部应用打开入口。');
+    });
+    separator(menu);
+    row(menu, '重命名', () => rename(seat, id), 'R');
+    row(menu, '创建分支', () => run(() => actions.fork(id)), 'F');
+    separator(menu);
+    row(menu, '归档', () => run(() => actions.archive(id)), 'A');
     // Hovering an ordinary row withdraws the previous submenu; moving into a
     // submenu keeps it open because both cards occupy the native top layer.
     for (const item of menu.querySelectorAll<HTMLButtonElement>('button:not([aria-haspopup])')) item.addEventListener('pointerenter', clearSubmenu);
     position(); if (keyboard) menu.querySelector<HTMLButtonElement>('button')?.focus();
   };
-  const releaseSeat = (seat: Seat) => { if (editing?.seat === seat) editing.finish(); if (owner === seat) close(); seat.releaseTitle(); seat.icon.remove(); seat.trigger.remove(); seat.project.remove(); seat.nav.removeAttribute('data-ccd-session-title'); };
+  const releaseSeat = (seat: Seat) => { if (editing?.seat === seat) editing.finish(); if (owner === seat) close(); seat.releaseTitle(); seat.icon.remove(); seat.trigger.remove(); seat.nav.removeAttribute('data-ccd-session-title'); };
   const sync = () => {
     for (const [header, seat] of seats) if (!header.isConnected || !seat.nav.isConnected) { releaseSeat(seat); seats.delete(header); }
     headers = [...document.querySelectorAll<HTMLElement>(host.conversationHeader)];
@@ -213,8 +199,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
       if (seat === undefined) {
         const icon = document.createElement('span'); icon.setAttribute('data-ccd-session-icon', ''); icon.innerHTML = LAPTOP;
         const trigger = button(''); trigger.innerHTML = CHEVRON; trigger.setAttribute('data-ccd-session-trigger', ''); trigger.setAttribute('aria-label', '会话操作'); trigger.setAttribute('aria-haspopup', 'menu'); trigger.setAttribute('aria-expanded', 'false');
-        const project = button(''); project.setAttribute('data-ccd-project-trigger', ''); project.setAttribute('aria-haspopup', 'menu'); project.setAttribute('aria-expanded', 'false');
-        seat = { header, nav, icon, trigger, project, id, releaseTitle: () => {} }; const current = seat;
+        seat = { header, nav, icon, trigger, id, releaseTitle: () => {} }; const current = seat;
         const title = [...nav.querySelectorAll<HTMLElement>(host.conversationCrumb)].at(-1);
         if (title) {
           const attributes = ['role', 'tabindex', 'title'] as const;
@@ -234,15 +219,11 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
             attributes.forEach((name, index) => { const value = original[index]; if (value == null) title.removeAttribute(name); else title.setAttribute(name, value); });
           };
         }
-        trigger.addEventListener('click', event => show(current, trigger, 'session', event.detail === 0));
-        project.addEventListener('click', event => show(current, project, 'project', event.detail === 0));
-        nav.setAttribute('data-ccd-session-title', ''); nav.prepend(icon); nav.append(trigger); nav.after(project); seats.set(header, seat);
+        trigger.addEventListener('click', event => show(current, trigger, event.detail === 0));
+        nav.setAttribute('data-ccd-session-title', ''); nav.prepend(icon); nav.append(trigger); seats.set(header, seat);
       }
       if (seat.id !== id) { if (editing?.seat === seat) editing.finish(); if (owner === seat) close(); seat.id = id; }
       if (editing?.seat === seat && !editing.input.isConnected) editing.finish();
-      if (seat.project.textContent !== data.folder) seat.project.textContent = data.folder;
-      if (seat.project.title !== data.path) seat.project.title = data.path;
-      if (seat.project.hidden !== (data.path === '')) seat.project.hidden = data.path === '';
     }
   };
   const safelySync = () => { try { sync(); } catch (error) { report(error); } };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent, ReactElement } from 'react';
 import { filterFamilies } from './fonts.ts';
 import { MenuCheck } from './ChoiceMenu.tsx';
@@ -10,7 +10,7 @@ import { MenuCheck } from './ChoiceMenu.tsx';
  * popup is an OS widget that ignores this page's styles and, in the desktop
  * window, does not scroll with the wheel — with several hundred families that
  * is unusable. The panel is positioned against the select box and closed by
- * Escape, an outside click, a scroll or a resize.
+ * Escape or an outside click; it follows the anchor on scroll and resize.
  */
 
 export interface FontMenuLabels {
@@ -38,6 +38,8 @@ export interface FontMenuProps {
 
 const HEIGHT = 320;
 const MARGIN = 12;
+/** The dialog's select box width, kept as the floor for narrower anchors. */
+const MIN_WIDTH = 260;
 
 /**
  * One open family menu.
@@ -47,8 +49,10 @@ const MARGIN = 12;
 export function FontMenu(props: FontMenuProps): ReactElement {
   const { anchor, families, value, labels, onSelect, onUseText, onClose } = props;
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => Math.max(0, families.indexOf(value)));
   const [rect, setRect] = useState<DOMRect>(() => anchor.getBoundingClientRect());
+  const [height, setHeight] = useState(HEIGHT);
+  const menuRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const shown = useMemo(() => filterFamilies(families, query), [families, query]);
 
@@ -58,7 +62,16 @@ export function FontMenu(props: FontMenuProps): ReactElement {
   const typedOffered = typed !== '' && !shown.includes(typed);
   const rows = typedOffered ? shown.length + 1 : shown.length;
 
-  useEffect(() => { setActive(0); }, [query]);
+  useEffect(() => { setActive(query === '' ? Math.max(0, shown.indexOf(value)) : 0); }, [query, shown, value]);
+  useLayoutEffect(() => {
+    const sync = () => {
+      setHeight(menuRef.current?.getBoundingClientRect().height ?? HEIGHT);
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    if (menuRef.current) observer.observe(menuRef.current);
+    return () => observer.disconnect();
+  }, [rows, rect]);
   useEffect(() => {
     const node = listRef.current?.children[active];
     if (node instanceof HTMLElement) node.scrollIntoView({ block: 'nearest' });
@@ -121,32 +134,40 @@ export function FontMenu(props: FontMenuProps): ReactElement {
     if (event.key === 'Escape') { event.preventDefault(); onClose(); }
   };
 
-  /* The menu hangs under the box and lines up with its leading edge, the way
-     the reference select does. */
-  const width = Math.min(Math.round(rect.width), window.innerWidth - MARGIN * 2);
+  /* The menu hangs under the box and lines up with its trailing edge: the
+     Theme panel's borderless select is narrower than the list and sits at the
+     row's end, and against the dialog's full-width box the two edges agree. */
+  const width = Math.min(Math.max(Math.round(rect.width), MIN_WIDTH), window.innerWidth - MARGIN * 2);
   const below = rect.bottom + 6;
-  const top = below + HEIGHT > window.innerHeight - MARGIN ? Math.max(MARGIN, rect.top - 6 - HEIGHT) : below;
-  const left = Math.min(Math.max(MARGIN, rect.left), window.innerWidth - MARGIN - width);
+  const aboveSpace = Math.max(0, rect.top - 6 - MARGIN);
+  const belowSpace = Math.max(0, window.innerHeight - MARGIN - below);
+  const maxHeight = Math.min(HEIGHT, Math.max(aboveSpace, belowSpace));
+  const top = below + height > window.innerHeight - MARGIN && aboveSpace > belowSpace
+    ? Math.max(MARGIN, rect.top - 6 - height) : below;
+  const left = Math.min(Math.max(MARGIN, rect.right - width), window.innerWidth - MARGIN - width);
 
   return (
-    <div className="ccd-settings-menu" role="dialog" aria-label={labels.search} style={{ top, left, width }}>
+    <div ref={menuRef} className="ccd-settings-menu ccd-settings-font-menu" role="dialog" aria-label={labels.search}
+      style={{ top, left, width, maxHeight }}>
+      <div className="ccd-settings-font-search">
+        <input
+          className="ccd-settings-menu-search"
+          type="search"
+          autoFocus
+          spellCheck={false}
+          autoComplete="off"
+          placeholder={labels.search}
+          aria-label={labels.search}
+          value={query}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
+          onKeyDown={onKeyDown}
+        />
+      </div>
+      <p className="ccd-settings-menu-count" role="status">{labels.count(shown.length)}</p>
       {families.length === 0 ? (
         <p className="ccd-settings-menu-empty">{labels.unavailable}</p>
       ) : null}
-      <>
-          <input
-            className="ccd-settings-menu-search"
-            type="search"
-            autoFocus
-            spellCheck={false}
-            autoComplete="off"
-            placeholder={labels.search}
-            aria-label={labels.search}
-            value={query}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)}
-            onKeyDown={onKeyDown}
-          />
-          <p className="ccd-settings-menu-count">{labels.count(shown.length)}</p>
+      <div className="ccd-settings-font-scroll">
           {shown.length === 0 && !typedOffered ? (
             <p className="ccd-settings-menu-empty">{labels.empty}</p>
           ) : (
@@ -185,7 +206,7 @@ export function FontMenu(props: FontMenuProps): ReactElement {
               ))}
             </ul>
           )}
-      </>
+      </div>
     </div>
   );
 }

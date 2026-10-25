@@ -2,6 +2,7 @@ import type { ImplementedFeature } from '../../contracts/feature.ts';
 import { mountChangedFiles } from '../../compat/changed-files.ts';
 import { mountConversationFade } from '../../compat/conversation-fade.ts';
 import { mountConversationProcess } from '../../compat/conversation-process.ts';
+import { mountConversationStream } from '../../compat/conversation-stream.ts';
 import { mountRunningStatus } from '../../compat/running-status.ts';
 import { mountReplySignature } from '../../compat/reply-signature.ts';
 import { probeHost } from '../../compat/host-dom.ts';
@@ -34,6 +35,8 @@ export const conversationFeature: ImplementedFeature = {
     const probe = probeHost(document);
     if (!probe.conversation) environment.logger.debug('conversation: body not mounted yet');
     scope.add(environment.dom.mountStyles(conversationCss));
+    scope.add(mountConversationStream(document,
+      error => environment.logger.error('conversation: streaming text failed', error)));
     scope.add(mountChangedFiles(document, error => environment.logger.error('conversation: changed files failed', error)));
     scope.add(mountRunningStatus(document, environment.config.personalization.runningStyle,
       error => environment.logger.error('conversation: running status failed', error)));

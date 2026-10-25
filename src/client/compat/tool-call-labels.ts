@@ -1,7 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 
 const LABELS = new Map([
-  ['思考', 'Thought'], ['查找文件', 'Find files'], ['搜索内容', 'Search content'],
+  ['思考', 'Thought'], ['查找文件', 'Find files'], ['搜索内容', 'Search content'], ['搜索文件内容', 'Search content'],
   ['搜索', 'Search'], ['读取', 'Read'], ['读取文件', 'Read file'], ['读取图片', 'Read image'],
   ['写入', 'Write'], ['编辑', 'Edit'], ['加载技能', 'Skill'], ['运行命令', 'Run command'],
   ['执行命令', 'Run command'], ['运行代码', 'Run code'], ['调用工具', 'Use tool'],
@@ -44,8 +44,11 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
         if (!source.isConnected || source.hasAttribute('data-ccd-english-label')) continue;
         if (!(source.getAttribute('class') ?? '').split(/\s+/u).some(token => /_title(?:_|$)/u.test(token))) continue;
         if (!source.closest('[data-disclosure-row]') && !source.closest('[data-tool="skill"]')) continue;
+        // TextShimmer paints its aria-hidden copy from a pseudo-element. Its
+        // textContent is empty; translate the attribute so both layers match.
         const text = source.hasAttribute('data-ccd-file-title-source') ? undefined
-          : englishToolLabel(source.textContent?.trim() ?? '', source.closest('[data-variant="think"]')?.getAttribute('data-state') === 'running');
+          : englishToolLabel(source.getAttribute('data-shimmer-text') ?? source.textContent?.trim() ?? '',
+            source.closest('[data-variant="think"]')?.getAttribute('data-state') === 'running');
         let label = labels.get(source);
         if (!text) { if (label) clear(source, label); continue; }
         if (!label) {
@@ -70,7 +73,7 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
     if (!pending && (scopes.size || removed)) { pending = true; queueMicrotask(sync); }
   });
   observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true,
-    attributeFilter: ['data-state', 'data-ccd-file-title-source', 'class'] });
+    attributeFilter: ['data-state', 'data-ccd-file-title-source', 'data-shimmer-text', 'class'] });
   collect(document.body);
   sync();
   return () => {

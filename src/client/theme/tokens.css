@@ -2,6 +2,7 @@
  * Colours are centralized here; the dark palette follows the host's body marker.
  */
 html[data-dsh-ccd-style="true"] {
+  --ccd-plugin-back-bg: #e5e5e5;
   --ccd-plugin-installed-bg: #e7f4eb;
   --ccd-plugin-installed-border: #b7d8c1;
   --ccd-plugin-installed-text: #24633c;
@@ -168,9 +169,7 @@ html[data-dsh-ccd-style="true"] {
   --ccd-menu-danger: #c04742;
   --ccd-menu-danger-ink: #ffffff;
   --ccd-header-trigger-hover: #f0f0ef;
-  --ccd-header-project-fill: #e5e5e5;
   --ccd-header-label-ink: #5a5a58;
-  --ccd-header-project-active: #cfcfcf;
   /* Transcript edge fade. 24px is the band the host's own internal-request
      viewer uses for `fadeTop`／`fadeBottom`, so the whole interface softens its
      scroll viewport edges by the same amount. */
@@ -205,7 +204,7 @@ html[data-dsh-ccd-style="true"] {
   /* Claude Desktop 2.31226.1's active flat frame, confirmed by window capture:
      gray-10 canvas; sidebar mixes gray-20 and gray-10 equally in sRGB. */
   --ccd-canvas: #fcfcfb;
-  --ccd-sidebar: #fbfbf9;
+  --ccd-sidebar: #fcfcfb;
   --ccd-card: #ffffff;
   --ccd-dialog-mask: rgba(0, 0, 0, .4);
   --ccd-dialog-shadow: 0 12px 24px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .08);
@@ -230,6 +229,15 @@ html[data-dsh-ccd-style="true"] {
   --ccd-view-menu-separator: #ebebeb;
   --ccd-view-menu-accent: #2a78d6;
   --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 8px 20px rgba(0, 0, 0, .12), 0 16px 32px rgba(0, 0, 0, .06);
+  /* Font-select reference: neutral selected row, blue tick, soft close shadow. */
+  --ccd-font-menu-selected: #e5e5e5;
+  --ccd-font-menu-check: #165dc1;
+  --ccd-font-menu-shadow: 0 0 0 .5px rgb(0 0 0 / 4%), 0 2px 4px rgb(0 0 0 / 8%), 0 8px 16px rgb(0 0 0 / 12%);
+  /* Sampled from the supplied search-palette reference: a darker pill for the
+     current type, a lighter fill for the current row, grey rows elsewhere. */
+  --ccd-palette-tab-selected: #d9d9d9;
+  --ccd-palette-row-selected: #e5e5e5;
+  --ccd-palette-row-ink: #5e5e5e;
   --ccd-selected: #ecebe8;
   /* The fill a control takes while it sits on a row that is already filled:
      a Session row paints `--ccd-selected` under the pointer, so its ⋮ takes
@@ -377,6 +385,11 @@ html[data-dsh-ccd-style="true"] {
      mode, and it shares the stats heat ramp's hue
      family (hsl(217 …)), which keeps every blue in the interface one voice. */
   --ccd-accent: #4b76ce;
+  /* The Edit sidebar dialog's checked box: the reference's system blue, a step
+     brighter than the accent because it fills a 20px square rather than
+     drawing a stroke. */
+  --ccd-check-fill: #2f7cf3;
+  --ccd-check-ink: #ffffff;
   /* Lavender ink keeps the light reference's crests visible on the pale page. */
   --ccd-hero-ripple-ink: #8574c4;
 
@@ -471,6 +484,10 @@ html[data-dsh-ccd-style="true"] {
      line across the body — left out: the reference draws the body empty, and
      the tab, the step and the four rounded corners are the whole of the mark. */
   --ccd-icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M1.50439 3.11059C1.50439 2.55831 1.95211 2.1106 2.50439 2.1106H5.43389C5.67773 2.1106 5.91318 2.19969 6.09593 2.36113L7.71649 3.79265C7.89924 3.95409 8.1347 4.04319 8.3785 4.04319H13.4958C14.0481 4.04319 14.4958 4.4909 14.4958 5.04319V12.8894C14.4958 13.4417 14.0481 13.8894 13.4958 13.8894H2.50439C1.95211 13.8894 1.50439 13.4417 1.50439 12.8894V4.04319V3.11059Z' stroke='black'/%3E%3C/svg%3E");
+
+  /* The worktree chip's mark: two branch tips over one trunk, on the folder's
+     16-unit grid and 1px stroke. */
+  --ccd-icon-branch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black'%3E%3Ccircle cx='4.5' cy='3.5' r='1.5'/%3E%3Ccircle cx='11.5' cy='3.5' r='1.5'/%3E%3Ccircle cx='4.5' cy='12.5' r='1.5'/%3E%3Cpath d='M4.5 5V11M11.5 5V6A3 3 0 0 1 8.5 9H6.5A2 2 0 0 0 4.5 11'/%3E%3C/svg%3E");
 
   /* The reference's disclosure mark is a 1px line chevron where the host draws a
      filled triangle; this is DSH's own `IconChevronRightOutlineArtwork` geometry
@@ -587,6 +604,7 @@ html[data-dsh-ccd-style="true"] body {
  * separate; text keeps the light palette's descending tone order.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
+  --ccd-plugin-back-bg: #484848;
   --ccd-plugin-installed-bg: #193b29;
   --ccd-plugin-installed-border: #315f43;
   --ccd-plugin-installed-text: #a1dfb5;
@@ -612,9 +630,7 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-menu-danger: #c04742;
   --ccd-menu-danger-ink: #ffffff;
   --ccd-header-trigger-hover: var(--ccd-hover);
-  --ccd-header-project-fill: var(--ccd-track);
   --ccd-header-label-ink: var(--ccd-text-secondary);
-  --ccd-header-project-active: var(--ccd-selected);
   --ccd-track: #1e1e1e;
   --ccd-raised: #2c2c2c;
   --ccd-hover: #303030;
@@ -625,6 +641,12 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-view-menu-separator: var(--ccd-border-soft);
   --ccd-view-menu-accent: var(--ccd-accent);
   --ccd-view-menu-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 20px rgba(0, 0, 0, .3), 0 16px 32px rgba(0, 0, 0, .2);
+  --ccd-font-menu-selected: var(--ccd-selected);
+  --ccd-font-menu-check: var(--dsw-static-blue-450);
+  --ccd-font-menu-shadow: 0 0 0 .5px rgb(0 0 0 / 12%), 0 2px 4px rgb(0 0 0 / 20%), 0 8px 16px rgb(0 0 0 / 30%);
+  --ccd-palette-tab-selected: #444444;
+  --ccd-palette-row-selected: #383838;
+  --ccd-palette-row-ink: #b5b5ad;
   --ccd-selected: #353535;
   /* The same step as the light side, in the direction this canvas recesses:
      the fill goes one step up from `selected` here — which happens to land on
@@ -746,6 +768,8 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
      reference's measured blue (220) rather than the ramp's 217, but the two sit
      in one family. */
   --ccd-accent: #789be3;
+  --ccd-check-fill: #3d86f2;
+  --ccd-check-ink: #ffffff;
 
   /* State colours that DSH already owns semantics for. */
   --ccd-diff-added: #7cbd72;

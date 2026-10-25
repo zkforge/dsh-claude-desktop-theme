@@ -12,12 +12,8 @@ test('header menus skip transcript churn and still follow catalog changes and he
   } as unknown as typeof MutationObserver;
   const create = () => {
     const attributes = new Map<string, string>();
-    let hidden = false, writes = 0;
     return {
       isConnected: true, textContent: '', innerHTML: '', title: '', type: '',
-      get hidden() { return hidden; },
-      set hidden(next: boolean) { writes++; hidden = next; },
-      get hiddenWrites() { return writes; },
       setAttribute(name: string, value: string) { attributes.set(name, value); },
       removeAttribute(name: string) { attributes.delete(name); },
       hasAttribute: (name: string) => attributes.has(name),
@@ -28,7 +24,7 @@ test('header menus skip transcript churn and still follow catalog changes and he
     };
   };
   const nav = create();
-  let sessionId = 'a', path = '/projects/theme', present = true, reads = 0, scans = 0;
+  let sessionId = 'a', present = true, reads = 0, scans = 0;
   const root = { querySelector: () => ({ getAttribute: () => sessionId }) };
   const header = {
     isConnected: true,
@@ -51,7 +47,7 @@ test('header menus skip transcript churn and still follow catalog changes and he
   const readIds: string[] = [];
   try {
     const dispose = mountHeaderMenus(doc, {
-      read(id) { reads++; readIds.push(id); return { title: 'Title', folder: 'theme', path }; },
+      read(id) { reads++; readIds.push(id); return { title: 'Title' }; },
       rename: async () => {}, fork: async () => {}, archive: async () => {},
       subscribe(listener) { notify = listener; return () => { notify = () => {}; }; },
     }, error => errors.push(error));
@@ -60,21 +56,19 @@ test('header menus skip transcript churn and still follow catalog changes and he
     for (let index = 0; index < 30; index++) mutate([{
       type: 'childList', target: {}, addedNodes: [{ nodeType: 3 }], removedNodes: [],
     } as unknown as MutationRecord]);
-    assert.equal(reads, 1, 'streaming does not re-read session or workspace catalogs');
+    assert.equal(reads, 1, 'streaming does not re-read the session catalog');
     assert.equal(scans, scansBefore, 'streaming does not re-scan headers');
-    const project = created.find(node => node.hasAttribute('data-ccd-project-trigger'))!;
-    path = ''; notify();
-    assert.equal(project.hidden, true);
-    const writes = project.hiddenWrites;
+    assert.equal(created.some(node => node.hasAttribute('data-ccd-project-trigger')), false, 'the title is not followed by a project chip');
+    const icon = created.find(node => node.hasAttribute('data-ccd-session-icon'))!;
     notify();
-    assert.equal(project.hiddenWrites, writes, 'unchanged project visibility produces no attribute churn');
+    assert.equal(reads, 2, 'catalog changes resync the header');
     sessionId = 'b';
     mutate([{ type: 'attributes', attributeName: 'data-conversation-session', target: root } as unknown as MutationRecord]);
     assert.equal(readIds.at(-1), 'b');
     present = false; header.isConnected = false;
     mutate([{ type: 'childList', target: {}, addedNodes: [], removedNodes: [header] } as unknown as MutationRecord]);
     assert.equal(nav.hasAttribute('data-ccd-session-title'), false);
-    assert.equal(project.isConnected, false);
+    assert.equal(icon.isConnected, false);
     present = true; header.isConnected = true;
     mutate([{ type: 'childList', target: {}, addedNodes: [{ ...header, nodeType: 1 }], removedNodes: [] } as unknown as MutationRecord]);
     assert.equal(nav.hasAttribute('data-ccd-session-title'), true, 'a newly inserted header is discovered synchronously');

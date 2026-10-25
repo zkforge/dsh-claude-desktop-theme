@@ -1,10 +1,12 @@
 import { BALANCE_PATH } from '../../shared/balance.ts';
 import type { Disposer } from '../contracts/ports.ts';
+import { mountAccountBalanceHint, type AccountBalanceBreakdown } from './account-balance-hint.ts';
 
 /** Last completed display, retained across menu openings for the same account. */
 export interface AccountBalanceCache {
   text?: string;
   description?: string;
+  balance?: AccountBalanceBreakdown;
 }
 
 /** One usage row in the lower-left account menu; polling lives only while open. */
@@ -17,7 +19,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
   row.type = 'button';
   row.setAttribute('role', 'menuitem');
   row.setAttribute('data-ccd-account-balance', '');
-  row.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4.5 19a9 9 0 1 1 15 0"/><path d="M12 6s-4 5-4 8a4 4 0 0 0 8 0c0-3-4-8-4-8Z"/></svg>';
+  row.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20A10 10 0 0 1 15.8 3.75M21.8 11A10 10 0 0 1 19 20"/><circle cx="12" cy="13" r="2.2"/><path d="m13.56 11.44 5.19-5.19"/></svg>';
   const label = document.createElement('span');
   label.textContent = zh ? '余额' : 'Balance';
   const amount = document.createElement('span');
@@ -27,6 +29,8 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
   row.ariaDescription = cache.description ?? (zh ? 'DeepSeek 官方 API 余额（人民币）' : 'DeepSeek API balance (CNY)');
   row.append(label, amount);
   anchor.after(row);
+  const hint = mountAccountBalanceHint(menu, row, zh);
+  hint.update(cache.balance, cache.description ?? (zh ? '正在查询余额…' : 'Checking balance…'));
   let disposed = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let deadline: ReturnType<typeof setTimeout> | undefined;
@@ -57,11 +61,13 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
       const validAmount = (value: unknown): value is string => typeof value === 'string'
         && /^-?\d+(?:\.\d+)?$/.test(value) && Number.isFinite(Number(value));
       if (data.state === 'ready' && balance && [balance.total, balance.granted, balance.toppedUp].every(validAmount)) {
+        cache.balance = { total: balance.total, toppedUp: balance.toppedUp, granted: balance.granted };
         amount.textContent = `¥${balance.total}`;
         row.ariaDescription = zh
           ? `DeepSeek 官方 API · 人民币\n总余额 ¥${balance.total}\n充值余额 ¥${balance.toppedUp}\n赠金余额 ¥${balance.granted}\n点击刷新`
           : `DeepSeek API · CNY\nTotal ¥${balance.total}\nTop-up ¥${balance.toppedUp}\nGranted ¥${balance.granted}\nClick to refresh`;
       } else {
+        delete cache.balance;
         const messages: Record<string, string> = {
           unconfigured: zh ? '未配置 API Key' : 'API key not configured',
           unauthorized: zh ? 'API Key 无效' : 'Invalid API key',
@@ -74,6 +80,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
       }
     } catch (error) {
       if (!disposed) {
+        delete cache.balance;
         amount.textContent = zh ? '查询失败 · 重试' : 'Unavailable · Retry';
         const reason = read.signal.aborted ? (zh ? '查询超时' : 'Request timed out')
           : error instanceof Error ? error.message : (zh ? '连接失败' : 'Connection failed');
@@ -86,6 +93,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
       if (!disposed) {
         cache.text = amount.textContent ?? '';
         cache.description = row.ariaDescription ?? '';
+        hint.update(cache.balance, cache.description);
         row.removeAttribute('aria-busy');
         if (!document.hidden) timer = setTimeout(() => { void refresh(); }, 60_000);
       }
@@ -105,6 +113,7 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
     clearTimeout(deadline);
     controller?.abort();
     document.removeEventListener('visibilitychange', visibility);
+    hint.dispose();
     row.remove();
   };
 }

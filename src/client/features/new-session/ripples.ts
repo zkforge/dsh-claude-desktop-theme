@@ -251,7 +251,7 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
   if (!width || !height) return;
   if (surface.ink === '') surface.ink = getComputedStyle(canvas).getPropertyValue('--ccd-hero-ripple-ink').trim();
   context.fillStyle = surface.ink;
-  context.font = '10px monospace'; context.textBaseline = 'top';
+  context.font = '12px monospace'; context.textBaseline = 'top';
   // Rasterize each glyph once at device density; frames only composite sprites.
   if (!surface.atlas && canvas.ownerDocument.createElement) {
     const atlas = canvas.ownerDocument.createElement('canvas');

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CLAUDE_FRAMES, CLAUDE_GROUND_Y, CLAUDE_IDLE } from '../src/client/features/composer-pet/claude-frames.ts';
+import { CLAUDE_FRAMES, CLAUDE_GROUND_Y, CLAUDE_IDLE, CLAUDE_TRACK } from '../src/client/features/composer-pet/claude-frames.ts';
 
 /** Rasterize the half-pixel rectangles so checks cover visible geometry. */
 function pixels(path: string): Set<string> {
@@ -65,6 +65,34 @@ test('recording fringes cannot become grey artwork on the body or feet', () => {
       assert.ok(x < 12, `pose ${index}: the laptop layer must not carry grey body or leg edges`);
     }
   }
+});
+
+test('typing overlaps square hands within one hand’s width and alternates their strokes', () => {
+  const strokes: number[] = [];
+  const sequence = CLAUDE_TRACK.slice(16, 46).map(index => CLAUDE_FRAMES[index]!);
+  for (const pose of sequence) {
+    const body = [...pixels(pose[0])].map(key => key.split(',').map(Number) as [number, number]);
+    const shade = pixels(pose[1]);
+    const hands = body.filter(([x]) => x < 6);
+    const nearHand = hands.filter(([x, y]) => !shade.has(`${x},${y}`));
+    const farEdge = hands.filter(([x]) => x < -3);
+    const xs = hands.map(([x]) => x);
+    assert.equal(Math.min(...xs), -6, 'both hands stay directly in front of the body');
+    assert.equal(Math.max(...xs) - Math.min(...xs) + 1, 12, 'overlapping hands occupy only 6px outside the body');
+    const nearTop = Math.min(...nearHand.map(([, y]) => y));
+    const nearBottom = Math.max(...nearHand.map(([, y]) => y)) + 1;
+    assert.equal(nearBottom - nearTop, 12, 'the front hand remains a 6px square');
+    assert.equal(nearHand.length, 9 * 12, 'the front square exposes 4.5px beside the body without rear shading');
+    const farTop = Math.min(...farEdge.map(([, y]) => y));
+    const farBottom = Math.max(...farEdge.map(([, y]) => y)) + 1;
+    assert.equal(farBottom - farTop, 12, 'the rear square keeps its height through the longer stroke');
+    assert.equal(farEdge.length, 3 * 12, 'the hands are staggered horizontally by only 1.5px');
+    for (const [x, y] of farEdge) assert.ok(shade.has(`${x},${y}`), 'the exposed rear edge keeps its depth shading');
+    const stroke = Math.sign(farTop - nearTop);
+    if (stroke !== 0 && stroke !== strokes.at(-1)) strokes.push(stroke);
+    assert.equal(pose[3], sequence[0]![3], 'the keyboard stays still beneath the hands');
+  }
+  assert.deepEqual(strokes, [1, -1, 1, -1, 1, -1, 1, -1, 1, -1], 'the hands take turns pressing');
 });
 
 test('the laptop keeps a continuous edge when it is folded back against the hand', () => {

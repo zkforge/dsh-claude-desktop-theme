@@ -2,7 +2,6 @@ import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { recordsInTranscript } from './mutation-scope.ts';
 import type { WorkspacePickerPort } from './workspace-picker-port.ts';
-import { mountWorktreeToggle } from './workspace-worktree.ts';
 import {
   createMenuSearch, FILTERED_ATTRIBUTE, menuCopy, mountWorkspaceBranch, WORKSPACE_EXTRA_ATTRIBUTE, type BranchCache,
 } from './workspace-branch.ts';
@@ -68,7 +67,8 @@ export function openFolderLabel(text: string, zh: boolean): string | null {
  * commit that mounts it and never shows the host's glyph first.
  *
  * @param document - renderer document carrying the hero chip and the portal.
- * @param port - Workspace order and new-worktree choices.
+ * @param port - Workspace order and new-worktree choices (the toggle itself is
+ *   `mountWorktreeChip`, beside the folder chip).
  * @param report - sink for observer failures; the native label stays untouched.
  * @returns disposer that disconnects every observer and restores each label.
  */
@@ -142,6 +142,7 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
     if (target?.closest('[popover]') != null) return;
     const items = [...menu.querySelectorAll<HTMLElement>(`input, button${host.menuItem}, button[role="menuitemcheckbox"]`)].filter(item =>
       item.closest('[popover]') === null && item.closest(`[${FILTERED_ATTRIBUTE}]`) === null
+      && item.closest('[hidden]') === null
       && !(item instanceof HTMLButtonElement && item.disabled));
     if (items.length === 0) return;
     event.preventDefault();
@@ -241,8 +242,7 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
           select: name => { const session = worktrees.session(); if (session !== undefined) worktrees.setBase(session, name); },
           subscribe: listener => worktrees.subscribe(listener),
         });
-      const releaseWorktree = port.worktrees === undefined ? () => {} : mountWorktreeToggle(menu, workspaceId, port.worktrees);
-      branch = { workspaceId, dispose: () => { releaseWorktree(); releaseBranch(); } };
+      branch = { workspaceId, dispose: releaseBranch };
     }
   };
 

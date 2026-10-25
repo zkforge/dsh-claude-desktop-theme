@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { findChrome, withPage } from '../scripts/lib/headless-chrome.mjs';
-import { aliasHostClasses, PINNED_BUILD, WINDOWS_BUILD } from '../src/client/compat/host-builds.ts';
+import { aliasHostClasses, MACOS_BUILD, PINNED_BUILD, WINDOWS_BUILD } from '../src/client/compat/host-builds.ts';
 
 /* The browsing toolbar stays above the tree; project actions share its right edge. */
 
@@ -197,6 +197,7 @@ const boxes = `(() => {
   return {
     region: box('._7514NG_root'), header: box('._7514NG_sectionHeader'), label: box('._7514NG_sectionLabel'),
     search: box('#search'), searchSlot: box('._7514NG_searchSlot'), searchButton: box('#search-button'),
+    searchRow: box('.ccd-sidebar-search-row'),
     options: box('#view-options'), add: box('#add-workspace'), logoRow: box('._3WPZCG_logoRow'),
     newSession: box('._3WPZCG_newSession'),
     row: box('#row-first'), title: box('#row-first .jJkEga_title'), plus: box('#plus-first'), menu: box('#menu-first'),
@@ -207,7 +208,7 @@ const boxes = `(() => {
 const styles = (await Promise.all(['src/client/theme/tokens.css', 'src/client/features/sidebar/sidebar.css']
   .map(path => readFile(join(root, path), 'utf8')))).join('\n');
 
-test('the separate browsing toolbar and compact project actions support both builds', {
+test('the separate browsing toolbar and compact project actions support all registered builds', {
   skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 20000,
 }, async () => {
   const bundle = await build({
@@ -215,32 +216,36 @@ test('the separate browsing toolbar and compact project actions support both bui
       import {mountBrowserHeader} from './src/client/compat/browser-header.ts';
       import {mountSidebarSearch} from './src/client/compat/sidebar-search.ts';
       window.releaseHeader=mountBrowserHeader(document,error=>{throw error});
-      window.releaseSearch=mountSidebarSearch(document,error=>{throw error});
+      window.opens=0;
+      const listeners=new Set();
+      window.palette={open(){window.opens++;listeners.forEach(listener=>listener());},isOpen:()=>false,subscribe(listener){listeners.add(listener);return()=>listeners.delete(listener);}};
+      window.releaseSearch=mountSidebarSearch(document,'<svg viewBox="0 0 24 24"></svg>',window.palette,error=>{throw error});
     ` }, bundle: true, write: false, format: 'iife',
   });
-  for (const hostBuild of [PINNED_BUILD, WINDOWS_BUILD]) {
+  for (const hostBuild of [PINNED_BUILD, WINDOWS_BUILD, MACOS_BUILD]) {
     const profile = await mkdtemp(join(tmpdir(), `ccd-sidebar-header-${hostBuild.id}-`));
     try {
       await withPage({ url: 'about:blank', width: 300, height: 420, scale: 1, profile }, async devtools => {
+        /* A background page gets no focus events; the ⌘K redirect listens for them. */
+        await devtools.send('Emulation.setFocusEmulationEnabled', { enabled: true });
         for (const [name, fixture] of Object.entries({ several, branded, searching, flatList, noHistory, rail })) {
-          await devtools.evaluate(`{document.documentElement.lang='en';document.documentElement.dataset.dshCcdStyle='true';document.documentElement.dataset.platform=${JSON.stringify(hostBuild === WINDOWS_BUILD ? 'win32' : 'darwin')};document.body.innerHTML=${JSON.stringify(aliasHostClasses(fixture, hostBuild))};document.head.querySelector('style')?.remove();const style=document.createElement('style');style.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, hostBuild))};document.head.append(style);}`);
+          await devtools.evaluate(`{document.documentElement.lang='en';document.documentElement.dataset.dshCcdStyle='true';document.documentElement.dataset.platform=${JSON.stringify(hostBuild === WINDOWS_BUILD ? 'win32' : 'darwin')};document.body.innerHTML=${JSON.stringify(aliasHostClasses(`<div data-slot="root"><div class="_6Qf49G_frame">${fixture}</div></div>`, hostBuild))};document.head.querySelector('style')?.remove();const style=document.createElement('style');style.textContent=${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, hostBuild))};document.head.append(style);}`);
           await devtools.evaluate(bundle.outputFiles[0].text);
           await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
           const geometry = await devtools.evaluate(aliasHostClasses(boxes, hostBuild));
           if (name === 'several') {
             assert(Math.abs(geometry.row.y - geometry.header.bottom - 5) < 0.5,
               'the search toolbar leaves the shared 5px section gap above the project row');
-            assert(Math.abs(geometry.searchSlot.height - geometry.newSession.height) < 0.5, 'the search field matches a navigation row');
-            assert(Math.abs(geometry.searchSlot.x - geometry.newSession.x) < 0.5, 'the search field shares New Session’s leading edge');
-            assert(Math.abs(geometry.searchSlot.width - geometry.newSession.width) < 0.5,
-              'the search field shares New Session’s width');
-            assert(Math.abs(geometry.searchSlot.bottom + 5 - geometry.newSession.y) < 0.5,
-              'the search field sits the shared 5px section gap above New Session');
+            assert(Math.abs(geometry.searchRow.height - geometry.newSession.height) < 0.5, 'Search is a navigation row');
+            assert(Math.abs(geometry.searchRow.x - geometry.newSession.x) < 0.5, 'Search shares New Session’s leading edge');
+            assert(Math.abs(geometry.searchRow.width - geometry.newSession.width) < 0.5, 'Search shares New Session’s width');
+            assert(Math.abs(geometry.newSession.bottom + 1 - geometry.searchRow.y) < 0.5,
+              'Search follows New Session on the navigation pitch');
+            assert(geometry.searchSlot.width <= 1 && geometry.searchSlot.height <= 1, 'the host field leaves the toolbar');
             // The section title is hidden; the row keeps only its trailing actions.
             assert.equal(geometry.label.display, 'none');
             assert.equal(geometry.plus.width, 22);
             assert.equal(geometry.plus.height, 22);
-            assert.equal(geometry.searchButton.width, 22);
             assert.equal(geometry.options.width, 22);
             const trailing = await devtools.evaluate(aliasHostClasses(`({
               first:document.querySelector('#plus-first').getBoundingClientRect().right,
@@ -252,10 +257,9 @@ test('the separate browsing toolbar and compact project actions support both bui
           }
           if (name === 'branded') {
             assert(geometry.logoRow !== null && geometry.logoRow.height > 0, 'the brand row is visible');
-            assert(geometry.searchSlot.y >= geometry.logoRow.bottom,
-              'the search field sits below the brand when the brand is visible');
-            assert(Math.abs(geometry.searchSlot.bottom + 5 - geometry.newSession.y) < 0.5,
-              'the branded search field still sits the shared 5px gap above New Session');
+            assert(geometry.newSession.y >= geometry.logoRow.bottom, 'New Session sits below the brand');
+            assert(Math.abs(geometry.newSession.bottom + 1 - geometry.searchRow.y) < 0.5,
+              'Search still follows New Session below the brand');
           }
           if (name === 'searching') {
             assert(Math.abs(geometry.row.y - geometry.header.bottom - 5) < .5,
@@ -265,13 +269,22 @@ test('the separate browsing toolbar and compact project actions support both bui
             const field = await devtools.evaluate(aliasHostClasses(`(() => {
               const input = document.querySelector('._7514NG_searchInput');
               const options = document.querySelector('#view-options');
-              return { inputWidth: input.getBoundingClientRect().width,
-                inputOpacity: getComputedStyle(input).opacity,
+              const row = document.querySelector('.ccd-sidebar-search-row');
+              const before = window.opens;
+              input.focus();
+              const redirected = window.opens - before;
+              const focused = document.activeElement === input;
+              row.click();
+              return { redirected, focused, clicked: window.opens - before - redirected,
+                label: row.textContent, previous: row.previousElementSibling?.className ?? '',
                 optionsVisibility: getComputedStyle(options.parentElement).visibility };
             })()`, hostBuild));
-            assert(field.inputWidth > 40, 'the permanent search field has room to type');
-            assert.equal(field.inputOpacity, '1');
-            assert.equal(field.optionsVisibility, 'visible', 'view options remain available while searching');
+            assert.equal(field.redirected, 1, 'the host ⌘K focus opens the palette');
+            assert.equal(field.focused, false, 'the hidden field gives its focus up');
+            assert.equal(field.clicked, 1, 'the Search row opens the palette');
+            assert.equal(field.label, 'Search');
+            assert.match(field.previous, /newSession/u, 'the row follows New Session');
+            assert.equal(field.optionsVisibility, 'visible', 'view options remain available');
           }
           if (name === 'flatList' || name === 'noHistory') {
             assert.equal(await devtools.evaluate(aliasHostClasses(`getComputedStyle(document.querySelector('._7514NG_sectionLabel')).display`, hostBuild)), 'none');
@@ -282,18 +295,9 @@ test('the separate browsing toolbar and compact project actions support both bui
           if (name === 'several') {
             const placed = await devtools.evaluate(aliasHostClasses(`(() => {
               const root = document.querySelector('._3WPZCG_root');
-              const slot = document.querySelector('._7514NG_searchSlot');
-              return {
-                marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
-                top: slot.style.getPropertyValue('--ccd-sidebar-search-top'),
-                left: slot.style.getPropertyValue('--ccd-sidebar-search-left'),
-                width: slot.style.getPropertyValue('--ccd-sidebar-search-width'),
-              };
+              return { marked: root.hasAttribute('data-ccd-sidebar-search-placed'), rows: document.querySelectorAll('.ccd-sidebar-search-row').length };
             })()`, hostBuild));
-            assert.equal(placed.marked, true);
-            assert.notEqual(placed.top, '');
-            assert.notEqual(placed.left, '');
-            assert.notEqual(placed.width, '');
+            assert.deepEqual(placed, { marked: true, rows: 1 });
             await devtools.evaluate(aliasHostClasses(
               `document.querySelector('._3WPZCG_root').classList.add('_3WPZCG_collapsed')`,
               hostBuild,
@@ -301,18 +305,9 @@ test('the separate browsing toolbar and compact project actions support both bui
             await devtools.evaluate('new Promise(resolve=>setTimeout(resolve,20))');
             const collapsed = await devtools.evaluate(aliasHostClasses(`(() => {
               const root = document.querySelector('._3WPZCG_root');
-              const slot = document.querySelector('._7514NG_searchSlot');
-              return {
-                marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
-                properties: [
-                  slot.style.getPropertyValue('--ccd-sidebar-search-top'),
-                  slot.style.getPropertyValue('--ccd-sidebar-search-left'),
-                  slot.style.getPropertyValue('--ccd-sidebar-search-width'),
-                ],
-              };
+              return { marked: root.hasAttribute('data-ccd-sidebar-search-placed'), rows: document.querySelectorAll('.ccd-sidebar-search-row').length };
             })()`, hostBuild));
-            assert.equal(collapsed.marked, false, 'the collapsed rail releases the parked search');
-            assert.deepEqual(collapsed.properties, ['', '', '']);
+            assert.deepEqual(collapsed, { marked: false, rows: 0 }, 'the collapsed rail keeps the host’s own search');
             await devtools.evaluate(aliasHostClasses(
               `document.querySelector('._3WPZCG_root').classList.remove('_3WPZCG_collapsed')`,
               hostBuild,
@@ -321,25 +316,19 @@ test('the separate browsing toolbar and compact project actions support both bui
             assert.equal(await devtools.evaluate(aliasHostClasses(
               `document.querySelector('._3WPZCG_root').hasAttribute('data-ccd-sidebar-search-placed')`,
               hostBuild,
-            )), true, 'the search is parked again when the column expands');
+            )), true, 'the Search row returns when the column expands');
           }
           await devtools.evaluate('window.releaseHeader()');
           await devtools.evaluate('window.releaseSearch()');
           if (name !== 'rail') {
             const released = await devtools.evaluate(aliasHostClasses(`(() => {
               const root = document.querySelector('._3WPZCG_root');
-              const slot = document.querySelector('._7514NG_searchSlot');
-              return {
-                marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
-                properties: [
-                  slot.style.getPropertyValue('--ccd-sidebar-search-top'),
-                  slot.style.getPropertyValue('--ccd-sidebar-search-left'),
-                  slot.style.getPropertyValue('--ccd-sidebar-search-width'),
-                ],
-              };
+              const before = window.opens;
+              document.querySelector('._7514NG_searchInput').focus();
+              return { marked: root.hasAttribute('data-ccd-sidebar-search-placed'),
+                rows: document.querySelectorAll('.ccd-sidebar-search-row').length, opens: window.opens - before };
             })()`, hostBuild));
-            assert.equal(released.marked, false, 'release removes the parking marker');
-            assert.deepEqual(released.properties, ['', '', ''], 'release removes every measured property');
+            assert.deepEqual(released, { marked: false, rows: 0, opens: 0 }, 'release removes the row, the marker and the redirect');
           }
         }
       });

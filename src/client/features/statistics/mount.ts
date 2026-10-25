@@ -100,7 +100,11 @@ export function mountStatisticsCard(
         sync();
       },
     });
-    stack.append(card.element);
+    // Keep the card between the native greeting and input when the new-page
+    // layout is disabled. Only our node moves; React retains its own children.
+    const greeting = stack.querySelector<HTMLElement>(selectors.heroRoot);
+    if (greeting?.parentElement === stack) greeting.after(card.element);
+    else stack.prepend(card.element);
     host = stack;
     measure();
   };

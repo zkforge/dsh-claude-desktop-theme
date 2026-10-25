@@ -188,7 +188,9 @@ html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search"] .ccd-schedule-
 html[data-dsh-ccd-style="true"] .ccd-schedule-search-close svg { width: 18px; height: 18px; }
 html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="list"] { grid-column: 1 / -1; grid-row: 4; margin: 0; }
 html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="empty"] {
-  min-height: 246px;
+  /* Let the artwork, copy and action set the height; a minimum leaves unused
+     space below the action before the templates' wave separator. */
+  min-height: 0;
   gap: 0;
   padding: 38px 0 22px;
   justify-content: flex-start;

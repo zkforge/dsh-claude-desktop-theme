@@ -562,73 +562,16 @@ html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-filtered] {
   display: none !important;
 }
 
+html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-workspace-extra][hidden] {
+  display: none !important;
+}
+
 html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-menu-note]:not([hidden]) {
   box-sizing: border-box;
   padding: 2px 8px;
   color: var(--ccd-text-secondary);
   font-size: 12px;
   line-height: 20px;
-}
-
-/* The worktree checkbox shares the row rhythm, with a compact trailing switch. */
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row] {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 24px;
-  padding-block: 2px;
-  border-radius: var(--ccd-table-radius);
-  outline: none;
-  box-shadow: none;
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row]:hover,
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row]:focus-visible {
-  background: var(--ccd-hover);
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-switch] {
-  display: inline-flex;
-  flex: none;
-  box-sizing: border-box;
-  width: 26px;
-  height: 16px;
-  margin-left: auto;
-  padding: 2px;
-  border-radius: 999px;
-  background: var(--dsw-alias-border-l3);
-  transition: background 120ms ease;
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-switch] > span {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--dsw-alias-switch-thumb);
-  transition: transform 120ms ease;
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row][aria-checked="true"] [data-ccd-worktree-switch] {
-  background: var(--ccd-view-menu-accent);
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row][aria-checked="true"] [data-ccd-worktree-switch] > span {
-  transform: translateX(10px);
-  background: var(--dsw-alias-label-primary-foreground);
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-row][aria-disabled="true"] {
-  opacity: .5;
-  cursor: default;
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-status]:not([hidden]) {
-  margin-left: auto;
-  color: var(--ccd-text-secondary);
-  font-size: 12px;
-}
-
-html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-worktree-status]:not([hidden]) + [data-ccd-worktree-switch] {
-  margin-left: 2px;
 }
 
 html[data-dsh-ccd-style="true"] [data-menu-material] [data-ccd-branch-row][aria-disabled="true"] {

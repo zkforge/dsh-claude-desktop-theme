@@ -1,0 +1,208 @@
+/*
+ * Edit sidebar (features/sidebar-editor/SidebarEditor.tsx).
+ *
+ * A panel the dialog unchecked leaves the column: the mark sits on the panel
+ * list's own child, so the list's gap closes behind it and DSH keeps the node.
+ */
+html[data-dsh-ccd-style="true"] [data-ccd-panel-hidden] {
+  display: none !important;
+}
+
+/* The dialog, measured on the reference and scaled to its 14px labels: a
+   410px card with a 16px corner and 16px insets; a 44px heading row carrying
+   the close button; 29px rows of a 20px check, an 18px glyph and the label;
+   a 28px 完成 button on the trailing edge. */
+.ccd-sidebar-editor {
+  box-sizing: border-box;
+  width: min(410px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100vh - 32px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: .5px solid var(--ccd-border);
+  border-radius: 16px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-dialog-shadow);
+  color: var(--ccd-text);
+  font: 400 var(--ccd-font-size-body)/20px var(--ccd-font-ui);
+  pointer-events: auto;
+}
+
+.ccd-sidebar-editor[open] {
+  animation: ccd-sidebar-editor-in 140ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.ccd-sidebar-editor::backdrop {
+  background: var(--ccd-dialog-mask);
+  animation: ccd-sidebar-editor-fade 140ms ease-out;
+}
+
+@keyframes ccd-sidebar-editor-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.985); }
+}
+
+@keyframes ccd-sidebar-editor-fade {
+  from { opacity: 0; }
+}
+
+.ccd-sidebar-editor-surface {
+  padding: 0 16px 16px;
+}
+
+.ccd-sidebar-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin-right: -7px;
+}
+
+.ccd-sidebar-editor-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.ccd-sidebar-editor-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  cursor: pointer;
+}
+
+.ccd-sidebar-editor-close:hover {
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+}
+
+.ccd-sidebar-editor-description {
+  margin: 4px 0 0;
+  color: var(--ccd-text-secondary);
+}
+
+.ccd-sidebar-editor-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ccd-sidebar-editor-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 29px;
+  cursor: pointer;
+}
+
+/* The native box stays the control: focusable, checkable and named by its
+   label, laid exactly over the drawn one so a press anywhere on it lands. */
+.ccd-sidebar-editor-row > input {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ccd-sidebar-editor-box {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--ccd-border-strong);
+  border-radius: 5px;
+  background: var(--ccd-card);
+  color: transparent;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.ccd-sidebar-editor-box svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ccd-sidebar-editor-row > input:checked + .ccd-sidebar-editor-box {
+  border-color: var(--ccd-check-fill);
+  background: var(--ccd-check-fill);
+  color: var(--ccd-check-ink);
+}
+
+.ccd-sidebar-editor-row > input:focus-visible + .ccd-sidebar-editor-box {
+  outline: 2px solid var(--ccd-dialog-focus-ring);
+  outline-offset: 2px;
+}
+
+.ccd-sidebar-editor-glyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--ccd-text-nav);
+}
+
+.ccd-sidebar-editor-glyph > svg {
+  width: 17px;
+  height: 17px;
+  overflow: visible;
+}
+
+.ccd-sidebar-editor-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccd-sidebar-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.ccd-sidebar-editor-done {
+  min-height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  font: 500 var(--ccd-font-size-body)/20px var(--ccd-font-ui);
+  cursor: pointer;
+}
+
+.ccd-sidebar-editor-done:focus-visible,
+.ccd-sidebar-editor-close:focus-visible {
+  outline: 2px solid var(--ccd-dialog-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ccd-sidebar-editor[open],
+  .ccd-sidebar-editor::backdrop {
+    animation: none;
+  }
+
+  .ccd-sidebar-editor-box {
+    transition: none;
+  }
+}

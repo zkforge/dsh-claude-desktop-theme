@@ -10,20 +10,25 @@ export function claudeGreeting(language = ''): string {
 
 /** Add a reversible presentation beside the native heading without taking its React nodes. */
 export function mountHeroGreeting(document: Document, config: PersonalizationConfig): Disposer {
-  if (config.greetingStyle !== 'claude') return () => {};
+  if (config.greetingStyle === 'explore') return () => {};
   const host = hostSelectors(document);
-  const added = new Map<HTMLElement, HTMLElement>();
+  const added = new Map<HTMLElement, HTMLElement | null>();
   const titles = new Map<HTMLElement, HTMLElement>();
   const sync = () => {
     for (const [heading, copy] of added) {
       if (heading.isConnected) continue;
-      copy.remove();
+      copy?.remove();
       heading.removeAttribute('data-ccd-greeting-style');
       added.delete(heading);
       titles.delete(heading);
     }
     const greeting = claudeGreeting(document.documentElement.lang || '');
     for (const heading of document.querySelectorAll<HTMLElement>(host.heroHeadline)) {
+      if (config.greetingStyle === 'none') {
+        heading.setAttribute('data-ccd-greeting-style', 'none');
+        added.set(heading, null);
+        continue;
+      }
       const existing = titles.get(heading);
       if (existing !== undefined) {
         if (existing.textContent !== greeting) existing.textContent = greeting;
@@ -56,7 +61,7 @@ export function mountHeroGreeting(document: Document, config: PersonalizationCon
   return () => {
     observer.disconnect();
     for (const [heading, copy] of added) {
-      copy.remove();
+      copy?.remove();
       heading.removeAttribute('data-ccd-greeting-style');
     }
     added.clear();

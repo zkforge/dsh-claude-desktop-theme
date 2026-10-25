@@ -11,6 +11,7 @@ export function mountReplySignature(
   report: (error: unknown) => void,
   style: PersonalizationConfig['replySignatureStyle'] = 'whale',
 ): Disposer {
+  if (style === 'none') return () => {};
   let mark: HTMLSpanElement | null = null;
   let released = false;
   let pending = false;

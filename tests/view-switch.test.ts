@@ -102,8 +102,8 @@ function fixture(options: FixtureOptions = {}) {
   tabs.querySelector = selector => (selector.includes('tabActive') ? chat : null);
 
   const lookups = new Map<string, FakeElement | null>([
-    ['.ST7X_W_tabs', tabs],
-    ['._6Qf49G_sidebarCol', column],
+    ['.kiGsTW_tabs', tabs],
+    ['.PIRFFq_sidebarCol', column],
   ]);
   if (options.historyRight !== undefined) {
     lookups.set('[data-ccd-navigation-history]', element(box(120, options.historyRight - 120), ''));
@@ -161,7 +161,7 @@ function fixture(options: FixtureOptions = {}) {
     const list = element(box(100, 66), '');
     list.querySelectorAll = () => [nextChat, nextTrajectory];
     list.querySelector = selector => (selector.includes('tabActive') ? nextChat : null);
-    lookups.set('.ST7X_W_tabs', list);
+    lookups.set('.kiGsTW_tabs', list);
     return { list, nextChat, nextTrajectory };
   };
 

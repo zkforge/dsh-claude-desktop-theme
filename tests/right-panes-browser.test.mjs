@@ -48,10 +48,12 @@ const drag = (page, key, delta, { up = true, pointer = 7 } = {}) => page.evaluat
 })()`);
 
 async function bundleAndSheet() {
-  const sheet = (await Promise.all(['src/client/theme/tokens.css', 'src/client/features/shell/shell.css', 'src/client/features/shell/right-panel.css'].map(path => readFile(join(root,path),'utf8')))).join('\n');
+  const sheet = (await Promise.all(['src/client/theme/tokens.css', 'src/client/theme/base.css'].map(path => readFile(join(root,path),'utf8')))).join('\n');
   const bundle = await build({ stdin: { resolveDir: root, contents: `
-import { mountRightPanes } from './src/client/compat/right-panes.ts';
-import { mountFilesPane } from './src/client/compat/files-pane.ts';
+import { mountRightPanel } from './src/client/features/right-panel/mount.ts';
+import { CleanupScope } from './src/client/core/cleanup.ts';
+import { createDomPort } from './src/client/compat/dom.ts';
+import { resolveConfig } from './src/shared/config.ts';
 window.errors=[];window.tabs=[];window.listeners=[];window.calls={float:[],dock:[],open:[],toggle:0};
 window.session=()=>[...document.querySelectorAll('[data-sidebar-right-session]')].find(node=>!node.hidden)?.getAttribute('data-sidebar-right-session');
 window.notify=()=>window.listeners.forEach(listener=>listener());
@@ -79,11 +81,14 @@ const sidebar={close:id=>window.closeTab(id),openTabs:{getSnapshot:()=>window.ta
 };
 document.addEventListener('click',event=>{if(event.target.closest('[data-sidebar-right-toggle]'))sidebar.toggleExpanded()});
 const ctx={inject:(_names,fn)=>({dispose:fn({sidebarRight:sidebar})})};
-window.mount=()=>{
- window.filesRelease=mountFilesPane(document,error=>window.errors.push(String(error)));
- window.release=mountRightPanes(ctx,document,error=>window.errors.push(String(error)));
+window.mount=(features={})=>{
+ const scope=new CleanupScope(error=>window.errors.push(String(error)));
+ mountRightPanel(ctx,{config:resolveConfig({features}),dom:createDomPort(document),
+   logger:{error:(message,error)=>window.errors.push(message+String(error))}},scope);
+ window.filesRelease=()=>{};
+ window.release=()=>scope.dispose();
 };
-` }, bundle:true,write:false,format:'iife' });
+` }, bundle:true,write:false,format:'iife',loader:{'.css':'text'} });
   return { sheet, script:bundle.outputFiles[0].text };
 }
 
@@ -480,3 +485,42 @@ for (const kind of ['files', 'terminal', 'browser']) {
     assert.notEqual(await page.evaluate("getComputedStyle(document.querySelector('[data-dockkit-pane]')).display"),'none','explicitly reopening an empty sidebar restores the guide');
   }));
 }
+
+
+test('right sidebar toggles remove controls and styles together, independent of the left sidebar', options, async () => withFixture(async page => {
+  await page.evaluate("window.add('files','files'); window.add('terminal','terminal')");
+  await wait(page);
+  await page.evaluate("window.nativeTree=document.querySelector('[data-files-root]'); window.nativeTerminal=document.querySelector('[data-dockkit-content=terminal]');");
+  for (const left of [false, true]) {
+    for (const right of [false, true, false, true]) {
+      await page.evaluate(`window.release(); window.mount({sidebar:${left}, 'right-panel':${right}})`);
+      await wait(page);
+      const state = await page.evaluate(`(() => {
+        const filter=document.querySelector('[data-ccd-files-filter]');
+        const folder=document.querySelector('[data-ccd-files-empty-mark] svg');
+        return {
+          filters:document.querySelectorAll('[data-ccd-files-filter]').length,
+          panes:document.querySelectorAll('[data-ccd-pane]').length,
+          sheets:document.querySelectorAll('style[data-plugin]').length,
+          treeUnchanged:window.nativeTree===document.querySelector('[data-files-root]'),
+          terminalUnchanged:window.nativeTerminal===document.querySelector('[data-dockkit-content=terminal]'),
+          searchWidth:filter?.querySelector('svg')?.getBoundingClientRect().width ?? 0,
+          folderWidth:folder?.getBoundingClientRect().width ?? 0,
+          leftovers:document.querySelectorAll('[data-ccd-files-landing], [data-ccd-files-expand], [data-ccd-pane-controls], [data-ccd-pane-seam], [data-ccd-files-empty]').length,
+        };
+      })()`);
+      assert.equal(state.filters, right ? 1 : 0);
+      assert.equal(state.sheets, right ? 2 : 0);
+      assert.equal(state.treeUnchanged, true, 'host file tree is preserved');
+      assert.equal(state.terminalUnchanged, true, 'open terminal is preserved');
+      if (right) {
+        assert.ok(state.panes >= 2);
+        assert.equal(state.searchWidth, 16, 'search SVG keeps its intended size');
+        assert.ok(state.folderWidth <= 28, 'empty-state SVG cannot grow to panel width');
+      } else {
+        assert.equal(state.panes, 0);
+        assert.equal(state.leftovers, 0, 'no unstyled plugin controls survive disable');
+      }
+    }
+  }
+}));

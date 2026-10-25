@@ -85,7 +85,7 @@ test('plugin page preserves host actions and parents across filtering, Discover,
   } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
 });
 
-test('plugin detail keeps breadcrumb above the icon, title, tags and actions row', {
+test('plugin detail keeps the native back action below the title bar and above the header', {
   skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
 }, async () => {
   const bundle = await build({
@@ -114,6 +114,7 @@ test('plugin detail keeps breadcrumb above the icon, title, tags and actions row
         style.textContent='body{margin:0}.host_page{height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:32px;padding:0 48px 48px}.host_page>*{width:100%;max-width:960px}.host_detail{display:flex;flex-direction:column}.host_detailTop{display:flex;flex-direction:column;padding-top:28px}[data-platform=darwin] .host_detailTop{padding-top:calc(28px + 24px)}.host_detailHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:32px 0 0}.host_detailMain{display:flex;flex-direction:column;gap:8px;min-width:0;margin-top:20px}.host_titleRow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}.host_detailTitle{margin:0;font-size:20px;line-height:28px}.host_detailSections{margin-top:32px}.host_detailDesc{margin:0;font-size:14px;line-height:22px}'+${JSON.stringify(css)};
         document.head.append(style);
         window.toggleCount=0;document.querySelector('#toggle').onclick=()=>window.toggleCount++;
+        window.backCount=0;document.querySelector('.host_crumb').onclick=()=>window.backCount++;
         window.parents=Array.from(document.querySelectorAll('#icon,#titleRow,#toggle'),node=>[node,node.parentNode]);
       `);
       await page.evaluate(bundle.outputFiles[0].text);
@@ -121,9 +122,10 @@ test('plugin detail keeps breadcrumb above the icon, title, tags and actions row
         await page.send('Emulation.setDeviceMetricsOverride', { width, height: 932, deviceScaleFactor: 1, mobile: false });
         const layout = await page.evaluate(`(() => {
           const rect=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,center:r.top+r.height/2};};
-          return {crumb:rect('.host_crumb'),current:rect('.ccd-plugin-detail-current'),icon:rect('#icon'),title:rect('#titleRow'),toggle:rect('#toggle'),description:rect('#description'),sections:rect('#sections')};
+          return {crumb:rect('.host_crumb'),icon:rect('#icon'),title:rect('#titleRow'),toggle:rect('#toggle'),description:rect('#description'),sections:rect('#sections')};
         })()`);
-        assert.ok(layout.title.top >= layout.crumb.bottom + 24, JSON.stringify(layout));
+        assert.ok(layout.crumb.top >= 47, JSON.stringify(layout));
+        assert.ok(layout.title.top >= layout.crumb.bottom + 16, JSON.stringify(layout));
         assert.ok(Math.abs(layout.icon.center - layout.title.center) < 1, JSON.stringify(layout));
         assert.ok(Math.abs(layout.toggle.center - layout.title.center) < 1, JSON.stringify(layout));
         assert.ok(layout.title.left >= layout.icon.right, JSON.stringify(layout));
@@ -131,7 +133,11 @@ test('plugin detail keeps breadcrumb above the icon, title, tags and actions row
         assert.ok(layout.description.top >= layout.title.bottom, JSON.stringify(layout));
         assert.ok(layout.sections.top >= layout.description.bottom, JSON.stringify(layout));
       }
-      await page.evaluate('document.querySelector("#toggle").click()');
+      assert.equal(await page.evaluate('document.querySelector(".ccd-plugin-detail-current")'), null);
+      assert.equal(await page.evaluate('document.querySelector(".host_crumb").textContent'), '插件');
+      assert.equal(await page.evaluate('getComputedStyle(document.querySelector(".host_crumbIcon")).display'), 'block');
+      await page.evaluate('document.querySelector(".host_crumb").click();document.querySelector("#toggle").click()');
+      assert.equal(await page.evaluate('window.backCount'), 1);
       assert.equal(await page.evaluate('window.toggleCount'), 1);
       assert.equal(await page.evaluate('parents.every(([node,parent])=>node.parentNode===parent)'), true);
       assert.deepEqual(await page.evaluate('pluginErrors'), []);

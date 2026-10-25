@@ -8,6 +8,12 @@
  *
  * Host classes are pinned in src/client/compat/host-dom.ts.
  */
+html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] {
+  --ccd-hero-seat-position: static;
+  --ccd-hero-stats-position: absolute;
+  --ccd-hero-stats-margin: 0;
+}
+
 html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_scrollBody {
   justify-content: flex-start;
 }
@@ -97,6 +103,9 @@ html[data-dsh-ccd-style="true"] .ccd-hero-ripples-titlebar {
 }
 
 /* The original React heading stays in place for instant restoration. */
+html[data-dsh-ccd-style="true"] [data-ccd-greeting-style="none"] {
+  display: none;
+}
 html[data-dsh-ccd-style="true"] [data-ccd-greeting-style="claude"] > :not([data-ccd-greeting]) {
   display: none;
 }

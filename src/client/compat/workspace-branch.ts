@@ -166,6 +166,8 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   let stale = false;
 
   const render = () => {
+    // Both Git controls share this group, including its separator.
+    group.hidden = view?.state === 'not-repo';
     const ready = view?.state === 'ready' && view.current !== null && (choice?.enabled() ?? false);
     value.textContent = stale ? copy.restart : view === undefined ? copy.loading
       : view.state === 'ready' ? (choice?.selected() ?? view.current ?? '—') : copy.states[view.state];

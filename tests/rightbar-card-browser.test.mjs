@@ -180,8 +180,8 @@ test('the right panel is a floating card at every size, over the host’s own tr
 }, async () => {
   const styles = (await Promise.all([
     'src/client/theme/tokens.css',
-    'src/client/features/shell/shell.css',
-    'src/client/features/shell/right-panel.css',
+    'src/client/theme/base.css', 'src/client/features/right-panel/frame.css',
+    'src/client/features/right-panel/right-panel.css',
   ].map(path => readFile(join(root, path), 'utf8')))).join('\n');
 
   for (const buildInfo of [PINNED_BUILD, WINDOWS_BUILD]) {

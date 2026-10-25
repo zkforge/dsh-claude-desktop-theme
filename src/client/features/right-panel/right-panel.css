@@ -2,8 +2,8 @@
  * The right panel's interior: the card's header line, the split hairline and
  * the Files tree (DESIGN.md §6.9).
  *
- * The card itself — its inset, surface, outline and shadow — is in `shell.css`,
- * which owns the frame's columns; this sheet dresses what the panel draws
+ * The card itself — its inset, surface, outline and shadow — is in `frame.css`,
+ * which owns the panel's card geometry; this sheet dresses what the panel draws
  * inside it. Everything here speaks the DockKit and Files packages' own stable
  * data hooks rather than their hashed class names (`compat/host-dom.ts` pins
  * each one), and every number is measured off the reference at @2x: its Files

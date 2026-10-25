@@ -9,7 +9,7 @@
  * label.
  */
 export const FEATURE_IDS = [
-  'shell', 'sidebar', 'new-session', 'conversation', 'tool-calls', 'statistics', 'composer-pet',
+  'sidebar', 'right-panel', 'new-session', 'conversation', 'tool-calls', 'statistics', 'composer-pet',
   'composer-stats', 'context-panel', 'hero-ripples',
 ] as const;
 
@@ -32,10 +32,10 @@ export type FontsConfig = Readonly<Record<FontField, string>>;
 export type ViewConfig = Readonly<Record<ViewField, boolean>>;
 
 export interface PersonalizationConfig {
-  readonly petStyle: 'whale' | 'claude';
+  readonly petStyle: 'whale' | 'claude' | 'none';
   readonly runningStyle: 'whale' | 'claude';
-  readonly replySignatureStyle: 'whale' | 'claude';
-  readonly greetingStyle: 'explore' | 'claude';
+  readonly replySignatureStyle: 'whale' | 'claude' | 'none';
+  readonly greetingStyle: 'explore' | 'claude' | 'none';
   readonly greetingName: string;
 }
 export const DEFAULT_PERSONALIZATION: PersonalizationConfig = Object.freeze({
@@ -51,18 +51,18 @@ function personalization(input: Partial<Record<keyof PersonalizationConfig, unkn
   const runningStyle = input.runningStyle ?? DEFAULT_PERSONALIZATION.runningStyle;
   const replySignatureStyle = input.replySignatureStyle ?? DEFAULT_PERSONALIZATION.replySignatureStyle;
   const greetingStyle = input.greetingStyle ?? DEFAULT_PERSONALIZATION.greetingStyle;
-  if (strict && petStyle !== 'whale' && petStyle !== 'claude') throw new TypeError('personalization.petStyle is invalid');
+  if (strict && petStyle !== 'whale' && petStyle !== 'claude' && petStyle !== 'none') throw new TypeError('personalization.petStyle is invalid');
   if (strict && runningStyle !== 'whale' && runningStyle !== 'claude') throw new TypeError('personalization.runningStyle is invalid');
-  if (strict && replySignatureStyle !== 'whale' && replySignatureStyle !== 'claude') throw new TypeError('personalization.replySignatureStyle is invalid');
-  if (strict && greetingStyle !== 'explore' && greetingStyle !== 'claude') throw new TypeError('personalization.greetingStyle is invalid');
+  if (strict && replySignatureStyle !== 'whale' && replySignatureStyle !== 'claude' && replySignatureStyle !== 'none') throw new TypeError('personalization.replySignatureStyle is invalid');
+  if (strict && greetingStyle !== 'explore' && greetingStyle !== 'claude' && greetingStyle !== 'none') throw new TypeError('personalization.greetingStyle is invalid');
   if (strict && input.greetingName !== undefined && typeof input.greetingName !== 'string') {
     throw new TypeError('personalization.greetingName must be a string');
   }
   return Object.freeze({
-    petStyle: petStyle === 'whale' || petStyle === 'claude' ? petStyle : DEFAULT_PERSONALIZATION.petStyle,
+    petStyle: petStyle === 'whale' || petStyle === 'claude' || petStyle === 'none' ? petStyle : DEFAULT_PERSONALIZATION.petStyle,
     runningStyle: runningStyle === 'whale' || runningStyle === 'claude' ? runningStyle : DEFAULT_PERSONALIZATION.runningStyle,
-    replySignatureStyle: replySignatureStyle === 'whale' || replySignatureStyle === 'claude' ? replySignatureStyle : DEFAULT_PERSONALIZATION.replySignatureStyle,
-    greetingStyle: greetingStyle === 'explore' || greetingStyle === 'claude' ? greetingStyle : DEFAULT_PERSONALIZATION.greetingStyle,
+    replySignatureStyle: replySignatureStyle === 'whale' || replySignatureStyle === 'claude' || replySignatureStyle === 'none' ? replySignatureStyle : DEFAULT_PERSONALIZATION.replySignatureStyle,
+    greetingStyle: greetingStyle === 'explore' || greetingStyle === 'claude' || greetingStyle === 'none' ? greetingStyle : DEFAULT_PERSONALIZATION.greetingStyle,
     greetingName: normalizeGreetingName(input.greetingName),
   });
 }
@@ -88,8 +88,8 @@ export interface StyleOptions {
 }
 
 export const DEFAULT_FEATURES: FeatureFlags = Object.freeze({
-  shell: true,
   sidebar: true,
+  'right-panel': true,
   'new-session': true,
   conversation: true,
   'tool-calls': true,

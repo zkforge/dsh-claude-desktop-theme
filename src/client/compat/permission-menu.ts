@@ -128,6 +128,8 @@ function mountChoiceMenu(
   const descriptionAttribute = agent ? 'data-ccd-agent-desc' : 'data-ccd-permission-desc';
   const headingAttribute = agent ? 'data-ccd-agent-heading' : 'data-ccd-permission-heading';
   const shortcutAttribute = agent ? 'data-ccd-agent-shortcut' : 'data-ccd-permission-shortcut';
+  const agentRows = (card: HTMLElement) =>
+    [...card.querySelectorAll<HTMLButtonElement>(`[${modeAttribute}]`)].filter(row => !row.hidden);
   const drawn: Drawn[] = [];
   const added: HTMLElement[] = [];
   const marked: HTMLElement[] = [];
@@ -319,7 +321,16 @@ function mountChoiceMenu(
        scan off the streaming transcript's mutation traffic. */
     if (document.querySelector(host.menu) === null) return;
     for (const row of document.querySelectorAll<HTMLElement>(host.menuItem)) drawRow(row);
-    if (agent) return;
+    if (agent) {
+      for (const card of document.querySelectorAll<HTMLElement>(`[${menuAttribute}]`)) {
+        agentRows(card).forEach((row, index) => {
+          const shortcut = row.querySelector<HTMLElement>(`:scope > [${shortcutAttribute}]`);
+          const number = String(index + 1);
+          if (shortcut && shortcut.textContent !== number) shortcut.textContent = number;
+        });
+      }
+      return;
+    }
     for (const card of document.querySelectorAll<HTMLElement>(`[${menuAttribute}]`)) {
       const viewport = card.querySelector<HTMLElement>(host.menuViewport);
       if (viewport === null) continue;
@@ -379,8 +390,9 @@ function mountChoiceMenu(
     if (card === null) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
-    const row = card.querySelector<HTMLButtonElement>(`[${modeAttribute}="${preset.value}"]`);
-    if (row === null || row.hidden || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
+    const row = agent ? agentRows(card)[index]
+      : card.querySelector<HTMLButtonElement>(`[${modeAttribute}="${preset.value}"]`);
+    if (!row || row.hidden || row.disabled || row.getAttribute('aria-disabled') === 'true') return;
     event.preventDefault();
     event.stopPropagation();
     row.click();

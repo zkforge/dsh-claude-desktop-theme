@@ -3,7 +3,7 @@ import type { MouseEvent, ReactElement } from 'react';
 import type {
   ConfigFormPort, SettingsPathOp, ThemePreference, ThemePreferencePort,
 } from '../../contracts/ports.ts';
-import { adoptConfig, APPEARANCE_FIELDS } from '../../../shared/config.ts';
+import { adoptConfig, APPEARANCE_FIELDS, DEFAULT_FONTS } from '../../../shared/config.ts';
 import type { AppearanceField, FeatureId, FontField } from '../../../shared/config.ts';
 import { hostBuildStatus } from '../../compat/host-builds.ts';
 import { commitColour, commitFont, setOperation, unsetOperation } from './edits.ts';
@@ -61,8 +61,8 @@ const THEME_KEYS: Record<ThemePreference, SettingsKey> = {
 
 /** Switches the page offers, in row order. */
 const OFFERED_FEATURES: readonly FeatureId[] = [
-  'shell',
   'sidebar',
+  'right-panel',
   'new-session',
   'hero-ripples',
   'conversation',
@@ -74,8 +74,8 @@ const OFFERED_FEATURES: readonly FeatureId[] = [
 ];
 
 const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
-  shell: 'feature.shell',
   sidebar: 'feature.sidebar',
+  'right-panel': 'feature.right-panel',
   'new-session': 'feature.new-session',
   'hero-ripples': 'feature.hero-ripples',
   conversation: 'feature.conversation',
@@ -87,12 +87,19 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
 };
 
 /**
- * Rows whose label alone does not say what the switch draws. The readouts are
- * the one such row: "statistics readouts" names a place in the row, not the two
- * numbers it puts there.
+ * One description per module row: the label names the module, the description
+ * says what the switch draws and whether it starts on, the way each row of the
+ * reference settings page carries a line under its title.
  */
-const FEATURE_HINTS: Partial<Record<FeatureId, SettingsKey>> = {
+const FEATURE_HINTS: Record<FeatureId, SettingsKey> = {
+  sidebar: 'hint.sidebar',
+  'right-panel': 'hint.right-panel',
+  'new-session': 'hint.new-session',
   'hero-ripples': 'hint.hero-ripples',
+  conversation: 'hint.conversation',
+  'tool-calls': 'hint.tool-calls',
+  statistics: 'hint.statistics',
+  'composer-pet': 'hint.composer-pet',
   'composer-stats': 'hint.composer-stats',
   'context-panel': 'hint.context-panel',
 };
@@ -239,26 +246,23 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
 
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.features')}</h4>
-        {OFFERED_FEATURES.map(id => {
-          const hint = FEATURE_HINTS[id];
-          return (
-            <SwitchRow
-              key={id}
-              id={`ccd-settings-feature-${id}`}
-              label={translate(FEATURE_KEYS[id])}
-              {...(hint === undefined ? {} : { hint: translate(hint) })}
-              checked={served.features[id]}
-              onChange={value => void write([setOperation(['features', id], value)])}
-            />
-          );
-        })}
+        {OFFERED_FEATURES.map(id => (
+          <SwitchRow
+            key={id}
+            id={`ccd-settings-feature-${id}`}
+            label={translate(FEATURE_KEYS[id])}
+            hint={translate(FEATURE_HINTS[id])}
+            checked={served.features[id]}
+            onChange={value => void write([setOperation(['features', id], value)])}
+          />
+        ))}
       </section>
 
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.personalization')}</h4>
         <ChoiceRow id="ccd-settings-pet-style" label={translate('field.petStyle')}
           value={served.personalization.petStyle}
-          options={[{ value: 'whale', label: translate('pet.whale') }, { value: 'claude', label: translate('pet.claude') }]}
+          options={[{ value: 'none', label: translate('style.none') }, { value: 'whale', label: translate('pet.whale') }, { value: 'claude', label: translate('pet.claude') }]}
           onChange={value => void write([setOperation(['personalization', 'petStyle'], value)])} />
         <ChoiceRow id="ccd-settings-running-style" label={translate('field.runningStyle')}
           value={served.personalization.runningStyle}
@@ -266,11 +270,11 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
           onChange={value => void write([setOperation(['personalization', 'runningStyle'], value)])} />
         <ChoiceRow id="ccd-settings-reply-signature-style" label={translate('field.replySignatureStyle')}
           value={served.personalization.replySignatureStyle}
-          options={[{ value: 'whale', label: translate('signature.whale') }, { value: 'claude', label: translate('signature.claude') }]}
+          options={[{ value: 'none', label: translate('style.none') }, { value: 'whale', label: translate('signature.whale') }, { value: 'claude', label: translate('signature.claude') }]}
           onChange={value => void write([setOperation(['personalization', 'replySignatureStyle'], value)])} />
         <ChoiceRow id="ccd-settings-greeting-style" label={translate('field.greetingStyle')}
           value={served.personalization.greetingStyle}
-          options={[{ value: 'explore', label: translate('greeting.explore') }, { value: 'claude', label: translate('greeting.claude') }]}
+          options={[{ value: 'none', label: translate('style.none') }, { value: 'explore', label: translate('greeting.explore') }, { value: 'claude', label: translate('greeting.claude') }]}
           onChange={value => void write([setOperation(['personalization', 'greetingStyle'], value)])} />
         <p className="ccd-settings-note">{translate('hint.personalization')}</p>
       </section>
@@ -295,15 +299,23 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
               label={translate(COLOUR_LABELS[field])}
               value={textOf(field, served.appearance[field])}
               placeholder={translate(field === 'canvas' ? 'placeholder.canvas' : 'placeholder.sidebar')}
-              resetLabel={translate('action.reset')}
+              pickerLabels={{ plane: translate('picker.colourPlane'), hue: translate('picker.hue') }}
               {...(failure === undefined ? {} : { error: translate(failure) })}
-              onChange={text => { edit(field, text); clearError(field); }}
-              onCommit={() => settleColour(field)}
-              onReset={() => {
-                setEditing(null);
+              onChange={text => {
+                edit(field, text);
                 clearError(field);
-                void write([unsetOperation(['appearance', field])]);
+                if (text.trim() === '') {
+                  const result = commitColour(['appearance', field], text, served.appearance[field]);
+                  void write(result.op === undefined ? [] : [result.op]).then(accepted => {
+                    if (accepted) setEditing(current => current?.key === field && current.text.trim() === '' ? null : current);
+                  });
+                }
               }}
+              onCommit={() => {
+                // Empty edits already restore the default in onChange.
+                if (textOf(field, served.appearance[field]).trim() !== '') settleColour(field);
+              }}
+              onSelect={colour => settleColour(field, colour)}
             />
           );
         })}
@@ -365,6 +377,7 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
               placeholder={translate('placeholder.font')}
               resetLabel={translate('action.reset')}
               {...(failure === undefined ? {} : { error: translate(failure) })}
+              customized={served.fonts[field] !== DEFAULT_FONTS[field]}
               anchor={menu?.field === field ? menu.anchor : undefined}
               families={fontFamilies}
               menuLabels={{

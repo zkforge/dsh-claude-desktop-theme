@@ -67,7 +67,7 @@ export const HOST = Object.freeze({
    * inline (the resolved width, or `100vw` in full screen). Its
    * `data-sidebar-right-panel` (`push` / `fullscreen`) and
    * `data-sidebar-right-open` are the package's own stable hooks, so the card
-   * `shell.css` paints on it survives a build whose classes were rehashed; this
+   * `features/right-panel/frame.css` paints on it survives a build whose classes were rehashed; this
    * plugin authors no selector for the panel's hashed class.
    */
   rightbarPanel: '[data-sidebar-right-panel]',
@@ -79,7 +79,7 @@ export const HOST = Object.freeze({
    * on, `pane` a dock column that would otherwise paint the canvas over it,
    * `strip` the tab strip (the card's header row), `divider` the hairline
    * between two columns, `empty` a column no tab has claimed. Only
-   * `features/shell/right-panel.css` reads them.
+   * `features/right-panel/right-panel.css` reads them.
    */
   dockSurface: '[data-dockkit-surface]',
   dockPane: '[data-dockkit-pane]',
@@ -146,6 +146,8 @@ export const HOST = Object.freeze({
   sidebarPanelRow: '._3WPZCG_panelRow',
   sidebarPanelTitle: '._3WPZCG_panelTitle',
   sidebarPanelGlyph: '._3WPZCG_panelGlyph',
+  /** SidebarRoot.module.css: the panel list's More card (`PanelMoreMenu`). */
+  sidebarMoreMenu: '._3WPZCG_moreMenu',
   sidebarRegionArea: '._3WPZCG_regionArea',
   sidebarFootArea: '._3WPZCG_footArea',
   sidebarSettingsArea: '._3WPZCG_settingsArea',
@@ -348,6 +350,13 @@ export const HOST = Object.freeze({
       no entry in `host-builds.ts` — the same fact `tokens.css` records for the
       primitive's check mark. */
   menuItemLabel: '._itemLabel_4ub78_190',
+  /** Menu.module.css: `MenuItemButton`'s wrap, its button and the separator a
+      wrap may lead with — the markup the plugin's own rows in a host menu
+      repeat (`features/sidebar-editor/MoreCardRows.tsx`), so the card's
+      keyboard walk and every popup rule reach them as host rows. */
+  menuItemWrap: '._itemWrap_4ub78_90',
+  menuItemButton: '._item_4ub78_90',
+  menuSeparator: '._separator_4ub78_80',
   /** Menu.module.css: the trailing mark a *selected* row draws — `Menu` renders
       it only for the row whose id is in `selectedIds`, so its presence is how
       `compat/view-options.ts` reads which option is current. */
@@ -464,6 +473,25 @@ function resolveTable<T extends Record<string, string>>(
  */
 export function hostSelectors(document: Document): HostSelectors {
   return resolveTable(HOST, detectHostBuild(document), selectorTables);
+}
+
+export interface MenuRowClasses {
+  readonly itemWrap: string;
+  readonly item: string;
+  readonly itemLabel: string;
+  readonly separator: string;
+}
+
+/** The `Menu` primitive's row classes, for rows this plugin renders into a host menu. */
+export function menuRowClasses(document: Document): MenuRowClasses {
+  const host = hostSelectors(document);
+  const name = (selector: string) => selector.slice(1);
+  return {
+    itemWrap: name(host.menuItemWrap),
+    item: name(host.menuItemButton),
+    itemLabel: name(host.menuItemLabel),
+    separator: name(host.menuSeparator),
+  };
 }
 
 /** The anchors of this document's build; see {@link hostSelectors}. */

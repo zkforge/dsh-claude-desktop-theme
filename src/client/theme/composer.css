@@ -896,7 +896,13 @@ html[data-dsh-ccd-style="true"] .y0jqnG_trigger {
    Overlay its native row on the status line and reserve its width in tools.
    Keep this stack unpositioned: positioning it changes the containing block
    of the absolute hero greeting and can place that content over the editor.
-   The workspace row anchors to the host's positioned composer seat instead. */
+   The workspace row anchors to the composer seat instead. With the native
+   centred greeting, the seat must supply that anchor itself; the new-session
+   layout releases it so its lifted greeting and statistics use the body. */
+html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_composerSeat {
+  position: var(--ccd-hero-seat-position, relative);
+}
+
 html[data-dsh-ccd-style="true"] .ST7X_W_composerHero {
   /* The row is measured as a whole; each chip keeps its own content width. */
   --ccd-workspace-seat: 280px;
@@ -1052,6 +1058,59 @@ html[data-dsh-ccd-style="true"] .bocITq_workspace::before {
   height: 16px;
   background-color: currentColor;
   mask: var(--ccd-icon-folder) center / 14px 14px no-repeat;
+}
+
+/* The worktree toggle sits beside the folder chip in the same geometry; once
+   on it reads as a pressed accent chip, as in the reference. */
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip] {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  height: var(--ccd-chip-height);
+  padding: 0 var(--ccd-hero-control-padding, var(--ccd-chip-padding-inline));
+  border: 0;
+  border-radius: var(--ccd-chip-radius);
+  background: transparent;
+  color: var(--ccd-text-strong);
+  font-family: var(--ccd-font-ui);
+  font-size: var(--ccd-font-size-muted);
+  font-weight: 400;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip][hidden] {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip]::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask: var(--ccd-icon-branch) center / 14px 14px no-repeat;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip]:hover:not([aria-disabled="true"]) {
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip][aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ccd-view-menu-accent) 14%, transparent);
+  color: var(--ccd-view-menu-accent);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip][aria-pressed="true"]:hover {
+  background: color-mix(in srgb, var(--ccd-view-menu-accent) 20%, transparent);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-worktree-chip][aria-disabled="true"] {
+  opacity: .5;
+  cursor: default;
 }
 
 /* The preset chip is text-only; its label already identifies the mode. */

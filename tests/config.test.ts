@@ -107,3 +107,23 @@ test('model icons default on, preserve explicit choices and reject invalid write
   assert.equal(adoptConfig({ view: { showModelIcons: 'false' } }).view.showModelIcons, true);
   assert.throws(() => resolveConfig({ view: { showModelIcons: 'false' } }), /view.showModelIcons/);
 });
+
+
+test('left and right sidebar switches remain independent', () => {
+  for (const sidebar of [false, true]) {
+    for (const right of [false, true]) {
+      const options = { features: { sidebar, 'right-panel': right } };
+      for (const config of [resolveConfig(options), adoptConfig(options)]) {
+        assert.equal(config.features.sidebar, sidebar);
+        assert.equal(config.features['right-panel'], right);
+      }
+    }
+  }
+});
+
+test('legacy window-frame flags are ignored after merging base styles into the theme', () => {
+  const config = adoptConfig({ features: { shell: false } });
+  assert.equal('shell' in config.features, false);
+  assert.equal(config.features.sidebar, true);
+  assert.equal(config.features['right-panel'], true);
+});

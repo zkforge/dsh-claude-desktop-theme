@@ -41,7 +41,7 @@ export interface Palette {
  */
 export const BUILT_IN_SURFACES = Object.freeze({
   canvas: '#fcfcfb',
-  sidebar: '#fbfbf9',
+  sidebar: '#fcfcfb',
   border: '#e3e3e1',
 });
 

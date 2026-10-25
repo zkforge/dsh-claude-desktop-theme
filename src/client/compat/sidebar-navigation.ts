@@ -5,19 +5,38 @@ export interface SidebarNavigationIcons {
   readonly newSession: string;
   readonly plugins: string;
   readonly routines: string;
+  readonly more: string;
+  readonly theme: string;
 }
 
 type Kind = keyof SidebarNavigationIcons;
+type Renamed = 'newSession' | 'plugins' | 'routines';
 export const SIDEBAR_NAV_ATTRIBUTE = 'data-ccd-nav';
+/** Marks the glyph this plugin's own Theme panel draws, so its row is known by
+    what it renders rather than by a label another panel could share. */
+export const THEME_PANEL_GLYPH_ATTRIBUTE = 'data-ccd-theme-glyph';
 
 /** Native PanelRow exposes its identity only through its localized name.
  * Source: ui-sidebar/SidebarRoot.tsx, ui-plugin-manager and ui-schedule locales.
  * Unknown/third-party panels keep their own glyphs and labels. */
-function panelKind(name: string): Kind | null {
+function panelKind(name: string): 'plugins' | 'routines' | null {
   if (name === '插件' || name === 'Plugins' || name === '自定义' || name === 'Customize') return 'plugins';
   if (name === '自动化任务' || name === 'Automation tasks' || name === '定时任务' || name === 'Scheduled tasks'
     || name === '例程' || name === 'Routines') return 'routines';
   return null;
+}
+
+const navigationCopy = (document: Document): Readonly<Record<Renamed, string>> => (
+  document.documentElement.lang || globalThis.navigator?.language || ''
+).toLowerCase().startsWith('zh')
+  ? { newSession: '新建', plugins: '自定义', routines: '定时任务' }
+  : { newSession: 'New session', plugins: 'Customize', routines: 'Scheduled tasks' };
+
+/** The name a panel row shows once this module has renamed it: 插件 reads 自定义
+    and 自动化任务 reads 定时任务, every other panel keeps its own label. */
+export function panelDisplayName(document: Document, name: string): string {
+  const kind = panelKind(name);
+  return kind === null ? name : navigationCopy(document)[kind];
 }
 
 /** Rename and decorate the native buttons without replacing React-owned nodes
@@ -32,10 +51,6 @@ export function mountSidebarNavigation(
   let root: HTMLElement | null = null;
   let observer: MutationObserver | undefined;
   let language: MutationObserver | undefined;
-
-  const copy = () => (document.documentElement.lang || globalThis.navigator?.language || '').toLowerCase().startsWith('zh')
-    ? { newSession: '新建', plugins: '自定义', routines: '定时任务' }
-    : { newSession: 'New session', plugins: 'Customize', routines: 'Scheduled tasks' };
 
   const attribute = (element: Element, name: string, value: string) => {
     const current = element.getAttribute(name);
@@ -81,7 +96,7 @@ export function mountSidebarNavigation(
   const sync = () => {
     const host = hostSelectors(document);
     root = document.querySelector<HTMLElement>(host.sidebarRoot);
-    const names = copy();
+    const names = navigationCopy(document);
     const button = root?.querySelector<HTMLElement>(host.sidebarNewSession);
     if (button) {
       decorate(button, button.querySelector(host.sidebarNewSessionContent), 'newSession');
@@ -89,6 +104,16 @@ export function mountSidebarNavigation(
       attribute(button, 'aria-label', names.newSession);
     }
     for (const row of root?.querySelectorAll<HTMLElement>(host.sidebarPanelRow) ?? []) {
+      /* PanelMoreMenu's launcher is a panel row too; it keeps the host's word
+         and trades the apps glyph for the reference's three dots. */
+      if (row.getAttribute('aria-haspopup') === 'menu') {
+        decorate(row, row.querySelector(host.sidebarPanelGlyph), 'more');
+        continue;
+      }
+      if (row.querySelector(`[${THEME_PANEL_GLYPH_ATTRIBUTE}]`)) {
+        decorate(row, row.querySelector(host.sidebarPanelGlyph), 'theme');
+        continue;
+      }
       const kind = panelKind(row.getAttribute('aria-label') ?? row.querySelector(host.sidebarPanelTitle)?.textContent?.trim() ?? '');
       if (!kind) continue;
       decorate(row, row.querySelector(host.sidebarPanelGlyph), kind);

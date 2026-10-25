@@ -1,3 +1,14 @@
+/* Flat, neutral sidebar column: no gradient, no blue cast. The divider is a
+   0.5px hairline: the native edge measures one physical pixel at @2x, and a
+   full 1px reads twice as heavy on a retina screen. Non-retina displays snap
+   the half pixel back up to 1px. */
+html[data-dsh-ccd-style="true"][data-platform="darwin"] ._6Qf49G_sidebarCol,
+html[data-dsh-ccd-style="true"] ._6Qf49G_sidebarCol {
+  background: var(--ccd-sidebar);
+  border-right: 0.5px solid var(--ccd-border);
+}
+
+
 /*
  * Sidebar: compact navigation column.
  *
@@ -180,14 +191,6 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] ._3WPZCG_root:not(._3WPZ
   font-weight: 400;
 }
 
-/* Search moves above New Session without leaving React's tree: New Session
-   opens the row's worth of flow, and `compat/sidebar-search.ts` paints the host
-   field over that gap. The gap follows the brand row automatically. */
-html[data-dsh-ccd-style="true"]
-  ._3WPZCG_root:not(._3WPZCG_collapsed)[data-ccd-sidebar-search-placed] ._3WPZCG_newSession {
-  margin-top: calc(var(--ccd-nav-row-height) + 5px);
-}
-
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSession:hover,
 html[data-dsh-ccd-style="true"][data-platform="darwin"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSession:hover {
   background: var(--ccd-hover);
@@ -341,74 +344,87 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_s
   overflow: visible;
 }
 
-/* Keep this toolbar for View options only; the search field sits above New
-   Session while the host retains ownership of its heading node. */
+/* Keep this toolbar for View options only; Search is a navigation row below
+   New Session while the host retains ownership of its heading node. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionLabel {
   display: none;
 }
 
+/* The host's field leaves the toolbar while the Search row stands in for it,
+   but stays focusable: the host's ⌘K focuses it, and `compat/sidebar-search.ts`
+   turns that focus into opening the palette. `visibility` would make it
+   unfocusable, so it is clipped to nothing instead. */
 html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_searchSlot {
   position: fixed;
-  top: var(--ccd-sidebar-search-top);
-  left: var(--ccd-sidebar-search-left);
-  z-index: 2;
-  flex: none;
-  width: var(--ccd-sidebar-search-width);
-  height: var(--ccd-nav-row-height);
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
   max-width: none;
   margin: 0;
   padding: 0;
-  transition: none;
+  overflow: hidden;
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
 }
 
-html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_search {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0 4px;
-  border: 1px solid var(--ccd-border);
+/* Search: the plugin's own row between New Session and the panel list, on the
+   same 26px pitch, 8px inset, 16px glyph seat and 8px gap as the panel rows. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .ccd-sidebar-search-row {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: var(--ccd-nav-row-height);
+  margin: 0 0 var(--ccd-nav-gap);
+  padding: 0 8px;
+  border: 0;
   border-radius: var(--ccd-radius-row);
-  background: var(--ccd-card);
-  box-shadow: var(--ccd-shadow-card);
-  color: var(--ccd-text-muted);
-  transition: none;
+  background: transparent;
+  color: var(--ccd-text-nav);
+  font: inherit;
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
 }
 
-html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_search:focus-within {
-  border-color: var(--ccd-border-strong);
-}
-
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchInput {
-  width: 0;
-  min-width: 0;
-  margin-left: 2px;
-  opacity: 1;
-  pointer-events: auto;
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .ccd-sidebar-search-row:hover {
+  background: var(--ccd-hover);
   color: var(--ccd-text);
-  font-family: inherit;
-  font-size: 13px;
 }
 
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_searchInput::placeholder {
-  color: var(--ccd-text-muted);
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .ccd-sidebar-search-row[aria-expanded="true"] {
+  background: var(--ccd-selected);
+  color: var(--ccd-text);
 }
 
-/* The persistent search field does not need the host's clear/collapse action. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root[data-ccd-sidebar-search-placed] ._7514NG_clearButton {
-  display: none;
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .ccd-sidebar-search-row:focus-visible {
+  outline: 1px solid var(--ccd-accent);
+  outline-offset: -1px;
 }
 
+html[data-dsh-ccd-style="true"] .ccd-sidebar-search-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Like New Session's shortcut, the binding shows on hover and keyboard focus. */
 html[data-dsh-ccd-style="true"] .ccd-sidebar-search-shortcut {
   display: inline-flex;
   flex: none;
   gap: 3px;
-  margin-left: 4px;
   opacity: 0;
   pointer-events: none;
   color: var(--ccd-text-muted);
 }
 
-html[data-dsh-ccd-style="true"] ._7514NG_search:is(:hover, :focus-within) .ccd-sidebar-search-shortcut {
+html[data-dsh-ccd-style="true"] .ccd-sidebar-search-row:is(:hover, :focus-visible) .ccd-sidebar-search-shortcut {
   opacity: 1;
 }
 
@@ -1362,4 +1378,13 @@ html[data-dsh-ccd-style="true"] .ccd-status-children button:hover {
 html[data-dsh-ccd-style="true"] :is(.ccd-status-children button, [data-ccd-status-order]):focus-visible {
   outline: 1px solid var(--ccd-accent);
   outline-offset: -1px;
+}
+/* The panel list's More card opens beside its row (compat/sidebar-more-menu.ts)
+   and fits its rows instead of the host's 288px column. */
+html[data-dsh-ccd-style="true"] [data-ccd-sidebar-more-menu] {
+  left: var(--ccd-sidebar-more-left) !important;
+  top: var(--ccd-sidebar-more-top) !important;
+  width: max-content;
+  min-width: 0;
+  max-width: min(288px, calc(100vw - 24px));
 }

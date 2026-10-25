@@ -29,11 +29,11 @@ const hostCss = `html,body{margin:0;font:13px/20px sans-serif}
 ._item_4ub78_90{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:2px 8px;text-align:left}
 ._footer_4ub78_62{border-top:.5px solid #ddd;margin-top:4px;padding-top:4px}`;
 
-test('Claude worktree toggle gates base selection; chip pointerdown then click closes the menu', { skip: !chrome, timeout: 60000 }, async () => {
+test('Claude worktree chip beside the folder gates base selection; chip pointerdown then click closes the menu', { skip: !chrome, timeout: 60000 }, async () => {
   const bundle = await build({
     stdin: { contents: `import { mountWorkspaceMenu } from './src/client/compat/workspace-menu.ts';
-      import { WorktreeChoices } from './src/client/compat/workspace-worktree.ts';
-      window.mount = mountWorkspaceMenu; window.Choices = WorktreeChoices;`, resolveDir: root },
+      import { mountWorktreeChip, WorktreeChoices } from './src/client/compat/workspace-worktree.ts';
+      window.mount = mountWorkspaceMenu; window.mountChip = mountWorktreeChip; window.Choices = WorktreeChoices;`, resolveDir: root },
     bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2022',
   });
   const profile = await mkdtemp(join(tmpdir(), 'ccd-worktree-menu-'));
@@ -41,17 +41,18 @@ test('Claude worktree toggle gates base selection; chip pointerdown then click c
     await withPage({ url: 'about:blank', width: 720, height: 520, scale: 1, profile }, async page => {
       await page.evaluate(`document.documentElement.setAttribute('data-dsh-ccd-style', 'true'); document.documentElement.lang = 'zh-CN';
         const style = document.createElement('style'); style.textContent = ${JSON.stringify(hostCss + css)}; document.head.append(style);
-        document.body.innerHTML = '<button class="bocITq_workspace" aria-expanded="false">project</button>';
-        window.calls = []; window.errors = []; window.posts = []; window.missing = false;
+        document.body.innerHTML = '<div class="ST7X_W_heroWorkspaceRow"><button class="bocITq_workspace" aria-expanded="false">project</button></div>';
+        window.calls = []; window.errors = []; window.posts = []; window.missing = false; window.notRepo = false; window.worktreeState = 'ready';
         window.fetch = async (url, init) => {
           if (init?.method === 'POST') { posts.push(String(url)); throw new Error('base selection must not check out the source'); }
           return String(url).includes('ccd-worktree')
-            ? new Response(JSON.stringify({ state: 'ready' }), { status: missing ? 404 : 200 })
-            : Response.json({ state: 'ready', current: 'main', detached: false, branches: ['main','feature/base'], truncated: false });
+            ? new Response(JSON.stringify({ state: worktreeState }), { status: missing ? 404 : 200 })
+            : Response.json({ state: notRepo ? 'not-repo' : 'ready', current: 'main', detached: false, branches: ['main','feature/base'], truncated: false });
         };`);
       await page.evaluate(bundle.outputFiles[0].text);
       await page.evaluate(`window.choices = new Choices(() => 's1');
         window.release = mount(document, { workspaceIds: () => ['w1','w2','w3'], worktrees: choices }, error => errors.push(String(error)));
+        window.releaseChip = mountChip(document, choices, () => 'w1', error => errors.push(String(error)));
         const chip = document.querySelector('.bocITq_workspace');
         chip.onclick = () => { const open = chip.getAttribute('aria-expanded') !== 'true'; chip.setAttribute('aria-expanded', String(open));
           if (open) document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(card)}); else document.querySelector('[role=menu]')?.remove(); };
@@ -61,18 +62,21 @@ test('Claude worktree toggle gates base selection; chip pointerdown then click c
         });
         chip.click();`);
       await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
-      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-row]').getAttribute('aria-disabled')`), 'false');
+      assert.equal(await page.evaluate(`document.querySelector('.bocITq_workspace').nextElementSibling.hasAttribute('data-ccd-worktree-chip')`), true);
+      assert.equal(await page.evaluate(`document.querySelector('[role=menu] [data-ccd-worktree-chip]') === null`), true, 'the toggle lives outside the card');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').getAttribute('aria-disabled')`), 'false');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').textContent`), '工作树');
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-branch-row]').getAttribute('aria-disabled')`), 'true');
       await page.evaluate(`document.querySelector('[data-ccd-branch-row]').click()`);
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-branch-menu]') === null`), true);
-      await page.evaluate(`document.querySelector('[data-ccd-worktree-row]').click(); document.querySelector('[data-ccd-branch-row]').click()`);
-      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-row]').getAttribute('aria-checked')`), 'true');
+      await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').click(); document.querySelector('[data-ccd-branch-row]').click()`);
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').getAttribute('aria-pressed')`), 'true');
       assert.equal(await page.evaluate(`document.querySelector('.bocITq_workspace').getAttribute('aria-expanded')`), 'true');
       await page.evaluate(`document.querySelector('[data-ccd-branch-name="feature/base"]').click()`);
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-branch-value]').textContent`), 'feature/base');
       assert.equal(await page.evaluate(`choices.base('s1')`), 'feature/base');
       assert.deepEqual(await page.evaluate('posts'), []);
-      await page.evaluate(`document.querySelector('[data-ccd-worktree-row]').click()`);
+      await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').click()`);
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-branch-row]').getAttribute('aria-disabled')`), 'true');
       assert.equal(await page.evaluate(`document.querySelector('[data-ccd-branch-menu]') === null`), true);
       // Same pointerdown -> click order as a real chip press, including the host's outside handler.
@@ -80,11 +84,48 @@ test('Claude worktree toggle gates base selection; chip pointerdown then click c
         chip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); chip.click(); }`);
       assert.equal(await page.evaluate(`document.querySelector('.bocITq_workspace').getAttribute('aria-expanded')`), 'false');
       assert.equal(await page.evaluate(`document.querySelector('[role=menu]') === null`), true);
+      // A non-repository hides the entire Git group, including the separator and keyboard stops.
+      await page.evaluate(`notRepo = true; document.querySelector('.bocITq_workspace').click()`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-workspace-extra="branch"]').getBoundingClientRect().height`), 0);
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-branch-row]').offsetParent`), null);
+      await page.evaluate(`document.querySelector('[data-ccd-menu-search]').focus();
+        document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));`);
+      assert.equal(await page.evaluate(`document.activeElement.textContent`), '打开文件夹 . . .');
+      await page.evaluate(`document.querySelector('.bocITq_workspace').click(); window.fetchBefore = fetch;
+        window.fetch = () => new Promise(() => {}); document.querySelector('.bocITq_workspace').click()`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-workspace-extra="branch"]').hidden`), true, 'cached non-repositories stay hidden while refreshing');
+      await page.evaluate(`document.querySelector('.bocITq_workspace').click(); fetch = fetchBefore; notRepo = false;`);
       await page.evaluate(`missing = true; document.querySelector('.bocITq_workspace').click()`);
       await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
-      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-status]').textContent`), '需重启 DSH');
-      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-row]').getAttribute('aria-disabled')`), 'true');
-      await page.evaluate('release()');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-workspace-extra="branch"]').hidden`), false, 'a refreshed Git repository restores the controls');
+      // A Host without the route dims the chip and says why; a non-repository hides it.
+      await page.evaluate(`releaseChip(); releaseChip = mountChip(document, choices, () => 'w1', error => errors.push(String(error)))`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').getAttribute('aria-disabled')`), 'true');
+      assert.match(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').title`), /需重启 DSH/);
+      await page.evaluate(`missing = false; worktreeState = 'not-repo'; releaseChip(); releaseChip = mountChip(document, choices, () => 'w1', error => errors.push(String(error)))`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').offsetParent`), null);
+      // Plugin availability changes without remounting the theme or composer.
+      await page.evaluate(`worktreeState = 'disabled'; window.dispatchEvent(new Event('focus'))`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').hidden`), true);
+      await page.evaluate(`worktreeState = 'ready'; window.dispatchEvent(new Event('focus'))`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').hidden`), false);
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').getAttribute('aria-disabled')`), 'false');
+      await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').click(); worktreeState = 'disabled'; window.dispatchEvent(new Event('focus'))`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 30))');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').hidden`), true);
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').getAttribute('aria-disabled')`), 'true');
+      // Before the first availability answer there is no misleading visible chip.
+      await page.evaluate(`releaseChip(); window.fetch = () => new Promise(() => {});
+        releaseChip = mountChip(document, choices, () => 'w1', error => errors.push(String(error)))`);
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]').hidden`), true);
+      await page.evaluate('releaseChip(); release()');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-worktree-chip]')`), null);
       assert.deepEqual(await page.evaluate('errors'), []);
     });
   } finally { await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 }); }
@@ -141,7 +182,7 @@ test('workspace picker: search, labels, branch card, base selection, keyboard an
       await page.evaluate(`document.querySelector('[data-ccd-menu-search]').focus()`);
       await key('ArrowDown');
       assert.equal(await page.evaluate('document.activeElement.textContent'), 'dsh-claude-desktop-theme');
-      await key('ArrowUp'); await key('ArrowUp'); await key('ArrowUp');
+      await key('ArrowUp'); await key('ArrowUp');
       assert.equal(await page.evaluate(`document.activeElement.hasAttribute('data-ccd-branch-row')`), true);
 
       // ArrowRight opens the side card beside the card, inside it for the primitive's pointer guard.

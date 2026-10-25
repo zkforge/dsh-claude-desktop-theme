@@ -309,6 +309,99 @@ export interface ContextPanelPort {
   toggleExpanded(): void;
 }
 
+/** One Session as the search palette lists it. */
+export interface PaletteSession {
+  readonly id: string;
+  readonly title: string;
+  /** Title of the Workspace the Session is accounted to; null when ungrouped. */
+  readonly workspace: string | null;
+  /** Durable activity time, milliseconds since the epoch. */
+  readonly updatedAt: number;
+  readonly running: boolean;
+  readonly archived: boolean;
+  readonly pinned: boolean;
+}
+
+/** One Workspace as the search palette lists it. */
+export interface PaletteProject {
+  readonly id: string;
+  readonly title: string;
+  readonly path: string;
+  /** Sessions accounted to it, archived ones included. */
+  readonly sessions: number;
+}
+
+/** A schedule's stored rule, reduced to what its label needs. */
+export type PaletteScheduleRule =
+  | { readonly kind: 'once'; readonly at: string }
+  | { readonly kind: 'every'; readonly seconds: number }
+  | { readonly kind: 'daily'; readonly time: string }
+  | { readonly kind: 'weekly'; readonly time: string; readonly weekdays: readonly number[] }
+  | { readonly kind: 'cron'; readonly expression: string };
+
+/** One scheduled task from the host catalog. */
+export interface PaletteSchedule {
+  readonly id: string;
+  readonly sessionId: string;
+  readonly title: string;
+  readonly prompt: string;
+  readonly rule: PaletteScheduleRule;
+  readonly active: boolean;
+  /** Last durably delivered run, milliseconds since the epoch; null before the first. */
+  readonly lastRunAt: number | null;
+}
+
+/** Everything the palette lists, as one immutable value. */
+export interface SearchPaletteSnapshot {
+  /** Listed Sessions: no provisional blanks and no subagent children. */
+  readonly sessions: readonly PaletteSession[];
+  /** Workspaces in the host's own order. */
+  readonly projects: readonly PaletteProject[];
+  /** Null on a build without the schedule interface, or while it cannot be read. */
+  readonly schedules: readonly PaletteSchedule[] | null;
+}
+
+/** Run count read from a task's delivery history; `more` when the page was full. */
+export interface PaletteScheduleRuns {
+  readonly count: number;
+  readonly more: boolean;
+}
+
+/**
+ * The host data and navigation the search palette is drawn from.
+ *
+ * Every list is read from the host's own catalogs (`sessions.list`,
+ * `workspaces.list`, `schedule/catalog()`) and every action goes through the
+ * host's own navigation or mutation, so the palette keeps no copy of state.
+ */
+export interface SearchPalettePort {
+  /** The current lists; the object identity changes only when a list does. */
+  getSnapshot(): SearchPaletteSnapshot;
+  subscribe(listener: () => void): Disposer;
+  /** Re-read the schedule catalog; the palette asks on every open. */
+  refreshSchedules(): void;
+  scheduleRuns(id: string): Promise<PaletteScheduleRuns>;
+  /** The host's message-content search; at most its own result bound. */
+  searchContent(query: string, signal: AbortSignal): Promise<readonly { readonly sessionId: string; readonly snippet: string }[]>;
+  openSession(id: string): void;
+  /** Open the New Session page, in a Workspace and with a draft when given. */
+  startSession(options?: { readonly workspaceId?: string; readonly prompt?: string }): void;
+  /** Show the Scheduled tasks page and the task's own detail. */
+  openSchedule(id: string): void;
+  setPinned(id: string, pinned: boolean): Promise<void>;
+  setArchived(id: string, archived: boolean): Promise<void>;
+  /** Fork a Session and open the child. */
+  fork(id: string): Promise<void>;
+  copy(text: string): Promise<void>;
+}
+
+/** Opens the search palette; the sidebar row mirrors its open state. */
+export interface SearchPaletteOpener {
+  open(): void;
+  isOpen(): boolean;
+  subscribe(listener: () => void): Disposer;
+}
+
 /** Actual SDK types, never a second definition of DSH component props. */
 export interface HostServices {
   readonly slots: Context['slots'];

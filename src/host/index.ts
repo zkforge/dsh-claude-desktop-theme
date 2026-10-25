@@ -27,11 +27,11 @@ const FONT_NAME = new RegExp(`^[\\p{L}\\p{N} ._-]{0,${FONT_NAME_MAX_LENGTH}}$`, 
  * `adoptConfig` falls back to the defaults for a hand-edited patch file.
  */
 export const Config = z.object({
-  enabled: z.boolean().default(false).description('启用 CCD 风格界面').volatile(),
+  enabled: z.boolean().default(false).description('开启 / 关闭 Claude 主题').volatile(),
   debug: z.boolean().default(false).description('在控制台输出调试日志').volatile(),
   features: z.object({
-    shell: z.boolean().default(DEFAULT_FEATURES.shell),
     sidebar: z.boolean().default(DEFAULT_FEATURES.sidebar),
+    'right-panel': z.boolean().default(DEFAULT_FEATURES['right-panel']),
     'new-session': z.boolean().default(DEFAULT_FEATURES['new-session']),
     conversation: z.boolean().default(DEFAULT_FEATURES.conversation),
     'tool-calls': z.boolean().default(DEFAULT_FEATURES['tool-calls']),
@@ -65,13 +65,13 @@ export const Config = z.object({
       .pattern(FONT_NAME),
   }).default({ ...DEFAULT_FONTS }).description('字体').volatile(),
   personalization: z.object({
-    petStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.petStyle)
+    petStyle: z.union(['whale', 'claude', 'none']).default(DEFAULT_PERSONALIZATION.petStyle)
       .description('输入框宠物样式'),
     runningStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.runningStyle)
       .description('聊天输出中的等待图标与状态样式'),
-    replySignatureStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.replySignatureStyle)
+    replySignatureStyle: z.union(['whale', 'claude', 'none']).default(DEFAULT_PERSONALIZATION.replySignatureStyle)
       .description('回复结束后的签名图标样式'),
-    greetingStyle: z.union(['explore', 'claude']).default(DEFAULT_PERSONALIZATION.greetingStyle)
+    greetingStyle: z.union(['explore', 'claude', 'none']).default(DEFAULT_PERSONALIZATION.greetingStyle)
       .description('首页问候语与图标样式'),
     greetingName: z.string().default('').pattern(/^.{0,64}$/u).description('问候语中的称呼（可留空）'),
   }).default({ ...DEFAULT_PERSONALIZATION }).description('个性化').volatile(),

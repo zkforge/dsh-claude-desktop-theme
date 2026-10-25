@@ -1,6 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { WORKTREE_PATH, readWorktreeResult, type WorktreeAvailability, type WorktreeResult } from '../../shared/worktree.ts';
 import { hostSelectors } from './host-dom.ts';
+import { recordsInTranscript } from './mutation-scope.ts';
 import { menuCopy } from './workspace-branch.ts';
 
 export interface WorktreePickerPort {
@@ -49,81 +50,155 @@ export class WorktreeChoices implements WorktreePickerPort {
   }
 }
 
-/** Claude's compact bottom row: a menu checkbox with a purely visual switch. */
-export function mountWorktreeToggle(card: HTMLElement, workspace: string, port: WorktreePickerPort): Disposer {
-  const document = card.ownerDocument;
+type ChipState = WorktreeAvailability | 'loading' | 'restart';
+
+/** Do not advertise an unavailable feature or flash it before the first check. */
+const HIDDEN: ReadonlySet<ChipState> = new Set(['loading', 'disabled', 'not-repo', 'no-commit', 'unknown-workspace']);
+
+/**
+ * Claude's worktree toggle beside the folder chip: a pressed chip, not a menu
+ * row. It is shown only for a new session whose folder is a Git repository,
+ * and the optional runtime is enabled. Recheck while visible and on returning
+ * to the composer so plugin enable/disable does not leave a stale button.
+ *
+ * @param document - renderer document carrying the hero workspace row.
+ * @param port - per-session worktree choices.
+ * @param workspaceOf - the Workspace a session belongs to.
+ * @param report - sink for observer failures.
+ */
+export function mountWorktreeChip(document: Document, port: WorktreePickerPort,
+  workspaceOf: (session: string) => string | undefined, report: (error: unknown) => void): Disposer {
   const host = hostSelectors(document);
-  const group = card.querySelector('[data-ccd-workspace-extra="branch"]');
-  const sample = group?.querySelector<HTMLElement>('[data-ccd-branch-row]');
-  if (!group || !sample) return () => {};
   const { zh } = menuCopy(document);
-  const reasons: Record<WorktreeAvailability | 'loading' | 'no-session' | 'restart', string> = zh ? {
+  const reasons: Record<ChipState | 'no-session', string> = zh ? {
     ready: '首次发送时创建独立工作树；未提交改动保留在原目录', loading: '检查工作树支持…',
     disabled: '请先在 DSH 插件中启用「Git 工作树」', 'not-repo': '当前文件夹不是 Git 仓库',
     'no-commit': '仓库至少需要一个提交', 'unknown-workspace': '无法识别当前工作区',
-    error: '无法读取工作树支持，请重新打开选单', 'no-session': '请先选择新会话', restart: '需重启 DSH：宿主尚未加载工作树接口',
+    error: '无法读取工作树支持', 'no-session': '请先选择新会话', restart: '需重启 DSH：宿主尚未加载工作树接口',
   } : {
     ready: 'Create an isolated worktree on first send; uncommitted changes stay in the source folder',
     loading: 'Checking worktree support…', disabled: 'Enable Git Worktrees in DSH plugins first',
     'not-repo': 'This folder is not a Git repository', 'no-commit': 'The repository needs at least one commit',
-    'unknown-workspace': 'Workspace not recognised', error: 'Could not check worktree support; reopen the menu',
+    'unknown-workspace': 'Workspace not recognised', error: 'Could not check worktree support',
     'no-session': 'Select a new session first', restart: 'Restart DSH to load the worktree interface',
   };
-  const wrap = document.createElement('div');
-  wrap.className = sample.parentElement?.className ?? '';
-  const row = document.createElement('button');
-  row.type = 'button';
-  row.className = sample.className;
-  row.setAttribute('role', 'menuitemcheckbox');
-  row.setAttribute('data-ccd-worktree-row', '');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.setAttribute('data-ccd-worktree-chip', '');
   const label = document.createElement('span');
-  label.className = sample.querySelector(host.menuItemLabel)?.className ?? '';
   label.textContent = zh ? '工作树' : 'Worktree';
-  const toggle = document.createElement('span');
-  toggle.setAttribute('data-ccd-worktree-switch', '');
-  toggle.setAttribute('aria-hidden', 'true');
-  toggle.append(document.createElement('span'));
-  const status = document.createElement('span');
-  status.setAttribute('data-ccd-worktree-status', '');
-  status.hidden = true;
-  row.append(label, status, toggle);
-  wrap.append(row);
-  group.append(wrap);
-  let state: WorktreeAvailability | 'loading' | 'restart' = 'loading';
-  const render = () => {
-    const session = port.session();
-    const reason = state !== 'ready' ? state : session === undefined ? 'no-session' : 'ready';
-    row.setAttribute('aria-checked', String(session !== undefined && port.selected(session)));
-    row.setAttribute('aria-disabled', String(reason !== 'ready'));
-    row.setAttribute('aria-busy', String(state === 'loading'));
-    row.title = reasons[reason];
-    row.setAttribute('aria-description', reasons[reason]);
-    status.hidden = state !== 'restart';
-    status.textContent = state === 'restart' ? (zh ? '需重启 DSH' : 'Restart DSH') : '';
+  button.append(label);
+  const states = new Map<string, ChipState>();
+  const requests = new Set<AbortController>();
+  const pending = new Set<string>();
+  let workspace: string | undefined;
+  let session: string | undefined;
+  let disposed = false;
+
+  const state = (): ChipState => workspace === undefined ? 'unknown-workspace' : states.get(workspace) ?? 'loading';
+
+  /** Keep the last answer during refresh and merge overlapping checks. */
+  const load = (id: string, refresh = false) => {
+    if (pending.has(id) || (!refresh && states.has(id))) return;
+    pending.add(id);
+    if (!states.has(id)) states.set(id, 'loading');
+    const request = new AbortController();
+    requests.add(request);
+    const deadline = setTimeout(() => request.abort(), 8_000);
+    void (async () => {
+      let next: ChipState;
+      try {
+        const response = await fetch(`${WORKTREE_PATH}?workspace=${encodeURIComponent(id)}`, { signal: request.signal });
+        const body: unknown = response.ok ? await response.json() : null;
+        const value = body !== null && typeof body === 'object' ? (body as { state?: unknown }).state : undefined;
+        next = response.status === 404 ? 'restart' : typeof value === 'string' && Object.hasOwn(reasons, value)
+          && value !== 'loading' && value !== 'no-session' && value !== 'restart' ? value as WorktreeAvailability : 'error';
+      } catch { next = 'error'; }
+      clearTimeout(deadline);
+      requests.delete(request);
+      pending.delete(id);
+      if (disposed) return;
+      states.set(id, next);
+      render();
+    })();
   };
-  row.addEventListener('click', event => {
+
+  const render = () => {
+    const current = state();
+    const reason = current !== 'ready' ? current : session === undefined ? 'no-session' : 'ready';
+    button.hidden = session === undefined || HIDDEN.has(current);
+    button.setAttribute('aria-pressed', String(session !== undefined && port.selected(session)));
+    button.setAttribute('aria-disabled', String(reason !== 'ready'));
+    button.setAttribute('aria-busy', String(current === 'loading'));
+    button.title = reasons[reason];
+  };
+
+  /** Keep the chip right after the folder chip's own row item. */
+  const sync = () => {
+    const chip = document.querySelector<HTMLElement>(host.heroWorkspaceChip);
+    const row = chip?.closest<HTMLElement>(host.heroWorkspaceRow) ?? null;
+    if (chip === null || row === null) {
+      button.remove();
+      return;
+    }
+    let item: HTMLElement = chip;
+    while (item.parentElement !== null && item.parentElement !== row) item = item.parentElement;
+    const returning = !button.isConnected;
+    if (item.nextElementSibling !== button) item.after(button);
+    const nextSession = port.session();
+    const nextWorkspace = nextSession === undefined ? undefined : workspaceOf(nextSession);
+    // Switching folders before the first send moves an enabled choice with it.
+    if (nextSession !== undefined && nextWorkspace !== undefined && nextWorkspace !== workspace
+      && nextSession === session && port.selected(nextSession)) port.select(nextSession, nextWorkspace, true);
+    const changed = session !== nextSession || workspace !== nextWorkspace;
+    session = nextSession;
+    workspace = nextWorkspace;
+    if (workspace !== undefined) load(workspace, returning || changed);
+    render();
+  };
+
+  button.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
-    const session = port.session();
-    if (state === 'ready' && session !== undefined) port.select(session, workspace, !port.selected(session));
+    if (state() === 'ready' && session !== undefined && workspace !== undefined) {
+      port.select(session, workspace, !port.selected(session));
+    }
     render();
   });
-  const request = new AbortController();
-  const deadline = setTimeout(() => request.abort(), 8_000);
-  let disposed = false;
-  render();
-  void (async () => {
-    try {
-      const response = await fetch(`${WORKTREE_PATH}?workspace=${encodeURIComponent(workspace)}`, { signal: request.signal });
-      const body: unknown = response.ok ? await response.json() : null;
-      const value = body !== null && typeof body === 'object' ? (body as { state?: unknown }).state : undefined;
-      state = response.status === 404 ? 'restart' : typeof value === 'string' && Object.hasOwn(reasons, value)
-        && value !== 'loading' && value !== 'no-session' ? value as WorktreeAvailability : 'error';
-    } catch { state = 'error'; }
-    clearTimeout(deadline);
-    if (!disposed) render();
-  })();
-  return () => { disposed = true; clearTimeout(deadline); request.abort(); wrap.remove(); };
+
+  let observer: MutationObserver | undefined;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const refresh = () => {
+    if (!document.hidden && button.isConnected && workspace !== undefined) load(workspace, true);
+  };
+  const view = document.defaultView;
+  let release: Disposer = () => {};
+  try {
+    release = port.subscribe(render);
+    observer = new MutationObserver(records => { if (!recordsInTranscript(records)) sync(); });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    sync();
+    timer = setInterval(refresh, 10_000);
+    view?.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+  } catch (error) {
+    observer?.disconnect();
+    release();
+    button.remove();
+    report(error);
+    return () => {};
+  }
+  return () => {
+    disposed = true;
+    clearInterval(timer);
+    view?.removeEventListener('focus', refresh);
+    document.removeEventListener('visibilitychange', refresh);
+    observer?.disconnect();
+    release();
+    for (const request of requests) request.abort();
+    requests.clear();
+    button.remove();
+  };
 }
 
 /** Request retries reuse the Host's per-session result, including after a lost response. */

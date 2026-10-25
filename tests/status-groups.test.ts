@@ -354,11 +354,11 @@ test('a heading collapses its section, persists the choice and expands again', a
     assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), true);
     assert.equal(f.a.hasAttribute('data-ccd-status-hidden'), false);
     assert.equal(stored.get('ccd-status-collapsed'), '["ended"]');
-    f.b.className = 'jJkEga_sessionRow jJkEga_selected';
+    f.b.className = 'JoiKIa_sessionRow JoiKIa_selected';
     f.mutation(batch('attributes', f.b));
     await Promise.resolve();
     assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), false, 'the Session on screen stays in its folded section');
-    f.b.className = 'jJkEga_sessionRow';
+    f.b.className = 'JoiKIa_sessionRow';
     f.mutation(batch('attributes', f.b));
     await Promise.resolve();
     assert.equal(f.b.hasAttribute('data-ccd-status-hidden'), true, 'leaving it folds it away with the rest');

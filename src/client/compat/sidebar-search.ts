@@ -1,164 +1,145 @@
-import type { Disposer } from '../contracts/ports.ts';
+import type { Disposer, SearchPaletteOpener } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 
-/** Marks the sidebar column whose field is currently parked above New Session. */
+/** Marks the sidebar column whose Search row this module placed below New Session. */
 export const SIDEBAR_SEARCH_PLACED_ATTRIBUTE = 'data-ccd-sidebar-search-placed';
 
-/**
- * Park the browsing region's search field above New Session.
- *
- * The field belongs to `ui-workspace`'s `WorkspaceBrowser`, and React removes
- * it from the section header whenever the sidebar collapses to its rail.
- * Moving the React-owned node would make that removal target the wrong parent,
- * so the node stays where React put it and is positioned over the gap that New
- * Session opens above itself. That gap sits after the brand row when the brand
- * is visible and directly below the window strip when it is not.
- *
- * The section header keeps its own row. With the search slot out of flow, its
- * label takes the leading edge and the native View options trigger stays on the
- * trailing edge.
- */
-export function mountSidebarSearch(document: Document, report: (error: unknown) => void): Disposer {
-  const host = hostSelectors(document);
-  const win = document.defaultView;
-  let slot: HTMLElement | null = null;
-  let root: HTMLElement | null = null;
-  let marked: HTMLElement | null = null;
-  let scheduled = false;
-  let disposed = false;
-  let resize: ResizeObserver | undefined;
-  const observed = new WeakSet<Element>();
-  const placeholders = new Map<HTMLInputElement, { original: string; drawn: string }>();
-  let shortcut: HTMLElement | null = null;
+const MODIFIERS: Readonly<Record<string, string>> = { Meta: '⌘', Control: 'Ctrl', Alt: '⌥', Shift: '⇧' };
 
-  const decorate = (searchSlot: HTMLElement) => {
-    const input = searchSlot.querySelector<HTMLInputElement>('input');
-    if (input) {
-      const previous = placeholders.get(input);
-      const drawn = document.documentElement.lang.toLowerCase().startsWith('zh') ? '搜索' : 'Search';
-      const original = previous?.drawn === input.placeholder ? previous.original : input.placeholder;
-      placeholders.set(input, { original, drawn });
-      if (input.placeholder !== drawn) input.placeholder = drawn;
+/**
+ * Give Search its own navigation row below New Session, like the reference's
+ * sidebar, and open the search palette from it.
+ *
+ * The host's field belongs to `ui-workspace`'s `WorkspaceBrowser`, and React
+ * removes it from the section header whenever the sidebar collapses to its
+ * rail, so the node stays where React put it. While the row is placed,
+ * `sidebar.css` takes the field out of sight without making it unfocusable: the
+ * host's own `session.search` shortcut (⌘K) still focuses it, and that focus is
+ * what this module turns into opening the palette. The row itself is the
+ * plugin's own button, inserted after New Session's node; React never addresses
+ * it, so a re-render only needs it put back.
+ */
+export function mountSidebarSearch(
+  document: Document,
+  icon: string,
+  palette: SearchPaletteOpener,
+  report: (error: unknown) => void,
+): Disposer {
+  const host = hostSelectors(document);
+  let root: HTMLElement | null = null;
+  let row: HTMLButtonElement | null = null;
+  let label: HTMLSpanElement | null = null;
+  let shortcut: HTMLSpanElement | null = null;
+  let disposed = false;
+
+  const chinese = () => (document.documentElement.lang || globalThis.navigator?.language || '')
+    .toLowerCase().startsWith('zh');
+
+  const build = () => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ccd-sidebar-search-row';
+    button.setAttribute('data-ccd-nav', 'search');
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-expanded', 'false');
+    const glyph = document.createElement('span');
+    glyph.className = 'ccd-nav-glyph';
+    glyph.setAttribute('data-ccd-nav-glyph', '');
+    glyph.setAttribute('aria-hidden', 'true');
+    // Trusted, bundled SVG constant; no host/user HTML is interpolated.
+    glyph.innerHTML = icon;
+    label = document.createElement('span');
+    label.className = 'ccd-sidebar-search-label';
+    shortcut = document.createElement('span');
+    shortcut.className = 'ccd-sidebar-search-shortcut';
+    shortcut.setAttribute('aria-hidden', 'true');
+    button.append(glyph, label, shortcut);
+    button.addEventListener('click', () => palette.open());
+    return button;
+  };
+
+  const decorate = (button: HTMLButtonElement, nextRoot: HTMLElement) => {
+    const text = chinese() ? '搜索' : 'Search';
+    if (label && label.textContent !== text) label.textContent = text;
+    if (button.getAttribute('aria-label') !== text) button.setAttribute('aria-label', text);
+    const expanded = String(palette.isOpen());
+    if (button.getAttribute('aria-expanded') !== expanded) button.setAttribute('aria-expanded', expanded);
+    /* The host's own binding, so a remapped shortcut reads the same here. */
+    const aria = nextRoot.querySelector(`${host.browserSearch} [aria-keyshortcuts]`)?.getAttribute('aria-keyshortcuts') ?? null;
+    if (aria === null) {
+      button.removeAttribute('aria-keyshortcuts');
+      shortcut?.replaceChildren();
+      return;
     }
-    const search = searchSlot.querySelector<HTMLElement>(host.browserSearch);
-    const aria = search?.querySelector('[aria-keyshortcuts]')?.getAttribute('aria-keyshortcuts');
-    if (!search || !aria) { shortcut?.remove(); shortcut = null; return; }
-    const keys = aria.split(' ')[0]!.split('+').map(key => ({
-      Meta: '⌘', Control: 'Ctrl', Alt: '⌥', Shift: '⇧',
-    })[key] ?? key.toUpperCase());
-    if (!shortcut) {
-      shortcut = document.createElement('span');
-      shortcut.className = 'ccd-sidebar-search-shortcut';
-      shortcut.setAttribute('aria-hidden', 'true');
-    }
-    if (shortcut.textContent !== keys.join('')) {
+    if (button.getAttribute('aria-keyshortcuts') !== aria) button.setAttribute('aria-keyshortcuts', aria);
+    const keys = aria.split(' ')[0]!.split('+').map(key => MODIFIERS[key] ?? key.toUpperCase());
+    if (shortcut && shortcut.textContent !== keys.join('')) {
       shortcut.replaceChildren(...keys.map(key => {
         const badge = document.createElement('kbd');
         badge.textContent = key;
         return badge;
       }));
     }
-    if (shortcut.parentElement !== search) search.append(shortcut);
-    for (const node of placeholders.keys()) if (!node.isConnected) placeholders.delete(node);
   };
 
-  const clearMark = () => {
-    marked?.removeAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE);
-    marked = null;
-  };
-
-  const clearSlot = () => {
-    if (slot === null) return;
-    shortcut?.remove();
-    shortcut = null;
-    slot.style.removeProperty('--ccd-sidebar-search-top');
-    slot.style.removeProperty('--ccd-sidebar-search-left');
-    slot.style.removeProperty('--ccd-sidebar-search-width');
-    slot = null;
+  const unplace = () => {
+    row?.remove();
+    root?.removeAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE);
   };
 
   const place = () => {
-    scheduled = false;
     if (disposed) return;
     const nextRoot = document.querySelector<HTMLElement>(host.sidebarRoot);
+    if (nextRoot !== root) { unplace(); root = nextRoot; }
     const newSession = nextRoot?.querySelector<HTMLElement>(host.sidebarNewSession) ?? null;
-    const nextSlot = nextRoot?.querySelector<HTMLElement>(host.browserSearchSlot) ?? null;
     const collapsed = nextRoot?.classList.contains(host.sidebarCollapsed.slice(1)) ?? true;
-
-    if (nextRoot !== root) {
-      clearSlot();
-      clearMark();
-      root = nextRoot;
-    }
-    if (nextRoot === null || newSession === null || nextSlot === null || collapsed) {
-      clearSlot();
-      clearMark();
-      return;
-    }
-
-    if (marked !== nextRoot) {
-      clearMark();
-      nextRoot.setAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE, '');
-      marked = nextRoot;
-    }
-    if (slot !== nextSlot) {
-      clearSlot();
-      slot = nextSlot;
-    }
-    decorate(nextSlot);
-    for (const element of [nextRoot, newSession, nextSlot]) {
-      if (observed.has(element) || resize === undefined) continue;
-      observed.add(element);
-      resize.observe(element);
-    }
-    const box = newSession.getBoundingClientRect();
-    const styles = win?.getComputedStyle(newSession);
-    const marginTop = Number.parseFloat(styles?.marginTop ?? '0') || 0;
-    const next = {
-      /* `getBoundingClientRect()` reports the border box, so the margin this
-         module opened above New Session is already included. Subtract it
-         regardless of the host's `position`; the host uses `relative` here. */
-      '--ccd-sidebar-search-top': `${box.top - marginTop}px`,
-      '--ccd-sidebar-search-left': `${box.left}px`,
-      '--ccd-sidebar-search-width': `${box.width}px`,
-    };
-    for (const [property, value] of Object.entries(next)) {
-      if (slot.style.getPropertyValue(property) !== value) slot.style.setProperty(property, value);
-    }
+    if (nextRoot === null || newSession === null || collapsed) { unplace(); return; }
+    /* New Session's own node, or the wrapper a tooltip may give it. */
+    let anchor: Element = newSession;
+    while (anchor.parentElement !== null && anchor.parentElement !== nextRoot) anchor = anchor.parentElement;
+    if (anchor.parentElement !== nextRoot) { unplace(); return; }
+    row ??= build();
+    decorate(row, nextRoot);
+    if (anchor.nextElementSibling !== row) anchor.after(row);
+    if (!nextRoot.hasAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE)) nextRoot.setAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE, '');
   };
 
-  const schedule = () => {
-    if (scheduled) return;
-    scheduled = true;
-    try {
-      place();
-    } finally {
-      scheduled = false;
-    }
+  const run = () => { try { place(); } catch (error) { report(error); } };
+
+  /* ⌘K reaches the host's hidden field; hand that focus to the palette instead.
+     The field is blurred before the palette opens, so the dialog never records
+     it as the element to give focus back to. */
+  const redirect = (event: FocusEvent) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || root === null || !root.hasAttribute(SIDEBAR_SEARCH_PLACED_ATTRIBUTE)) return;
+    if (!root.contains(target) || target.closest(host.browserSearchSlot) === null) return;
+    target.blur();
+    palette.open();
   };
 
   let observer: MutationObserver | undefined;
+  let language: MutationObserver | undefined;
+  let unsubscribe: Disposer = () => {};
   try {
     observer = new MutationObserver(records => {
       if (recordsTouch(records, root) || recordsIntroduce(records, host.sidebarRoot)
-        || records.some(record => record.attributeName === 'lang')) schedule();
+        || (row !== null && !row.isConnected)) run();
     });
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'placeholder', 'aria-keyshortcuts', 'lang'],
+    observer.observe(document.body, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'aria-keyshortcuts'],
     });
-    resize = new ResizeObserver(schedule);
-    win?.addEventListener('resize', schedule);
-    schedule();
+    language = new MutationObserver(run);
+    language.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    unsubscribe = palette.subscribe(run);
+    document.addEventListener('focusin', redirect, true);
+    place();
   } catch (error) {
     observer?.disconnect();
-    resize?.disconnect();
-    win?.removeEventListener('resize', schedule);
-    clearSlot();
-    clearMark();
+    language?.disconnect();
+    unsubscribe();
+    document.removeEventListener('focusin', redirect, true);
+    unplace();
     report(error);
     return () => {};
   }
@@ -166,14 +147,11 @@ export function mountSidebarSearch(document: Document, report: (error: unknown) 
   return () => {
     disposed = true;
     observer?.disconnect();
-    resize?.disconnect();
-    win?.removeEventListener('resize', schedule);
-    clearSlot();
-    clearMark();
-    for (const [input, { original, drawn }] of placeholders) {
-      if (input.placeholder === drawn) input.placeholder = original;
-    }
-    placeholders.clear();
+    language?.disconnect();
+    unsubscribe();
+    document.removeEventListener('focusin', redirect, true);
+    unplace();
+    row = null;
     root = null;
   };
 }

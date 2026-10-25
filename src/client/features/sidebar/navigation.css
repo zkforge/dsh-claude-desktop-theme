@@ -1,7 +1,13 @@
 /* Replace only the decorated native glyphs; all click/focus/selection remains
-   owned by DSH. A 16px seat preserves the existing text column in both layouts. */
+   owned by DSH. A 16px seat preserves the existing text column in both layouts.
+   The More launcher draws its apps glyph straight into the seat rather than
+   through the panel list's slot. The Theme row's slot glyph is a sized box
+   around its artwork, so the box goes rather than only the drawing in it:
+   left in place it would take half the 16px seat and push this glyph aside. */
 html[data-dsh-ccd-style="true"] [data-ccd-nav="newSession"] ._3WPZCG_newSessionContent > svg,
-html[data-dsh-ccd-style="true"] [data-ccd-nav] ._3WPZCG_panelGlyph > [data-slot="sidebar.panellist"] svg {
+html[data-dsh-ccd-style="true"] [data-ccd-nav] ._3WPZCG_panelGlyph > [data-slot="sidebar.panellist"] svg,
+html[data-dsh-ccd-style="true"] [data-ccd-nav] ._3WPZCG_panelGlyph > [data-slot="sidebar.panellist"] [data-ccd-theme-glyph],
+html[data-dsh-ccd-style="true"] [data-ccd-nav="more"] ._3WPZCG_panelGlyph > svg {
   display: none;
 }
 
@@ -30,7 +36,7 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root [data-ccd-nav="newSession"] .ccd-n
   height: 17px;
 }
 
-html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand) {
+html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand, .search-glass, .theme-palette) {
   transform-box: view-box;
   transform-origin: 12px 12px;
   transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -48,6 +54,14 @@ html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .routi
   transform: rotate(45deg);
 }
 
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .search-glass {
+  transform: rotate(-10deg);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .theme-palette {
+  transform: rotate(-12deg);
+}
+
 html[data-dsh-ccd-style="true"] [data-ccd-nav]:is(:hover, :focus-visible) .icon-disc {
   opacity: 0;
 }
@@ -58,7 +72,7 @@ html[data-dsh-ccd-style="true"]:has(.ST7X_W_root[data-phase="hero"]) ._3WPZCG_ro
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand, .icon-disc) {
+  html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand, .search-glass, .theme-palette, .icon-disc) {
     transition: none;
   }
 }

@@ -17,9 +17,9 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] > * {
   min-width: 0;
   max-width: none;
 }
-/* Match the task detail's title-bar breadcrumb and content inset. */
+/* Keep the back action in the content area, below the window title bar. */
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] {
-  padding: 15px 44px 40px;
+  padding: 47px 50px 40px;
   font: 400 14px/22px var(--ccd-font-ui);
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detail"] {
@@ -39,38 +39,32 @@ html[data-dsh-ccd-style="true"] :is(
   margin: 0;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"] {
-  grid-column: 1;
+  grid-column: 1 / -1;
   grid-row: 1;
   justify-self: start;
-  margin: 0 -4px 24px -22px;
-  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: 28px;
+  margin: 0 0 4px -9px;
+  padding: 4px 8px;
   border: 0;
-  border-radius: 6px;
-  background: transparent;
+  border-radius: 8px;
+  background: var(--ccd-plugin-back-bg);
   color: var(--ccd-text);
-  font: 400 14px/22px var(--ccd-font-ui);
+  font: 400 15px/20px var(--ccd-font-ui);
   cursor: pointer;
   -webkit-app-region: no-drag;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:hover { background: var(--ccd-hover); color: var(--ccd-text); }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:hover { background: var(--ccd-plugin-back-bg); color: var(--ccd-text); }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumbIcon"] { display: none; }
-html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current {
-  grid-column: 2 / -1;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  margin: 0 0 24px -18px;
-  color: var(--ccd-text);
-  font: 400 14px/22px var(--ccd-font-ui);
-}
-html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current > [aria-hidden] { color: var(--ccd-text-muted); }
-html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current > [aria-current] {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumbIcon"] {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailHead"] > [data-ccd-plugin-part="manager-cardIcon"] {
   grid-column: 1;
@@ -378,7 +372,13 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"] {
   font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
   cursor: pointer;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:hover { opacity: .85; }
+/* The host ghost Button supplies a higher-specificity hover background. Keep
+   the filled action's background and foreground paired in that state too. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:hover:not(:disabled) {
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+  opacity: .85;
+}
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"], [data-ccd-plugin-part="market-main"]) { display: contents; }
 html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"] > [data-ccd-plugin-part="manager-titleRow"], [data-ccd-plugin-part="market-main"] > [data-ccd-plugin-part="market-titleRow"], [data-ccd-plugin-part="manager-cardMain"] > [data-ccd-plugin-part="manager-cardTitle"]) {
@@ -458,7 +458,5 @@ html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] > :not([data-ccd-pl
 }
 @media (max-width: 800px) {
   html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] { padding: 40px 24px 32px; column-gap: 10px; }
-  html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] { padding: 15px 24px 40px; }
-  html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"] { margin-left: -4px; }
-  html[data-dsh-ccd-style="true"] .ccd-plugin-detail-current { margin-left: 0; }
+  html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] { padding: 47px 24px 40px; }
 }

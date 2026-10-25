@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  HOST_BUILDS, PINNED_BUILD, WINDOWS_BUILD, aliasHostClasses, detectHostBuild, hostBuildStatus, watchHostBuild,
+  HOST_BUILDS, MACOS_BUILD, PINNED_BUILD, WINDOWS_BUILD, aliasHostClasses, detectHostBuild, hostBuildStatus, watchHostBuild,
 } from '../src/client/compat/host-builds.ts';
 import type { HostBuildStatus } from '../src/client/compat/host-builds.ts';
 import { hostAnchors, hostSelectors } from '../src/client/compat/host-dom.ts';
@@ -120,7 +120,7 @@ test('the authored build is the identity rewrite', () => {
 
 test('detection reads the frame first, then the preload platform', () => {
   assert.equal(detectHostBuild(documentDouble('win32')), WINDOWS_BUILD);
-  assert.equal(detectHostBuild(documentDouble('darwin')), PINNED_BUILD);
+  assert.equal(detectHostBuild(documentDouble('darwin')), MACOS_BUILD);
   assert.equal(detectHostBuild(documentDouble(undefined)), PINNED_BUILD);
   assert.equal(detectHostBuild(documentDouble('darwin', 'BynINW_frame _6Qf49G_quietBars')), WINDOWS_BUILD);
   assert.equal(detectHostBuild(documentDouble('win32', '_6Qf49G_frame')), PINNED_BUILD);
@@ -136,7 +136,7 @@ test('an unregistered frame is the state the page and the log report', () => {
   /* A frame from a build with class names this plugin has never seen. */
   const stranger = documentDouble('darwin', 'Qq9Zz0_frame');
   assert.equal(hostBuildStatus(stranger).state, 'unknown');
-  assert.equal(hostBuildStatus(stranger).build, PINNED_BUILD);
+  assert.equal(hostBuildStatus(stranger).build, MACOS_BUILD);
   /* The state is re-read, so a later frame can still identify the build. */
   assert.equal(hostBuildStatus(stranger).state, 'unknown');
 });
@@ -214,17 +214,34 @@ test('resolved tables speak the document build and keep the authored table intac
   assert.equal(windows.sidebarNewSession, '._2H3hWW_newSession');
   assert.equal(hostAnchors(documentDouble('win32')).composerCardHero, '.Dc7zOa_root[data-phase="hero"] [data-composer-card]');
 
-  const pinned = hostSelectors(documentDouble('darwin'));
+  const pinned = hostSelectors(documentDouble('darwin', PINNED_BUILD.frameClass));
   assert.equal(pinned.frame, '._6Qf49G_frame');
-  assert.equal(hostAnchors(documentDouble('darwin')).composerCardHero, '.ST7X_W_root[data-phase="hero"] [data-composer-card]');
+  assert.equal(hostAnchors(documentDouble('darwin', PINNED_BUILD.frameClass)).composerCardHero, '.ST7X_W_root[data-phase="hero"] [data-composer-card]');
 
   /* A resolved table is a copy: the authored one keeps the authored names. */
   assert.equal(hostSelectors(documentDouble(undefined)).frame, '._6Qf49G_frame');
 });
 
-test('both builds are declared once, with the pinned one first', () => {
+test('verified builds are declared once, with the authored one first', () => {
   assert.equal(HOST_BUILDS[0], PINNED_BUILD);
-  assert.equal(HOST_BUILDS.length, 2);
+  assert.equal(HOST_BUILDS.length, 3);
   assert.equal(PINNED_BUILD.frameClass, '_6Qf49G_frame');
   assert.equal(WINDOWS_BUILD.frameClass, 'BynINW_frame');
+});
+
+test('the current macOS release resolves every authored module before and after the frame mounts', () => {
+  for (const prefix of [...cssPrefixes(), ...tablePrefixes()]) {
+    assert.ok(Object.hasOwn(MACOS_BUILD.prefixes, prefix), prefix + ' has no current macOS counterpart');
+  }
+  const pending = documentDouble('darwin');
+  const rendered = documentDouble('darwin', 'PIRFFq_frame');
+  assert.equal(hostBuildStatus(pending).state, 'pending');
+  assert.equal(hostBuildStatus(rendered).state, 'identified');
+  for (const document of [pending, rendered]) {
+    assert.equal(detectHostBuild(document), MACOS_BUILD);
+    assert.equal(hostSelectors(document).frame, '.PIRFFq_frame');
+    assert.equal(hostSelectors(document).sidebarNewSession, '.kB3qhq_newSession');
+    assert.equal(hostAnchors(document).composerCardHero, '.kiGsTW_root[data-phase="hero"] [data-composer-card]');
+    assert.equal(aliasHostClasses('._6Qf49G_frame .yhfFVG_card', detectHostBuild(document)), '.PIRFFq_frame .JZLxKW_card');
+  }
 });

@@ -28,7 +28,7 @@ const ANCHOR: { readonly hero: string; readonly account: string } = {
  * hand. It makes no claim about the real renderer — the verification record
  * covers that.
  */
-function fixture({ viewport = 871, anchorTop = 800, anchorBottom = 828, menuHeight = 110, anchor = ANCHOR.account } = {}) {
+function fixture({ viewport = 871, anchorTop = 800, anchorBottom = 828, menuHeight = 110, anchor = ANCHOR.account, permission = false } = {}) {
   const state = { viewport, menuHeight, open: true, queries: 0, reads: 0, writes: 0 };
   const sibling = {};
   const region = { isConnected: true, contains: (node: unknown) => node === region || node === control || node === sibling };
@@ -61,7 +61,15 @@ function fixture({ viewport = 871, anchorTop = 800, anchorBottom = 828, menuHeig
       setAttribute: () => {},
       removeAttribute: () => {},
     },
-    querySelector: (selector: string) => { state.queries++; return selector === anchor && state.open ? control : null; },
+    querySelector: (selector: string) => {
+      state.queries++;
+      if (!state.open) return null;
+      if (permission) {
+        if (selector === '[data-ccd-permission-menu]') return menu;
+        return selector === '.wXeviG_trigger' ? control : null;
+      }
+      return selector === anchor ? control : null;
+    },
     querySelectorAll: () => { state.queries++; return state.open && menu.getAttribute('role') === 'menu' ? [menu] : []; },
   };
   const windowDouble = {
@@ -121,6 +129,21 @@ test('a card that fits above keeps its own height and stays flush when it grows 
   fake.sync();
   assert.equal(fake.menu.style.maxHeight, '', 'growth must not meet a stale ceiling');
   assert.equal(fake.menu.style.top, '663px', 'the correction follows the card it now is');
+  dispose();
+});
+
+test('permission rows are placed on tagging without an aria-expanded trigger or animation frame', () => {
+  const fake = fixture({ permission: true, menuHeight: 110 });
+  install(fake);
+  const dispose = mountComposerMenuPlacement(globalThis.document, () => {});
+  // The permission adapter adds descriptions and the plan row after mount.
+  fake.grow(235);
+  fake.sync([{ type: 'attributes', target: fake.menu, attributeName: 'data-ccd-permission-menu' } as unknown as MutationRecord]);
+  assert.equal(fake.menu.style.top, '561px');
+  assert.equal(fake.menu.getAttribute('data-ccd-menu-flipped'), '');
+  fake.state.open = false;
+  fake.sync([{ type: 'childList', target: {}, addedNodes: [], removedNodes: [fake.menu] } as unknown as MutationRecord]);
+  assert.equal(fake.menu.getAttribute('data-ccd-menu-flipped'), null);
   dispose();
 });
 

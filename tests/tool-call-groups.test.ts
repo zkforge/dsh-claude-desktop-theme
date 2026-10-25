@@ -57,6 +57,11 @@ class ElementDouble {
     const siblings = this.parentElement?.children ?? [];
     return siblings[siblings.indexOf(this) + 1] ?? null;
   }
+  getBoundingClientRect() {
+    const text = this.children.length ? this.children.filter(child => !child.hasAttribute('data-ccd-tool-roll-out'))
+      .map(child => child.textContent).join('') : this.textContent;
+    return { width: text.length * 7 };
+  }
   setAttribute(key: string, value: string) { this.attrs.set(key, value); }
   getAttribute(key: string) { return this.attrs.get(key) ?? null; }
   hasAttribute(key: string) { return this.attrs.has(key); }
@@ -283,11 +288,12 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
   const first = call('bash', 'running'); first.row.textContent = 'Checking git status';
   const second = call('read', 'running'); second.row.textContent = 'Reading README.md';
   parent.append(first.flow);
-  const motions: { frames: Keyframe[]; cancelled: boolean; onfinish?: () => void }[] = [];
+  const motions: { frames: Keyframe[]; options: KeyframeAnimationOptions; cancelled: boolean; onfinish?: () => void }[] = [];
   const errors: unknown[] = [];
-  const document = { body, createElement: () => Object.assign(node(), {
-    animate(frames: Keyframe[]) {
-      const motion = { frames, cancelled: false, cancel() { this.cancelled = true; } };
+  let reducedMotion = false;
+  const document = { body, defaultView: { matchMedia: () => ({ matches: reducedMotion }) }, createElement: () => Object.assign(node(), {
+    animate(frames: Keyframe[], options: KeyframeAnimationOptions) {
+      const motion = { frames, options, cancelled: false, cancel() { this.cancelled = true; } };
       motions.push(motion);
       return motion;
     },
@@ -316,15 +322,19 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
     assert.equal(first.flow.parentElement, parent);
     assert.equal(second.row.parentElement, second.atomic);
-    assert.equal(motions[0]!.frames[1]!.transform, 'translateY(-5px)');
-    assert.equal(motions[1]!.frames[0]!.transform, 'translateY(6px)');
+    assert.equal(motions[0]!.frames[1]!.transform, 'translateY(-4px)');
+    assert.equal(motions[1]!.frames[0]!.transform, 'translateY(4px)');
+    assert.equal(motions[1]!.options.delay, 40, 'the handoff avoids a blank pause');
+    assert.equal(motions[1]!.options.fill, 'backwards', 'no flash of the incoming text during its delay');
+    assert.deepEqual(motions[2]!.frames, [{ width: '168px' }, { width: '168px' }], 'a longer incoming line has its full width from the start');
+    assert.equal(motions[2]!.options.delay, 180, 'the seat only shrinks once the outgoing line has faded');
     second.row.setAttribute('data-state', 'ok');
     await deliver();
     assert.equal(motions[0]!.cancelled, false, 'rapid updates do not interrupt the current transition');
     context.mock.timers.tick(900);
     assert.equal(toggle.children[0]!.children[0]!.textContent, 'Read a file, ran a command');
-    assert.equal(motions[2]!.frames[1]!.transform, 'translateY(0)', 'completion only fades');
-    assert.equal(motions[3]!.frames[0]!.transform, 'translateY(0)');
+    assert.equal(motions[3]!.frames[1]!.transform, 'translateY(0)', 'completion only fades');
+    assert.equal(motions[4]!.frames[0]!.transform, 'translateY(0)');
     assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
     assert.equal(motions[0]!.cancelled, true, 'new switches cancel earlier in-flight layers');
     toggle.click();
@@ -334,11 +344,17 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
     second.row.textContent = 'Another pending update';
     await deliver();
     second.row.setAttribute('data-state', 'error');
+    const beforeFailure = motions.length;
     await deliver();
+    assert.equal(motions.length, beforeFailure, 'failure reveals immediately without a decorative transition');
     assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'failure details open immediately');
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    reducedMotion = true;
     second.row.setAttribute('data-state', 'running');
+    second.row.textContent = 'Reduced motion activity';
     await deliver();
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Reduced motion activity');
+    assert.equal(motions.length, beforeFailure, 'reduced motion skips both text and width animation');
     release();
     context.mock.timers.tick(1000);
     assert.equal(parent.querySelector('[data-ccd-tool-group-toggle]'), null, 'disposal cancels pending refresh');

@@ -33,11 +33,11 @@ import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-m
 import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
 import { workspacePickerPort } from './compat/workspace-picker-port.ts';
 import { mountWorktreeSupport } from './compat/workspace-worktree-port.ts';
+import { mountWorktreeChip } from './compat/workspace-worktree.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
-import { mountFilesPane } from './compat/files-pane.ts';
-import { mountRightPanes } from './compat/right-panes.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { mountSidebarSearch } from './compat/sidebar-search.ts';
+import { mountSidebarMoreMenu } from './compat/sidebar-more-menu.ts';
 import { headerMenuActions } from './compat/header-menu-actions.ts';
 import { mountHeaderMenus } from './compat/header-menus.ts';
 import { createDomPort } from './compat/dom.ts';
@@ -50,8 +50,11 @@ import { mountViewOptions } from './features/view-options/mount.ts';
 import { mountContextPanel } from './features/context-panel/mount.ts';
 import { mountHeaderActions } from './features/conversation/header-actions/mount.ts';
 import { mountComposerPet } from './features/composer-pet/mount.ts';
+import { mountSearchPalette } from './features/search-palette/mount.ts';
+import { mountSidebarEditor } from './features/sidebar-editor/mount.ts';
+import { SIDEBAR_NAVIGATION_ICONS } from './features/sidebar/navigation-icons.ts';
 import { mountSettingsPage } from './features/settings/mount.ts';
-import { shellFeature } from './features/shell/index.ts';
+import { mountRightPanel } from './features/right-panel/mount.ts';
 import { sidebarFeature } from './features/sidebar/index.ts';
 import { newSessionFeature } from './features/new-session/index.ts';
 import { conversationFeature } from './features/conversation/index.ts';
@@ -60,7 +63,7 @@ import { statisticsFeature } from './features/statistics/index.ts';
 
 /** Speaks for the settings page's "planned" markers and for feature mounting. */
 const FEATURES = [
-  shellFeature, sidebarFeature, newSessionFeature,
+  sidebarFeature, newSessionFeature,
   conversationFeature, toolCallsFeature, statisticsFeature,
 ] as const;
 
@@ -105,7 +108,7 @@ export function apply(ctx: Context): void {
       error: (message, error) => console.error(`[${PLUGIN_ID}] ${message}`, error),
     };
     const settingsScope = new CleanupScope(error => logger.error('settings page cleanup failed', error));
-    mountSettingsPage(ctx, dom, form, host.themePreference, settingsScope);
+    mountSettingsPage(ctx, dom, form, host.themePreference, SIDEBAR_NAVIGATION_ICONS.theme, settingsScope);
     let active: CleanupScope | null = null;
     let released = false;
     let applied: string | null = null;
@@ -127,7 +130,7 @@ export function apply(ctx: Context): void {
       try {
         mountTheme(environment, scope);
         scope.add(mountPluginPage(document, error => logger.error('plugins: page enhancement failed', error), pluginCatalogPort(ctx)));
-        if (next.features.shell) {
+        if (next.features.sidebar) {
           scope.add(mountNavigationHistory(document, navigationHistoryPort(ctx), error => logger.error('navigation history: operation failed', error)));
         }
         const scheduleDraft = mountScheduleDraft(ctx, document, error => logger.error('schedule: draft preparation failed', error));
@@ -194,6 +197,12 @@ export function apply(ctx: Context): void {
            and the branch row are the plugin's own nodes in that card. */
         const worktrees = mountWorktreeSupport(ctx, document, error => logger.error('worktree: preparation failed', error));
         scope.add(worktrees.dispose);
+        scope.add(mountWorktreeChip(
+          document,
+          worktrees.choices,
+          session => ctx.workspaces.list.getSnapshot().items.find(item => (item.sessionIds as readonly string[]).includes(session))?.workspaceId,
+          error => logger.error('worktree: chip observer failed', error),
+        ));
         scope.add(mountWorkspaceMenu(
           document,
           workspacePickerPort(ctx, worktrees.choices),
@@ -207,23 +216,7 @@ export function apply(ctx: Context): void {
           document,
           error => logger.error('scrollbars: activity listener failed', error),
         ));
-        /* The Files pane's filter field, tree control, tab mark and empty
-           column are nodes the host has no counterpart for, so they are
-           supplied from the compatibility layer the same way — beside the
-           sheet that dresses the pane around them. */
-        scope.add(mountFilesPane(
-          document,
-          error => logger.error('files pane: observer failed', error),
-        ));
-        /* The panel's views as blocks rather than tabs: the leaf whose module
-           takes each view out of the strip into a pane of its own
-           (`compat/right-panes.ts`). It needs the panel's own service, so it is
-           mounted here rather than from a feature's own mount. */
-        scope.add(mountRightPanes(
-          ctx,
-          document,
-          error => logger.error('right panes: observer failed', error),
-        ));
+        mountRightPanel(ctx, environment, scope);
         if (next.features.conversation) {
           /* The header cluster's open control is host-rendered, so its mode and
              its names are annotated from the compatibility layer; the two added
@@ -247,10 +240,21 @@ export function apply(ctx: Context): void {
            plugin owns; both follow the sidebar switch that draws the trigger. */
         if (next.features.sidebar) {
           const view = mountViewOptions(ctx, environment, scope);
+          /* Search is a navigation row that opens the plugin's palette; the
+             host's ⌘K reaches the same palette through its hidden field. */
           scope.add(mountSidebarSearch(
             document,
-            error => logger.error('sidebar: search field could not be placed', error),
+            SIDEBAR_NAVIGATION_ICONS.search,
+            mountSearchPalette(ctx, environment, scope),
+            error => logger.error('sidebar: search row could not be placed', error),
           ));
+          scope.add(mountSidebarMoreMenu(
+            document,
+            error => logger.error('sidebar: more menu placement failed', error),
+          ));
+          /* More's 编辑侧边栏… chooses which panels the column lists; the
+             ones left out move to the head of the same card. */
+          mountSidebarEditor(ctx, environment, scope);
           if (next.view.groupByStatus) {
             scope.add(mountStatusGroups(document, ctx,
               error => logger.error('sidebar: status grouping failed', error)));

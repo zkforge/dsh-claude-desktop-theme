@@ -19,6 +19,7 @@ const PET_ORDER = 20;
  * @param cleanup - scope owning the styles, slot registration and anchor.
  */
 export function mountComposerPet(ctx: Context, environment: FeatureEnvironment, cleanup: CleanupScope): void {
+  if (environment.config.personalization.petStyle === 'none') return;
   cleanup.add(environment.dom.mountStyles(css));
   const registration = ctx.inject(['slots'], scope => {
     const disposers: Disposer[] = [];

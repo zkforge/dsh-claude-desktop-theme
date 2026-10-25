@@ -6,6 +6,7 @@ test('only known interface labels are translated, never paths or generated descr
   assert.equal(englishToolLabel('思考'), 'Thought');
   assert.equal(englishToolLabel('思考', true), 'Thinking');
   assert.equal(englishToolLabel('查找文件'), 'Find files');
+  assert.equal(englishToolLabel('搜索文件内容'), 'Search content');
   assert.equal(englishToolLabel('加载技能'), 'Skill');
   for (const text of ['scratch/思考.txt', '查看生成的文件', 'Show working directory and list files', '']) {
     assert.equal(englishToolLabel(text), undefined);
@@ -50,6 +51,15 @@ test('English title siblings follow native changes and restore original nodes on
     assert.equal(views[0]?.textContent, 'Thinking');
     assert.equal(source.textContent, '思考');
     assert.ok(attributes.has('data-ccd-english-source'));
+    source.textContent = '';
+    attributes.set('data-shimmer-text', '思考');
+    await deliver();
+    assert.equal(views[0]?.textContent, 'Thinking', 'the shimmer copy matches the translated base title');
+    attributes.set('data-shimmer-text', '加载技能');
+    await deliver();
+    assert.equal(views[0]?.textContent, 'Skill', 'attribute-only updates refresh the shimmer title');
+    attributes.delete('data-shimmer-text');
+    source.textContent = '思考';
     running = false; await deliver();
     assert.equal(views[0]?.textContent, 'Thought');
     assert.equal(views.length, 1);

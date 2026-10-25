@@ -31,7 +31,7 @@ function rules(sheet: string): Rule[] {
   }));
 }
 
-const shell = rules(read('../src/client/features/shell/shell.css'));
+const shell = rules(read('../src/client/theme/base.css'));
 const sidebar = rules(read('../src/client/features/sidebar/sidebar.css'));
 
 test('the Windows caption strip keeps the configured sidebar colour', () => {

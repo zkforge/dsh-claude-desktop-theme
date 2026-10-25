@@ -13,10 +13,9 @@
  * and the static web frontend's markdown classes (`_markdown_1ypvv_5`) are
  * identical in both builds, so neither needs an entry here.
  *
- * The tables are pinned to the DSH version the plugin declares
- * (`dsh.engines.dsh = "=0.2.0-rc.2"`): a later release may rehash every prefix
- * again, and both tables then have to be refreshed from that build's
- * `app.asar` — the same single-place update `host-dom.ts` documents.
+ * Keep the authored build stable and register each verified release below.
+ * A new release may rehash every prefix; read its tables from `app.asar`.
+ * The latest macOS build is also the preload fallback before the frame mounts.
  */
 
 /** One shipped DSH build and the prefixes it uses for the pinned classes. */
@@ -75,8 +74,40 @@ export const WINDOWS_BUILD: HostBuild = Object.freeze({
   }),
 });
 
+/** DSH `0.2.1-rc.3`, macOS commit `be72761e`, read from its shipped app.asar. */
+export const MACOS_BUILD: HostBuild = Object.freeze({
+  id: 'dsh-0.2.1-rc.3-be72761e',
+  frameClass: 'PIRFFq_frame',
+  prefixes: Object.freeze({
+    '-gRAhq_': 'BFlR-G_',
+    'Da3aKq_': 'sDDavq_',
+    'Dws9Sa_': '_77Pn0W_',
+    'HiSsxa_': 'ijfCxa_',
+    'IzP3Va_': 'AkCqbG_',
+    'OpZ85W_': 'TQ0rwa_',
+    'Q2dzhW_': 'UHhYua_',
+    'ST7X_W_': 'kiGsTW_',
+    'ZogL4G_': 'hjANda_',
+    '_2tNPVa_': 'XdyUwa_',
+    '_3WPZCG_': 'kB3qhq_',
+    '_3li69W_': 'nIjNjW_',
+    '_6Qf49G_': 'PIRFFq_',
+    '_7514NG_': 'Kjh-qa_',
+    'bocITq_': '_8tPydW_',
+    'cl2Rlq_': 'htuFrW_',
+    'dVdiKa_': 'pNt0EW_',
+    'gKv1-q_': 'XNZzAa_',
+    'icaHSq_': 'tnXGgG_',
+    'iq4beG_': 'ga5fXW_',
+    'jJkEga_': 'JoiKIa_',
+    'wXeviG_': 'SJRB_q_',
+    'y0jqnG_': 'X0HXfW_',
+    'yhfFVG_': 'JZLxKW_',
+  }),
+});
+
 /** Every build whose class names this plugin knows how to speak. */
-export const HOST_BUILDS: readonly HostBuild[] = Object.freeze([PINNED_BUILD, WINDOWS_BUILD]);
+export const HOST_BUILDS: readonly HostBuild[] = Object.freeze([PINNED_BUILD, WINDOWS_BUILD, MACOS_BUILD]);
 
 /** Detection results that came from the document itself, so they never change. */
 const identified = new WeakMap<Document, HostBuild>();
@@ -106,7 +137,8 @@ function frameClasses(document: Document): string[] {
 
 /** The build the preload's `data-platform` suggests; a guess, not evidence. */
 function platformBuild(document: Document): HostBuild {
-  return document.documentElement?.dataset?.platform === 'win32' ? WINDOWS_BUILD : PINNED_BUILD;
+  const platform = document.documentElement?.dataset?.platform;
+  return platform === 'win32' ? WINDOWS_BUILD : platform === 'darwin' ? MACOS_BUILD : PINNED_BUILD;
 }
 
 /**

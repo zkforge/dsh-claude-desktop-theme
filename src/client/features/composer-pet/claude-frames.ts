@@ -65,19 +65,19 @@ const turningBody = box(4.5, -1.5, 23.5, 19) + box(3, -5.5, 6, 4)
 const turn: ClaudeFrame = [turningBody + straightFeet(17.5, [4.5, 10.5, 19, 25]),
   box(25, -1.5, 3, 19) + box(25, 17.5, 3, 6), eyes(6, 20.5, 4.5), laptopSteps(13)];
 
-const slopeHand = box(1.5, 10.5, 1.5, 1.5) + box(0, 12, 3, 1.5)
-  + box(-1.5, 13.5, 4.5, 1.5) + box(-3, 15, 6, 4.5);
-const raisedHand = box(-1.5, 10.5, 4.5, 6) + box(1.5, 16.5, 1.5, 3)
-  + box(-3, 18, 6, 1.5);
-const pressedHand = box(-1.5, 10.5, 4.5, 9);
-const loweredHand = raisedHand + box(-3, 19.5, 6, 4);
-const raisedCrease = box(-3, 18, 6, 1.5);
-const pressedCrease = box(-1.5, 10.5, 4.5, 1.5);
-
-function typing(hand: string, crease = '', laptop = laptopSteps(14.5)): ClaudeFrame {
-  return [box(3, 3, 23.5, 16.5) + hand + projectedFeet(19.5),
-    box(20.5, 3, 6, 16.5) + bentFoot(23.5, 25, 19.5) + crease,
-    eyes(3, 14.5, 7.5), laptop];
+/** The recording staggers two square hands by one 1.5px step horizontally.
+ * The near hand masks the far one, whose keystroke reaches lower. */
+function typing(farY: number, nearY: number): ClaudeFrame {
+  const farHand = box(-3, farY, 6, 6);
+  const nearHand = box(-1.5, nearY, 6, 6);
+  const above = Math.min(6, Math.max(0, nearY - farY));
+  const below = Math.min(6, Math.max(0, farY - nearY));
+  const farShade = box(-3, farY, 1.5, 6)
+    + (above > 0 ? box(-1.5, farY, 4.5, above) : '')
+    + (below > 0 ? box(-1.5, farY + 6 - below, 4.5, below) : '');
+  return [box(3, 3, 23.5, 16.5) + farHand + nearHand + projectedFeet(19.5),
+    box(20.5, 3, 6, 16.5) + bentFoot(23.5, 25, 19.5) + farShade,
+    eyes(3, 14.5, 7.5), laptopSteps(14.5)];
 }
 
 const lean: ClaudeFrame = [box(3, 1.5, 23.5, 16) + box(-3, 6, 6, 7.5)
@@ -96,8 +96,8 @@ const returnArms = box(-3, 11, 9, 3) + box(0, 9.5, 6, 1.5) + box(3, 8, 3, 1.5)
 const returning = upright(0, 17.5, returnArms, eyes(6, 20.5, 4.5), laptopFold,
   box(26.5, 0, 3, 17.5) + box(26.5, 17.5, 3, 6) + box(29.5, 12, 5.5, 1.5));
 
-/** Pose order and hold times follow the recording; identical clean silhouettes
- * are reused so compression noise cannot animate otherwise stationary edges. */
+/** Reuse clean silhouettes for the recorded sequence; typing uses a steady
+ * far / passing / near cadence instead of changing the hands' contours. */
 export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
   upright(1.5, 19, winkArms, box(9, 7.5, 3, 3) + box(22, 9, 4.5, 1.5)),
   upright(0, 17.5, reachingArm + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 3), laptopOut),
@@ -107,17 +107,9 @@ export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
   upright(0, 17.5, box(0, 6, 6, 6) + box(29.5, 4.5, 5.5, 6), eyes(9, 23.5, 4.5), laptopFlat),
   turn,
   lean,
-  typing(slopeHand, '', laptopSteps(13)),
-  typing(slopeHand, '', laptopSteps(13)),
-  typing(raisedHand, raisedCrease),
-  typing(pressedHand, pressedCrease),
-  typing(slopeHand),
-  typing(pressedHand, pressedCrease),
-  typing(raisedHand, raisedCrease),
-  typing(pressedHand, pressedCrease),
-  typing(loweredHand, raisedCrease + box(-3, 19.5, 6, 4)),
-  typing(loweredHand, raisedCrease + box(-3, 19.5, 6, 4)),
-  fold,
+  typing(13.5, 13.5),
+  typing(17.5, 10.5),
+  typing(10.5, 13.5),
   fold,
   returning,
   upright(1.5, 19, winkArms, eyes(9, 23.5, 7.5)),
@@ -125,4 +117,8 @@ export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
   upright(0, 17.5, box(0, 7.5, 6, 6) + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 3)),
   CLAUDE_IDLE,
 ];
-export const CLAUDE_TRACK: readonly number[] = [0,0,0,1,1,2,2,2,3,3,4,5,5,6,6,7,8,9,10,10,11,12,12,10,10,11,12,12,10,11,11,12,12,10,10,13,13,13,14,14,15,13,13,16,16,17,18,19,20,20,21,21,21,22,22,23,24];
+export const CLAUDE_TRACK: readonly number[] = [
+  0,0,0,1,1,2,2,2,3,3,4,5,5,6,6,7,
+  8,9,9,8,10,10,8,9,9,8,10,10,8,9,9,8,10,10,8,9,9,8,10,10,8,9,9,8,10,10,
+  11,11,12,12,13,13,13,14,14,15,16,
+];

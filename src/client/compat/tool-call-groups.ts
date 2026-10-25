@@ -240,6 +240,10 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
           try { syncParent(parent); } catch (error) { report(error); }
         }, remainingDwell);
       } else if (group.renderKey !== renderKey) {
+        const viewport = group.label.parentElement!;
+        // Measure before cancelling: an interrupted transition must continue
+        // from its visible width rather than jump to its previous destination.
+        const oldWidth = canAnimate ? viewport.getBoundingClientRect().width : 0;
         group.renderKey = renderKey;
         group.shownAt = Date.now();
         group.shownLive = !!live;
@@ -254,21 +258,32 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
           span.textContent = part.text;
           group.label.append(span);
         }
-        if (oldText && canAnimate) {
+        if (oldText && canAnimate && !failed) {
           const outgoing = document.createElement('span');
           outgoing.textContent = oldText;
           outgoing.setAttribute('data-ccd-tool-roll-out', '');
           outgoing.setAttribute('aria-hidden', 'true');
-          group.label.parentElement!.append(outgoing);
+          viewport.append(outgoing);
           group.outgoing = outgoing;
-          // Settling into the final summary only fades; live activity keeps a
-          // small directional cue without rolling through an entire line. The
-          // gentler acceleration leaves time to perceive the change itself.
-          const options = { duration: 380, easing: 'cubic-bezier(.25, .1, .25, 1)' };
+          // Crossfade with a small directional cue and no blank pause. The
+          // incoming line gets its full intrinsic width throughout the motion,
+          // so a longer description never grows out of a moving ellipsis.
+          const options = { duration: 360, easing: 'cubic-bezier(.2, .65, .3, 1)' };
           const exit = outgoing.animate([{ transform: 'translateY(0)', opacity: 1 },
-            { transform: live ? 'translateY(-5px)' : 'translateY(0)', opacity: 0 }], { ...options, duration: 220, fill: 'forwards' });
-          group.animations = [exit, group.label.animate([{ transform: live ? 'translateY(6px)' : 'translateY(0)', opacity: 0 },
-            { transform: 'translateY(0)', opacity: 1 }], options)];
+            { transform: live ? 'translateY(-4px)' : 'translateY(0)', opacity: 0 }], { duration: 180, easing: 'ease-in', fill: 'forwards' });
+          group.animations = [exit, group.label.animate([
+            { transform: live ? 'translateY(4px)' : 'translateY(0)', opacity: 0 },
+            { transform: 'translateY(0)', opacity: 1 },
+          ], { ...options, delay: 40, fill: 'backwards' })];
+          const width = viewport.getBoundingClientRect().width;
+          // Reserve the larger width while the old line fades. Only the outer
+          // seat resizes; neither text layer is squeezed during the crossfade.
+          if (oldWidth !== width) {
+            const seatWidth = Math.max(oldWidth, width);
+            group.animations.push(viewport.animate([
+              { width: `${seatWidth}px` }, { width: `${width}px` },
+            ], { duration: 220, delay: 180, easing: 'ease-in-out', fill: 'backwards' }));
+          }
           exit.onfinish = () => outgoing.remove();
         }
       }

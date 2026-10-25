@@ -63,13 +63,16 @@ export function ChoiceMenu({ id, labelId, anchor, value, options, onSelect, onCl
     event.preventDefault();
     buttons[next]?.focus();
   };
-  const width = Math.min(rect.width, window.innerWidth - 24);
+  /* At least 240px wide and aligned to the trigger's trailing edge, so the
+     Theme panel's borderless select still opens a full list; the dialog's
+     260px box gives the same rectangle as before. */
+  const width = Math.min(Math.max(rect.width, 240), window.innerWidth - 24);
   const top = rect.bottom + 6 + height > window.innerHeight - 12
     ? Math.max(12, rect.top - 6 - height) : rect.bottom + 6;
   return (
     <ul id={id} ref={menuRef} className="ccd-settings-menu ccd-settings-choice-menu" role="listbox"
       aria-labelledby={labelId} onKeyDown={onKeyDown}
-      style={{ top, left: Math.max(12, Math.min(rect.left, window.innerWidth - 12 - width)), width }}>
+      style={{ top, left: Math.max(12, Math.min(rect.right - width, window.innerWidth - 12 - width)), width }}>
       {options.map(option => (
         <li key={option.value} role="presentation">
           <button type="button" role="option" aria-selected={option.value === value}

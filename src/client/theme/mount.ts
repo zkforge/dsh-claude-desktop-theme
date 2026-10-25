@@ -6,6 +6,7 @@ import menuCss from './menus.css';
 import dialogCss from './dialogs.css';
 import scrollbarCss from './scrollbars.css';
 import tokenCss from './tokens.css';
+import baseCss from './base.css';
 import scheduleCss from './schedule.css';
 import navigationHistoryCss from './navigation-history.css';
 import pluginsCss from './plugins.css';
@@ -26,6 +27,7 @@ import managementCss from './management.css';
 export function mountTheme(environment: FeatureEnvironment, scope: CleanupScope): void {
   scope.add(environment.dom.activate());
   scope.add(environment.dom.mountStyles(tokenCss));
+  scope.add(environment.dom.mountStyles(baseCss));
   scope.add(environment.dom.mountStyles(composerCss));
   scope.add(environment.dom.mountStyles(menuCss));
   scope.add(environment.dom.mountStyles(dialogCss));

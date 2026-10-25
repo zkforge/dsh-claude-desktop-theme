@@ -1,0 +1,378 @@
+/*
+ * The search palette (features/search-palette/SearchPalette.tsx).
+ *
+ * Measured on the reference at @2x and halved: a 540px card 468px tall with a
+ * 16px corner, about a sixth of the window below its top. The field's text and
+ * the section headings share a 20px inset; the tab pills start on that inset
+ * with 8px of padding, so their words sit 8px further in. A 1px rule closes
+ * the 81px header. Rows are 29px on a 29px pitch with a 7px corner, inset 8px
+ * from the card, with a 12px glyph in a 16px seat and a 7px gap; the current
+ * row carries its `…` and ↵ against the trailing edge. A 32px footer lists the
+ * key hints. Row, tab and field text share one size with the sidebar's
+ * navigation labels, as they do in the reference; headings, readings and hints
+ * sit one step smaller.
+ */
+
+.ccd-search-palette {
+  box-sizing: border-box;
+  width: min(540px, calc(100vw - 32px));
+  max-width: none;
+  height: min(468px, calc(100vh - 96px));
+  max-height: none;
+  margin: clamp(48px, 17vh, 120px) auto auto;
+  padding: 0;
+  overflow: visible;
+  border: .5px solid var(--ccd-border);
+  border-radius: 16px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-dialog-shadow);
+  color: var(--ccd-text);
+  font: 400 var(--ccd-font-size-body)/20px var(--ccd-font-ui);
+  /* The seat it is registered in is click-through; the modal card is hit
+     tested in the top layer, and this states it rather than relying on that. */
+  pointer-events: auto;
+}
+
+.ccd-search-palette[open] {
+  animation: ccd-search-palette-in 140ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.ccd-search-palette::backdrop {
+  background: var(--ccd-dialog-mask);
+  animation: ccd-search-palette-fade 140ms ease-out;
+}
+
+@keyframes ccd-search-palette-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.985); }
+}
+
+@keyframes ccd-search-palette-fade {
+  from { opacity: 0; }
+}
+
+.ccd-search-palette-surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.ccd-search-palette-field {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 46px;
+  padding: 8px 6px 0 20px;
+}
+
+.ccd-search-palette-field input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 400 var(--ccd-font-size-muted)/20px var(--ccd-font-ui);
+  caret-color: var(--ccd-text);
+}
+
+.ccd-search-palette-field input::placeholder {
+  color: var(--ccd-text-placeholder);
+}
+
+.ccd-search-palette-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  cursor: pointer;
+}
+
+.ccd-search-palette-close:hover {
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+}
+
+.ccd-search-palette-tabs {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 20px 10px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ccd-border-soft);
+  scrollbar-width: none;
+}
+
+.ccd-search-palette-tabs button {
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 400 var(--ccd-font-size-muted)/24px var(--ccd-font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ccd-search-palette-tabs button:hover {
+  background: var(--ccd-hover);
+}
+
+.ccd-search-palette-tabs button[aria-selected="true"] {
+  background: var(--ccd-palette-tab-selected);
+  font-weight: 500;
+}
+
+.ccd-search-palette-list {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 8px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ccd-search-palette-heading {
+  height: 26px;
+  padding: 0 12px;
+  color: var(--ccd-text-secondary);
+  font-size: 11px;
+  line-height: 26px;
+  user-select: none;
+}
+
+.ccd-search-palette-heading:not(:first-child) {
+  margin-top: 8px;
+}
+
+.ccd-search-palette-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 29px;
+  padding: 0 8px 0 10px;
+  border-radius: 7px;
+  color: var(--ccd-palette-row-ink);
+  font-size: var(--ccd-font-size-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ccd-search-palette-row[aria-selected="true"] {
+  background: var(--ccd-palette-row-selected);
+  color: var(--ccd-text);
+}
+
+.ccd-search-palette-row[data-archived] .ccd-search-palette-label {
+  color: var(--ccd-text-archived);
+}
+
+.ccd-search-palette-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.ccd-search-palette-row[aria-selected="true"] .ccd-search-palette-icon {
+  color: var(--ccd-text);
+}
+
+.ccd-search-palette-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccd-search-palette-label mark {
+  background: transparent;
+  color: var(--ccd-text);
+  font-weight: 600;
+}
+
+.ccd-search-palette-secondary {
+  flex: 0 10 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ccd-text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccd-search-palette-trail {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.ccd-search-palette-meta {
+  color: var(--ccd-text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ccd-search-palette-more,
+.ccd-search-palette-enter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  color: var(--ccd-text);
+}
+
+.ccd-search-palette-enter {
+  width: 16px;
+  color: var(--ccd-text-secondary);
+}
+
+.ccd-search-palette-more {
+  width: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ccd-search-palette-more:hover,
+.ccd-search-palette-more[aria-expanded="true"] {
+  background: var(--ccd-hover-strong);
+  color: var(--ccd-text);
+}
+
+.ccd-search-palette-empty {
+  margin: 0;
+  padding: 28px 12px;
+  color: var(--ccd-text-muted);
+  font-size: var(--ccd-font-size-muted);
+  text-align: center;
+}
+
+.ccd-search-palette-menu {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 148px;
+  padding: 4px;
+  border: .5px solid var(--ccd-view-menu-border);
+  border-radius: var(--ccd-view-menu-radius);
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-view-menu-shadow);
+}
+
+.ccd-search-palette-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 400 var(--ccd-font-size-muted)/20px var(--ccd-font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ccd-search-palette-menu button[data-active] {
+  background: var(--ccd-hover);
+}
+
+.ccd-search-palette-menu kbd {
+  color: var(--ccd-text-muted);
+  font: inherit;
+}
+
+.ccd-search-palette-notice {
+  flex: none;
+  margin: 0;
+  padding: 6px 16px;
+  border-top: 1px solid var(--ccd-border-soft);
+  color: var(--ccd-menu-danger);
+  font-size: var(--ccd-font-size-muted);
+}
+
+.ccd-search-palette-footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 16px;
+  overflow: hidden;
+  border-top: 1px solid var(--ccd-border-soft);
+  color: var(--ccd-text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ccd-search-palette-footer > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ccd-search-palette-footer kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 4px;
+  color: var(--ccd-text-secondary);
+  font: 400 10px/13px var(--ccd-font-ui);
+}
+
+.ccd-search-palette-footer kbd:first-of-type {
+  margin-left: 6px;
+}
+
+.ccd-search-palette-compose {
+  margin-left: auto;
+}
+
+@media (max-width: 560px) {
+  .ccd-search-palette-footer > span:nth-child(3),
+  .ccd-search-palette-footer > span:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ccd-search-palette[open],
+  .ccd-search-palette::backdrop {
+    animation: none;
+  }
+}

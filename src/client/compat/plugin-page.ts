@@ -33,7 +33,6 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
   let released = false;
   const headings = new Map<Element, HTMLElement>();
   const versions = new Map<Element, HTMLElement>();
-  const breadcrumbs = new Map<Element, HTMLElement>();
   let entries: readonly PluginCatalogEntry[] = [];
   let loaded = false;
   let loading = false;
@@ -69,8 +68,6 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
     }
   };
   const restore = () => {
-    for (const breadcrumb of breadcrumbs.values()) breadcrumb.remove();
-    breadcrumbs.clear();
     for (const version of versions.values()) version.remove();
     versions.clear();
     for (const heading of headings.values()) heading.remove();
@@ -106,26 +103,6 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
     const heading = page.querySelector(`[${PART}="manager-pageHeading"] h1`);
     const mode = discover ? 'discover' : heading ? 'mine' : 'detail';
     attribute(page, 'data-ccd-plugin-page', mode);
-    for (const [top, breadcrumb] of breadcrumbs) if (!page.contains(top)) {
-      breadcrumb.remove(); breadcrumbs.delete(top);
-    }
-    for (const top of page.querySelectorAll(`[${PART}="manager-detailTop"]`)) {
-      const title = top.parentElement?.querySelector(`[${PART}="manager-detailTitle"]`)?.textContent?.trim();
-      if (!title) { breadcrumbs.get(top)?.remove(); breadcrumbs.delete(top); continue; }
-      let breadcrumb = breadcrumbs.get(top);
-      if (!breadcrumb) {
-        breadcrumb = document.createElement('span');
-        breadcrumb.className = 'ccd-plugin-detail-current';
-        const separator = document.createElement('span');
-        separator.textContent = '/'; separator.setAttribute('aria-hidden', 'true');
-        const current = document.createElement('span'); current.setAttribute('aria-current', 'page');
-        breadcrumb.append(separator, current);
-        breadcrumbs.set(top, breadcrumb);
-      }
-      const current = breadcrumb.lastElementChild!;
-      if (current.textContent !== title) current.textContent = title;
-      if (breadcrumb.parentElement !== top) top.append(breadcrumb);
-    }
     const zh = document.documentElement.lang.toLowerCase().startsWith('zh');
     if (catalog && !loaded && !loading) void loadCatalog();
     for (const [card, version] of versions) if (!page.contains(card)) { version.remove(); versions.delete(card); }

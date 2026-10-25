@@ -4,6 +4,9 @@ import type { ThemePreference } from '../../contracts/ports.ts';
 import { FontMenu } from './FontMenu.tsx';
 import type { FontMenuLabels } from './FontMenu.tsx';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
+import { normalizeColour } from '../../../shared/config.ts';
+import { ColourMenu } from './ColourMenu.tsx';
+import type { ColourMenuLabels } from './ColourMenu.tsx';
 
 /**
  * Field rows for the configuration page.
@@ -187,21 +190,24 @@ export interface ColourRowProps {
   readonly hint?: string;
   readonly value: string;
   readonly placeholder: string;
-  readonly resetLabel: string;
+  readonly pickerLabels: ColourMenuLabels;
   readonly error?: string;
   readonly onChange: (value: string) => void;
   readonly onCommit: () => void;
-  readonly onReset: () => void;
+  readonly onSelect: (value: string) => void;
 }
 
 /**
- * One background-colour row: a bordered hex field, written when it is left.
+ * One background-colour row: a preview swatch, editable hex and gradient picker.
  * @param props - Identity, copy, current text and callbacks.
  * @returns The row.
  */
 export function ColourRow(props: ColourRowProps): ReactElement {
-  const { id, label, hint, value, placeholder, resetLabel, error, onChange, onCommit, onReset } = props;
+  const { id, label, hint, value, placeholder, pickerLabels, error, onChange, onCommit, onSelect } = props;
   const labelId = `${id}-label`;
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const preview = normalizeColour(value) || placeholder;
+  const menuId = `${id}-picker`;
   return (
     <div className="ccd-settings-row" data-ccd-row="colour">
       <span className="ccd-settings-label">
@@ -209,25 +215,36 @@ export function ColourRow(props: ColourRowProps): ReactElement {
         {hint === undefined ? null : <span className="ccd-settings-hint">{hint}</span>}
       </span>
       <span className="ccd-settings-control">
-        <input
-          id={id}
-          className="ccd-settings-text ccd-settings-text-short"
-          type="text"
-          spellCheck={false}
-          autoComplete="off"
-          value={value}
-          placeholder={placeholder}
-          aria-labelledby={labelId}
-          aria-invalid={error !== undefined}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
-          onBlur={onCommit}
-          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-            if (event.key === 'Enter') { event.preventDefault(); onCommit(); }
-          }}
-        />
-        <button type="button" className="ccd-settings-button-quiet" onClick={onReset}>{resetLabel}</button>
+        <span className="ccd-settings-colour" data-invalid={error !== undefined}>
+          <button type="button" className="ccd-settings-colour-swatch" aria-labelledby={labelId}
+            aria-haspopup="dialog" aria-expanded={anchor !== null} aria-controls={anchor ? menuId : undefined}
+            onClick={event => setAnchor(anchor ? null : event.currentTarget.parentElement)}>
+            <span aria-hidden="true" style={{ background: preview }} />
+          </button>
+          <input
+            id={id}
+            className="ccd-settings-colour-text"
+            type="text"
+            spellCheck={false}
+            autoComplete="off"
+            value={value.toUpperCase()}
+            placeholder={placeholder.toUpperCase()}
+            aria-labelledby={labelId}
+            aria-invalid={error !== undefined}
+            onFocus={() => setAnchor(null)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value.toUpperCase())}
+            onBlur={onCommit}
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+              if (event.key === 'Enter') { event.preventDefault(); onCommit(); }
+            }}
+          />
+        </span>
       </span>
       {error === undefined ? null : <p className="ccd-settings-error" role="alert">{error}</p>}
+      {anchor === null ? null : (
+        <ColourMenu id={menuId} labelId={labelId} anchor={anchor} value={preview} labels={pickerLabels}
+          onPreview={onChange} onSelect={onSelect} onClose={() => setAnchor(null)} />
+      )}
     </div>
   );
 }
@@ -240,6 +257,8 @@ export interface FontRowProps {
   readonly placeholder: string;
   readonly resetLabel: string;
   readonly error?: string;
+  /** Whether the served value differs from the default; the Theme panel shows Reset only then. */
+  readonly customized?: boolean;
   /** The open family menu's anchor box, or undefined while it is closed. */
   readonly anchor: HTMLElement | undefined;
   readonly families: readonly string[];
@@ -260,12 +279,12 @@ export interface FontRowProps {
  */
 export function FontRow(props: FontRowProps): ReactElement {
   const {
-    id, label, hint, value, placeholder, resetLabel, error, anchor, families, menuLabels,
+    id, label, hint, value, placeholder, resetLabel, error, customized, anchor, families, menuLabels,
     onToggle, onSelect, onUseText, onCloseMenu, onReset,
   } = props;
   const labelId = `${id}-label`;
   return (
-    <div className="ccd-settings-row" data-ccd-row="font">
+    <div className="ccd-settings-row" data-ccd-row="font" data-ccd-customized={customized}>
       <span className="ccd-settings-label">
         <span className="ccd-settings-name" id={labelId}>{label}</span>
         {hint === undefined ? null : <span className="ccd-settings-hint">{hint}</span>}
@@ -284,7 +303,18 @@ export function FontRow(props: FontRowProps): ReactElement {
           <span className="ccd-settings-select-value">{value === '' ? placeholder : value}</span>
           <Chevron />
         </button>
-        <button type="button" className="ccd-settings-button-quiet" onClick={onReset}>{resetLabel}</button>
+        <button
+          type="button"
+          className="ccd-settings-button-quiet"
+          onClick={() => {
+            onReset();
+            /* The Theme panel hides Reset once the value is the default again, so
+               focus moves to the row's own control instead of falling to the body. */
+            document.getElementById(id)?.focus();
+          }}
+        >
+          {resetLabel}
+        </button>
       </span>
       {error === undefined ? null : <p className="ccd-settings-error" role="alert">{error}</p>}
       {anchor === undefined ? null : (

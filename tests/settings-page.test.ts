@@ -51,18 +51,22 @@ interface FakeChild {
   effect(callback: () => unknown, label?: string): () => void;
   readonly slots: {
     inject(name: string, register: () => () => void): () => void;
-    register(options: { name: string; id: string; order: number; label: () => string; locale?: string }, component: unknown): () => void;
+    register(options: Registration, component: unknown): () => void;
   };
 }
 
+interface Registration { name: string; id?: string; key?: string; order?: number; label?: () => string; locale?: string }
+
+const PANEL = { page: () => null, glyph: () => null };
+
 function fakeContext() {
   const events: string[] = [];
-  const registrations: Array<{ name: string; id: string; order: number; label: () => string; locale?: string }> = [];
+  const registrations: Registration[] = [];
   const dictionaries: string[] = [];
   const injected: string[] = [];
   const child: FakeChild = {
     locale: {
-      bind: () => key => key === 'nav' ? 'Claude 主题' : key,
+      bind: () => key => key === 'nav' ? 'Claude 主题' : key === 'panel' ? '主题' : key,
       register(ns, dicts) {
         dictionaries.push(`${ns}:${Object.keys(dicts).sort().join(',')}`);
         events.push('dictionary');
@@ -95,24 +99,28 @@ function fakeContext() {
   return { ctx, events, registrations, dictionaries, injected };
 }
 
-test('the page registers as a localized main settings section', () => {
+test('the page registers as a localized settings section and a Theme panel', () => {
   const fake = fakeContext();
-  registerSettingsPage(fake.ctx, 'ui-skin-ccd-style', () => null);
-  assert.deepEqual(fake.injected, ['slots,locale']);
+  registerSettingsPage(fake.ctx, 'ui-skin-ccd-style', () => null, PANEL);
+  assert.deepEqual(fake.injected, ['slots,locale,layout']);
   assert.deepEqual(fake.dictionaries, [`${SETTINGS_NAMESPACE}:en,zh`]);
-  assert.equal(fake.registrations[0]?.label(), 'Claude 主题');
-  assert.deepEqual(fake.registrations.map(({ label, ...options }) => options), [{
-    name: 'settings.section',
-    order: 20,
-    id: 'ui-skin-ccd-style',
-    locale: SETTINGS_NAMESPACE,
-  }]);
-  assert.deepEqual(fake.events, ['dictionary', 'inject:settings.section', 'page registered']);
+  assert.deepEqual(fake.registrations.map(({ label }) => label?.()), [undefined, '主题', 'Claude 主题']);
+  assert.deepEqual(fake.registrations.map(({ label, ...options }) => options), [
+    { name: 'main', key: 'ccd-theme', locale: SETTINGS_NAMESPACE },
+    { name: 'sidebar.panellist', id: 'ccd-theme', order: 20, locale: SETTINGS_NAMESPACE },
+    { name: 'settings.section', order: 20, id: 'ui-skin-ccd-style', locale: SETTINGS_NAMESPACE },
+  ]);
+  assert.deepEqual(fake.events, [
+    'dictionary',
+    'inject:main', 'page registered',
+    'inject:sidebar.panellist', 'page registered',
+    'inject:settings.section', 'page registered',
+  ]);
 });
 
 test('releasing the registration disposes the injected scope', () => {
   const fake = fakeContext();
-  const registration = registerSettingsPage(fake.ctx, 'ui-skin-ccd-style', () => null);
+  const registration = registerSettingsPage(fake.ctx, 'ui-skin-ccd-style', () => null, PANEL);
   registration.dispose();
   assert.ok(fake.events.includes('injection released'));
 });

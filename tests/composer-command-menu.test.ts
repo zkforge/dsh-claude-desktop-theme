@@ -51,10 +51,14 @@ test('typed slash preserves command and skill candidates, groups skill-only resu
   command.name = new Node(); command.name.textContent = '计划';
   skill.name = new Node(); skill.name.textContent = 'review';
   menu.append(command); menu.append(skill);
+  const addTip = new Node(), otherTip = new Node();
+  addTip.textContent = '添加文件或调用指令';
+  otherTip.textContent = '其他提示';
   const events = new Map<string, unknown>();
   const doc = {
     body: {}, defaultView: { addEventListener() {}, removeEventListener() {} },
-    querySelectorAll: () => [menu], createElement: () => new Node(),
+    querySelectorAll: (selector: string) => selector === '[role="tooltip"]' ? [addTip, otherTip] : [menu],
+    createElement: () => new Node(),
     addEventListener: (type: string, listener: unknown) => events.set(type, listener),
     removeEventListener: (type: string) => events.delete(type),
   } as unknown as Document;
@@ -63,6 +67,10 @@ test('typed slash preserves command and skill candidates, groups skill-only resu
   try {
     disposers.push(mountComposerCommandMenu(doc, error => { throw error; }));
     disposers.push(mountCommandMenuDetails(doc, error => { throw error; }));
+    assert.equal(addTip.hasAttribute('data-ccd-add-tooltip'), true, 'add tooltip is suppressed without data-portal');
+    assert.equal(otherTip.hasAttribute('data-ccd-add-tooltip'), false);
+    addTip.textContent = 'Add files or run commands'; sync();
+    assert.equal(addTip.hasAttribute('data-ccd-add-tooltip'), true);
     assert.deepEqual(menu.children.map(node => node.id || node.textContent), ['命令', command.id, '技能', skill.id]);
     assert.equal(command.children[0]?.textContent, 'plan');
     assert.equal(command.name.textContent, '计划', 'native labels stay intact');
@@ -79,4 +87,5 @@ test('typed slash preserves command and skill candidates, groups skill-only resu
   assert.deepEqual(menu.children, [skill]);
   assert.equal(menu.hasAttribute('data-ccd-command-menu'), false);
   assert.equal(events.size, 0);
+  assert.equal(addTip.hasAttribute('data-ccd-add-tooltip'), false);
 });

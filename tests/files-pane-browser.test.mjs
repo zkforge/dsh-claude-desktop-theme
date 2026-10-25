@@ -220,8 +220,8 @@ test('the Files pane carries the reference’s filter, tree control, marks and l
   const script = bundle.outputFiles[0].text;
   const styles = (await Promise.all([
     'src/client/theme/tokens.css',
-    'src/client/features/shell/shell.css',
-    'src/client/features/shell/right-panel.css',
+    'src/client/theme/base.css', 'src/client/features/right-panel/frame.css',
+    'src/client/features/right-panel/right-panel.css',
   ].map(path => readFile(join(root, path), 'utf8')))).join('\n');
   const profile = await mkdtemp(join(tmpdir(), 'ccd-files-pane-test-'));
 

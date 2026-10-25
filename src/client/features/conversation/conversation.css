@@ -504,7 +504,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] {
 }
 
 /* With the switcher parked, native crumbs supply 8px end padding. The custom
-   title has no end padding, so its project and team use the full group gap. */
+   title has no end padding, so its team entry uses the full group gap. */
 html[data-dsh-ccd-style="true"] .ST7X_W_header:has(.ST7X_W_tabs[data-ccd-view-dock]) .ST7X_W_headerActions {
   margin-left: var(--ccd-header-group-gap, 2px);
 }

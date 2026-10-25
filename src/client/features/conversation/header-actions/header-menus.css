@@ -1,6 +1,6 @@
 /* Reference crops are @2x: 136/192px cards, 24px rows and 10px corners. */
 html[data-dsh-ccd-style="true"] .ST7X_W_header:has([data-ccd-session-title]) {
-  /* Equal spacing between the title controls, project chip and team entry. */
+  /* Equal spacing between the title controls and the team entry. */
   --ccd-header-group-gap: 10px;
   padding-top: 6px;
   padding-bottom: 6px;
@@ -28,7 +28,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-title] .ST7X_W_crumb {
   line-height: 24px;
 }
 
-/* Keep the icon, title, chevron and chip on the traffic lights' y=25 axis. */
+/* Keep the icon, title and chevron on the traffic lights' y=25 axis. */
 html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header:has([data-ccd-session-title]) {
   padding-top: 10px;
   padding-bottom: 0;
@@ -118,36 +118,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-session-trigger][aria-expanded="true"]
   background: var(--ccd-header-trigger-hover);
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-project-trigger] {
-  order: 0;
-  flex: 0 3 auto;
-  min-width: 0;
-  max-width: min(220px, 40%);
-  height: 20px;
-  margin-left: var(--ccd-header-group-gap);
-  padding: 0 5px;
-  border: 0;
-  border-radius: 6px;
-  background: var(--ccd-header-project-fill);
-  color: var(--ccd-header-label-ink);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 20px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-project-trigger][hidden] { display: none; }
-
-html[data-dsh-ccd-style="true"] [data-ccd-project-trigger]:hover,
-html[data-dsh-ccd-style="true"] [data-ccd-project-trigger][aria-expanded="true"] {
-  background: var(--ccd-header-project-active);
-}
-
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] {
   position: fixed;
   inset: auto;
@@ -171,7 +141,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-menu] {
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu="session"] { width: 160px; }
-html[data-dsh-ccd-style="true"] [data-ccd-header-menu="project"] { width: 176px; }
 
 html[data-dsh-ccd-style="true"] [data-ccd-header-menu] button {
   box-sizing: border-box;

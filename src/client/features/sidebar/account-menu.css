@@ -217,6 +217,34 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-balance] svg {
   height: 14px;
 }
 
+/* Match the model pricing hint's surface, spacing and tabular rate columns. */
+html[data-dsh-ccd-style="true"] [data-ccd-balance-hint] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  z-index: 1001;
+  box-sizing: border-box;
+  width: min(276px, calc(100vw - 24px));
+  padding: 14px;
+  border: 1px solid var(--ccd-border);
+  border-radius: 12px;
+  background: var(--ccd-card);
+  color: var(--ccd-text-strong);
+  box-shadow: var(--ccd-effort-shadow);
+  text-align: left;
+  font: 12px/1.5 var(--ccd-font-ui);
+  cursor: default;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-hint]::backdrop { background: transparent; pointer-events: none; }
+html[data-dsh-ccd-style="true"] [data-ccd-balance-hint][hidden],
+html[data-dsh-ccd-style="true"] [data-ccd-balance-hint] [hidden] { display: none; }
+html[data-dsh-ccd-style="true"] .ccd-balance-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+html[data-dsh-ccd-style="true"] .ccd-balance-heading > :last-child { color: var(--ccd-text-secondary); }
+html[data-dsh-ccd-style="true"] .ccd-balance-summary { margin: 5px 0 14px; white-space: pre-line; font-variant-numeric: tabular-nums; }
+html[data-dsh-ccd-style="true"] .ccd-balance-rates { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin: 0; }
+html[data-dsh-ccd-style="true"] .ccd-balance-rates dt { color: var(--ccd-text-secondary); }
+html[data-dsh-ccd-style="true"] .ccd-balance-rates dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
 html[data-dsh-ccd-style="true"] [data-ccd-balance-amount] {
   margin-inline-start: auto;
   color: var(--ccd-text);

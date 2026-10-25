@@ -35,7 +35,6 @@ main{margin-left:114px;min-height:300px;background:#fff}
 .ST7X_W_tabs{position:fixed!important;left:35.5px;right:auto!important;top:3px!important;margin:0!important}
 button{font:inherit}`;
 const menu = '[data-ccd-header-menu="session"]';
-const project = '[data-ccd-header-menu="project"]';
 
 test('header reference menus: geometry, real actions, keyboard, boundaries and cleanup on both builds', { skip: !chrome, timeout: 60000 }, async () => {
   const bundle = await build({
@@ -49,11 +48,11 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         await page.evaluate(`document.documentElement.setAttribute('data-dsh-ccd-style', 'true');
           document.body.innerHTML = ${JSON.stringify(aliasHostClasses(markup, host))};
           const style = document.createElement('style'); style.textContent = ${JSON.stringify(aliasHostClasses(hostCss + css, host))}; document.head.append(style);
-          window.calls = []; window.errors = []; window.data = { title:'问候', folder:'dsh-claude-desktop-theme', path:'/Users/demo/dsh-claude-desktop-theme' };
+          window.calls = []; window.errors = []; window.data = { title:'问候' };
           window.listener = null;`);
         await page.evaluate(bundle.outputFiles[0].text);
         await page.evaluate(`window.release = window.mount(document, {
-          read:id=>id==='s1' ? data : {...data,folder:'other-project'},
+          read:id=>id==='s1' ? data : {title:'其他会话'},
           rename:async(id,title)=>{calls.push(['rename',id,title]);data.title=title;listener()},
           fork:async id=>calls.push(['fork',id]),archive:async id=>calls.push(['archive',id]),
           subscribe:fn=>{listener=fn;return ()=>{listener=null}}
@@ -62,6 +61,7 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         const choose = (selector, label) => page.evaluate(`[...document.querySelectorAll(${JSON.stringify(selector + ' button')})].find(node=>node.querySelector('[data-ccd-header-row-label]')?.textContent===${JSON.stringify(label)}).click()`);
         const key = value => page.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', {key:${JSON.stringify(value)},bubbles:true}))`);
         const geometry = selector => page.evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)});const r=node.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,rows:[...node.querySelectorAll('button')].map(row=>row.getBoundingClientRect().height)}})()`);
+        assert.equal(await page.evaluate(`document.querySelector('[data-ccd-project-trigger]')`), null, 'no project chip competes with the title');
         await click('[data-ccd-session-trigger]');
         assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${menu} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['打开方式', '重命名', '创建分支', '归档']);
         const session = await geometry(menu);
@@ -106,27 +106,10 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         await click('[data-ccd-session-trigger]'); await key('d');
         assert.equal(await page.evaluate(`document.querySelector('dialog')`), null);
         assert.equal(await page.evaluate(`document.querySelector('${menu}').matches(':popover-open')`), true);
-        await key('Escape');
-        await click('[data-ccd-project-trigger]');
-        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.querySelector('[data-ccd-header-row-label]').textContent)`), ['复制', '在终端中打开']);
-        assert.equal(await page.evaluate(`document.querySelectorAll('${project} [data-ccd-header-row-icon]').length`), 0);
-        const folder = await geometry(project); assert.equal(folder.w, 176); assert.equal(folder.h, 67);
-        assert.equal(folder.x, (await geometry('[data-ccd-project-trigger]')).x);
-        await choose(project, '在终端中打开'); assert.equal(await page.evaluate('calls.at(-1)'), 'terminal');
-        await click('[data-ccd-project-trigger]'); await key('Home'); await key('ArrowRight');
-        assert.equal(await page.evaluate(`document.activeElement.querySelector('[data-ccd-header-row-label]').textContent`), '文件夹路径');
+        await key('Home'); await key('ArrowRight');
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-header-menu]').length`), 2);
-        await key('ArrowLeft'); assert.equal(await page.evaluate(`document.activeElement.querySelector('[data-ccd-header-row-label]').textContent`), '复制');
-        await key('Escape'); assert.equal(await page.evaluate(`document.activeElement.hasAttribute('data-ccd-project-trigger')`), true);
-        await page.evaluate(`document.querySelector('[data-ccd-header-view="terminal"]').disabled = true`);
-        await click('[data-ccd-project-trigger]');
-        assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('${project} button')).map(node=>node.textContent)`), ['复制']);
-        assert.equal(await page.evaluate(`document.querySelectorAll('${project} hr').length`), 0);
-        await key('Escape');
-        await page.evaluate(`document.querySelector('[data-ccd-header-view="terminal"]').remove()`);
-        await click('[data-ccd-project-trigger]');
-        assert.equal(await page.evaluate(`document.querySelectorAll('${project} button').length`), 1);
-        await key('Escape');
+        await key('ArrowLeft'); assert.equal(await page.evaluate(`document.activeElement.querySelector('[data-ccd-header-row-label]').textContent`), '打开方式');
+        await key('Escape'); assert.equal(await page.evaluate(`document.activeElement.hasAttribute('data-ccd-session-trigger')`), true);
         // Escape/outside and navigation must withdraw both cards and update identity.
         await click('[data-ccd-session-trigger]');
         await page.evaluate(`document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))`);
@@ -134,30 +117,27 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         await click('[data-ccd-session-trigger]');
         await page.evaluate(`document.querySelector('[data-conversation-session]').setAttribute('data-conversation-session','s2')`);
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-header-menu]').length`), 0);
-        assert.equal(await page.evaluate(`document.querySelector('[data-ccd-project-trigger]').textContent`), 'other-project');
         await page.evaluate(`document.querySelector('[data-conversation-session]').setAttribute('data-conversation-session','s1')`);
         await click('[data-ccd-session-trigger]'); await choose(menu, '重命名');
         await page.evaluate(`document.querySelector('[data-ccd-session-rename]').value='Stale';document.querySelector('[data-conversation-session]').setAttribute('data-conversation-session','s2')`);
         assert.equal(await page.evaluate(`document.querySelector('[data-ccd-session-rename]')`), null, 'switching sessions cancels the editor');
         assert.equal(await page.evaluate(`calls.some(call=>Array.isArray(call)&&call[2]==='Stale')`), false);
         await page.evaluate(`document.querySelector('[data-conversation-session]').setAttribute('data-conversation-session','s1')`);
-        await click('[data-ccd-project-trigger]');
+        await click('[data-ccd-session-trigger]');
         await page.evaluate(`document.body.setAttribute('data-ds-dark-theme','')`);
-        assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('${project}')).backgroundColor`), 'rgb(34, 34, 34)');
+        assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('${menu}')).backgroundColor`), 'rgb(34, 34, 34)');
         // A short window and narrow viewport keep all menu rows reachable.
         await page.send('Emulation.setDeviceMetricsOverride', { width: 320, height: 150, deviceScaleFactor: 2, mobile: false });
         await page.evaluate('window.dispatchEvent(new Event("resize"))');
-        const narrow = await geometry(project); assert(narrow.x >= 8); assert(narrow.x + narrow.w <= 312); assert(narrow.h <= 134);
+        const narrow = await geometry(menu); assert(narrow.x >= 8); assert(narrow.x + narrow.w <= 312); assert(narrow.h <= 134);
         await page.send('Emulation.setDeviceMetricsOverride', { width: 520, height: 300, deviceScaleFactor: 2, mobile: false });
         await page.evaluate(`document.body.removeAttribute('data-ds-dark-theme');window.dispatchEvent(new Event('resize'))`);
         if (host === PINNED_BUILD && process.env.CCD_HEADER_MENU_PREVIEW === '1') {
           await mkdir(join(root, 'artifacts'), { recursive: true });
-          for (const [name, selector] of [['project', '[data-ccd-project-trigger]'], ['session', '[data-ccd-session-trigger]']]) {
-            if (name === 'session') await click(selector);
-            const shot = await page.send('Page.captureScreenshot', { format: 'png' });
-            await writeFile(join(root, `artifacts/header-menu-${name}.png`), Buffer.from(shot.data, 'base64'));
-          }
+          const shot = await page.send('Page.captureScreenshot', { format: 'png' });
+          await writeFile(join(root, 'artifacts/header-menu-session.png'), Buffer.from(shot.data, 'base64'));
         }
+        await key('Escape');
         await click('[data-ccd-session-trigger]'); await choose(menu, '重命名');
         await page.evaluate('release()');
         assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-header-menu], [data-ccd-session-trigger], [data-ccd-session-icon], [data-ccd-project-trigger], [data-ccd-session-title], [data-ccd-session-editing], [data-ccd-session-rename], dialog').length`), 0);

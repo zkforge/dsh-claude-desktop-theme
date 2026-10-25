@@ -1,6 +1,7 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { HOST, hostSelectors } from './host-dom.ts';
 import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
+import { PERMISSION_MENU_ATTRIBUTE } from './permission-menu.ts';
 
 /** Marks a menu this module has already placed above its anchor. */
 export const FLIPPED_MENU_ATTRIBUTE = 'data-ccd-menu-flipped';
@@ -62,6 +63,10 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
     return document.querySelector<HTMLElement>(`${host.heroWorkspaceRow} ${expanded}`)
       ?? document.querySelector<HTMLElement>(`${host.heroWorkspaceChip}${expanded}`)
       ?? document.querySelector<HTMLElement>(`${host.composerCard} ${expanded}`)
+      // PermissionSelect does not publish aria-expanded. Its tagged portal is
+      // the open state; place the enlarged rows before the host's next frame.
+      ?? (document.querySelector(`[${PERMISSION_MENU_ATTRIBUTE}]`) !== null
+        ? document.querySelector<HTMLElement>(host.permissionSelectTrigger) : null)
       ?? document.querySelector<HTMLElement>(`${host.accountTrigger}${expanded}`);
   };
 
@@ -221,7 +226,8 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
     observer = new MutationObserver(records => {
       // While closed there is nothing to place. While open, only its anchor,
       // portal or their ancestors can invalidate the measured geometry.
-      if (records.some(record => record.type === 'attributes' && record.attributeName === 'aria-expanded')
+      if (records.some(record => record.type === 'attributes'
+        && (record.attributeName === 'aria-expanded' || record.attributeName === PERMISSION_MENU_ATTRIBUTE))
         || (anchorRegion !== null && recordsTouch(records, anchorRegion))
         || [...measured.keys()].some(menu => recordsTouch(records, menu))
         || recordsIntroduce(records, `${host.menu}, ${host.heroWorkspaceRow}, ${host.heroWorkspaceChip}, ${host.composerCard}, ${host.accountTrigger}`)) schedule();
@@ -231,7 +237,7 @@ export function mountComposerMenuPlacement(document: Document, report: (error: u
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['style', 'aria-expanded', 'role'],
+      attributeFilter: ['style', 'aria-expanded', 'role', PERMISSION_MENU_ATTRIBUTE],
     });
     window.addEventListener('resize', onResize);
     sync();

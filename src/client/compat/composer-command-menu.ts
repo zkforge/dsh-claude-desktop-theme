@@ -156,7 +156,8 @@ export function mountComposerCommandMenu(document: Document, report: (error: unk
     if (anchor && (!anchor.isConnected || anchor.disabled
       || (session && session.getAttribute('data-conversation-session') !== sessionId))) close();
     for (const tip of suppressed) if (!tip.isConnected) suppressed.delete(tip);
-    for (const tip of document.querySelectorAll('[role="tooltip"][data-portal]')) {
+    // Host tooltips need not carry data-portal, even when rendered outside the composer.
+    for (const tip of document.querySelectorAll('[role="tooltip"]')) {
       if (!['添加文件或调用指令', 'Add files or run commands'].includes(tip.textContent?.trim() ?? '')) continue;
       if (!tip.hasAttribute('data-ccd-add-tooltip')) tip.setAttribute('data-ccd-add-tooltip', '');
       suppressed.add(tip);
