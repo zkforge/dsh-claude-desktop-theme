@@ -143,16 +143,64 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_b
   flex: 0 1 auto;
 }
 
-/* Windows has no traffic-light row: the sidebar toggle, the native caption
-   menus and the window controls live in the host's 40px strip above the frame,
-   so the brand row is the first row below it. The host's Windows build grows
-   that row to 40px and nudges the brand 4px right of its own inset; the CCD
-   header keeps the compact rhythm above and the inset New Session and the panel
-   glyphs share, so the nudge is dropped. Everything inside the strip (toggle at
-   12px, caption menus at 48px, window controls at the right) belongs to the host
-   and is never moved here. */
+/* The Windows toggle belongs to logoRow even though it is fixed in the
+   caption. Hide only the brand: hiding its ancestor also hides the toggle.
+   With no row box the optional brand supplies its own navigation spacing. */
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root ._3WPZCG_logoRow {
+  display: contents;
+}
+
 html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_brand {
-  padding-left: 0;
+  display: var(--ccd-sidebar-brand-display, none);
+  box-sizing: border-box;
+  height: 32px;
+  margin-bottom: 6px;
+  padding: 0 8px;
+}
+
+/* Expanded and collapsed native controls share one caption baseline and size.
+   Their React ownership, tooltips and click handlers stay with the host. */
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root ._3WPZCG_toggle,
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root._3WPZCG_collapsed ._3WPZCG_newSession {
+  position: fixed;
+  top: calc((var(--dsh-windows-titlebar-height, 40px) - 24px) / 2);
+  z-index: 30;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  animation: none;
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root ._3WPZCG_toggle {
+  left: 12px;
+}
+
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root._3WPZCG_collapsed ._3WPZCG_newSession {
+  left: var(--ccd-windows-new-session-left, 48px);
+}
+
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root ._3WPZCG_toggle svg,
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root._3WPZCG_collapsed ._3WPZCG_newSession svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root ._3WPZCG_toggle:hover,
+html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root._3WPZCG_collapsed ._3WPZCG_newSession:hover {
+  background: var(--ccd-hover);
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_brandIdentity,

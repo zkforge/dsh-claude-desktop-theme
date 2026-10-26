@@ -22,23 +22,29 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
   const SCOPE = '[data-chat-flow-kind="tool-call"], [data-variant="think"]';
   let pending = false;
   let released = false;
+  let cleanup = true;
   const clear = (source: Element, label: HTMLElement) => {
     source.removeAttribute('data-ccd-english-source');
     label.remove();
     labels.delete(source);
   };
-  const collect = (node: Node) => {
+  const collect = (node: Node, descendants = true) => {
     const element = node.nodeType === 1 ? node as Element : node.parentElement;
     if (!element) return;
     const scope = element.closest(SCOPE);
     if (scope) scopes.add(scope);
-    for (const child of element.querySelectorAll(SCOPE)) scopes.add(child);
+    if (descendants) for (const child of element.querySelectorAll(SCOPE)) scopes.add(child);
   };
   const sync = () => {
     pending = false;
     if (released) return;
     try {
-      for (const [source, label] of labels) if (!source.isConnected || !source.closest(SCOPE)) clear(source, label);
+      // Text growth cannot detach historical titles. Sweep ownership only
+      // after structural removals or attributes that may change a scope.
+      if (cleanup) for (const [source, label] of labels) {
+        if (!source.isConnected || !source.closest(SCOPE)) clear(source, label);
+      }
+      cleanup = false;
       const dirty = [...scopes];
       scopes.clear();
       for (const scope of dirty) for (const source of scope.querySelectorAll('[class*="_title"]')) {
@@ -67,14 +73,14 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
   };
   const observer = new MutationObserver(records => {
     for (const record of records) {
-      collect(record.target);
+      if (record.type !== 'characterData' && (record.type !== 'childList' || record.removedNodes?.length)) cleanup = true;
+      collect(record.target, record.type !== 'childList' && record.type !== 'characterData');
       for (const node of record.addedNodes) collect(node);
     }
-    const removed = [...labels.keys()].some(source => !source.isConnected);
-    if (!pending && (scopes.size || removed)) { pending = true; queueMicrotask(sync); }
+    if (!pending && (scopes.size || cleanup)) { pending = true; queueMicrotask(sync); }
   });
   observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true,
-    attributeFilter: ['data-state', 'data-ccd-file-title-source', 'data-shimmer-text', 'class'] });
+    attributeFilter: ['data-state', 'data-ccd-file-title-source', 'data-shimmer-text', 'class', 'data-chat-flow-kind', 'data-variant'] });
   collect(document.body);
   sync();
   return () => {

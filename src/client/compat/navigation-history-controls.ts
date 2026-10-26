@@ -46,6 +46,12 @@ export function mountNavigationHistory(document: Document, port: NavigationHisto
       const strip = document.querySelector(host.sidebarTopStrip);
       if (strip && group.parentElement !== strip) strip.append(group);
       else if (!strip) group.remove();
+    } else if (document.documentElement.hasAttribute('data-windows-titlebar')) {
+      // The Windows sidebar collapses to zero width. Keep this plugin-owned
+      // group in the frame so sidebar clipping cannot hide caption controls.
+      const frame = document.querySelector(host.frame);
+      if (frame && group.parentElement !== frame) frame.append(group);
+      else if (!frame) group.remove();
     } else {
       // Other platforms keep native caption menus intact; use a compact row
       // at the top of the sidebar (a vertical pair in the collapsed rail).
@@ -60,7 +66,7 @@ export function mountNavigationHistory(document: Document, port: NavigationHisto
   });
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-sidebar-collapsed'] });
   const language = new MutationObserver(place);
-  language.observe(document.documentElement, { attributes: true, attributeFilter: ['lang', 'data-platform'] });
+  language.observe(document.documentElement, { attributes: true, attributeFilter: ['lang', 'data-platform', 'data-windows-titlebar'] });
   place();
   return () => { history.dispose(); observer.disconnect(); language.disconnect(); group.remove(); };
 }

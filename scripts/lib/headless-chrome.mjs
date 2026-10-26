@@ -162,7 +162,20 @@ export async function withPage({ url, width, height, scale = 1, transparent = fa
       const loaded = devtools.once('Page.loadEventFired');
       await devtools.send('Page.navigate', { url });
       await loaded;
-      return await callback(devtools);
+      // Opt-in diagnostic sampling also works with existing browser fixtures.
+      // Ordinary tests and asset generation keep their original execution path.
+      const recording = process.env.CCD_PERF_DIR
+        ? await (await import('./page-performance.mjs')).recordPage(devtools, { width, height, scale })
+        : null;
+      let failure;
+      try {
+        return await callback(devtools);
+      } catch (error) {
+        failure = String(error);
+        throw error;
+      } finally {
+        await recording?.finish(failure);
+      }
     } finally {
       devtools.close();
     }

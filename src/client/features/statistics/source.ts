@@ -10,10 +10,11 @@
  * are still being folded (`pending > 0`) the card is genuinely incomplete, so
  * it refreshes every couple of seconds; once the snapshot is complete it drops
  * to a slow poll. A missing route (the host half is off) hides the card rather
- * than failing the mount. Hidden documents pause reads and resume immediately
- * when visible, keeping background windows from repeatedly aggregating history.
+ * than failing the mount. The hero card seat owns demand: leaving it or hiding
+ * the document pauses reads, keeps the last snapshot and aborts in-flight IO.
+ * Returning to a visible seat refreshes immediately.
  */
-import { STATS_PATH, readStatsSnapshot, type StatsSnapshot } from '../../../shared/stats.ts';
+import { STATS_PATH, localDayKey, readStatsSnapshot, sameStatsSnapshot, type StatsSnapshot } from '../../../shared/stats.ts';
 import type { Logger } from '../../contracts/ports.ts';
 
 /** Poll interval while the host still has sessions to fold. */
@@ -34,6 +35,8 @@ export interface StatsSource {
   readonly current: StatsSnapshot | null;
   /** Observe snapshots; returns the unsubscribe function. */
   subscribe(listener: (snapshot: StatsSnapshot | null) => void): () => void;
+  /** The hero's card seat controls demand; pausing retains its last snapshot. */
+  setActive(active: boolean): void;
   /** Stop polling and abort any read in flight. */
   dispose(): void;
 }
@@ -60,10 +63,10 @@ function isUsable(snapshot: StatsSnapshot): boolean {
 /**
  * Start polling the host's statistics route.
  *
- * @param options - logger and an optional route override (tests).
+ * @param options - logger, initial demand and an optional route override (tests).
  * @returns the live source.
  */
-export function createStatsSource(options: { logger: Logger; url?: string }): StatsSource {
+export function createStatsSource(options: { logger: Logger; url?: string; active?: boolean }): StatsSource {
   const url = options.url ?? STATS_PATH;
   const page = globalThis.document;
   const listeners = new Set<(snapshot: StatsSnapshot | null) => void>();
@@ -72,10 +75,16 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
   let controller: AbortController | undefined;
   let disposed = false;
   let reported = false;
+  let active = options.active ?? true;
+  let publishedDay: string | null = null;
+  const canPoll = () => !disposed && active && !page?.hidden;
 
   const publish = (next: StatsSnapshot | null) => {
     if (disposed) return;
+    const day = localDayKey(Date.now());
+    if (snapshot === next || (snapshot !== null && next !== null && publishedDay === day && sameStatsSnapshot(snapshot, next))) return;
     snapshot = next;
+    publishedDay = day;
     for (const listener of [...listeners]) {
       try {
         listener(next);
@@ -86,12 +95,15 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
   };
 
   const schedule = (delay: number) => {
-    if (disposed || page?.hidden) return;
-    timer = setTimeout(() => { timer = undefined; void poll(); }, delay);
+    if (!canPoll()) return;
+    // The heatmap and date ranges change at local midnight even without usage.
+    const now = Date.now(), midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    timer = setTimeout(() => { timer = undefined; void poll(); }, Math.min(delay, Math.max(1, midnight.getTime() - now)));
   };
 
   const poll = async () => {
-    if (disposed || page?.hidden || controller !== undefined) return;
+    if (!canPoll() || controller !== undefined) return;
     const read = new AbortController();
     controller = read;
     let delay = IDLE_INTERVAL_MS;
@@ -153,7 +165,7 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
     pending?.abort();
   };
   const visibility = () => {
-    if (page.hidden) pause();
+    if (!canPoll()) pause();
     else {
       if (timer !== undefined) { clearTimeout(timer); timer = undefined; }
       void poll();
@@ -170,6 +182,12 @@ export function createStatsSource(options: { logger: Logger; url?: string }): St
       if (disposed) return () => {};
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    setActive(next) {
+      if (disposed || next === active) return;
+      active = next;
+      if (!canPoll()) pause();
+      else void poll();
     },
     dispose() {
       disposed = true;

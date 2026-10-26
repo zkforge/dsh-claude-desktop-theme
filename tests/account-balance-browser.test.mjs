@@ -123,6 +123,18 @@ test('sidebar balance shows totals and breakdown, refreshes with keyboard, and f
     await until(page, `/Unavailable/.test(document.querySelector('[data-ccd-balance-amount]').textContent)`, 'network failure offers retry');
     assert.equal(await page.evaluate(`document.querySelector('${card}').hasAttribute('aria-busy')`), false);
     assert.doesNotMatch(await page.evaluate(`document.querySelector('${card}').innerText`), /10\.00|2\.30/, 'failure hides stale breakdown');
+    for (const state of ['unconfigured', 'unauthorized', 'no-cny', 'offline']) {
+      await page.evaluate(`window.fail=${state === 'offline'};window.response={state:${JSON.stringify(state)}};document.querySelector('${card}').click()`);
+      await until(page, `!document.querySelector('${card}').hasAttribute('aria-busy')`, 'failure state settles');
+      const layout = await page.evaluate(`(()=>{
+        const el=document.querySelector('${card}'),label=el.querySelector(':scope > span'),amount=el.querySelector('[data-ccd-balance-amount]');
+        const l=label.getBoundingClientRect(),a=amount.getBoundingClientRect();
+        return {sameRow:a.top<l.bottom&&a.bottom>l.top,oneLine:a.height<=18,overflow:el.scrollWidth>el.clientWidth};
+      })()`);
+      assert.equal(layout.sameRow, true, state + ': status stays beside the balance label');
+      assert.equal(layout.oneLine, true, state + ': status does not wrap');
+      assert.equal(layout.overflow, false, state + ': a long status fits the narrow sidebar');
+    }
     await page.evaluate('window.stopBalance()');
     assert.equal(await page.evaluate(`document.querySelector('${card}')===null`), true);
   });
@@ -154,5 +166,31 @@ test('closed account menu owns a sidebar balance slot through collapse, trigger 
     await page.evaluate(`document.dispatchEvent(new Event('visibilitychange'));document.querySelector('._3WPZCG_root').append(document.createElement('div'));new Promise(resolve=>setTimeout(resolve,60))`);
     assert.equal(await page.evaluate('window.requests.length'), requests, 'disposed observers and visibility handler cannot restart polling');
     assert.deepEqual(await page.evaluate('window.errors'), []);
+  });
+});
+
+test('disabling API balance removes both placements and prevents requests after configuration remount', options, async () => {
+  await fixture(async page => {
+    await page.evaluate(`
+      document.querySelector('#fixture').innerHTML='<aside class="_3WPZCG_root"><div class="_3WPZCG_footArea"><button class="ZogL4G_trigger" aria-expanded="true"><span class="ZogL4G_label">Demo account</span></button></div></aside><div role="menu" style="position:fixed"><button role="menuitem">Settings</button></div>';
+      window.mountWithBalance=enabled=>window.mountMenu(document,e=>{throw e},null,enabled);
+      window.stopMenu=window.mountWithBalance(false);
+      new Promise(r=>setTimeout(r,30));
+    `);
+    assert.equal(await page.evaluate('window.requests.length'), 0);
+    assert.equal(await page.evaluate('document.querySelectorAll("[data-ccd-account-balance], [data-ccd-balance-slot]").length'), 0);
+    assert.equal(await page.evaluate('document.querySelectorAll("[data-ccd-plugin-feedback]").length'), 1, 'other account controls remain available');
+    await page.evaluate('window.stopMenu();window.stopMenu=window.mountWithBalance(true)');
+    await until(page, `document.querySelector('${card} [data-ccd-balance-amount]')?.textContent==='¥12.30'`, 'enabling mounts the balance reader');
+    await page.evaluate('window.stopMenu();window.stopMenu=window.mountWithBalance(false)');
+    const requests = await page.evaluate('window.requests.length');
+    await page.evaluate(`
+      document.querySelector('._3WPZCG_root').classList.add('_3WPZCG_collapsed');
+      document.dispatchEvent(new Event('visibilitychange'));
+      new Promise(r=>setTimeout(r,60));
+    `);
+    assert.equal(await page.evaluate('document.querySelectorAll("[data-ccd-account-balance], [data-ccd-balance-slot], [data-ccd-balance-hint]").length'), 0);
+    assert.equal(await page.evaluate('window.requests.length'), requests, 'collapse and visibility changes do not restart disabled readers');
+    await page.evaluate('window.stopMenu()');
   });
 });

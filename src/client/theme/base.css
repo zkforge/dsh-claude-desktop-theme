@@ -36,8 +36,8 @@ html[data-dsh-ccd-style="true"] ._6Qf49G_frame {
    replaces with the configured sidebar colour, so the strip follows the column
    today; pinning it to the plugin's own surface token keeps the whole window
    chrome on one source instead of a host token that may be repainted
-   elsewhere. The controls inside the strip keep their host geometry — only the
-   background is claimed here. */
+   elsewhere. Icon geometry is handled by the sidebar and navigation-history
+   sheets; this rule only paints the background. */
 html[data-dsh-ccd-style="true"][data-windows-titlebar] ._6Qf49G_frame:before {
   background: var(--ccd-sidebar);
 }

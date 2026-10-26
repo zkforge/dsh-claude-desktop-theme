@@ -122,3 +122,22 @@ test('short aliases respect token boundaries', () => {
   assert.equal(slugFor('Hy3drogen'), null);
   assert.equal(slugFor('GPT-6.1 Sol'), 'openai');
 });
+
+test('indexed matching retains ranking across phrase, compact and routing candidates', () => {
+  assert.equal(slugFor('CLÁUDE Sonnet'), 'claude');
+  assert.equal(slugFor('DeepSeekV3'), 'deepseek');
+  assert.equal(slugFor('GPT-6.1 Sol OpenRouter'), 'openai');
+  const model = { id: 'mystery', name: 'Unknown model' };
+  assert.equal(resolveModelIcon(magpie, model), null);
+  model.name = 'Claude Sonnet';
+  assert.equal(resolveModelIcon(magpie, model)?.slug, 'claude', 'renaming a reused catalog row invalidates text-based lookup');
+});
+
+test('catalog churn keeps matching correct after bounded cache eviction', () => {
+  assert.equal(slugFor('DeepSeek V4 Pro'), 'deepseek');
+  for (let index = 0; index < 2200; index++) {
+    assert.equal(resolveModelIcon(magpie, { id: String(index), name: 'Unknown Model ' + index }), null);
+  }
+  assert.equal(slugFor('DeepSeek V4 Pro'), 'deepseek');
+  assert.equal(resolveModelIcon({ id: 'deepseek', name: 'DeepSeek' }, { id: 'flash', name: 'Unknown Model' })?.slug, 'deepseek');
+});

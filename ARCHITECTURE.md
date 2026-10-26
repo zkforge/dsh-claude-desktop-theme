@@ -25,9 +25,9 @@ Host 依赖 shared 与 Host 运行库；客户端各层通过 contracts、core�
 
 插件管理页由 `compat/plugin-page.ts` 和 `theme/plugins.css` 适配为「自定义」：保留宿主「我的／发现」页签、市场来源、搜索、标签筛选、排序、安装任务和详情配置，列表改为双列描边卡片，内容宽度不足时回到单列。适配从 `data-plugin-panel` 与 `data-plugin-tab="discover"` 定位各自 CSS Module 的前缀，再为该模块的精确类名添加自有标记，不固定构建哈希、不搬移 React 节点。「我的」搜索仅匹配宿主已加载卡片的名称、包名与描述，并跟随列表刷新；无匹配显示空态。发现页普通安装按钮显示为加号，兼容性受限及已安装状态保留宿主文字和动作，不添加虚构推荐、安装量或试用入口。观察器仅在面板变化或出现时按帧同步，卸载时清理搜索、监听器并恢复仍由插件持有的文字与属性。
 
-导航历史由 `compat/navigation-history.ts` 在本次挂载的内存中保存最近 100 次会话与主面板访问；后退后打开新目标会清除前进分支。`navigation-history-port.ts` 从宿主 `mainView` 保留引用与 `layout.panelInfo` 读取当前目标，合并同一轮切换通知，重放通过宿主会话／面板接口完成，并取消尚未完成的新会话导航。归档／删除的会话会移出栈，已注销的面板打开失败时移除该条并保留当前位置；不改浏览器 history，不额外保留会话引用。`navigation-history-controls.ts` 在 macOS 侧栏开关右侧插入插件自己的后退／前进按钮，侧栏收起后跟随 `shell.leading`；其他平台使用侧栏顶部独立行，折叠轨道中纵向排列，保留系统标题栏菜单。样式在 `theme/navigation-history.css`，跟随 sidebar 开关挂载，卸载时清理节点和订阅。视图切换器的停靠宽度预算包含箭头，窄侧栏时回到会话标题栏。
+导航历史由 `compat/navigation-history.ts` 在本次挂载的内存中保存最近 100 次会话与主面板访问；后退后打开新目标会清除前进分支。`navigation-history-port.ts` 从宿主 `mainView` 保留引用与 `layout.panelInfo` 读取当前目标，合并同一轮切换通知，重放通过宿主会话／面板接口完成，并取消尚未完成的新会话导航。归档／删除的会话会移出栈，已注销的面板打开失败时移除该条并保留当前位置；不改浏览器 history，不额外保留会话引用。`navigation-history-controls.ts` 在 macOS 侧栏开关右侧插入插件自己的后退／前进按钮，侧栏收起后跟随 `shell.leading`；Windows 标题栏模式将导航组挂到 frame，避免侧栏收起为零宽后被裁掉；折叠、后退、前进和收起后的新建按钮统一为 24px 点击区与 16px 图标，纵向居中在原生 40px 标题栏。菜单通过宿主的 `--dsh-windows-menu-start` 预留空间；品牌开关仅隐藏品牌内容，折叠按钮保留。其他平台仍使用侧栏顶部独立行，折叠轨道中纵向排列。样式在 `theme/navigation-history.css`，跟随 sidebar 开关挂载，卸载时清理节点和订阅。视图切换器的停靠宽度预算包含箭头，窄侧栏时回到会话标题栏。
 
-侧栏展开时，`compat/account-menu.ts` 在宿主账号 footer 前插入独立 `data-ccd-balance-slot`，由 `compat/account-balance.ts` 常显 DeepSeek API 总余额、赠金、预计可用天数与峰谷标签，今日消耗与充值放在悬停卡片。`compat/balance-ledger.ts` 在 `localStorage` 按本地日期记录余额下降（上涨只移动基线），保留最近 7 个已观测日用于日均；峰谷判定在 `shared/pricing-period.ts`（2026 年节假日日历，未知年度不外推，需随官方规则维护）；不搬移 React 节点，不依赖账号菜单打开。点击卡片刷新，每分钟后台更新，页面隐藏时停止，侧栏折叠、账号变化或卸载时中止请求并清理；同账号重新展开保留上次读数。展开时账号菜单不重复查询，折叠轨道的账号菜单保留余额行作为入口；两处都由 `compat/account-balance-hint.ts` 在悬停或聚焦 500ms 后显示顶层明细卡片；查询失败时清除旧明细。卡片与菜单使用同一读取器与缓存，浅深主题沿用 sidebar token。`host/balance.ts` 复用启用的 `dsh-llm-deepseek-api-key` 的凭据引用，只向固定的 DeepSeek 官方余额接口发起请求；自定义端点不参与。Key 和上游错误正文留在 Host，客户端仅收到人民币余额与查询状态。接口说明见 [DeepSeek 官方文档](https://api-docs.deepseek.com/zh-cn/api/get-user-balance/)。
+侧栏展开时，`compat/account-menu.ts` 在宿主账号 footer 前插入独立 `data-ccd-balance-slot`，由 `compat/account-balance.ts` 常显 DeepSeek API 总余额、赠金、预计可用天数与峰谷标签，今日消耗与充值放在悬停卡片。`compat/balance-ledger.ts` 在 `localStorage` 按本地日期记录余额下降（上涨只移动基线），保留最近 7 个已观测日用于日均；峰谷判定在 `shared/pricing-period.ts`（2026 年节假日日历，未知年度不外推，需随官方规则维护）；不搬移 React 节点，不依赖账号菜单打开。点击卡片刷新，每分钟后台更新，页面隐藏时停止，侧栏折叠、账号变化或卸载时中止请求并清理；同账号重新展开保留上次读数。展开时账号菜单不重复查询，折叠轨道的账号菜单保留余额行作为入口；两处统一受 `view.showApiBalance` 控制（默认开启），关闭时不挂载余额读取器、峰谷标记与明细，配置变化经现有重挂载流程停止请求和计时器；两处都由 `compat/account-balance-hint.ts` 在悬停或聚焦 500ms 后显示顶层明细卡片；查询失败时清除旧明细。卡片与菜单使用同一读取器与缓存，浅深主题沿用 sidebar token。`host/balance.ts` 复用启用的 `dsh-llm-deepseek-api-key` 的凭据引用，只向固定的 DeepSeek 官方余额接口发起请求；自定义端点不参与。Key 和上游错误正文留在 Host，客户端仅收到人民币余额与查询状态。接口说明见 [DeepSeek 官方文档](https://api-docs.deepseek.com/zh-cn/api/get-user-balance/)。
 
 账号按钮右侧的插件反馈按钮由 `compat/plugin-feedback.ts` 打开仿宿主「发送反馈」样式的模态框：输入描述后，「发送」（或 ⌘/Ctrl+Enter）在浏览器打开 GitHub `issues/new`，以 `title`／`body` 查询参数预填描述与插件版本（构建时注入）、宿主构建识别结果、平台、语言、外观、窗口尺寸和 UA；描述为空时直接打开空白的新建 Issue 页。「发送」沿用插件确认对话框的红色主按钮 token，聚焦环与共用 Modal 一致只在键盘聚焦时出现；反馈按钮本身不显示悬停提示。不读取会话内容，插件本身不发起任何请求，用户在 GitHub 上确认、补截图后提交。描述截断到 4000 字以免 URL 过长。
 
@@ -137,7 +137,15 @@ POST `/api/ccd-worktree` 只接收工作区和会话 id。`host/worktree.ts` 校
 
 顶栏的子代理数量、团队入口与后台任务入口由 `view.showHeaderSubagents`、`view.showHeaderTeam`、`view.showHeaderJobs` 分别控制，默认关闭。`features/conversation/header-actions/visibility.ts` 在 `conversation.session.header.actions` 列表中以更低 priority 注册同 id 的空渲染器，分别覆盖宿主 `subagent-catalog`、`agent-team` 与 `job-list`（order 20）条目；打开开关或释放聊天页模块后撤销覆盖，恢复原生入口。不操作后端服务，后台任务继续运行，也不覆盖子代理谱系导航、侧栏树或其他顶栏条目。设置页三项通过同一 Host 配置传输即时写入。
 
+## 转录更新的性能边界
+
+工具分组按 flow seat 用 WeakMap 缓存解析结果，变更只使目标 seat 与外层嵌套 seat 失效；非 seat 包装节点不缓存。分组属性仅在值变化时写入，避免相同的可见性和展开属性反复唤醒详情观察器。分组、标题翻译与详情装饰的结构通知只扫描新增子树，不再扫描 childList 目标下未变的历史；文本通知只定位所属区域。标题与详情的历史所有权清理仅在移除或属性变更后执行，流式文本不触发历史清理。
+
+可用 `node scripts/profile-transcript.mjs current` 对真实适配器运行独立 Chrome 演示场景，生成 DevTools 时间线、CPU profile 与调用计数到 `artifacts/performance/`。条件、结果与局限见 [2026-10-26 性能采样](docs/research/performance-profile-2026-10-26.md)；真实 MutationObserver 回归在 `tests/transcript-performance-browser.test.mjs`，不以耗时阈值判断 CI 成败。
+
 ## 配置与生命周期
+
+组件性能核验可通过 `CCD_PERF_DIR=artifacts/performance/components CCD_PERF_TRACE=1 node --test --test-concurrency=1 tests/*-browser.test.mjs` 为已有浏览器夹具启用 CDP 指标、Event Timing、长任务、CPU profile 和时间线；不设置环境变量时沿用原执行路径。用 `node scripts/summarize-page-performance.mjs artifacts/performance/components` 汇总。覆盖范围与实机录制边界见 [组件响应核验](docs/research/component-response-audit-2026-10-26.md)。模型图标匹配按首词／完整 compact 文本索引候选，保留原始全局优先级，并用最多 2048 条的缓存复用模型及 provider 的命中／未命中结果。
 
 Host `Config` 的 `.volatile()` 字段通过 DSH 设置服务投影到 `configForms`。客户端订阅 `ui-skin-ccd-style`，配置变化时释放旧作用域，再挂载主题与模块；相同配置跳过重复挂载。
 
@@ -153,7 +161,7 @@ Host `Config` 的 `.volatile()` 字段通过 DSH 设置服务投影到 `configFo
 
 平台差异由宿主属性分流：`data-platform="darwin"` 只标记 macOS，交通灯与折叠侧栏的窗口控件几何都限制在该作用域内；Windows 由 `data-windows-titlebar` 标记，宿主在窗口上方另加 40px 标题栏条带，侧栏开关、原生「应用／编辑」菜单和窗口按钮都在其中，插件只让该条带沿用配置的侧栏配色，不移动其中的控件。
 
-同一版本号的 macOS 与 Windows 安装包是两次不同构建（`0.2.0-rc.2` 分别是 commit `5e9e301d` 与 `04f392c9`），宿主 CSS Module 的类名前缀在两者间不同。`compat/host-builds.ts` 保留原有两套前缀表，并登记 macOS `0.2.1-rc.3`（commit `be72761e`）的 24 组映射，`dom.mountStyles` 在挂载样式前改写类名，`hostSelectors`/`hostAnchors` 按当前构建解析选择器表，因此样式表与适配代码都只写一套类名。macOS 首屏在 frame 尚未挂载时使用最新版映射，frame 出现后按实际类名识别构建；未登记的构建不会静默失效：`watchHostBuild` 在窗口骨架渲染后报告一次，配置页同时给出提示。前缀表由 `node scripts/host-prefixes.mjs --windows <app.asar>` 从该构建的 `app.asar` 重新读出（整版重绑用 `--pinned`），配对以参照构建里每个模块的完整类名集合为指纹，配不上就报错而不是猜。
+同一版本号的 macOS 与 Windows 安装包是两次不同构建（`0.2.0-rc.2` 分别是 commit `5e9e301d` 与 `04f392c9`），宿主 CSS Module 的类名前缀在两者间不同。`compat/host-builds.ts` 保留原有两套前缀表，并登记 macOS 与 Windows `0.2.1-rc.3`（两者 commit 均为 `be72761e`，类名前缀仍不同）的各 24 组映射，Windows 当前构建 id 带 `-win32` 以区分选择器缓存，`dom.mountStyles` 在挂载样式前改写类名，`hostSelectors`/`hostAnchors` 按当前构建解析选择器表，因此样式表与适配代码都只写一套类名。两个平台的首屏在 frame 尚未挂载时均使用各自的最新版映射，frame 出现后按实际类名识别构建；未登记的构建不会静默失效：`watchHostBuild` 在窗口骨架渲染后报告一次，配置页同时给出提示。前缀表由 `node scripts/host-prefixes.mjs --windows <app.asar>` 从该构建的 `app.asar` 重新读出（整版重绑用 `--pinned`），已登记的参照构建可通过现有映射还原 authored 前缀，配对以参照构建里每个模块的完整类名集合为指纹，配不上就报错而不是猜。
 
 ## 统计数据
 
@@ -169,7 +177,9 @@ Host 注册 `ccdUsage` 会话投影单元，折叠提示数与输入、输出、
 
 `/api/ccd-stats` 通过宿主鉴权 fetch 通道提供快照。浏览器读取快照并渲染 Overview／Models 与 All／30d／7d；首次数据准备完成后显示卡片。聚合服务随总开关启用，卡片显示由 statistics 模块开关控制。
 
-历史日志最多并发读取四个，待处理任务按会话 id 去重；会话删除或已有可用缓存时取消其排队任务。后台完成读取只标记汇总失效，在接口读取快照时再统一聚合。卸载后正在等待的读取只释放句柄，不再折叠日志。浏览器窗口隐藏时暂停统计轮询并取消当前请求，恢复可见后立即刷新；旧请求的延迟返回不会覆盖新快照或重新启动轮询。
+历史日志最多并发读取四个，待处理任务按会话 id 去重；会话删除或已有可用缓存时取消其排队任务。后台完成读取只在有效用量改变时标记汇总失效，在接口读取快照时再统一聚合；不变投影（包括同值新对象）复用汇总，折叠进度和失败数变化只替换元数据，不重新遍历用量。跨本地午夜仍使滚动日期范围失效。卸载后正在等待的读取只释放句柄，不再折叠日志。
+
+浏览器统计源默认由首页 hero 的卡片位置激活；进入已有会话、设置等页面或隐藏窗口时暂停轮询、取消当前请求，并保留最后快照，回到可见首页时先展示缓存并立即刷新。首页阶段原地变化也会同步需求，页面不在场时不因流式结构变化反复扫描整页。有效展示数据不变时复用卡片节点，只有时间戳变化不通知订阅者，只有进度／失败数变化不重建卡片；本地午夜的刷新计时及日期比较仍会更新热力图和日期范围。延迟返回的旧请求不能覆盖新快照或重新启动轮询。相关回归为 stats-source、stats-service、stats-equality 与 new-session-toggle-browser。
 
 ## 上下文分解
 

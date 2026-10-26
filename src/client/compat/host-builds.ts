@@ -15,7 +15,8 @@
  *
  * Keep the authored build stable and register each verified release below.
  * A new release may rehash every prefix; read its tables from `app.asar`.
- * The latest macOS build is also the preload fallback before the frame mounts.
+ * The latest build for each platform is the preload fallback before the frame mounts.
+ * Refresh Windows with `node scripts/host-prefixes.mjs --windows <app.asar> --write`.
  */
 
 /** One shipped DSH build and the prefixes it uses for the pinned classes. */
@@ -39,38 +40,38 @@ export const PINNED_BUILD: HostBuild = Object.freeze({
 });
 
 /**
- * DSH `0.2.0-rc.2`, Windows commit `04f392c9`. Read from that build's
+ * DSH `0.2.1-rc.3`, Windows commit `be72761e`. Read from that build's
  * `app.asar`: each entry is the same CSS module's class-name map, keyed by the
  * prefix this plugin authored.
  */
 export const WINDOWS_BUILD: HostBuild = Object.freeze({
-  id: 'dsh-0.2.0-rc.2-04f392c9',
-  frameClass: 'BynINW_frame',
+  id: 'dsh-0.2.1-rc.3-be72761e-win32',
+  frameClass: 'mP3x-q_frame',
   prefixes: Object.freeze({
-    '-gRAhq_': 'ws8cKG_',
-    'Da3aKq_': '_4Nnt6q_',
-    'Dws9Sa_': 'wCInkW_',
-    'HiSsxa_': '_3GBCTG_',
-    'IzP3Va_': 'cJsG2q_',
-    'OpZ85W_': 'iq1doa_',
-    'Q2dzhW_': 'pFy1Ka_',
-    'ST7X_W_': 'Dc7zOa_',
-    'ZogL4G_': 'ET65mq_',
-    '_2tNPVa_': 'EBLgjq_',
-    '_3WPZCG_': '_2H3hWW_',
-    '_3li69W_': 'b06baG_',
-    '_6Qf49G_': 'BynINW_',
-    '_7514NG_': '_9lTDKa_',
-    'bocITq_': 'Hqq-bq_',
-    'cl2Rlq_': 'wq12jW_',
-    'dVdiKa_': 'srf2qa_',
-    'gKv1-q_': 'v5IAXa_',
-    'icaHSq_': 'xz4KEq_',
-    'iq4beG_': 'WgQWqa_',
-    'jJkEga_': 'hIlkoa_',
-    'wXeviG_': 'dlU_AG_',
-    'y0jqnG_': '_2WTFBq_',
-    'yhfFVG_': 'RlGAzG_',
+    '_2tNPVa_': 'VBK9GG_',
+    '_3li69W_': 'dscfja_',
+    '_3WPZCG_': 'wtg9ga_',
+    '_6Qf49G_': 'mP3x-q_',
+    '_7514NG_': 'GAkraW_',
+    '-gRAhq_': 'cr4P6W_',
+    'bocITq_': 'WOwLGG_',
+    'cl2Rlq_': '_9r0rkG_',
+    'Da3aKq_': 'K0RNnq_',
+    'dVdiKa_': 'yTDIAG_',
+    'Dws9Sa_': 'AnXs9G_',
+    'gKv1-q_': 'xMeOpW_',
+    'HiSsxa_': 'VJlF5q_',
+    'icaHSq_': 'V4vHZW_',
+    'iq4beG_': 'mOxcpG_',
+    'IzP3Va_': 'LOmM4q_',
+    'jJkEga_': 'wnFoaW_',
+    'OpZ85W_': 'hNGZaa_',
+    'Q2dzhW_': 'hKdVjq_',
+    'ST7X_W_': 'an3WzG_',
+    'wXeviG_': '_86kJGG_',
+    'y0jqnG_': 'A6Bq1a_',
+    'yhfFVG_': 'GRgSLq_',
+    'ZogL4G_': '_5Qcc8a_',
   }),
 });
 
@@ -106,8 +107,44 @@ export const MACOS_BUILD: HostBuild = Object.freeze({
   }),
 });
 
+/**
+ * DSH `0.2.0-rc.2`, Windows commit `04f392c9`. Read from that build's
+ * `app.asar`: each entry is the same CSS module's class-name map, keyed by the
+ * prefix this plugin authored.
+ */
+export const WINDOWS_LEGACY_BUILD: HostBuild = Object.freeze({
+  id: 'dsh-0.2.0-rc.2-04f392c9',
+  frameClass: 'BynINW_frame',
+  prefixes: Object.freeze({
+    '-gRAhq_': 'ws8cKG_',
+    'Da3aKq_': '_4Nnt6q_',
+    'Dws9Sa_': 'wCInkW_',
+    'HiSsxa_': '_3GBCTG_',
+    'IzP3Va_': 'cJsG2q_',
+    'OpZ85W_': 'iq1doa_',
+    'Q2dzhW_': 'pFy1Ka_',
+    'ST7X_W_': 'Dc7zOa_',
+    'ZogL4G_': 'ET65mq_',
+    '_2tNPVa_': 'EBLgjq_',
+    '_3WPZCG_': '_2H3hWW_',
+    '_3li69W_': 'b06baG_',
+    '_6Qf49G_': 'BynINW_',
+    '_7514NG_': '_9lTDKa_',
+    'bocITq_': 'Hqq-bq_',
+    'cl2Rlq_': 'wq12jW_',
+    'dVdiKa_': 'srf2qa_',
+    'gKv1-q_': 'v5IAXa_',
+    'icaHSq_': 'xz4KEq_',
+    'iq4beG_': 'WgQWqa_',
+    'jJkEga_': 'hIlkoa_',
+    'wXeviG_': 'dlU_AG_',
+    'y0jqnG_': '_2WTFBq_',
+    'yhfFVG_': 'RlGAzG_',
+  }),
+});
+
 /** Every build whose class names this plugin knows how to speak. */
-export const HOST_BUILDS: readonly HostBuild[] = Object.freeze([PINNED_BUILD, WINDOWS_BUILD, MACOS_BUILD]);
+export const HOST_BUILDS: readonly HostBuild[] = Object.freeze([PINNED_BUILD, WINDOWS_BUILD, MACOS_BUILD, WINDOWS_LEGACY_BUILD]);
 
 /** Detection results that came from the document itself, so they never change. */
 const identified = new WeakMap<Document, HostBuild>();

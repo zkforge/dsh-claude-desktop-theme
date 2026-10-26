@@ -3,12 +3,12 @@
  * to the greeting. The observer recreates the container after phase changes.
  * Render when StatsSource supplies the first completed snapshot.
  */
-import type { StatsRangeId, StatsSnapshot } from '../../../shared/stats.ts';
+import { localDayKey, sameStatsDisplay, type StatsRangeId, type StatsSnapshot } from '../../../shared/stats.ts';
 import type { CleanupScope } from '../../core/cleanup.ts';
 import type { Logger } from '../../contracts/ports.ts';
 import { frameScheduler } from '../../compat/frame.ts';
 import { hostSelectors } from '../../compat/host-dom.ts';
-import { recordsTouch } from '../../compat/mutation-scope.ts';
+import { recordsIntroduce, recordsTouch } from '../../compat/mutation-scope.ts';
 import { createStatsCard, type StatsCard } from './card.ts';
 import type { StatsSource } from './source.ts';
 import { buildCardData, INITIAL_STATS_VIEW, type StatsViewState } from './view.ts';
@@ -50,7 +50,8 @@ export function mountStatisticsCard(
   const selectors = hostSelectors(document);
   let snapshot: StatsSnapshot | null = source.current;
   let view: StatsViewState = INITIAL_STATS_VIEW;
-  let rendered: { snapshot: StatsSnapshot; view: StatsViewState } | null = null;
+  let rendered: { snapshot: StatsSnapshot; view: StatsViewState; day: string } | null = null;
+  let hero: HTMLElement | null = null;
   let card: StatsCard | null = null;
   let host: HTMLElement | null = null;
 
@@ -71,14 +72,16 @@ export function mountStatisticsCard(
   };
 
   const sync = () => {
-    const hero = document.querySelector<HTMLElement>(HERO);
+    hero = document.querySelector<HTMLElement>(HERO);
     const stack = hero?.querySelector<HTMLElement>(selectors.heroComposerStack) ?? null;
+    source.setActive(stack !== null);
     if (stack === null || snapshot === null) {
       remove();
       return;
     }
-    if (rendered === null || rendered.snapshot !== snapshot || rendered.view !== view) {
-      rendered = { snapshot, view };
+    const now = Date.now(), day = localDayKey(now);
+    if (rendered === null || !sameStatsDisplay(rendered.snapshot, snapshot) || rendered.view !== view || rendered.day !== day) {
+      rendered = { snapshot, view, day };
       remove();
     }
     if (card !== null && card.element.isConnected && host === stack) {
@@ -86,7 +89,7 @@ export function mountStatisticsCard(
       return;
     }
     remove();
-    card = createStatsCard(document, buildCardData(snapshot, view, random), {
+    card = createStatsCard(document, buildCardData(snapshot, view, random, new Date(now)), {
       onTab: tab => {
         /* Re-selecting the current view must not rebuild the card under the
            pointer that just clicked it. */
@@ -128,10 +131,9 @@ export function mountStatisticsCard(
    * chat page, the right pane, the sidebar — cannot.
    */
   const relevant = (records: readonly MutationRecord[]): boolean => {
-    const hero = document.querySelector<HTMLElement>(HERO);
-    if (hero === null) return true;
-    if (recordsTouch(records, hero)) return true;
-    return card !== null && recordsTouch(records, card.element);
+    if (records.some(record => record.type === 'attributes' && record.attributeName === 'data-phase')) return true;
+    if (hero !== null && recordsTouch(records, hero)) return true;
+    return recordsIntroduce(records, HERO);
   };
   try {
     observer = new MutationObserver(records => {
@@ -139,11 +141,12 @@ export function mountStatisticsCard(
     });
     /* The phase swap replaces the whole conversation body, so the card has to
        follow it; a guarded insert keeps our own write from feeding the loop. */
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-phase'] });
     sync();
   } catch (error) {
     frames.cancel();
     observer?.disconnect();
+    source.setActive(false);
     remove();
     logger.error('statistics: card mount failed', error);
     return;
@@ -160,6 +163,7 @@ export function mountStatisticsCard(
     window.removeEventListener('resize', relayout);
     observer?.disconnect();
     unsubscribe();
+    source.setActive(false);
     remove();
   });
 }

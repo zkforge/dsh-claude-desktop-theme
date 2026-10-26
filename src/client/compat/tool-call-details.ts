@@ -88,41 +88,46 @@ export function mountToolCallDetails(document: Document, report: (error: unknown
   const dirty = new Set<Element>();
   let pending = false;
   let released = false;
-  const collect = (node: Node) => {
+  let cleanup = true;
+  const collect = (node: Node, descendants = true) => {
     const element = node.nodeType === 1 ? node as Element : node.parentElement;
     if (!element) return;
     for (const selector of ['[data-terminal]', '[data-read]', '[data-tool="skill"]', '[data-search="paths"]']) {
       const block = element.closest(selector);
       if (block) dirty.add(block);
-      for (const child of element.querySelectorAll(selector)) dirty.add(child);
+      if (descendants) for (const child of element.querySelectorAll(selector)) dirty.add(child);
     }
   };
   const flush = () => {
     pending = false;
     if (released) return;
     try {
-      for (const [terminal, state] of copies) {
-        if (terminal.isConnected && terminal.closest('[data-chat-flow-kind="tool-call"]') && terminal.children[0] === state.header) continue;
-        releaseCopy(state);
-        copies.delete(terminal);
+      // A streamed text chunk cannot invalidate ownership of historical views.
+      if (cleanup) {
+        for (const [terminal, state] of copies) {
+          if (terminal.isConnected && terminal.closest('[data-chat-flow-kind="tool-call"]') && terminal.children[0] === state.header) continue;
+          releaseCopy(state);
+          copies.delete(terminal);
+        }
+        for (const [source, state] of commands) {
+          if (source.isConnected && source.closest('[data-chat-flow-kind="tool-call"]')) continue;
+          state.view.remove();
+          source.removeAttribute('data-ccd-command-source');
+          commands.delete(source);
+        }
+        for (const [source, state] of skills) {
+          if (source.isConnected && source.closest('[data-chat-flow-kind="tool-call"]')) continue;
+          state.view.remove();
+          source.removeAttribute('data-ccd-skill-source');
+          skills.delete(source);
+        }
+        for (const [read, state] of reads) {
+          if (read.isConnected && read.closest('[data-chat-flow-kind="tool-call"]') && read.children[1] === state.body) continue;
+          restoreRead(read, state);
+          reads.delete(read);
+        }
       }
-      for (const [source, state] of commands) {
-        if (source.isConnected && source.closest('[data-chat-flow-kind="tool-call"]')) continue;
-        state.view.remove();
-        source.removeAttribute('data-ccd-command-source');
-        commands.delete(source);
-      }
-      for (const [source, state] of skills) {
-        if (source.isConnected && source.closest('[data-chat-flow-kind="tool-call"]')) continue;
-        state.view.remove();
-        source.removeAttribute('data-ccd-skill-source');
-        skills.delete(source);
-      }
-      for (const [read, state] of reads) {
-        if (read.isConnected && read.closest('[data-chat-flow-kind="tool-call"]') && read.children[1] === state.body) continue;
-        restoreRead(read, state);
-        reads.delete(read);
-      }
+      cleanup = false;
       for (const terminal of dirty) {
         if (!terminal.isConnected || !terminal.closest('[data-chat-flow-kind="tool-call"]')) continue;
         const paths = terminal.getAttribute('data-search') === 'paths';
@@ -250,17 +255,18 @@ export function mountToolCallDetails(document: Document, report: (error: unknown
   };
   const observer = new MutationObserver(records => {
     for (const record of records) {
-      collect(record.target);
+      if (record.type !== 'characterData' && (record.type !== 'childList' || record.removedNodes?.length)) cleanup = true;
+      collect(record.target, record.type !== 'childList' && record.type !== 'characterData');
       for (const node of record.addedNodes) collect(node);
     }
-    if (!pending) {
+    if (!pending && (dirty.size || cleanup)) {
       pending = true;
       queueMicrotask(flush);
     }
   });
   observer.observe(document.body, {
     subtree: true, childList: true, characterData: true,
-    attributes: true, attributeFilter: ['data-ccd-tool-group-member', 'aria-expanded'],
+    attributes: true, attributeFilter: ['data-ccd-tool-group-member', 'aria-expanded', 'data-chat-flow-kind'],
   });
   collect(document.body);
   flush();

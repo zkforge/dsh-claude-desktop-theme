@@ -7,8 +7,9 @@ import { USAGE_KEY } from '../src/host/stats/unit.ts';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(done => { resolve = done; });
-  return { promise, resolve };
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
 }
 
 const settle = () => new Promise<void>(resolve => setImmediate(resolve));
@@ -18,6 +19,7 @@ function fixture(count: number) {
   let ids = Array.from({ length: count }, (_, index) => String(index));
   const reads = new Map(ids.map(id => [id, deferred<{ events: unknown[] }>()]));
   const cached = new Map<string, StatsSessionUsage>();
+  const live = new Map<string, StatsSessionUsage>();
   const opened: string[] = [], closed: string[] = [], folded: string[] = [], read: string[] = [];
   let aggregateReads = 0;
   let listing: Promise<void> | undefined;
@@ -29,13 +31,14 @@ function fixture(count: number) {
     models: [['provider/model', 10, 7, 3]], modelDays: [['2026-10-18', 0, 10]],
   });
   const services: Record<string, unknown> = {
-    sessionProjections: { register() {} },
+    sessionProjections: { register() {}, snapshot(session: { id: string }) { return { values: { [USAGE_KEY]: live.get(session.id) } }; } },
+    sessions: { get: (id: string) => live.has(id) ? { id } : undefined },
     connection: { fetch: { register(route: { fetch: typeof fetchRoute }) {
       fetchRoute = route.fetch; return async () => {};
     } } },
     sessionQuery: { async listSessions() {
       await listing;
-      return ids.map(id => ({ header: { id, cwd: '/project' }, live: false }));
+      return ids.map(id => ({ header: { id, cwd: '/project' }, live: live.has(id) }));
     } },
     sessionProjectionCache: {
       cachedSnapshot(header: { id: string }) {
@@ -67,9 +70,12 @@ function fixture(count: number) {
     opened, closed, folded, read, cached,
     get aggregateReads() { return aggregateReads; },
     remove(id: string) { ids = ids.filter(candidate => candidate !== id); },
-    cache(id: string) { cached.set(id, usage()); },
+    cache(id: string, value = usage()) { cached.set(id, value); },
+    add(id: string) { ids.push(id); reads.set(id, deferred<{ events: unknown[] }>()); },
+    setLive(id: string, value: StatsSessionUsage) { live.set(id, value); },
     blockListing(promise: Promise<void>) { listing = promise; },
     finish(id: string) { reads.get(id)!.resolve({ events: [] }); },
+    fail(id: string) { reads.get(id)!.reject(new Error('unreadable log')); },
     async request(): Promise<StatsSnapshot> {
       return (await fetchRoute(new Request('http://localhost/api/ccd-stats'))).json();
     },
@@ -138,4 +144,82 @@ test('unloading while a session listing is pending does not start persistence wo
   f.dispose(); gate.resolve();
   await request;
   assert.deepEqual(f.opened, []);
+});
+
+test('unchanged polls reuse totals and timestamp, including equivalent projection wrappers', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date(2026, 9, 26, 12).getTime() });
+  const f = fixture(2);
+  try {
+    f.cache('0'); f.cache('1');
+    const first = await f.request(), reads = f.aggregateReads;
+    t.mock.timers.tick(30_000);
+    assert.deepEqual(await f.request(), first);
+    assert.equal(f.aggregateReads, reads, 'stable projections do not revisit aggregate inputs');
+    f.cache('0', structuredClone(f.cached.get('0')!));
+    assert.deepEqual(await f.request(), first, 'equal wire data does not invalidate totals');
+    f.cache('0', { ...f.cached.get('0')!, tokens: 20, models: [['provider/model', 20, 14, 6]], modelDays: [['2026-10-18', 0, 20]] });
+    const changed = await f.request();
+    assert.equal(changed.ranges.all.tokens, 30);
+    assert.ok(changed.computedAt > first.computedAt);
+    f.remove('1');
+    assert.equal((await f.request()).ranges.all.tokens, 20);
+    f.add('new'); f.cache('new');
+    assert.equal((await f.request()).ranges.all.tokens, 30);
+  } finally { f.dispose(); }
+});
+
+test('live usage changes refresh totals while equal replacement views do not', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date(2026, 9, 26, 12).getTime() });
+  const f = fixture(1);
+  const value: StatsSessionUsage = { prompts: 1, tokens: 10, days: [['2026-10-26', 1]], hours: [[12, 1]],
+    models: [['provider/model', 10, 7, 3]], modelDays: [['2026-10-26', 0, 10]] };
+  try {
+    f.setLive('0', value);
+    const first = await f.request();
+    t.mock.timers.tick(1000);
+    f.setLive('0', structuredClone(value));
+    assert.deepEqual(await f.request(), first);
+    f.setLive('0', { ...value, hours: [[13, 1]], models: [['provider/model', 10, 6, 4]] });
+    const changed = await f.request();
+    assert.equal(changed.busyHour, 13);
+    assert.deepEqual(changed.modelIO, [['provider/model', 6, 4]]);
+    assert.deepEqual(f.opened, [], 'live reads never open historical logs');
+  } finally { f.dispose(); }
+});
+
+test('progress and failure recovery update metadata without reaggregating unchanged usage', async t => {
+  t.mock.method(console, 'warn', () => {});
+  const f = fixture(2);
+  try {
+    f.cache('0');
+    const first = await f.request(), reads = f.aggregateReads;
+    assert.equal(first.pending, 1);
+    f.fail('1'); await settle();
+    const failed = await f.request();
+    assert.equal(failed.pending, 0);
+    assert.equal(failed.missed, 1);
+    assert.equal(f.aggregateReads, reads, 'a failed fold only changes progress metadata');
+    assert.equal(failed.ranges.all.tokens, first.ranges.all.tokens);
+    f.cache('1');
+    const recovered = await f.request();
+    assert.equal(recovered.missed, 0, 'a newly available checkpoint clears an old failure');
+    assert.equal(recovered.ranges.all.tokens, 20);
+  } finally { f.dispose(); }
+});
+
+test('midnight invalidates rolling ranges without any projection change', async t => {
+  const at = new Date(2026, 9, 26, 23, 59, 59).getTime();
+  t.mock.timers.enable({ apis: ['Date'], now: at });
+  const f = fixture(1);
+  try {
+    f.cache('0', { prompts: 1, tokens: 10, days: [['2026-10-20', 1]], hours: [[12, 1]],
+      models: [['provider/model', 10, 7, 3]], modelDays: [['2026-10-20', 0, 10]] });
+    const first = await f.request();
+    assert.equal(first.ranges['7d'].tokens, 10);
+    t.mock.timers.tick(1000);
+    const next = await f.request();
+    assert.equal(next.ranges['7d'].tokens, 0);
+    assert.equal(next.ranges.all.tokens, 10);
+    assert.equal(next.computedAt, at + 1000);
+  } finally { f.dispose(); }
 });

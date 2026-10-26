@@ -18,7 +18,8 @@
  * `--pinned` rewrites every host class named in `src/` (the stylesheets are
  * authored against that build) and the Windows table's keys with them, so run
  * it before `--windows`. The reference build defaults to the installed app;
- * pass `--authored` when the sources pin a build that is no longer installed.
+ * a registered reference build is translated back to the authored prefixes.
+ * Pass `--authored` to use a different reference archive.
  *
  * Without `--write` nothing is touched and the mapping is printed. A prefix
  * that cannot be paired exactly is reported and exits non-zero, because a
@@ -98,7 +99,19 @@ function buildId(identity) {
 
 /** Pair every prefix with one target build, or exit with the reasons. */
 function pair(prefixes, reference, target) {
-  const { mapping, problems } = mapPrefixes(prefixes, reference.modules, target.modules);
+  /* The installed reference may be newer than the authored build. Its
+     registered table identifies the same modules under their current hashes. */
+  const id = buildId(reference.identity);
+  const registered = HOST_BUILDS.find(build =>
+    (build.id === id || build.id === `${id}-win32`)
+    && reference.modules.get(build.frameClass.slice(0, -'_frame'.length))?.locals.has('frame'));
+  const modules = new Map(reference.modules);
+  for (const prefix of prefixes) {
+    const actual = registered?.prefixes[prefix];
+    const module = actual === undefined ? undefined : reference.modules.get(actual.slice(0, -1));
+    if (module !== undefined) modules.set(prefix.slice(0, -1), module);
+  }
+  const { mapping, problems } = mapPrefixes(prefixes, modules, target.modules);
   if (problems.size > 0) {
     for (const [prefix, reason] of problems) process.stderr.write(`host-prefixes: ${prefix}: ${reason}\n`);
     throw new Error(`${problems.size} prefix(es) could not be paired`);
@@ -114,7 +127,7 @@ function replaceBlock(text, marker, rendered) {
 
 const options = parseArguments(process.argv.slice(2));
 /* The current tables decide which prefixes are the authored ones. */
-const { PINNED_BUILD, WINDOWS_BUILD } = await import(
+const { HOST_BUILDS, PINNED_BUILD, WINDOWS_BUILD } = await import(
   new URL('../src/client/compat/host-builds.ts', import.meta.url)
 );
 let prefixes = Object.keys(WINDOWS_BUILD.prefixes);
@@ -165,7 +178,9 @@ if (options.windows !== null) {
   const mapping = pair(prefixes, reference, target);
   const frameClass = `${mapping.get(framePrefix)}frame`;
   process.stdout.write(`--windows ${buildId(target.identity)} (reference ${buildId(reference.identity)}): ${mapping.size} prefixes, frame ${frameClass}\n`);
-  const rendered = renderWindowsBuild({ id: buildId(target.identity), frameClass, prefixes: mapping });
+  /* Windows and macOS can share both version and commit but hash differently.
+     Keep their selector caches and diagnostic identities distinct. */
+  const rendered = renderWindowsBuild({ id: `${buildId(target.identity)}-win32`, frameClass, prefixes: mapping });
   if (options.write) {
     const header = [
       '/**',

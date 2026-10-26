@@ -44,12 +44,12 @@ test('the Windows caption strip keeps the configured sidebar colour', () => {
   assert.match(rule?.body ?? '', /background:\s*var\(--ccd-sidebar\)/u);
 });
 
-test('macOS window-control geometry stays inside the darwin scope', () => {
+test('fixed window-control geometry stays inside its desktop platform scope', () => {
   const fixedToggle = sidebar.filter(rule => rule.selector.includes('._3WPZCG_toggle')
     && /position:\s*fixed/u.test(rule.body));
   assert.ok(fixedToggle.length > 0);
   for (const rule of fixedToggle) {
-    assert.ok(rule.selector.includes('[data-platform="darwin"]'), rule.selector);
+    assert.ok(rule.selector.includes('[data-platform="darwin"]') || rule.selector.includes('[data-windows-titlebar]'), rule.selector);
   }
   const offsets = sidebar.filter(rule => rule.body.includes('--ccd-sidebar-toggle-left'));
   assert.ok(offsets.length > 0);
@@ -62,7 +62,7 @@ test('the Windows brand row keeps the CCD navigation inset', () => {
   const brand = sidebar.filter(rule => rule.selector.includes('[data-windows-titlebar]')
     && rule.selector.includes('._3WPZCG_brand'));
   assert.equal(brand.length, 1);
-  assert.match(brand[0]?.body ?? '', /padding-left:\s*0/u);
+  assert.match(brand[0]?.body ?? '', /padding:\s*0 8px/u);
 });
 
 test('the install guide carries a Windows path next to the macOS one', () => {

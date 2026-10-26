@@ -106,6 +106,57 @@ const node = (attrs: Record<string, string> = {}) => {
   for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
   return element;
 };
+
+test('streaming leaves settled entries and markers untouched while native updates invalidate the cache', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: typeof notify) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true; body.append(parent);
+  const history = call(), active = call('bash', 'running');
+  const reply = node({ 'data-chat-flow-kind': 'assistant-step' });
+  reply.textContent = 'Earlier reply';
+  active.row.textContent = 'First live command';
+  parent.append(history.flow, reply, active.flow);
+  body.append(node({ 'data-chat-running': '' }));
+  const errors: unknown[] = [];
+  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, e => errors.push(e));
+  let queries = 0, writes = 0;
+  const query = history.flow.querySelectorAll.bind(history.flow);
+  history.flow.querySelectorAll = selector => { queries++; return query(selector); };
+  const set = history.flow.setAttribute.bind(history.flow);
+  history.flow.setAttribute = (name, value) => { writes++; set(name, value); };
+  const deliver = async (target: ElementDouble, type = 'characterData') => {
+    notify([{ target, type, addedNodes: [], removedNodes: [] }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  try {
+    for (let i = 0; i < 20; i++) {
+      active.row.textContent = 'Live command ' + i;
+      await deliver(active.row);
+    }
+    assert.equal(queries, 0, 'streaming never reparses the settled call');
+    assert.equal(writes, 0, 'unchanged history markers never wake other observers');
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-roll-label]')[1]?.textContent, 'Live command 19');
+    history.row.setAttribute('data-tool', 'read');
+    await deliver(history.row, 'attributes');
+    assert.ok(queries > 0, 'native state changes invalidate the historical entry');
+    assert.equal(parent.querySelector('[data-ccd-tool-roll-label]')?.textContent, 'Read 1 file');
+    const oldParent = history.flow.parentElement;
+    history.flow.remove();
+    await deliver(parent, 'childList');
+    parent.append(history.flow);
+    notify([{ target: parent, type: 'childList', addedNodes: [history.flow], removedNodes: [] }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+    assert.equal(history.flow.parentElement, oldParent);
+    assert.equal(history.flow.getAttribute('data-ccd-tool-group-kind'), 'read');
+    assert.deepEqual(errors, []);
+  } finally { dispose(); globalThis.MutationObserver = nativeObserver; }
+});
+
 function call(name = 'bash', state = 'ok') {
   const flow = node({ 'data-chat-flow-kind': 'tool-call', 'data-chat-turn': '1' });
   const atomic = node({ 'data-chat-call-id': String(Math.random()) });
@@ -199,8 +250,8 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   parent.append(first.flow, second.flow, third.flow, reply, fourth.flow, live.flow);
   const errors: unknown[] = [];
   const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
-  const deliver = async (target: ElementDouble) => {
-    notify([{ target, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+  const deliver = async (target: ElementDouble, addedNodes: ElementDouble[] = []) => {
+    notify([{ target, addedNodes, type: 'childList' }] as unknown as MutationRecord[]);
     await Promise.resolve();
   };
   try {
@@ -251,7 +302,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
     schedule.row.removeAttribute('data-state');
     specialParent.append(present.flow, cordis.flow, schedule.flow);
     body.append(specialParent);
-    await deliver(specialParent);
+    await deliver(body, [specialParent]);
     assert.equal(present.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
     assert.equal(cordis.flow.getAttribute('data-ccd-tool-group-member'), null, 'Cordis approval remains visible even after its tool call returns');
     assert.equal(schedule.flow.getAttribute('data-ccd-tool-group-member'), null, 'a pending schedule has no success evidence');
@@ -444,7 +495,12 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
     },
   }) } as unknown as Document;
   const deliver = async () => {
-    notify([{ target: parent, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+    // These steps change both rows in place as well as list membership.
+    notify([
+      { target: first.row, addedNodes: [], type: 'attributes' },
+      { target: second.row, addedNodes: [], type: 'childList' },
+      { target: parent, addedNodes: [second.flow], type: 'childList' },
+    ] as unknown as MutationRecord[]);
     await Promise.resolve();
   };
   const release = mountToolCallGroups(document, error => errors.push(error));
@@ -628,7 +684,10 @@ test('a streaming thought after a call rolls in the same line instead of opening
   const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   const deliver = async () => {
-    notify([{ target: parent, addedNodes: [], removedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+    notify([
+      { target: thought, addedNodes: [], removedNodes: [], type: 'attributes' },
+      { target: parent, addedNodes: [...parent.children], removedNodes: [], type: 'childList' },
+    ] as unknown as MutationRecord[]);
     await Promise.resolve();
   };
   try {

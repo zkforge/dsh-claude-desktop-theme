@@ -277,7 +277,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-balance-slot] {
 }
 html[data-dsh-ccd-style="true"] [data-ccd-account-balance][data-ccd-balance-card] {
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr) auto;
+  grid-template-columns: 14px auto minmax(0, 1fr);
   gap: 4px 6px;
   min-width: 0;
   padding: 6px;
@@ -296,10 +296,17 @@ html[data-dsh-ccd-style="true"] [data-ccd-balance-card] > svg {
   width: 14px;
   height: 14px;
 }
+html[data-dsh-ccd-style="true"] [data-ccd-balance-card] > span:first-of-type {
+  white-space: nowrap;
+}
 html[data-dsh-ccd-style="true"] [data-ccd-balance-card] [data-ccd-balance-amount] {
   grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
   margin: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--ccd-text);
   font-size: 12px;
   font-weight: 400;
@@ -308,7 +315,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-balance-card] [data-ccd-balance-amount
   text-align: end;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-balance-card][data-balance-state="unavailable"] [data-ccd-balance-amount] {
-  grid-column: 2 / -1;
   font-size: 11px;
   line-height: 16px;
   letter-spacing: 0;

@@ -27,9 +27,17 @@ let listenersOpened = 0;
 let listenersClosed = 0;
 let documentListenersOpened = 0;
 let documentListenersClosed = 0;
+const activeIntervals = new Set();
 const sandbox = {
   setTimeout,
   clearTimeout,
+  setInterval(callback, delay) {
+    const timer = setInterval(callback, delay);
+    timer.unref();
+    activeIntervals.add(timer);
+    return timer;
+  },
+  clearInterval(timer) { activeIntervals.delete(timer); clearInterval(timer); },
   window: {
     __ModuleLoader__: { load(row) { assert.equal(registration, undefined); registration = row; } },
     addEventListener() { listenersOpened += 1; },
@@ -134,6 +142,7 @@ sandbox.document = {
     lang: 'en',
     dataset: {},
     getAttribute: key => attributes.get(key) ?? null,
+    hasAttribute: key => attributes.has(key),
     setAttribute: (key, value) => attributes.set(key, value),
     removeAttribute: key => attributes.delete(key),
   },
@@ -635,6 +644,7 @@ assert.ok(listenersOpened > 0, 'the compat layer must own its window listeners')
 assert.equal(listenersClosed, listenersOpened);
 assert.ok(documentListenersOpened > 0, 'the compat layer must own its document listeners');
 assert.equal(documentListenersClosed, documentListenersOpened);
+assert.equal(activeIntervals.size, 0, 'teardown releases recurring timers');
 const host = await import(pathToFileURL(join(root, 'lib/index.js')).href);
 assert.equal(typeof host.apply, 'function');
 assert.ok(host.Config);

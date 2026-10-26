@@ -15,7 +15,7 @@ export const statisticsFeature: ImplementedFeature = {
   task: 'ARCHITECTURE.md#统计数据',
   mount(environment, scope) {
     scope.add(environment.dom.mountStyles(statisticsCss));
-    const source = createStatsSource({ logger: environment.logger });
+    const source = createStatsSource({ logger: environment.logger, active: false });
     scope.add(() => source.dispose());
     mountStatisticsCard(document, scope, environment.logger, source);
   },

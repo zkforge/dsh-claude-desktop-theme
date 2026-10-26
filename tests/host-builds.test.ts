@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  HOST_BUILDS, MACOS_BUILD, PINNED_BUILD, WINDOWS_BUILD, aliasHostClasses, detectHostBuild, hostBuildStatus, watchHostBuild,
+  HOST_BUILDS, MACOS_BUILD, PINNED_BUILD, WINDOWS_BUILD, WINDOWS_LEGACY_BUILD, aliasHostClasses, detectHostBuild, hostBuildStatus, watchHostBuild,
 } from '../src/client/compat/host-builds.ts';
 import type { HostBuildStatus } from '../src/client/compat/host-builds.ts';
 import { hostAnchors, hostSelectors } from '../src/client/compat/host-dom.ts';
@@ -103,10 +103,10 @@ test('aliasing carries the Windows build the classes read from its app.asar', ()
     'html[data-dsh-ccd-style="true"] ._3WPZCG_root ._3WPZCG_newSession, ._6Qf49G_frame:before, .yhfFVG_card {}',
     WINDOWS_BUILD,
   );
-  assert.ok(css.includes('._2H3hWW_root'));
-  assert.ok(css.includes('._2H3hWW_newSession'));
-  assert.ok(css.includes('.BynINW_frame:before'));
-  assert.ok(css.includes('.RlGAzG_card'));
+  assert.ok(css.includes('.wtg9ga_root'));
+  assert.ok(css.includes('.wtg9ga_newSession'));
+  assert.ok(css.includes('.mP3x-q_frame:before'));
+  assert.ok(css.includes('.GRgSLq_card'));
   assert.ok(!css.includes('_3WPZCG_'));
   /* Stable hooks and shared classes are never rewritten. */
   const stable = '[data-slot="root"] > div, [role="menu"], ._markdown_1ypvv_5';
@@ -122,7 +122,7 @@ test('detection reads the frame first, then the preload platform', () => {
   assert.equal(detectHostBuild(documentDouble('win32')), WINDOWS_BUILD);
   assert.equal(detectHostBuild(documentDouble('darwin')), MACOS_BUILD);
   assert.equal(detectHostBuild(documentDouble(undefined)), PINNED_BUILD);
-  assert.equal(detectHostBuild(documentDouble('darwin', 'BynINW_frame _6Qf49G_quietBars')), WINDOWS_BUILD);
+  assert.equal(detectHostBuild(documentDouble('darwin', 'mP3x-q_frame _6Qf49G_quietBars')), WINDOWS_BUILD);
   assert.equal(detectHostBuild(documentDouble('win32', '_6Qf49G_frame')), PINNED_BUILD);
 });
 
@@ -131,8 +131,8 @@ test('an unregistered frame is the state the page and the log report', () => {
   assert.equal(hostBuildStatus(documentDouble('win32')).state, 'pending');
   assert.equal(hostBuildStatus(documentDouble('win32')).build, WINDOWS_BUILD);
   /* A frame this plugin knows. */
-  assert.equal(hostBuildStatus(documentDouble('darwin', 'BynINW_frame')).state, 'identified');
-  assert.equal(hostBuildStatus(documentDouble('darwin', 'BynINW_frame')).build, WINDOWS_BUILD);
+  assert.equal(hostBuildStatus(documentDouble('darwin', 'mP3x-q_frame')).state, 'identified');
+  assert.equal(hostBuildStatus(documentDouble('darwin', 'mP3x-q_frame')).build, WINDOWS_BUILD);
   /* A frame from a build with class names this plugin has never seen. */
   const stranger = documentDouble('darwin', 'Qq9Zz0_frame');
   assert.equal(hostBuildStatus(stranger).state, 'unknown');
@@ -197,7 +197,7 @@ test('a document whose frame is already known reports immediately', () => {
   scope.MutationObserver = FakeObserver;
   try {
     const seen: HostBuildStatus[] = [];
-    const release = watchHostBuild(documentDouble('darwin', 'BynINW_frame'), status => seen.push(status));
+    const release = watchHostBuild(documentDouble('darwin', 'mP3x-q_frame'), status => seen.push(status));
     assert.equal(seen.length, 1);
     assert.equal(seen[0]?.state, 'identified');
     assert.equal(FakeObserver.instances.length, 0);
@@ -210,9 +210,9 @@ test('a document whose frame is already known reports immediately', () => {
 
 test('resolved tables speak the document build and keep the authored table intact', () => {
   const windows = hostSelectors(documentDouble('win32'));
-  assert.equal(windows.frame, '.BynINW_frame');
-  assert.equal(windows.sidebarNewSession, '._2H3hWW_newSession');
-  assert.equal(hostAnchors(documentDouble('win32')).composerCardHero, '.Dc7zOa_root[data-phase="hero"] [data-composer-card]');
+  assert.equal(windows.frame, '.mP3x-q_frame');
+  assert.equal(windows.sidebarNewSession, '.wtg9ga_newSession');
+  assert.equal(hostAnchors(documentDouble('win32')).composerCardHero, '.an3WzG_root[data-phase="hero"] [data-composer-card]');
 
   const pinned = hostSelectors(documentDouble('darwin', PINNED_BUILD.frameClass));
   assert.equal(pinned.frame, '._6Qf49G_frame');
@@ -224,9 +224,10 @@ test('resolved tables speak the document build and keep the authored table intac
 
 test('verified builds are declared once, with the authored one first', () => {
   assert.equal(HOST_BUILDS[0], PINNED_BUILD);
-  assert.equal(HOST_BUILDS.length, 3);
+  assert.equal(HOST_BUILDS.length, 4);
+  assert.equal(new Set(HOST_BUILDS.map(build => build.id)).size, HOST_BUILDS.length, 'platform builds need distinct selector cache keys');
   assert.equal(PINNED_BUILD.frameClass, '_6Qf49G_frame');
-  assert.equal(WINDOWS_BUILD.frameClass, 'BynINW_frame');
+  assert.equal(WINDOWS_BUILD.frameClass, 'mP3x-q_frame');
 });
 
 test('the current macOS release resolves every authored module before and after the frame mounts', () => {
@@ -244,4 +245,33 @@ test('the current macOS release resolves every authored module before and after 
     assert.equal(hostAnchors(document).composerCardHero, '.kiGsTW_root[data-phase="hero"] [data-composer-card]');
     assert.equal(aliasHostClasses('._6Qf49G_frame .yhfFVG_card', detectHostBuild(document)), '.PIRFFq_frame .JZLxKW_card');
   }
+});
+
+
+test('Windows rc.3 resolves every authored module before and after the frame mounts', () => {
+  for (const prefix of [...cssPrefixes(), ...tablePrefixes()]) {
+    assert.ok(Object.hasOwn(WINDOWS_BUILD.prefixes, prefix), prefix + ' has no current Windows counterpart');
+  }
+  assert.equal(WINDOWS_BUILD.id, 'dsh-0.2.1-rc.3-be72761e-win32');
+  const pending = documentDouble('win32');
+  const rendered = documentDouble('win32', 'mP3x-q_frame');
+  assert.equal(hostBuildStatus(pending).state, 'pending');
+  assert.equal(hostBuildStatus(rendered).state, 'identified');
+  for (const document of [pending, rendered]) {
+    assert.equal(detectHostBuild(document), WINDOWS_BUILD);
+    assert.equal(hostSelectors(document).frame, '.mP3x-q_frame');
+    assert.equal(hostSelectors(document).sidebarNewSession, '.wtg9ga_newSession');
+    assert.equal(hostAnchors(document).composerCardHero, '.an3WzG_root[data-phase="hero"] [data-composer-card]');
+    assert.equal(aliasHostClasses('._6Qf49G_frame .yhfFVG_card', detectHostBuild(document)), '.mP3x-q_frame .GRgSLq_card');
+  }
+  // Resolving Windows must not reuse the current macOS build's cached selectors.
+  assert.equal(hostSelectors(documentDouble('darwin', MACOS_BUILD.frameClass)).frame, '.PIRFFq_frame');
+});
+
+test('the registered Windows rc.2 frame retains its original mapping', () => {
+  const document = documentDouble('win32', 'BynINW_frame');
+  assert.equal(hostBuildStatus(document).state, 'identified');
+  assert.equal(detectHostBuild(document), WINDOWS_LEGACY_BUILD);
+  assert.equal(hostSelectors(document).frame, '.BynINW_frame');
+  assert.equal(hostSelectors(document).sidebarNewSession, '._2H3hWW_newSession');
 });

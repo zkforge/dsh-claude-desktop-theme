@@ -335,6 +335,13 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
           onChange={value => void write([setOperation(['view', 'showModelIcons'], value)])}
         />
         <SwitchRow
+          id="ccd-settings-show-api-balance"
+          label={translate('field.showApiBalance')}
+          hint={translate('hint.showApiBalance')}
+          checked={served.view.showApiBalance}
+          onChange={value => void write([setOperation(['view', 'showApiBalance'], value)])}
+        />
+        <SwitchRow
           id="ccd-settings-show-sidebar-brand"
           label={translate('field.showSidebarBrand')}
           hint={translate('hint.showSidebarBrand')}

@@ -161,6 +161,8 @@ export function resumeTailAtFloor(document: Document, from: Element): boolean {
  */
 export function mountToolCallGroups(document: Document, report: (error: unknown) => void): Disposer {
   const groups = new Map<HTMLElement, Map<HTMLElement, Group>>();
+  // A streaming seat invalidates itself, not every settled call in history.
+  const entries = new WeakMap<HTMLElement, ToolGroupEntry<HTMLElement>>();
   const dirty = new Set<HTMLElement>();
   const fileTitles = new Map<Element, { title: Element; label: HTMLElement }>();
   const restoreFileTitle = (row: Element) => {
@@ -173,6 +175,9 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
   let released = false;
   let pending = false;
 
+  const set = (element: Element, name: string, value: string) => {
+    if (element.getAttribute(name) !== value) element.setAttribute(name, value);
+  };
   const unmark = (member: HTMLElement) => {
     member.removeAttribute('data-ccd-tool-group-member');
     member.removeAttribute('data-ccd-tool-group-edge');
@@ -181,11 +186,11 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
   /** Paint one group; reports whether a member that was on screen is now folded. */
   const paint = (group: Group): boolean => {
     let folded = false;
-    group.button.setAttribute('aria-expanded', String(group.open));
+    set(group.button, 'aria-expanded', String(group.open));
     group.members.forEach((member, index) => {
       if (!group.open && member.getAttribute('data-ccd-tool-group-member') !== 'closed') folded = true;
-      member.setAttribute('data-ccd-tool-group-member', group.open ? 'open' : 'closed');
-      member.setAttribute('data-ccd-tool-group-edge', group.members.length === 1 ? 'only'
+      set(member, 'data-ccd-tool-group-member', group.open ? 'open' : 'closed');
+      set(member, 'data-ccd-tool-group-edge', group.members.length === 1 ? 'only'
         : index === 0 ? 'first' : index === group.members.length - 1 ? 'last' : 'middle');
     });
     return folded;
@@ -286,7 +291,14 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     const previous = groups.get(parent) ?? new Map<HTMLElement, Group>();
     const runs = parent.isConnected ? consecutiveToolGroups(
       [...parent.children].filter((child): child is HTMLElement => child.nodeType === 1
-        && !child.hasAttribute('data-ccd-tool-group-toggle')).map(entry), true,
+        && !child.hasAttribute('data-ccd-tool-group-toggle')).map(child => {
+          // Wrapper/barrier entries can depend on nested seats; only cache
+          // seats whose mutations the collector can invalidate directly.
+          if (!child.matches(ANCHOR.chatFlowItem)) return entry(child);
+          let cached = entries.get(child);
+          if (!cached) { cached = entry(child); entries.set(child, cached); }
+          return cached;
+        }), true,
     ) : [];
     const next = new Map<HTMLElement, Group>();
     // Keep unchanged memberships intact: removing/readding visibility markers
@@ -344,11 +356,11 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       const canAnimate = !!group.label.animate && !reducedMotion;
       group.members = run.map(item => item.value);
       if (document.activeElement && group.members.some(member => member.contains(document.activeElement))) group.open = true;
-      for (const item of run) item.value.setAttribute('data-ccd-tool-group-kind', item.kind);
+      for (const item of run) set(item.value, 'data-ccd-tool-group-kind', item.kind);
       // A settled call that the turn may still continue stays marked live: the
       // row is the turn's current activity, not a finished summary.
-      if (live || (!answered && !failed && run.every(item => item.settled))) group.button.setAttribute('data-ccd-tool-live', '');
-      else group.button.removeAttribute('data-ccd-tool-live');
+      if (live || (!answered && !failed && run.every(item => item.settled))) set(group.button, 'data-ccd-tool-live', '');
+      else if (group.button.hasAttribute('data-ccd-tool-live')) group.button.removeAttribute('data-ccd-tool-live');
       clearTimeout(group.refreshTimer);
       delete group.refreshTimer;
       const remainingDwell = group.shownAt !== undefined && canAnimate && (live || group.shownLive) && !failed
@@ -443,15 +455,25 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       for (const parent of parents) syncParent(parent);
     } catch (error) { report(error); }
   };
-  const collect = (node: Node) => {
+  const collect = (node: Node, descendants = true) => {
     const element = node.nodeType === 1 ? node as Element : node.parentElement;
     if (!element) return;
-    const flow = element.closest<HTMLElement>(ANCHOR.chatFlowItem);
-    if (flow?.parentElement) dirty.add(flow.parentElement);
+    let flow = element.closest<HTMLElement>(ANCHOR.chatFlowItem);
+    while (flow) {
+      entries.delete(flow);
+      if (flow.parentElement) dirty.add(flow.parentElement);
+      // Nested calls can change the outer call's approval/live status too.
+      flow = flow.parentElement?.closest<HTMLElement>(ANCHOR.chatFlowItem) ?? null;
+    }
+    // Only arrivals/attribute changes can introduce descendant seats. Scanning
+    // a childList target would revisit its entire unchanged history.
+    if (!descendants) return;
     for (const child of element.querySelectorAll<HTMLElement>(ANCHOR.toolFlow)) {
+      entries.delete(child);
       if (child.parentElement) dirty.add(child.parentElement);
     }
     for (const child of element.querySelectorAll<HTMLElement>(ANCHOR.reasoningFlow)) {
+      entries.delete(child);
       if (child.parentElement) dirty.add(child.parentElement);
     }
   };
@@ -466,7 +488,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       if (record.target.nodeType === 1 && (record.target as Element).hasAttribute('data-chat-running')) {
         for (const parent of groups.keys()) dirty.add(parent);
       }
-      collect(record.target);
+      collect(record.target, record.type !== 'childList' && record.type !== 'characterData');
       for (const node of record.addedNodes ?? []) collect(node);
       for (const node of record.removedNodes ?? []) {
         if (node.nodeType === 1 && (node as Element).hasAttribute('data-chat-running')) {

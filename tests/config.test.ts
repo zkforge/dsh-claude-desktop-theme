@@ -69,6 +69,17 @@ test('a default configuration keeps every built-in', () => {
   assert.equal(adoptConfig({ features: { 'context-panel': false } }).features['context-panel'], false);
 });
 
+test('API balance defaults on, persists choices and rejects invalid writes', () => {
+  assert.equal(resolveConfig().view.showApiBalance, true);
+  assert.equal(adoptConfig({}).view.showApiBalance, true);
+  for (const showApiBalance of [true, false]) {
+    assert.equal(resolveConfig({ view: { showApiBalance } }).view.showApiBalance, showApiBalance);
+    assert.equal(adoptConfig({ view: { showApiBalance } }).view.showApiBalance, showApiBalance);
+  }
+  assert.equal(adoptConfig({ view: { showApiBalance: 'false' } }).view.showApiBalance, true);
+  assert.throws(() => resolveConfig({ view: { showApiBalance: 'false' } }), /view.showApiBalance/);
+});
+
 test('sidebar branding defaults off, persists explicit choices and rejects invalid writes', () => {
   assert.equal(resolveConfig().view.showSidebarBrand, false);
   assert.equal(adoptConfig({}).view.showSidebarBrand, false);

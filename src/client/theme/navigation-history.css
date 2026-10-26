@@ -69,10 +69,28 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"][data-fullscreen] ._6Qf49
   --dsh-frame-leading-clearance: 124px;
 }
 
-html[data-dsh-ccd-style="true"]:not([data-platform="darwin"]) [data-ccd-navigation-history] {
+html[data-dsh-ccd-style="true"]:not([data-platform="darwin"]):not([data-windows-titlebar]) [data-ccd-navigation-history] {
   margin-bottom: 4px;
 }
 
-html[data-dsh-ccd-style="true"]:not([data-platform="darwin"]) ._3WPZCG_collapsed [data-ccd-navigation-history] {
+html[data-dsh-ccd-style="true"]:not([data-platform="darwin"]):not([data-windows-titlebar]) ._3WPZCG_collapsed [data-ccd-navigation-history] {
   flex-direction: column;
+}
+
+/* Keep history beside the native toggle, including when the sidebar is hidden.
+   The preload's menu host consumes this inherited offset inside its shadow DOM. */
+html[data-dsh-ccd-style="true"][data-windows-titlebar] [data-ccd-navigation-history] {
+  position: fixed;
+  top: calc((var(--dsh-windows-titlebar-height, 40px) - 24px) / 2);
+  left: 40px;
+  z-index: 30;
+}
+
+html[data-dsh-ccd-style="true"][data-windows-titlebar]:has([data-ccd-navigation-history]) {
+  --ccd-windows-new-session-left: 92px;
+  --dsh-windows-menu-start: 96px;
+}
+
+html[data-dsh-ccd-style="true"][data-windows-titlebar]:has([data-sidebar-collapsed]):has([data-ccd-navigation-history]) {
+  --dsh-windows-menu-start: 124px;
 }

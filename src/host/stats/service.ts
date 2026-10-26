@@ -8,7 +8,7 @@ import type { Session, SessionHeader } from '@deepseek-ai/dsh-session';
 import type { SessionPersistence, SessionHandle } from '@deepseek-ai/dsh-session-persistence';
 import type { SessionProjectionRegistry, ProjectionSnapshot } from '@deepseek-ai/dsh-session-projection';
 import type { SessionQueryEngine, SessionRecord } from '@deepseek-ai/dsh-session-query';
-import { STATS_PATH, type StatsSessionUsage, type StatsSnapshot } from '../../shared/stats.ts';
+import { STATS_PATH, localDayKey, sameStatsUsage, type StatsSessionUsage, type StatsSnapshot } from '../../shared/stats.ts';
 import { PLUGIN_ID } from '../../shared/identity.ts';
 import { aggregateUsage } from './aggregate.ts';
 import { USAGE_KEY, usageProjection } from './unit.ts';
@@ -61,6 +61,7 @@ class UsageAggregator {
   private refreshRun: Promise<StatsSnapshot> | null = null;
   private snapshot: StatsSnapshot | null = null;
   private dirty = true;
+  private snapshotDay: string | null = null;
   private listed = new Set<string>();
   private disposed = false;
 
@@ -71,11 +72,17 @@ class UsageAggregator {
 
   /** The most recent snapshot; an empty one before the first refresh. */
   get current(): StatsSnapshot {
-    if (this.snapshot === null || this.dirty) {
+    const now = Date.now(), day = localDayKey(now);
+    const pending = this.queued.size + this.running, missed = this.failures.size;
+    if (this.snapshot === null || this.dirty || this.snapshotDay !== day) {
       this.snapshot = aggregateUsage(this.values.values(), {
-        now: Date.now(), pending: this.queued.size + this.running, missed: this.failures.size,
+        now, pending, missed,
       });
+      this.snapshotDay = day;
       this.dirty = false;
+    } else if (this.snapshot.pending !== pending || this.snapshot.missed !== missed) {
+      // Fold progress alone does not require collecting and sorting all usage.
+      this.snapshot = { ...this.snapshot, pending, missed, computedAt: now };
     }
     return this.snapshot;
   }
@@ -119,7 +126,10 @@ class UsageAggregator {
          session that merely failed this pass keeps its last value. */
       const listed = new Set<string>(candidates.map(candidate => candidate.header.id));
       this.listed = listed;
-      for (const id of [...this.values.keys()]) if (!listed.has(id)) this.values.delete(id);
+      for (const id of [...this.values.keys()]) if (!listed.has(id)) {
+        this.values.delete(id);
+        this.invalidate();
+      }
       for (const id of [...this.failures.keys()]) if (!listed.has(id)) this.failures.delete(id);
       for (const id of this.queued.keys()) if (!listed.has(id)) this.queued.delete(id);
       for (const candidate of candidates) {
@@ -128,14 +138,20 @@ class UsageAggregator {
         if (value === undefined) this.enqueue(candidate);
         else {
           this.queued.delete(candidate.header.id);
-          this.values.set(candidate.header.id, value);
+          this.store(candidate.header.id, value);
+          this.failures.delete(candidate.header.id);
         }
       }
     } catch (error) {
       this.warn('session listing failed; the card keeps the last snapshot', error);
     }
-    this.invalidate();
     return this.current;
+  }
+
+  private store(id: string, value: StatsSessionUsage): void {
+    if (sameStatsUsage(this.values.get(id), value)) return;
+    this.values.set(id, value);
+    this.invalidate();
   }
 
   /** Every stored session the card counts, newest first. */
@@ -208,7 +224,6 @@ class UsageAggregator {
       void this.fold(candidate).finally(() => {
         this.folding.delete(id);
         this.running -= 1;
-        this.invalidate();
         this.pump();
       });
     }
@@ -232,7 +247,7 @@ class UsageAggregator {
         this.failures.set(candidate.header.id, Date.now());
         return;
       }
-      this.values.set(candidate.header.id, value);
+      this.store(candidate.header.id, value);
       this.failures.delete(candidate.header.id);
     } catch (error) {
       if (this.disposed || !this.listed.has(candidate.header.id)) return;

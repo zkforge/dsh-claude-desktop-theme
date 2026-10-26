@@ -140,6 +140,23 @@ function buildAliases(): readonly Alias[] {
 }
 
 const ALIASES = buildAliases();
+const ranks = new Map(ALIASES.map((alias, index) => [alias, index]));
+const phraseAliases = new Map<string, Alias[]>();
+const compactAliases = new Map<string, Alias[]>();
+const substrings = ALIASES.filter(alias => alias.explicit && alias.compact.length >= 5);
+for (const alias of ALIASES) {
+  const first = alias.text.split(' ')[0]!;
+  const phrases = phraseAliases.get(first) ?? [];
+  phrases.push(alias);
+  phraseAliases.set(first, phrases);
+  const compact = compactAliases.get(alias.compact) ?? [];
+  compact.push(alias);
+  compactAliases.set(alias.compact, compact);
+}
+// Cache both hits and misses, including the provider fallback shared by rows.
+// Bound catalog churn across a long-running desktop session.
+const matchesByText = new Map<string, Alias | null>();
+const MATCH_LIMIT = 2048;
 
 /** True when `phrase` occupies whole normalized tokens, never a substring. */
 function hasPhrase(text: string, phrase: string): boolean {
@@ -153,24 +170,29 @@ function hasPhrase(text: string, phrase: string): boolean {
   return false;
 }
 
-function matches(text: string, compact: string, alias: Alias): boolean {
-  if (hasPhrase(text, alias.text)) return true;
-  if (compact === alias.compact) return true;
-  /*
-   * Camel-case names such as `DeepSeekV3` normalize to `deep seek v3`, while
-   * the brand alias is `deepseek`. A long explicit alias can still appear as
-   * a compact prefix or suffix; the five-character floor keeps short aliases
-   * such as `step` from matching words like `stepper`.
-   */
-  return alias.explicit && alias.compact.length >= 5 && compact.includes(alias.compact);
-}
-
 function matchText(value: string, excludeRouting = false): Alias | null {
+  const key = (excludeRouting ? 'family:' : 'all:') + value;
+  if (matchesByText.has(key)) return matchesByText.get(key)!;
   const text = normalize(value);
   if (text === '') return null;
   const compact = text.replaceAll(' ', '');
-  return ALIASES.find(alias => (!excludeRouting || !ROUTING_SLUGS.has(alias.slug))
-    && matches(text, compact, alias)) ?? null;
+  const allowed = (alias: Alias) => !excludeRouting || !ROUTING_SLUGS.has(alias.slug);
+  let found: Alias | null = null;
+  const consider = (alias: Alias | undefined) => {
+    if (alias && (found === null || ranks.get(alias)! < ranks.get(found)!)) found = alias;
+  };
+  // Whole-phrase matches can only start at one of the input's own tokens.
+  // Keep the original global ranking across all three matching strategies.
+  for (const token of new Set(text.split(' '))) {
+    consider(phraseAliases.get(token)?.find(alias => allowed(alias) && hasPhrase(text, alias.text)));
+  }
+  consider(compactAliases.get(compact)?.find(allowed));
+  // Long explicit aliases also match compact prefixes/suffixes; short aliases
+  // retain token boundaries, so "stepper" still never matches "step".
+  consider(substrings.find(alias => allowed(alias) && compact.includes(alias.compact)));
+  if (matchesByText.size >= MATCH_LIMIT) matchesByText.delete(matchesByText.keys().next().value!);
+  matchesByText.set(key, found);
+  return found;
 }
 
 /**

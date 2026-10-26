@@ -81,4 +81,8 @@ test('unusable values are refused at the settings boundary', () => {
   assert.throws(() => schema({ view: { showModelIcons: 'false' } }), /showModelIcons/);
   assert.doesNotThrow(() => schema({ view: { showSidebarBrand: true } }));
   assert.throws(() => schema({ view: { showSidebarBrand: 'true' } }), /showSidebarBrand/);
+  for (const showApiBalance of [true, false]) {
+    assert.doesNotThrow(() => schema({ view: { showApiBalance } }));
+  }
+  assert.throws(() => schema({ view: { showApiBalance: 'false' } }), /showApiBalance/);
 });

@@ -72,6 +72,7 @@ export function accountNameToken(name: string): string {
  */
 export function mountAccountMenu(
   document: Document, report: (error: unknown) => void, theme: ThemePreferencePort | null = null,
+  showApiBalance = true,
 ): Disposer {
   const host = hostSelectors(document);
   const marked = new Set<HTMLElement>();
@@ -127,7 +128,7 @@ export function mountAccountMenu(
       balanceAccount = name;
       balanceCache = {};
     }
-    const foot = (expanded ? trigger?.closest<HTMLElement>(host.sidebarFootArea) : null) ?? null;
+    const foot = (showApiBalance && expanded ? trigger?.closest<HTMLElement>(host.sidebarFootArea) : null) ?? null;
     if (balanceOwner !== foot || (balanceSlot && !balanceSlot.isConnected)) clearSidebarBalance();
     if (foot?.parentElement && !balanceSlot) {
       balanceSlot = document.createElement('div');
@@ -174,7 +175,7 @@ export function mountAccountMenu(
     if (!additions.has(target)) {
       const disposeMore = mountAccountMore(target);
       const disposeTheme = mountAccountTheme(target, theme);
-      const disposeBalance = balanceSlot ? () => {} : mountAccountBalance(target, balanceCache);
+      const disposeBalance = !showApiBalance || balanceSlot ? () => {} : mountAccountBalance(target, balanceCache);
       additions.set(target, () => { disposeBalance(); disposeTheme(); disposeMore(); });
     }
   };

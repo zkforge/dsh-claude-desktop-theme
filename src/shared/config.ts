@@ -21,7 +21,7 @@ export const APPEARANCE_FIELDS = ['canvas', 'sidebar'] as const;
 /** Fields of the typeface section; an empty string means "system stack". */
 export const FONT_FIELDS = ['uiLatin', 'uiCjk', 'code'] as const;
 /** Fields of the view-options section. */
-export const VIEW_FIELDS = ['showEmptyGroups', 'groupByStatus', 'showHeaderSubagents', 'showHeaderTeam', 'showHeaderJobs', 'showSidebarBrand', 'showModelIcons'] as const;
+export const VIEW_FIELDS = ['showEmptyGroups', 'groupByStatus', 'showHeaderSubagents', 'showHeaderTeam', 'showHeaderJobs', 'showSidebarBrand', 'showModelIcons', 'showApiBalance'] as const;
 
 export type AppearanceField = typeof APPEARANCE_FIELDS[number];
 export type FontField = typeof FONT_FIELDS[number];
@@ -128,6 +128,7 @@ export const DEFAULT_VIEW: ViewConfig = Object.freeze({
   showHeaderJobs: false,
   showSidebarBrand: false,
   showModelIcons: true,
+  showApiBalance: true,
 });
 
 /** Three- or six-digit hex, with the leading `#`; both forms normalize to six. */

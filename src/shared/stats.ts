@@ -155,6 +155,39 @@ export interface StatsSnapshot {
   readonly computedAt: number;
 }
 
+/** Compare ordered wire rows without serializing or allocating a second copy. */
+function sameRows(left: readonly (readonly (string | number)[])[], right: readonly (readonly (string | number)[])[]): boolean {
+  return left === right || (left.length === right.length && left.every((row, index) => {
+    const other = right[index]!;
+    return row === other || (row.length === other.length && row.every((value, at) => value === other[at]));
+  }));
+}
+
+/** Projection wrappers can change identity while their effective usage stays the same. */
+export function sameStatsUsage(left: StatsSessionUsage | undefined, right: StatsSessionUsage): boolean {
+  return left === right || (left !== undefined && left.prompts === right.prompts && left.tokens === right.tokens
+    && sameRows(left.days, right.days) && sameRows(left.hours, right.hours)
+    && sameRows(left.models, right.models) && sameRows(left.modelDays, right.modelDays));
+}
+
+/** Only values the card draws; transport timestamps and fold progress are excluded. */
+export function sameStatsDisplay(left: StatsSnapshot, right: StatsSnapshot): boolean {
+  if (left === right) return true;
+  if (left.version !== right.version || left.busyHour !== right.busyHour
+    || !sameRows(left.days, right.days) || !sameRows(left.modelDays, right.modelDays)
+    || !sameRows(left.modelIO, right.modelIO)) return false;
+  return STATS_RANGES.every(id => {
+    const a = left.ranges[id], b = right.ranges[id];
+    return a === b || (a.sessions === b.sessions && a.messages === b.messages && a.tokens === b.tokens
+      && a.activeDays === b.activeDays && a.topModel === b.topModel && sameRows(a.models, b.models));
+  });
+}
+
+/** Semantic snapshot equality; computedAt alone must not wake subscribers. */
+export function sameStatsSnapshot(left: StatsSnapshot, right: StatsSnapshot): boolean {
+  return left === right || (left.pending === right.pending && left.missed === right.missed && sameStatsDisplay(left, right));
+}
+
 /** Whether a value is a finite, non-negative count. */
 function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;

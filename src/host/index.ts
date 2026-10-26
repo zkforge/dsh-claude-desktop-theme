@@ -77,6 +77,8 @@ export const Config = z.object({
     greetingName: z.string().default('').pattern(/^.{0,64}$/u).description('问候语中的称呼（可留空）'),
   }).default({ ...DEFAULT_PERSONALIZATION }).description('个性化').volatile(),
   view: z.object({
+    showApiBalance: z.boolean().default(DEFAULT_VIEW.showApiBalance)
+      .description('显示 DeepSeek API 余额与峰谷时段，关闭后停止余额查询（默认开启）'),
     showModelIcons: z.boolean().default(DEFAULT_VIEW.showModelIcons)
       .description('显示模型选单中的前置图标（默认开启）'),
     showSidebarBrand: z.boolean().default(DEFAULT_VIEW.showSidebarBrand)
