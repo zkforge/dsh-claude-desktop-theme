@@ -55,6 +55,7 @@ import { mountSidebarEditor } from './features/sidebar-editor/mount.ts';
 import { SIDEBAR_NAVIGATION_ICONS } from './features/sidebar/navigation-icons.ts';
 import { mountSettingsPage } from './features/settings/mount.ts';
 import { mountRightPanel } from './features/right-panel/mount.ts';
+import { mountSessionCards } from './features/session-info/mount.ts';
 import { sidebarFeature } from './features/sidebar/index.ts';
 import { newSessionFeature } from './features/new-session/index.ts';
 import { conversationFeature } from './features/conversation/index.ts';
@@ -217,6 +218,7 @@ export function apply(ctx: Context): void {
           error => logger.error('scrollbars: activity listener failed', error),
         ));
         mountRightPanel(ctx, environment, scope);
+        mountSessionCards(ctx, environment, scope);
         if (next.features.conversation) {
           /* The header cluster's open control is host-rendered, so its mode and
              its names are annotated from the compatibility layer; the two added

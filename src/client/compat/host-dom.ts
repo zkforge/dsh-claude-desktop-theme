@@ -243,7 +243,8 @@ export const HOST = Object.freeze({
   /** ChatView.module.css: the transcript's own scroll column, inside the page's
       scroll viewport, and the two shells of the floating jump-to-bottom control
       that ChatView renders off the tail. `conversation.css` places and sizes
-      that control; no TypeScript reads it. */
+      that control; `compat/tool-call-groups.ts` presses it when a fold leaves
+      the reader on the floor. */
   chatViewScroll: '.icaHSq_scroll',
   chatViewColumn: '.icaHSq_column',
   chatViewToBottomSlot: '.icaHSq_toBottomSlot',

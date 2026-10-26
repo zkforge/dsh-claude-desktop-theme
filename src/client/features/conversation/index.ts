@@ -10,6 +10,7 @@ import { mountViewSwitch } from '../../compat/view-switch.ts';
 import conversationCss from './conversation.css';
 import { VIEW_SWITCH_ICONS } from './view-switch-icons.ts';
 import { mountHeaderVisibility } from './header-actions/visibility.ts';
+import { mountDirectViewTabs } from '../../compat/direct-view-tabs.ts';
 
 /**
  * Conversation page presentation. The transcript, its scroll behaviour, tool
@@ -50,6 +51,7 @@ export const conversationFeature: ImplementedFeature = {
       error => environment.logger.error('conversation: process expansion failed', error),
     ));
     mountHeaderVisibility(environment.host.slots, environment.config.view, scope);
+    scope.add(mountDirectViewTabs(document, error => environment.logger.error('conversation: direct view tabs failed', error)));
     scope.add(mountViewSwitch(
       document, VIEW_SWITCH_ICONS,
       error => environment.logger.error('conversation: view switcher observer failed', error),

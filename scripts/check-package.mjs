@@ -251,7 +251,7 @@ const slots = {
       return () => moreCardRows.delete(options);
     }
     if (options.name === 'conversation.session.header.actions') {
-      assert.ok(['subagent-catalog', 'agent-team'].includes(options.id));
+      assert.ok(['subagent-catalog', 'agent-team', 'job-list'].includes(options.id));
       assert.equal(options.priority, -10);
       return () => {};
     }

@@ -402,7 +402,6 @@ function PaletteBody({ port, copy, language, close, report }: BodyProps): ReactE
         <span>{copy.hints.tabs}<kbd>←</kbd><kbd>→</kbd></span>
         <span>{copy.hints.filter}<kbd>/</kbd></span>
         <span>{copy.hints.actions}<kbd>{option}</kbd><kbd>↵</kbd></span>
-        <span className="ccd-search-palette-compose">{copy.hints.compose}<kbd>Tab</kbd></span>
       </footer>
     </div>
   );

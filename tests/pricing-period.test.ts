@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { officialPrice, pricingCountdown, pricingPeriod } from '../src/client/features/model-controls/pricing.ts';
+import { pricingCountdown, pricingPeriod } from '../src/shared/pricing-period.ts';
 
 const at = (date: string) => Date.parse(`${date}+08:00`);
 test('peak windows include the opening instant and exclude the closing instant', () => {
@@ -23,20 +23,6 @@ test('unknown holiday years do not produce a made-up period or countdown', () =>
   assert.equal(pricingPeriod(at('2027-01-04T10:00:00')), null);
   assert.deepEqual(pricingPeriod(at('2026-12-31T18:00:00')), { peak: false, next: null });
   assert.equal(pricingPeriod(Number.NaN), null);
-});
-test('official references only match exact built-in routes and supported aliases', () => {
-  assert.deepEqual(officialPrice('deepseek', 'deepseek-flash'), { hit: .02, input: 1, output: 4 });
-  assert.deepEqual(officialPrice('deepseek', 'deepseek-v4-pro'), { hit: .15, input: 4.5, output: 13.5 });
-  assert.deepEqual(officialPrice('deepseek-account', 'deepseek-flash'), officialPrice('deepseek', 'deepseek-flash'));
-  assert.deepEqual(officialPrice('deepseek-account', 'deepseek-v4-pro'), officialPrice('deepseek', 'deepseek-v4-pro'));
-  assert.deepEqual(officialPrice('deepseek-official', 'deepseek-flash'), { hit: .02, input: 1, output: 4 });
-  assert.deepEqual(officialPrice('deepseek-official', 'deepseek-v4-pro'), { hit: .15, input: 4.5, output: 13.5 });
-  assert.deepEqual(officialPrice('deepseek', 'deepseek-v4-flash'), officialPrice('deepseek', 'deepseek-flash'));
-  assert.equal(officialPrice('openrouter', 'deepseek-flash'), null);
-  assert.equal(officialPrice('custom-deepseek', 'deepseek-flash'), null);
-  assert.equal(officialPrice('magpie', 'deepseek-flash'), null);
-  assert.equal(officialPrice('deepseek', 'deepseek-chat'), null);
-  assert.equal(officialPrice('deepseek', 'future-pro'), null);
 });
 test('countdowns round up to a minute without showing zero before a switch', () => {
   assert.equal(pricingCountdown(1, true), '1 分钟');

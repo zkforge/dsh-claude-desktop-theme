@@ -356,6 +356,13 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
           onChange={value => void write([setOperation(['view', 'showHeaderTeam'], value)])}
         />
         <SwitchRow
+          id="ccd-settings-show-header-jobs"
+          label={translate('field.showHeaderJobs')}
+          hint={translate('hint.showHeaderJobs')}
+          checked={served.view.showHeaderJobs}
+          onChange={value => void write([setOperation(['view', 'showHeaderJobs'], value)])}
+        />
+        <SwitchRow
           id="ccd-settings-show-empty-groups"
           label={translate('field.showEmptyGroups')}
           hint={translate('hint.showEmptyGroups')}

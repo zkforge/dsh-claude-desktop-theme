@@ -1,25 +1,7 @@
-/** Official reference prices, CNY / million tokens; checked 2026-10-20.
+/** DeepSeek's Beijing-time peak windows for the sidebar balance card.
+ * Peak is Mon–Fri 09:00–12:00 and 14:00–18:00.
  * https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
- * The directory exposes route ids, not endpoints. Only the built-in DeepSeek
- * route is eligible; these are reference prices, never a billing estimate.
  */
-export interface ModelPrice { readonly hit: number; readonly input: number; readonly output: number; }
-const FLASH: ModelPrice = { hit: .02, input: 1, output: 4 };
-const PRO: ModelPrice = { hit: .15, input: 4.5, output: 13.5 };
-export function officialPrice(provider: string | undefined, model: string | undefined): ModelPrice | null {
-  // Verified in the installed host: dsh-llm-deepseek-api-key registers
-  // `deepseek-official`; account login registers `deepseek-account`.
-  // Keep the legacy `deepseek` route; never match provider display names.
-  if (provider !== 'deepseek-official' && provider !== 'deepseek-account' && provider !== 'deepseek') return null;
-  switch (model) {
-    case 'deepseek-flash':
-    case 'deepseek-v4-flash':
-    case 'deepseek-v4-flash-vision-exp': return FLASH;
-    case 'deepseek-v4-pro': return PRO;
-    default: return null;
-  }
-}
-
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 /** 2026 State Council holiday breaks (Beijing dates); weekends stay off-peak

@@ -169,18 +169,3 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .ccd-model-options butt
 @container ccd-composer (max-width: 420px) { .ccd-model-trigger { padding-inline: 4px; } .ccd-effort-trigger { padding-inline: 4px; } }
 
 /* Price information stays quiet until the model is hovered or focused. */
-.ccd-price-anchor { min-width: 0; }
-.ccd-price-anchor-compact { display: flex; flex: 1 1 auto; min-width: 0; overflow: hidden; }
-.ccd-price-mark { flex: 0 0 auto; color: var(--ccd-price-off-peak); font-size: 12px; white-space: nowrap; }
-.ccd-price-mark[data-peak="true"] { color: var(--ccd-price-peak); }
-.ccd-price-badge { display: inline-flex; align-items: center; gap: 4px; padding: 0 4px; border-radius: 4px; background: color-mix(in srgb, currentColor 12%, transparent); font-size: 11px; font-weight: 500; line-height: 16px; }
-.ccd-price-badge svg { display: block; flex: 0 0 10px; width: 10px; height: 10px; }
-.ccd-price-trend { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 12px; }
-.ccd-price-trend svg { display: block; width: 16px; height: 12px; }
-.ccd-price-tooltip { position: fixed; inset: auto; margin: 0; z-index: 1001; box-sizing: border-box; width: min(276px, calc(100vw - 24px)); padding: 14px; border: 1px solid var(--ccd-border); border-radius: 12px; background: var(--ccd-card); color: var(--ccd-text-strong); box-shadow: var(--ccd-effort-shadow); text-align: left; font: 12px/1.5 var(--ccd-font-ui); cursor: default; }
-.ccd-price-tooltip::backdrop { background: transparent; pointer-events: none; }
-.ccd-price-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.ccd-price-countdown { margin: 5px 0 14px; color: var(--ccd-text-secondary); font-variant-numeric: tabular-nums; }
-.ccd-price-unit { margin-bottom: 5px; color: var(--ccd-text-secondary); }
-.ccd-price-rates { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin: 0; }
-.ccd-price-rates dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }

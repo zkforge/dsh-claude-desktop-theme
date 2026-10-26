@@ -51,6 +51,9 @@ class ElementDouble {
   set textContent(value: string) { for (const child of [...this.children]) child.remove(); this.text = value; }
   type = '';
   connectedRoot = false;
+  scrollHeight = 0;
+  clientHeight = 0;
+  scrollTop = 0;
   readonly listeners = new Map<string, () => void>();
   get isConnected(): boolean { return this.connectedRoot || this.parentElement?.isConnected === true; }
   get nextElementSibling(): ElementDouble | null {
@@ -68,6 +71,8 @@ class ElementDouble {
   removeAttribute(key: string) { this.attrs.delete(key); }
   matches(selector: string): boolean {
     return selector.split(',').some(part => {
+      const name = part.trim().match(/^\.([\w-]+)$/);
+      if (name) return this.getAttribute('class')?.split(' ').includes(name[1]!) === true;
       const contains = part.trim().match(/^\[([^\]]+)\*="([^"]*)"\]$/);
       if (contains) return this.getAttribute(contains[1]!)?.includes(contains[2]!) === true;
       const match = part.trim().match(/^\[([^=\]]+)(?:="([^"]*)")?\]$/);
@@ -110,7 +115,7 @@ function call(name = 'bash', state = 'ok') {
   return { flow, atomic, row };
 }
 
-test('DOM mixed groups retain native reasoning and leave streaming or mixed response seats visible', async () => {
+test('DOM mixed groups retain native reasoning and leave mixed response seats visible', async () => {
   const nativeObserver = globalThis.MutationObserver;
   let notify: (records: MutationRecord[]) => void = () => {};
   globalThis.MutationObserver = class {
@@ -151,9 +156,13 @@ test('DOM mixed groups retain native reasoning and leave streaming or mixed resp
     assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'open');
     assert.equal(first.row.parentElement, first.flow);
     assert.equal(first.flow.parentElement, parent);
+    const running = node({ 'data-chat-running': '' });
+    body.append(running);
     second.row.setAttribute('data-state', 'running');
     await deliver(second.row);
-    assert.equal(second.flow.hasAttribute('data-ccd-tool-group-member'), false);
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open',
+      'a streaming thought stays inside the run');
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Thinking');
     second.row.setAttribute('data-state', 'ok');
     await deliver(second.row);
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
@@ -181,6 +190,9 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   body.connectedRoot = true;
   const parent = node();
   body.append(parent);
+  // A call or thought only runs while the host shows its running row.
+  const running = node({ 'data-chat-running': '' });
+  body.append(running);
   const first = call(), second = call(), third = call();
   const reply = node({ 'data-chat-flow-kind': 'assistant-step' });
   const fourth = call('read'), live = call('bash', 'running');
@@ -204,6 +216,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
     assert.equal(first.row.parentElement, first.atomic);
 
     live.row.setAttribute('data-state', 'ok');
+    running.remove();
     await deliver(live.row);
     assert.equal(toggles[1]!.children[0]!.children[0]!.textContent, 'Read a file, ran a command');
     assert.equal(toggles[0]!.getAttribute('aria-expanded'), 'true', 'unrelated settlement retains the reader’s open state');
@@ -275,6 +288,80 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   assert.equal(first.flow.parentElement, parent);
 });
 
+test('a fold that leaves the reader on the floor hands bottom-follow back to the host', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify: (records: MutationRecord[]) => void = () => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {}
+    disconnect() {}
+  } as unknown as typeof MutationObserver;
+  // ChatView: [data-conversation-scroll] > frame > root > scroll > column, with
+  // the jump-to-bottom slot beside root while the host is off the tail.
+  const body = node(), scroller = node({ 'data-conversation-scroll': '' }), frame = node(), root = node();
+  const list = node({ class: 'icaHSq_scroll' }), parent = node();
+  body.connectedRoot = true;
+  body.append(scroller);
+  scroller.append(frame);
+  frame.append(root);
+  root.append(list);
+  list.append(parent);
+  const slot = node({ class: 'icaHSq_toBottomSlot' }), toBottom = node({ class: 'icaHSq_toBottom' });
+  slot.append(toBottom);
+  let pressed = 0;
+  toBottom.addEventListener('click', () => { pressed++; });
+  const first = call(), second = call();
+  parent.append(first.flow, second.flow);
+  const errors: unknown[] = [];
+  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const atFloor = () => { scroller.scrollHeight = 900; scroller.clientHeight = 600; scroller.scrollTop = 300; };
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    toggle.click();
+    assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+
+    // Following the tail: the host renders no control, and no geometry is read.
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, get: () => assert.fail('measured while following') });
+    toggle.click();
+    assert.equal(pressed, 0);
+    delete (scroller as { scrollHeight?: number }).scrollHeight;
+    toggle.click();
+
+    // Off the tail, but the fold clamped the reader onto the floor.
+    frame.append(slot);
+    atFloor();
+    toggle.click();
+    assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(pressed, 1, 'the host control resumes following');
+
+    // Expanding never presses it; a fold that leaves content below does not either.
+    toggle.click();
+    assert.equal(pressed, 1);
+    scroller.scrollTop = 120;
+    toggle.click();
+    assert.equal(pressed, 1, 'a reader above the floor keeps their position');
+
+    // A streamed call folding into the closed run shrinks the transcript too.
+    atFloor();
+    const third = call();
+    parent.append(third.flow);
+    notify([{ target: parent, addedNodes: [third.flow], type: 'childList' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+    assert.equal(third.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(pressed, 2);
+
+    // A content update that folds nothing new leaves the host alone.
+    third.row.setAttribute('data-tool', 'read');
+    notify([{ target: third.row, addedNodes: [], type: 'attributes' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+    assert.equal(pressed, 2);
+    assert.deepEqual(errors, []);
+  } finally {
+    dispose();
+    globalThis.MutationObserver = nativeObserver;
+  }
+});
+
 test('live tool labels coalesce rapid updates, settle gently and retain native details', async (context) => {
   context.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
   const nativeObserver = globalThis.MutationObserver;
@@ -285,6 +372,9 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
   } as unknown as typeof MutationObserver;
   const body = node(), parent = node();
   body.connectedRoot = true; body.append(parent);
+  // A call or thought only runs while the host shows its running row.
+  const running = node({ 'data-chat-running': '' });
+  body.append(running);
   const first = call('bash', 'running'); first.row.textContent = 'Checking git status';
   const second = call('read', 'running'); second.row.textContent = 'Reading README.md';
   parent.append(first.flow);
@@ -329,6 +419,7 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
     assert.deepEqual(motions[2]!.frames, [{ width: '168px' }, { width: '168px' }], 'a longer incoming line has its full width from the start');
     assert.equal(motions[2]!.options.delay, 180, 'the seat only shrinks once the outgoing line has faded');
     second.row.setAttribute('data-state', 'ok');
+    running.remove();
     await deliver();
     assert.equal(motions[0]!.cancelled, false, 'rapid updates do not interrupt the current transition');
     context.mock.timers.tick(900);
@@ -350,6 +441,7 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
     assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'failure details open immediately');
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
     reducedMotion = true;
+    body.append(running);
     second.row.setAttribute('data-state', 'running');
     second.row.textContent = 'Reduced motion activity';
     await deliver();
@@ -364,6 +456,278 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
   assert.ok(motions.every(motion => motion.cancelled));
   assert.equal(first.flow.hasAttribute('data-ccd-tool-group-member'), false);
   assert.equal(second.row.parentElement, second.atomic);
+});
+
+test('a working turn keeps rolling each call and only summarises once the reply follows', async (context) => {
+  context.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true; body.append(parent);
+  const first = call('bash', 'running'); first.row.textContent = 'First call';
+  const second = call('bash', 'running'); second.row.textContent = 'Second call';
+  // The host seats the running row beside the flow rows while a turn is open.
+  const running = node({ 'data-chat-running': '' });
+  body.append(running);
+  parent.append(first.flow);
+  const errors: unknown[] = [];
+  const document = { body, createElement: () => node() } as unknown as Document;
+  const deliver = async () => {
+    notify([{ target: parent, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  const release = mountToolCallGroups(document, error => errors.push(error));
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    context.mock.timers.tick(1000); // Let the first description pass its dwell.
+    first.row.setAttribute('data-state', 'ok');
+    parent.append(second.flow);
+    await deliver();
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Second call');
+    second.row.setAttribute('data-state', 'ok');
+    await deliver();
+    context.mock.timers.tick(10000);
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Second call',
+      'a settled run keeps its current call until the next one starts');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), true,
+      'the waiting call stays the turn’s current activity');
+    // The next call joins the same run and takes over the rolling line.
+    const third = call('read', 'running'); third.row.textContent = 'Reading a file';
+    parent.append(third.flow);
+    await deliver();
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 1,
+      'consecutive calls stay one disclosure');
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Reading a file');
+    third.row.setAttribute('data-state', 'ok');
+    await deliver();
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Reading a file',
+      'the last call stays on screen after it settles');
+    // Reply text after the run is what folds it into its counts summary.
+    const reply = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'response' });
+    reply.textContent = 'Here is the answer';
+    parent.append(reply);
+    await deliver();
+    context.mock.timers.tick(1000);
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Read a file, ran 2 commands',
+      'the summary appears once the reply follows the run');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
+    // A second run starts after the reply, so it owns its own disclosure.
+    const again = call('bash', 'running'); again.row.textContent = 'Running again';
+    parent.append(again.flow);
+    await deliver();
+    const last = parent.querySelectorAll('[data-ccd-tool-group-toggle]')[1]!;
+    assert.equal(last.children[0]!.children[0]!.textContent, 'Running again');
+    // A trailing thought is not a reply: it belongs to the same working turn.
+    const thought = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'reasoning' });
+    thought.textContent = 'Thinking again';
+    parent.append(thought);
+    await deliver();
+    assert.equal(last.children[0]!.children[0]!.textContent, 'Running again',
+      'a trailing thought does not end the run');
+    again.row.setAttribute('data-state', 'ok');
+    await deliver();
+    assert.equal(last.children[0]!.children[0]!.textContent, 'Running again',
+      'the settled call keeps its line until the turn answers');
+    // A response seat that only carries a thought has not answered the run.
+    const thoughtSeat = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'response' });
+    const thoughtBlock = node({ 'data-variant': 'think', 'data-state': 'running' });
+    thoughtBlock.textContent = 'Considering the next step';
+    thoughtSeat.append(thoughtBlock);
+    parent.append(thoughtSeat);
+    await deliver();
+    assert.equal(last.children[0]!.children[0]!.textContent, 'Running again',
+      'a thought inside the reply seat is not body text');
+    thoughtBlock.setAttribute('data-state', 'ok');
+    const streamed = node({ 'data-streaming': '' });
+    streamed.textContent = 'The answer';
+    thoughtSeat.append(streamed);
+    await deliver();
+    context.mock.timers.tick(1000);
+    assert.equal(last.children[0]!.children[0]!.textContent, 'Ran 1 command',
+      'streamed body text outside the thought ends the run');
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
+});
+
+test('a streaming thought after a call rolls in the same line instead of opening below it', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true; body.append(parent);
+  body.append(node({ 'data-chat-running': '' }));
+  const first = call('bash', 'ok'); first.row.textContent = 'Find composer references';
+  const seat = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'reasoning', 'data-chat-turn': '1' });
+  const thought = node({ 'data-variant': 'think', 'data-state': 'running' });
+  thought.textContent = 'Thinking';
+  seat.append(thought);
+  parent.append(first.flow, seat);
+  const errors: unknown[] = [];
+  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+    error => errors.push(error));
+  const deliver = async () => {
+    notify([{ target: parent, addedNodes: [], removedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  try {
+    const label = () => parent.querySelector('[data-ccd-tool-group-toggle]')!.children[0]!.children[0]!.textContent;
+    assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]').length, 1);
+    assert.equal(seat.getAttribute('data-ccd-tool-group-member'), 'closed', 'the thought folds into the run');
+    assert.equal(label(), 'Thinking');
+    thought.setAttribute('data-state', 'ok');
+    await deliver();
+    assert.equal(seat.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(label(), 'Find composer references', 'a settled thought hands the line back to the call');
+    // Some replies open with their thought inside the response seat.
+    const reply = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'response', 'data-chat-turn': '1' });
+    const replyThought = node({ 'data-variant': 'think', 'data-state': 'running' });
+    replyThought.textContent = 'Thinking';
+    reply.append(replyThought);
+    parent.append(reply);
+    await deliver();
+    assert.equal(reply.getAttribute('data-ccd-tool-group-member'), 'closed');
+    assert.equal(label(), 'Thinking');
+    const streamed = node({ 'data-streaming': '' });
+    streamed.textContent = 'The answer';
+    reply.append(streamed);
+    await deliver();
+    assert.equal(reply.hasAttribute('data-ccd-tool-group-member'), false, 'body text keeps the reply visible');
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
+});
+
+test('removing the running row folds the last run into its summary', async (context) => {
+  context.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true; body.append(parent);
+  const running = node({ 'data-chat-running': '' });
+  body.append(running);
+  const only = call('bash', 'running'); only.row.textContent = 'Still working';
+  parent.append(only.flow);
+  const errors: unknown[] = [];
+  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+    error => errors.push(error));
+  const deliver = async (record: Record<string, unknown> = {}) => {
+    notify([{ target: parent, addedNodes: [], removedNodes: [], type: 'childList', ...record }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Still working');
+    only.row.setAttribute('data-state', 'ok');
+    await deliver({});
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Still working',
+      'the working turn keeps its call on screen');
+    // The host drops the running row when the turn closes.
+    running.remove();
+    await deliver({ target: body, removedNodes: [running] });
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Ran 1 command',
+      'a closed turn summarises its last run');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
+});
+
+test('a finished reply folds its run even while another transcript is still running', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  globalThis.MutationObserver = class {
+    constructor(_callback: (records: MutationRecord[]) => void) {}
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node(), other = node();
+  body.connectedRoot = true; body.append(parent, other);
+  // A second mounted transcript keeps its own running row inside its list.
+  other.append(node({ 'data-chat-running': '' }));
+  const only = call('bash', 'ok'); only.row.textContent = 'Check client access';
+  // The reply opened with a thought and has stopped streaming.
+  const reply = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'response', 'data-chat-turn': '1' });
+  const thought = node({ 'data-variant': 'think', 'data-state': 'ok' });
+  thought.textContent = 'Thought';
+  const markdown = node();
+  markdown.textContent = 'The answer';
+  reply.append(thought, markdown);
+  parent.append(only.flow, reply);
+  const errors: unknown[] = [];
+  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+    error => errors.push(error));
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Ran 1 command');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
+});
+
+test('an interrupted thought left running stops rolling once the turn has ended', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  globalThis.MutationObserver = class {
+    constructor(_callback: (records: MutationRecord[]) => void) {}
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), parent = node();
+  body.connectedRoot = true; body.append(parent);
+  const only = call('bash', 'ok'); only.row.textContent = 'Check client access';
+  // The user aborted mid-thought; the host never settled the reasoning row.
+  const seat = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'reasoning', 'data-chat-turn': '1' });
+  const thought = node({ 'data-variant': 'think', 'data-state': 'running' });
+  thought.textContent = 'Thinking';
+  seat.append(thought);
+  parent.append(only.flow, seat);
+  const errors: unknown[] = [];
+  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+    error => errors.push(error));
+  try {
+    const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Thought, ran a command');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
+});
+
+test('a run inside a host step group folds once a reply follows the group', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(), list = node();
+  body.connectedRoot = true; body.append(list);
+  // ChatGroupSeat: root > body > content, with the calls inside the content.
+  const group = node({ 'data-step-process': '' }), groupBody = node(), content = node();
+  group.append(groupBody); groupBody.append(content);
+  const only = call('bash', 'ok'); only.row.textContent = 'Count changed files';
+  content.append(only.flow);
+  const reply = node({ 'data-chat-flow-kind': 'assistant-step', 'data-chat-group-part': 'response', 'data-chat-turn': '1' });
+  // The turn is still running.
+  list.append(group, reply, node({ 'data-chat-running': '' }));
+  const errors: unknown[] = [];
+  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+    error => errors.push(error));
+  try {
+    const toggle = content.querySelector('[data-ccd-tool-group-toggle]')!;
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Count changed files', 'an empty reply seat has not answered yet');
+    // Streaming text only reports the reply seat, which lives beside the group.
+    reply.textContent = 'Typecheck passes.';
+    notify([{ target: reply, addedNodes: [], removedNodes: [], type: 'characterData' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+    assert.equal(toggle.children[0]!.children[0]!.textContent, 'Ran 1 command');
+    assert.equal(toggle.hasAttribute('data-ccd-tool-live'), false);
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
 });
 
 test('file groups use native header metadata, update totals and restore titles without replacing controls', async () => {

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { findChrome, withPage } from '../scripts/lib/headless-chrome.mjs';
-import { aliasHostClasses, PINNED_BUILD, WINDOWS_BUILD } from '../src/client/compat/host-builds.ts';
+import { aliasHostClasses, PINNED_BUILD, WINDOWS_BUILD, MACOS_BUILD } from '../src/client/compat/host-builds.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 let chrome;
@@ -312,6 +312,74 @@ test('the View switcher parks on the sidebar column and survives rerenders, coll
         assert.equal(await page.evaluate(`document.querySelector('[data-conversation-tabs]').hasAttribute('data-ccd-view-dock')`), false);
         assert.equal(await page.evaluate(`Array.from(document.querySelectorAll('[role=tab]')).map(tab=>tab.textContent.trim()).join()`), '对话,轨迹');
         assert.deepEqual(await page.evaluate('window.errors'), []);
+      });
+    } finally {
+      await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
+    }
+  }
+});
+
+test('coding view nested tabs and More menu keep a compact header across host builds', {
+  skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
+}, async () => {
+  const bundle = await build({
+    stdin: { resolveDir: root, contents: `
+      import {mountViewSwitch} from './src/client/compat/view-switch.ts';
+      import {VIEW_SWITCH_ICONS} from './src/client/features/conversation/view-switch-icons.ts';
+      window.errors=[];
+      window.releaseSwitcher=mountViewSwitch(document,VIEW_SWITCH_ICONS,error=>window.errors.push(String(error)));
+    ` }, bundle: true, write: false, format: 'iife',
+  });
+  const styles = (await Promise.all([
+    'src/client/theme/tokens.css', 'src/client/features/conversation/conversation.css',
+    'src/client/features/sidebar/sidebar.css',
+  ].map(path => readFile(join(root, path), 'utf8')))).join('\n');
+  // Current host: .tabs is the 100%-wide wrapper, not the role=tablist.
+  const nested = fixture.replace('role="tablist" data-conversation-tabs>', '><div class="native-view-tabs" role="tablist" data-conversation-tabs>')
+    .replace('</div>\n</header>', '</div><span><button aria-haspopup="menu" aria-expanded="false" aria-label="更多视图">⋯</button></span></div>\n</header>');
+  const currentStyles = nativeStyles + `
+    .ST7X_W_tabs{width:100%;box-sizing:border-box;flex-wrap:wrap;gap:16px 20px;align-items:flex-start}
+    .native-view-tabs{display:flex;flex-wrap:wrap;gap:32px;min-width:0;min-height:25px}
+    .ST7X_W_tabs button[aria-haspopup]{margin-top:-3px;width:22px;height:22px}
+  `;
+  for (const buildInfo of [MACOS_BUILD, WINDOWS_BUILD]) {
+    const profile = await mkdtemp(join(tmpdir(), 'ccd-nested-view-'));
+    try {
+      await withPage({ url: 'about:blank', width: 1000, height: 650, profile }, async page => {
+        await page.evaluate(`
+          document.documentElement.dataset.platform=${JSON.stringify(buildInfo === WINDOWS_BUILD ? 'win32' : 'darwin')};
+          document.documentElement.dataset.dshCcdStyle='true';
+          document.body.innerHTML=${JSON.stringify(aliasHostClasses(nested, buildInfo))};
+          const style=document.createElement('style');style.textContent=${JSON.stringify(aliasHostClasses(currentStyles + styles, buildInfo))};document.head.append(style);
+          const more=document.querySelector('[aria-haspopup="menu"]');
+          more.onclick=()=>more.setAttribute('aria-expanded',String(more.getAttribute('aria-expanded')!=='true'));
+        `);
+        await page.evaluate(bundle.outputFiles[0].text);
+        const geometry = `(() => {
+          const box=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+          const tabs=document.querySelector('[data-conversation-tabs]').parentElement;
+          return {track:box(tabs),more:box(tabs.querySelector('[aria-haspopup]')),segments:[...tabs.querySelectorAll('[role=tab]')].map(box),
+            header:box(tabs.closest('header')),thumb:parseFloat(tabs.style.getPropertyValue('--ccd-view-w'))};
+        })()`;
+        const initial = await page.evaluate(geometry);
+        assert.equal(initial.track.width, 92, JSON.stringify(initial));
+        assert.equal(initial.track.height, 26);
+        assert.equal(initial.more.height, 26);
+        assert.equal(initial.more.top, initial.segments[0].top);
+        assert.equal(initial.thumb, 33);
+        await page.evaluate(`document.querySelector('[aria-haspopup]').click()`);
+        assert.equal(await page.evaluate(`document.querySelector('[aria-haspopup]').getAttribute('aria-expanded')`), 'true');
+        // Host preference updates can remove/re-add trajectory without remounting the theme.
+        await page.evaluate(`window.savedTab=document.querySelectorAll('[role=tab]')[1];window.savedTab.remove()`);
+        assert.equal((await page.evaluate(geometry)).track.width, 59);
+        await page.evaluate(`document.querySelector('[role=tablist]').append(window.savedTab);document.documentElement.dataset.platform='win32'`);
+        const inline = await page.evaluate(geometry);
+        assert.equal(inline.track.width, 92);
+        assert.ok(inline.track.right <= inline.header.right, JSON.stringify(inline));
+        assert.ok(inline.track.top >= inline.header.top && inline.track.bottom <= inline.header.bottom, JSON.stringify(inline));
+        assert.deepEqual(await page.evaluate('window.errors'), []);
+        await page.evaluate('window.releaseSwitcher()');
+        assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-view-glyph]').length`), 0);
       });
     } finally {
       await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });

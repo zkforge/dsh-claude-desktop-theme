@@ -375,6 +375,9 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
   flex: none;
   display: inline-flex;
   align-items: stretch;
+  flex-wrap: nowrap;
+  width: max-content;
+  max-width: 100%;
   gap: 0;
   /* The switcher sits directly after the Session title; later header chrome
      (the Agent-preset chip today, more to come) follows it. */
@@ -383,6 +386,47 @@ html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
   border-radius: 6px;
   background: var(--ccd-track);
   -webkit-app-region: no-drag;
+}
+
+/* Newer hosts wrap the tabs in a separate tablist and append a More menu.
+   Keep one compact track across both structures; native menu handlers and
+   responsive view selection remain on their original React nodes. */
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs > [role="tablist"] {
+  display: contents;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs button[aria-haspopup="menu"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ccd-text-muted);
+  -webkit-app-region: no-drag;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs button[aria-haspopup="menu"]:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-view-more-source] {
+  display: none !important;
+}
+
+/* Opening the hidden native menu is only a bridge to its Trajectory action.
+   Resolve it before paint; the native action still owns selection and state. */
+html[data-dsh-ccd-style="true"][data-ccd-direct-view-opening] [class*="_viewsMoreMenu"] {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* The docked pill sits over the sidebar's native window-drag strip. Let its
@@ -1287,6 +1331,43 @@ html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] :is([class
   flex: none;
   gap: 4px;
   font: 12px/20px var(--ccd-font-code);
+}
+
+/* Native list expansion uses the same compact row as files and review,
+   instead of the host's full-width grey footer strip. */
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] > button[class*="_toggle"] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  box-sizing: border-box;
+  width: calc(100% - 6px);
+  height: auto;
+  min-height: 28px;
+  margin: 0 3px 3px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text);
+  font: 14px/20px var(--ccd-font-ui);
+  text-align: start;
+  cursor: pointer;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] > button[class*="_toggle"] svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] > button[class*="_toggle"]:is(:hover, :focus-visible):not(:disabled) {
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] > button[class*="_toggle"]:focus-visible {
+  outline: 2px solid var(--ccd-text-muted);
+  outline-offset: -3px;
 }
 
 html[data-dsh-ccd-style="true"] [data-turn-tail] [data-changed-files] [data-ccd-changes-review] {

@@ -9,7 +9,7 @@ import { DSH_SLOTS, OVERRIDE_PRIORITY } from '../src/client/compat/slots.ts';
 
 function registry() {
   const live: Array<{ name: string; id: string; priority: number; render: () => unknown }> = [];
-  const native = new Map([['subagent-catalog', 'subagents'], ['agent-team', 'team'], ['custom', 'other']]);
+  const native = new Map([['subagent-catalog', 'subagents'], ['agent-team', 'team'], ['job-list', 'jobs'], ['custom', 'other']]);
   const slots = {
     inject(_name: string, register: () => () => void) { return register(); },
     register(entry: { name: string; id: string; priority: number }, render: () => unknown) {
@@ -25,12 +25,13 @@ function registry() {
 }
 
 test('header entries are independently optional and release to their native renderers', () => {
-  for (const showHeaderSubagents of [false, true]) for (const showHeaderTeam of [false, true]) {
+  for (const showHeaderSubagents of [false, true]) for (const showHeaderTeam of [false, true]) for (const showHeaderJobs of [false, true]) {
     const host = registry();
     const cleanup = new CleanupScope();
-    mountHeaderVisibility(host.slots, { showHeaderSubagents, showHeaderTeam }, cleanup);
+    mountHeaderVisibility(host.slots, { showHeaderSubagents, showHeaderTeam, showHeaderJobs }, cleanup);
     assert.equal(host.read('subagent-catalog'), showHeaderSubagents ? 'subagents' : null);
     assert.equal(host.read('agent-team'), showHeaderTeam ? 'team' : null);
+    assert.equal(host.read('job-list'), showHeaderJobs ? 'jobs' : null);
     assert.equal(host.read('custom'), 'other');
     for (const entry of host.live) {
       assert.equal(entry.name, DSH_SLOTS.sessionHeaderActions);
@@ -41,18 +42,24 @@ test('header entries are independently optional and release to their native rend
     assert.equal(host.live.length, 0);
     assert.equal(host.read('subagent-catalog'), 'subagents');
     assert.equal(host.read('agent-team'), 'team');
+    assert.equal(host.read('job-list'), 'jobs');
   }
 });
 
-test('Host defaults hide both entries; saved independent values survive the settings transport', () => {
+test('Host defaults hide all optional entries; saved independent values survive the settings transport', () => {
   const schema = Config as unknown as (value: unknown) => Record<string, { get(): unknown }>;
-  for (const view of [undefined, { showHeaderSubagents: true }, { showHeaderTeam: true },
-    { showHeaderSubagents: true, showHeaderTeam: true }]) {
+  for (const view of [undefined, { showHeaderSubagents: true }, { showHeaderTeam: true }, { showHeaderJobs: true },
+    { showHeaderSubagents: true, showHeaderTeam: true, showHeaderJobs: true }]) {
     const cells = schema(view ? { view } : {});
     const served = adoptConfig(Object.fromEntries(Object.entries(cells).map(([key, cell]) => [key, cell.get()])));
     assert.equal(served.view.showHeaderSubagents, view?.showHeaderSubagents ?? false);
     assert.equal(served.view.showHeaderTeam, view?.showHeaderTeam ?? false);
+    assert.equal(served.view.showHeaderJobs, view?.showHeaderJobs ?? false);
   }
+  assert.equal(resolveConfig().view.showHeaderJobs, false);
+  assert.equal(resolveConfig({ view: { showHeaderJobs: true } }).view.showHeaderJobs, true);
+  assert.equal(adoptConfig({ view: { showHeaderJobs: 'true' } }).view.showHeaderJobs, false);
+  assert.throws(() => resolveConfig({ view: { showHeaderJobs: 'true' } }), /view.showHeaderJobs/);
   assert.equal(resolveConfig().view.showHeaderSubagents, false);
   assert.equal(resolveConfig().view.showHeaderTeam, false);
   assert.equal(adoptConfig({ view: { showHeaderSubagents: 'true', showHeaderTeam: null } }).view.showHeaderSubagents, false);

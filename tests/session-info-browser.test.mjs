@@ -1,0 +1,136 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { findChrome, withPage } from '../scripts/lib/headless-chrome.mjs';
+import { sessionInfoDemo, mountSessionInfoDemo } from '../scripts/lib/session-info-demo.mjs';
+
+let chrome;
+try { chrome = findChrome(); } catch { /* Optional local browser. */ }
+
+test('session cards follow data, overlay chat beside tools, reorder and clean up', {
+  skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
+}, async () => {
+  const demo = await sessionInfoDemo();
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-session-info-'));
+  try {
+    await withPage({ url: 'about:blank', width: 1392, height: 932, scale: 2, profile }, async page => {
+      await page.send('Emulation.setFocusEmulationEnabled', { enabled: true });
+      await mountSessionInfoDemo(page, demo);
+      const pause = () => page.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+      const text = () => page.evaluate(`document.querySelector('[data-ccd-session-cards]')?.textContent??''`);
+      assert.match(await text(), /200k/);
+      assert.match(await text(), /75\.0%/);
+      assert.match(await text(), /75\.0 tok\/s/);
+      assert.match(await text(), /main/);
+      await page.evaluate(`window.environmentStatus=404;window.demo.port.retry()`); await pause();
+      assert.match(await text(), /需重启 DSH/);
+      await page.evaluate(`window.environmentStatus=200;window.environmentWorktree=true;window.environmentCwd='/demo/desktop-theme/worktrees/a-very-long-worktree-checkout-directory';window.demo.port.retry()`); await pause();
+      assert.match(await text(), /独立工作树/);
+      const path = await page.evaluate(`(()=>{const v=[...document.querySelectorAll('.ccd-info-value')].find(n=>n.firstElementChild.textContent==='工作目录');
+        const label=v.firstElementChild.getBoundingClientRect(),value=v.querySelector('.ccd-info-text'),r=value.getBoundingClientRect();value.focus();return {top:Math.abs(label.top-r.top),height:r.height,overflow:value.scrollWidth>value.clientWidth};})()`);
+      assert.ok(path.top < 1);
+      assert.equal(path.height, 20);
+      assert.equal(path.overflow, true);
+      await page.evaluate('new Promise(resolve=>setTimeout(resolve,450))');
+      const tip = await page.evaluate(`(()=>{const t=document.querySelector('.ccd-info-tooltip');return{open:t.matches(':popover-open'),text:t.textContent,bg:getComputedStyle(t).backgroundColor};})()`);
+      assert.equal(tip.open, true);
+      assert.match(tip.text, /a-very-long-worktree-checkout-directory/);
+      assert.equal(tip.bg, 'rgb(17, 17, 17)');
+      await page.evaluate(`document.activeElement.blur()`); await pause();
+      assert.equal(await page.evaluate(`document.querySelectorAll('[data-ccd-info-card="usage"] .ccd-info-value [tabindex], [data-ccd-info-card="usage"] [title]').length`), 0,
+        'session usage values and its collapsed summary have no tooltip');
+      await page.evaluate(`document.querySelector('[data-ccd-info-card="usage"] .ccd-info-value .ccd-info-text').dispatchEvent(new PointerEvent('pointerover',{bubbles:true}))`);
+      await page.evaluate('new Promise(resolve=>setTimeout(resolve,450))');
+      assert.equal(await page.evaluate(`document.querySelector('.ccd-info-tooltip')===null`), true);
+      const toggle = `.ccd-session-info-toggle`;
+      assert.equal(await page.evaluate(`document.querySelector('${toggle}').getAttribute('aria-pressed')`), 'true');
+      const geometry = await page.evaluate(`(()=>{const b=document.querySelector('${toggle}'),t=document.querySelector('[title="终端"]');
+        const s=getComputedStyle(b),r=b.getBoundingClientRect(),other=t.getBoundingClientRect(),divider=getComputedStyle(b,'::after');
+        return {width:r.width,otherWidth:other.width,height:r.height,otherHeight:other.height,bg:s.backgroundColor,divider:divider.width,gap:other.left-r.right};})()`);
+      assert.equal(geometry.width, geometry.otherWidth);
+      assert.equal(geometry.height, geometry.otherHeight);
+      assert.notEqual(geometry.bg, 'rgba(0, 0, 0, 0)');
+      assert.equal(geometry.divider, '1px');
+      assert.ok(geometry.gap >= 12);
+      await page.evaluate(`document.querySelector('${toggle}').click()`); await pause();
+      assert.equal(await text(), '');
+      assert.equal(await page.evaluate(`document.querySelector('${toggle}').getAttribute('aria-pressed')`), 'false');
+      await page.evaluate(`document.getElementById('chat').style.width='1000px'`); await pause();
+      assert.equal(await text(), '', 'manual close survives a resize');
+      await page.evaluate(`document.querySelector('${toggle}').click()`); await pause();
+      assert.match(await text(), /会话用量/);
+      assert.equal(await page.evaluate(`document.getElementById('chat').hasAttribute('data-ccd-session-info')`), true);
+      assert.equal(await page.evaluate(`getComputedStyle(document.getElementById('chat')).paddingRight`), '280px');
+      const railGeometry = await page.evaluate(`(()=>{const rail=document.querySelector('[data-ccd-session-cards]'),card=rail.firstElementChild,scroll=document.querySelector('[data-conversation-scroll]');
+        const r=rail.getBoundingClientRect(),c=card.getBoundingClientRect(),s=scroll.getBoundingClientRect(),body=document.getElementById('chat').getBoundingClientRect();
+        return{shadowLeft:c.left-r.left,shadowRight:r.right-c.right,scrollRight:s.right- r.right,edge:body.right-s.right,width:c.width};})()`);
+      assert.equal(railGeometry.shadowLeft, 10);
+      assert.equal(railGeometry.shadowRight, 10);
+      assert.equal(railGeometry.width, 252, 'shadow clearance does not narrow the card body');
+      assert.equal(railGeometry.scrollRight, 6, 'the native chat scrollbar is beyond the cards');
+      assert.equal(railGeometry.edge, 2);
+      await page.evaluate(`document.querySelector('.ccd-info-toggle').click()`); await pause();
+      assert.match(await text(), /MCP 工具/);
+      assert.match(await text(), /92k \/ 200k/);
+      await page.evaluate(`document.querySelector('.ccd-info-group summary').click()`); await pause();
+      assert.match(await text(), /docs · search/);
+      await page.evaluate(`document.querySelector('.ccd-info-grip').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`); await pause();
+      assert.match(await page.evaluate(`document.querySelector('.ccd-info-toggle').textContent`), /环境/);
+      const drag = await page.evaluate(`(()=>{const rail=document.querySelector('[data-ccd-session-cards]'),card=rail.querySelector('[data-ccd-info-card="usage"]'),label=card.querySelector('.ccd-info-value > span'),r=label.getBoundingClientRect(),first=rail.firstElementChild.getBoundingClientRect();window.dragCard=card;
+        return {x:r.left+r.width/2,y:r.top+r.height/2,destination:first.top+10,top:card.getBoundingClientRect().top};})()`);
+      await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: drag.x, y: drag.y });
+      await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: drag.x, y: drag.y, button: 'left', buttons: 1, clickCount: 1 });
+      await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: drag.x + 24, y: drag.destination, buttons: 1 });
+      await pause();
+      const moved = await page.evaluate(`({moving:window.dragCard.hasAttribute('data-ccd-info-moving'),top:window.dragCard.getBoundingClientRect().top,same:window.dragCard===document.querySelector('[data-ccd-info-card="usage"]')})`);
+      assert.equal(moved.moving, true);
+      assert.equal(moved.same, true, 'the actual whole card follows the pointer');
+      assert.ok(Math.abs(moved.top - drag.top - (drag.destination - drag.y)) < 2);
+      await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: drag.x + 24, y: drag.destination, button: 'left', buttons: 0, clickCount: 1 });
+      await pause();
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-session-cards]').firstElementChild.getAttribute('data-ccd-info-card')`), 'usage');
+      const cancel = await page.evaluate(`(()=>{const r=document.querySelector('[data-ccd-info-card="usage"] .ccd-info-header').getBoundingClientRect();return{x:r.left+20,y:r.top+16}})()`);
+      await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cancel.x, y: cancel.y, button: 'left', buttons: 1, clickCount: 1 });
+      await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: cancel.x, y: cancel.y + 150, buttons: 1 });
+      await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' });
+      await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cancel.x, y: cancel.y + 150, button: 'left', buttons: 0, clickCount: 1 });
+      await pause();
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-info-dragging]')===null&&document.querySelector('[data-ccd-session-cards]').firstElementChild.getAttribute('data-ccd-info-card')==='usage'`), true,
+        'Escape restores the order and removes drag geometry');
+      await page.evaluate(`document.getElementById('chat').style.width='750px'`); await pause();
+      assert.equal(await text(), '');
+      assert.equal(await page.evaluate(`document.getElementById('chat').hasAttribute('data-ccd-session-info')`), false);
+      await page.evaluate(`document.getElementById('chat').style.width='1100px'`); await pause();
+      assert.match(await text(), /会话用量/);
+      await page.evaluate(`const panel=document.createElement('aside');panel.id='native-rightbar';panel.setAttribute('data-sidebar-right-panel','docked');panel.setAttribute('data-sidebar-right-open','');document.body.append(panel);document.getElementById('chat').style.width='750px'`); await pause();
+       assert.match(await text(), /会话用量/, 'opening native tools keeps information cards available');
+       const overlay = await page.evaluate(`(()=>{const chat=document.getElementById('chat'),rail=document.querySelector('[data-ccd-session-cards]'),card=rail.firstElementChild;
+         const r=rail.getBoundingClientRect(),b=chat.getBoundingClientRect(),c=card.getBoundingClientRect(),s=document.querySelector('[data-conversation-scroll]').getBoundingClientRect();
+         return {mode:chat.getAttribute('data-ccd-session-info'),padding:getComputedStyle(chat).paddingRight,scrollWidth:s.width,chatWidth:b.width,
+           inside:r.left>=b.left&&r.right<=b.right,above:document.elementFromPoint(c.left+15,c.top+15)?.closest('[data-ccd-session-cards]')===rail};})()`);
+       assert.equal(overlay.mode, 'overlay');
+       assert.equal(overlay.padding, '0px', 'overlay does not reserve another column');
+       assert.equal(overlay.scrollWidth, overlay.chatWidth, 'chat keeps its full width beside tools');
+       assert.equal(overlay.inside, true);
+       assert.equal(overlay.above, true, 'cards receive pointer input above chat');
+       await page.evaluate(`document.querySelector('${toggle}').click()`); await pause();
+       assert.equal(await text(), '');
+       await page.evaluate(`document.querySelector('${toggle}').click()`); await pause();
+       assert.match(await text(), /会话用量/, 'the toggle can reopen cards while tools stay open');
+       assert.equal(await page.evaluate(`document.getElementById('native-rightbar').hasAttribute('data-sidebar-right-open')`), true);
+       await page.evaluate(`document.getElementById('native-rightbar').remove();document.getElementById('chat').style.width='1100px'`); await pause();
+       assert.equal(await page.evaluate(`getComputedStyle(document.getElementById('chat')).paddingRight`), '280px', 'closing tools restores the rail');
+       await page.evaluate(`document.body.setAttribute('data-ccd-pane-expanded','')`); await pause();
+      assert.equal(await text(), '', 'maximized native tools take priority over the information cards');
+      await page.evaluate(`document.body.removeAttribute('data-ccd-pane-expanded')`); await pause();
+      assert.match(await text(), /会话用量/);
+      await page.evaluate(`window.demo.changeSession()`); await pause();
+      assert.equal((await page.evaluate(`window.demo.port.getSnapshot()`)).metrics.input, null);
+      assert.doesNotMatch(await text(), /75\.0 tok\/s/);
+      await page.evaluate(`window.demo.dispose()`); await pause();
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-session-info]')===null&&window.demo.listeners.size===0`), true);
+    });
+  } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
+});

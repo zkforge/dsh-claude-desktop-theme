@@ -1,0 +1,148 @@
+/* Reserve a rail while tools are closed. With the native rightbar open,
+   information cards float above chat without changing its content width. */
+/* The separator is outside the button's hit box and selected surface. */
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .ccd-session-info-toggle {
+  position: relative;
+  margin-right: 12px;
+}
+.ccd-header-action.ccd-session-info-toggle::before { display: none; }
+.ccd-session-info-toggle::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 16px;
+  background: var(--ccd-border);
+  pointer-events: none;
+}
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] .ccd-session-info-toggle svg {
+  color: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"]) {
+  padding-right: 280px;
+  box-sizing: border-box;
+}
+
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"])::before,
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"])::after {
+  right: 280px;
+}
+
+/* Extend the native chat scroll surface behind the rail, while its content
+   keeps the reserved width. Its scrollbar lands beyond the cards on the right. */
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"]) > [data-conversation-scroll] {
+  margin-right: -278px;
+  padding-right: 280px;
+  box-sizing: border-box;
+}
+
+/* Overlay views (Trajectory) pin the composer seat absolutely, which ignores
+   the scroll padding above; keep it centred on the chat column, not the rail. */
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"]) > [data-conversation-scroll]:has([data-conversation-composer-overlay]) > [data-composer-seat] {
+  right: 280px;
+}
+
+.ccd-session-cards {
+  position: fixed;
+  z-index: 20;
+  width: 272px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  scrollbar-width: thin;
+  pointer-events: auto;
+  color: var(--ccd-text);
+  font: 12px/20px var(--ccd-font-ui);
+  font-variant-numeric: tabular-nums;
+  /* Let the existing soft shadow fade out instead of cutting it at 1–2px.
+     The card body retains its width; the final 8px is the chat scrollbar lane. */
+  padding: 9px 10px 12px;
+  box-sizing: border-box;
+}
+
+.ccd-info-card {
+  position: relative;
+  flex: none;
+  border: 1px solid var(--ccd-right-panel-border);
+  border-radius: 10px;
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-right-panel-shadow);
+  overflow: hidden;
+}
+
+.ccd-session-cards[data-ccd-info-dragging] { overflow: visible; }
+.ccd-session-cards[data-ccd-info-dragging] .ccd-info-card { transition: transform 140ms ease; }
+.ccd-session-cards .ccd-info-card[data-ccd-info-moving] { z-index: 1; transition: none; cursor: grabbing; }
+.ccd-session-cards[data-ccd-info-dragging] .ccd-info-card,
+.ccd-session-cards[data-ccd-info-dragging] .ccd-info-card .ccd-info-text { user-select: none; -webkit-user-select: none; }
+
+.ccd-info-header { display: flex; align-items: center; min-height: 32px; padding: 0 6px 0 10px; touch-action: none; }
+.ccd-info-toggle, .ccd-info-grip, .ccd-info-retry {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ccd-info-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; flex: 1; padding: 5px 0; text-align: left; }
+.ccd-info-toggle > span:first-child { flex: none; display: inline-flex; align-items: center; gap: 4px; }
+.ccd-info-chevron { display: block; flex: none; width: 12px; height: 12px; color: var(--ccd-text-secondary); }
+.ccd-info-chevron[data-open="true"] { transform: rotate(90deg); }
+.ccd-info-summary { color: var(--ccd-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.ccd-info-grip { flex: none; width: 20px; padding: 2px 0; color: var(--ccd-text-secondary); cursor: grab; opacity: 0; }
+.ccd-info-header:hover .ccd-info-grip, .ccd-info-header:focus-within .ccd-info-grip { opacity: 1; }
+.ccd-info-toggle:focus-visible, .ccd-info-grip:focus-visible, .ccd-info-retry:focus-visible, .ccd-info-group summary:focus-visible {
+  outline: 2px solid var(--ccd-text-secondary);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.ccd-info-content { padding: 0 10px 9px; }
+.ccd-info-value { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.ccd-info-value > span:first-child { flex: none; color: var(--ccd-text-secondary); white-space: nowrap; }
+.ccd-info-value > span:last-child { min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ccd-info-text { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; user-select: text; -webkit-user-select: text; }
+.ccd-info-text:focus-visible { outline: 1px solid var(--ccd-text-secondary); outline-offset: -1px; border-radius: 3px; }
+.ccd-info-tooltip {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 6px 9px;
+  box-sizing: border-box;
+  max-width: min(480px, calc(100vw - 16px));
+  border: 0;
+  border-radius: 6px;
+  background: var(--ccd-command-tooltip-fill);
+  color: var(--ccd-command-tooltip-ink);
+  font: 12px/18px var(--ccd-font-ui);
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.ccd-info-tooltip::backdrop { background: transparent; pointer-events: none; }
+.ccd-info-value > span.ccd-info-tooltip { white-space: normal; text-align: left; overflow: visible; }
+.ccd-info-retry { color: var(--ccd-text-secondary); padding: 3px 0 0; text-decoration: underline; }
+.ccd-info-empty { margin: 0; color: var(--ccd-text-secondary); }
+.ccd-info-bar { display: flex; gap: 1px; height: 4px; margin: 5px 0 7px; overflow: hidden; border-radius: 2px; }
+.ccd-info-bar i { flex-basis: 0; min-width: 0; }
+.ccd-info-context-row { display: grid; grid-template-columns: minmax(0, 1fr) 43px 42px; gap: 5px; line-height: 19px; font-size: 11px; color: var(--ccd-text-secondary); }
+.ccd-info-context-row > span:first-child { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; }
+.ccd-info-context-row > span:not(:first-child) { text-align: right; }
+.ccd-info-context-row i { display: block; flex: none; width: 7px; height: 7px; }
+.ccd-session-cards [data-slice="mcp"] { background: var(--ccd-context-mcp); }
+.ccd-session-cards [data-slice="tools"] { background: var(--ccd-context-tools); }
+.ccd-session-cards [data-slice="system"] { background: var(--ccd-context-system); }
+.ccd-session-cards [data-slice="skills"] { background: var(--ccd-context-skills); }
+.ccd-session-cards [data-slice="memory"] { background: var(--ccd-context-memory); }
+.ccd-session-cards [data-slice="messages"] { background: var(--ccd-context-messages); }
+.ccd-session-cards [data-slice="autocompact"] { background: var(--ccd-context-buffer); }
+.ccd-session-cards [data-slice="free"] { background: var(--ccd-context-free); }
+.ccd-info-group { margin-top: 3px; color: var(--ccd-text-secondary); }
+.ccd-info-group summary { cursor: pointer; font-size: 11px; }
+.ccd-info-group summary > span:last-child { float: right; }
+.ccd-info-details { max-height: 170px; overflow: auto; padding-left: 10px; font-size: 11px; line-height: 18px; }
+.ccd-info-details .ccd-info-value > span:last-child { flex: none; }
+@media (hover: none) { .ccd-info-grip { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ccd-session-cards[data-ccd-info-dragging] .ccd-info-card { transition: none; } }

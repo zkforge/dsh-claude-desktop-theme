@@ -1,5 +1,5 @@
 import type { Disposer } from '../contracts/ports.ts';
-import { ANCHOR } from './host-dom.ts';
+import { ANCHOR, hostSelectors } from './host-dom.ts';
 import { fileSummaryParts, toolFileSummary, type ToolFileSummary } from './tool-file-summary.ts';
 
 export type ToolGroupKind = 'read' | 'command' | 'tool' | 'reasoning';
@@ -62,6 +62,100 @@ interface Group {
 }
 
 /**
+ * Whether a reply seat already holds body text.
+ *
+ * A response seat can carry a reasoning block before its answer, so thought
+ * text never counts; only text outside a thought, or a streaming element
+ * outside one, is the reply this run was waiting for.
+ */
+function replyStarted(seat: Element): boolean {
+  const thoughts = [...seat.querySelectorAll('[data-variant="think"]')];
+  if (thoughts.length === 0) return !!seat.textContent?.trim();
+  const streams = [...seat.querySelectorAll('[data-streaming]')]
+    .filter(element => !element.closest('[data-variant="think"]'));
+  if (streams.length) return streams.some(element => !!element.textContent?.trim());
+  // The host drops data-streaming once the reply finishes; whatever text is
+  // left outside the thoughts is then the finished answer.
+  let text = seat.textContent ?? '';
+  for (const thought of thoughts) text = text.replace(thought.textContent ?? '', '');
+  return !!text.trim();
+}
+
+/**
+ * The running row of the transcript that holds these rows.
+ *
+ * ChatFlow seats it as a sibling of the flow rows, so only a direct child of
+ * the rows' own list (or an ancestor) counts; another mounted transcript
+ * still working never keeps this one's runs live.
+ */
+function runningFor(parent: Element): Element | null {
+  for (let element: Element | null = parent; element !== null; element = element.parentElement) {
+    const running = [...element.children].find(child => child.hasAttribute('data-chat-running'));
+    if (running) return running;
+  }
+  return null;
+}
+
+/**
+ * Whether a reply or a later turn's content follows this run's last call.
+ *
+ * The host seats the running row beside the flow rows and gives every row a
+ * group part, so a trailing reasoning seat is a thought the next call may
+ * still follow, while an empty reply seat has not started streaming yet.
+ * Without a running row the turn is over, and every run has been answered.
+ */
+function answeredAfter(last: Element, running: Element | null): boolean {
+  if (running === null) return true;
+  // A host step group seats its calls inside its own body, so the reply that
+  // follows them is a sibling of the group rather than of its last call.
+  for (let seat: Element | null = last; seat !== null;
+    seat = seat.parentElement?.closest('[data-step-process]') ?? null) {
+    for (let sibling = seat.nextElementSibling; sibling !== null; sibling = sibling.nextElementSibling) {
+      if (sibling.hasAttribute('data-ccd-tool-group-toggle') || sibling.hasAttribute('data-chat-running')) continue;
+      if (sibling.getAttribute('data-chat-group-part') === 'reasoning') continue;
+      if (sibling.getAttribute('data-chat-flow-kind') === 'assistant-step' && !replyStarted(sibling)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Hand bottom-follow back to the host once a fold left the reader on the floor.
+ *
+ * ChatView shows its jump-to-bottom control whenever it is not following the
+ * tail, and only a reader's own arrival at the floor resumes following. A run
+ * folding with `display: none` shrinks the transcript at once; the browser
+ * clamps the scroll offset to the new floor, which the host attributes to
+ * layout rather than to the reader, so the control stays up with nothing left
+ * below. Pressing that control runs the host's own `returnToBottom`, which at
+ * the floor lands without moving.
+ *
+ * The control is read first: while the host follows there is none, and the
+ * scroll geometry is never measured.
+ * @param document - the renderer document, for this build's selectors.
+ * @param from - an element of the transcript that just shrank.
+ * @returns whether following was handed back.
+ */
+export function resumeTailAtFloor(document: Document, from: Element): boolean {
+  if (!from.isConnected) return false;
+  const host = hostSelectors(document);
+  // ChatView renders frame > root > scroll, and seats the control's slot as a
+  // direct child of the frame — never a nested transcript's control.
+  const list = from.closest<HTMLElement>(host.chatViewScroll);
+  const frame = list?.parentElement?.parentElement;
+  if (!list || !frame) return false;
+  const slot = [...frame.children].find(child => child.matches(host.chatViewToBottomSlot));
+  const button = slot?.querySelector<HTMLElement>(host.chatViewToBottom);
+  if (!button) return false;
+  // The same scrollport and floor tolerance ChatView measures against.
+  const scroller = list.closest<HTMLElement>(ANCHOR.conversationScroll) ?? list;
+  if (scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop >= 1) return false;
+  button.click();
+  return true;
+}
+
+/**
  * Inject only a sibling disclosure. Native calls keep their original React
  * parents, identities, handlers and independent detail state. Adjacent borders
  * paint the expanded list without wrapping or moving host nodes.
@@ -85,17 +179,21 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     member.removeAttribute('data-ccd-tool-group-edge');
     member.removeAttribute('data-ccd-tool-group-kind');
   };
-  const paint = (group: Group) => {
+  /** Paint one group; reports whether a member that was on screen is now folded. */
+  const paint = (group: Group): boolean => {
+    let folded = false;
     group.button.setAttribute('aria-expanded', String(group.open));
     group.members.forEach((member, index) => {
+      if (!group.open && member.getAttribute('data-ccd-tool-group-member') !== 'closed') folded = true;
       member.setAttribute('data-ccd-tool-group-member', group.open ? 'open' : 'closed');
       member.setAttribute('data-ccd-tool-group-edge', group.members.length === 1 ? 'only'
         : index === 0 ? 'first' : index === group.members.length - 1 ? 'last' : 'middle');
     });
+    return folded;
   };
   const toggle = (group: Group) => {
     group.open = !group.open;
-    paint(group);
+    if (paint(group)) resumeTailAtFloor(document, group.button);
   };
   const disposeGroup = (group: Group) => {
     clearTimeout(group.refreshTimer);
@@ -107,13 +205,25 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
   const entry = (element: HTMLElement): ToolGroupEntry<HTMLElement> => {
     // The host splits reasoning and response into separate flow seats. Never
     // infer a reasoning-only seat from a descendant: mixed replies stay visible.
+    // A thought still streaming joins the run as its live row, so it rolls in
+    // the same line as the calls instead of opening a disclosure below them.
+    const thoughts = [...element.querySelectorAll('[data-variant="think"]')];
+    const thinking = thoughts.some(thought => !['ok', 'error', 'stopped'].includes(thought.getAttribute('data-state') ?? ''));
     if (element.matches(ANCHOR.reasoningFlow)) {
-      const thoughts = [...element.querySelectorAll('[data-variant="think"]')];
       return {
         value: element, kind: thoughts.length ? 'reasoning' : 'barrier',
         turn: element.getAttribute('data-chat-turn'),
         settled: thoughts.length > 0 && thoughts.every(thought => thought.getAttribute('data-state') === 'ok'),
+        live: thinking, description: 'Thinking',
         failed: false,
+      };
+    }
+    // A reply seat may open with its thought; only while that thought streams
+    // and no body text has started is the seat still the run's activity.
+    if (thinking && element.getAttribute('data-chat-flow-kind') === 'assistant-step' && !replyStarted(element)) {
+      return {
+        value: element, kind: 'reasoning', turn: element.getAttribute('data-chat-turn'),
+        settled: false, live: true, description: 'Thinking', failed: false,
       };
     }
     const call = element.querySelector<HTMLElement>(ANCHOR.toolCall);
@@ -172,6 +282,8 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     };
   };
   const syncParent = (parent: HTMLElement) => {
+    let folded = false;
+    const running = runningFor(parent);
     const previous = groups.get(parent) ?? new Map<HTMLElement, Group>();
     const runs = parent.isConnected ? consecutiveToolGroups(
       [...parent.children].filter((child): child is HTMLElement => child.nodeType === 1
@@ -213,28 +325,40 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
         group.open = true;
       }
       group.failed = failed;
-      group.members = run.map(item => item.value);
-      if (document.activeElement && group.members.some(member => member.contains(document.activeElement))) group.open = true;
-      for (const item of run) item.value.setAttribute('data-ccd-tool-group-kind', item.kind);
-      const live = [...run].reverse().find(item => item.live);
-      if (live) group.button.setAttribute('data-ccd-tool-live', '');
-      else group.button.removeAttribute('data-ccd-tool-live');
+      // A run keeps rolling its own calls — live, then the last settled one —
+      // until a reply (or a later turn) follows it. Only then does the run
+      // fold into its counts summary, so the reader never sees "Thought, read
+      // 4 files…" while the turn is still working through calls.
+      const followed = answeredAfter(run[run.length - 1]!.value, running);
+      // An interrupted turn can leave a thought or call marked running for
+      // good; once anything follows or the turn has ended, it is not live.
+      const live = followed ? undefined : [...run].reverse().find(item => item.live);
+      const answered = !failed && followed;
       const files = run.flatMap(item => item.file ? [item.file] : []);
       const otherKinds = run.filter(item => !item.file).map(item => item.kind);
       const remaining = toolGroupLabel(otherKinds as ToolGroupKind[]);
       const others = remaining ? [remaining] : [];
-      const parts = !live && files.length ? fileSummaryParts(files, others) : null;
-      const text = live?.description || toolGroupLabel(run.map(item => item.kind as ToolGroupKind));
+      const parts = (answered || failed) && !live && files.length ? fileSummaryParts(files, others) : null;
+      const summary = toolGroupLabel(run.map(item => item.kind as ToolGroupKind));
+      const current = [...run].reverse().find(item => item.kind !== 'reasoning')?.description;
+      const text = live?.description || (answered || failed ? summary : current || summary);
       const renderKey = JSON.stringify(parts ?? text);
       const reducedMotion = document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const canAnimate = !!group.label.animate && !reducedMotion;
-      // Re-read the host when the dwell expires: intermediate streamed states
-      // are coalesced, never queued to play after they have become stale.
+      group.members = run.map(item => item.value);
+      if (document.activeElement && group.members.some(member => member.contains(document.activeElement))) group.open = true;
+      for (const item of run) item.value.setAttribute('data-ccd-tool-group-kind', item.kind);
+      // A settled call that the turn may still continue stays marked live: the
+      // row is the turn's current activity, not a finished summary.
+      if (live || (!answered && !failed && run.every(item => item.settled))) group.button.setAttribute('data-ccd-tool-live', '');
+      else group.button.removeAttribute('data-ccd-tool-live');
       clearTimeout(group.refreshTimer);
       delete group.refreshTimer;
       const remainingDwell = group.shownAt !== undefined && canAnimate && (live || group.shownLive) && !failed
         ? Math.max(0, 900 - (Date.now() - (group.shownAt ?? 0))) : 0;
       if (group.renderKey !== renderKey && remainingDwell > 0) {
+        // Re-read the host when the dwell expires: intermediate streamed states
+        // are coalesced, never queued to play after they have become stale.
         group.refreshTimer = setTimeout(() => {
           if (released) return;
           try { syncParent(parent); } catch (error) { report(error); }
@@ -246,7 +370,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
         const oldWidth = canAnimate ? viewport.getBoundingClientRect().width : 0;
         group.renderKey = renderKey;
         group.shownAt = Date.now();
-        group.shownLive = !!live;
+        group.shownLive = !!live || (!answered && !failed && run.every(item => item.settled));
         const oldText = group.label.textContent;
         group.animations?.forEach(animation => animation.cancel());
         group.outgoing?.remove();
@@ -288,7 +412,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
         }
       }
       if (group.button.nextElementSibling !== first) parent.insertBefore(group.button, first);
-      paint(group);
+      if (paint(group)) folded = true;
       next.set(first, group);
     }
     for (const [first, group] of previous) {
@@ -302,13 +426,21 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     }
     if (next.size) groups.set(parent, next);
     else groups.delete(parent);
+    // Streamed calls and thoughts fold into a closed run on their own; the
+    // same shrink can strand the host's control as a reader's collapse does.
+    if (folded) resumeTailAtFloor(document, parent);
   };
   const flush = () => {
     pending = false;
     if (released) return;
     try {
       for (const row of fileTitles.keys()) if (!row.isConnected || !row.closest(ANCHOR.toolFlow)) restoreFileTitle(row);
-      for (const parent of groups.keys()) if (!parent.isConnected) dirty.add(parent);
+      for (const parent of groups.keys()) {
+        // A reply streaming beside a step group only marks the outer list, yet
+        // it answers the run inside that group.
+        const group = parent.closest('[data-step-process]');
+        if (!parent.isConnected || (group?.parentElement && dirty.has(group.parentElement as HTMLElement))) dirty.add(parent);
+      }
       const parents = [...dirty];
       dirty.clear();
       for (const parent of parents) syncParent(parent);
@@ -331,8 +463,19 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       // Native row state/structure can change in place. Sibling replies can
       // also be inserted or removed between calls, including empty live seats.
       if (groups.has(record.target as HTMLElement)) dirty.add(record.target as HTMLElement);
+      // The running row is a sibling of the flow rows rather than one of them,
+      // and its appearance or removal is what tells a working turn from a
+      // finished one, so every tracked parent has to re-read itself.
+      if (record.target.nodeType === 1 && (record.target as Element).hasAttribute('data-chat-running')) {
+        for (const parent of groups.keys()) dirty.add(parent);
+      }
       collect(record.target);
-      for (const node of record.addedNodes) collect(node);
+      for (const node of record.addedNodes ?? []) collect(node);
+      for (const node of record.removedNodes ?? []) {
+        if (node.nodeType === 1 && (node as Element).hasAttribute('data-chat-running')) {
+          for (const parent of groups.keys()) dirty.add(parent);
+        }
+      }
     }
     for (const parent of groups.keys()) if (!parent.isConnected) dirty.add(parent);
     if (!pending && dirty.size) {
@@ -342,7 +485,8 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
   });
   observer.observe(document.body, {
     subtree: true, childList: true, characterData: true, attributes: true,
-    attributeFilter: ['data-state', 'data-tool', 'data-cordis-status', 'disabled', 'data-chat-flow-kind', 'data-chat-turn', 'data-chat-group-part', 'data-variant'],
+    attributeFilter: ['data-state', 'data-tool', 'data-cordis-status', 'disabled', 'data-chat-flow-kind',
+      'data-chat-turn', 'data-chat-group-part', 'data-variant', 'data-streaming', 'data-chat-running'],
   });
   collect(document.body);
   flush();

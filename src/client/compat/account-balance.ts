@@ -1,38 +1,102 @@
 import { BALANCE_PATH } from '../../shared/balance.ts';
 import type { Disposer } from '../contracts/ports.ts';
-import { mountAccountBalanceHint, type AccountBalanceBreakdown } from './account-balance-hint.ts';
+import {
+  mountAccountBalanceHint, periodGlyph, periodLabel, type AccountBalanceView,
+} from './account-balance-hint.ts';
+import { dailyRate, loadLedger, recordBalance, remainingDays, saveLedger, toCents } from './balance-ledger.ts';
 
-/** Last completed display, retained across menu openings for the same account. */
+/** Last completed display, retained across remounts for the same account. */
 export interface AccountBalanceCache {
   text?: string;
   description?: string;
-  balance?: AccountBalanceBreakdown;
+  balance?: AccountBalanceView;
 }
 
-/** One usage row in the lower-left account menu; polling lives only while open. */
-export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCache = {}): Disposer {
+const yuan = (cents: number) => (cents / 100).toFixed(2);
+
+/** Balance reader shared by the expanded sidebar and collapsed account menu. */
+export function mountAccountBalance(
+  menu: HTMLElement, cache: AccountBalanceCache = {}, placement: 'menu' | 'sidebar' = 'menu',
+): Disposer {
   const document = menu.ownerDocument;
-  const anchor = menu.querySelector('button[role="menuitem"]');
-  if (!anchor) return () => {};
+  const sidebar = placement === 'sidebar';
+  const anchor = sidebar ? null : menu.querySelector('button[role="menuitem"]');
+  if (!sidebar && !anchor) return () => {};
   const zh = (document.documentElement.lang || document.defaultView?.navigator?.language || '').toLowerCase().startsWith('zh');
   const row = document.createElement('button');
   row.type = 'button';
-  row.setAttribute('role', 'menuitem');
+  if (!sidebar) row.setAttribute('role', 'menuitem');
+  else row.setAttribute('data-ccd-balance-card', '');
   row.setAttribute('data-ccd-account-balance', '');
   row.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20A10 10 0 0 1 15.8 3.75M21.8 11A10 10 0 0 1 19 20"/><circle cx="12" cy="13" r="2.2"/><path d="m13.56 11.44 5.19-5.19"/></svg>';
   const label = document.createElement('span');
-  label.textContent = zh ? '余额' : 'Balance';
+  label.textContent = sidebar ? (zh ? 'API 余额' : 'API balance') : zh ? '余额' : 'Balance';
   const amount = document.createElement('span');
   amount.setAttribute('data-ccd-balance-amount', '');
   amount.setAttribute('aria-live', 'polite');
   amount.textContent = cache.text ?? '—';
-  row.ariaDescription = cache.description ?? (zh ? 'DeepSeek 官方 API 余额（人民币）' : 'DeepSeek API balance (CNY)');
+  row.ariaDescription = cache.description ?? (zh ? 'DeepSeek 官方 API 余额（人民币），点击刷新' : 'DeepSeek API balance (CNY), click to refresh');
   row.append(label, amount);
-  anchor.after(row);
+  const details = document.createElement('span');
+  details.setAttribute('data-ccd-balance-details', '');
+  const storage = (() => { try { return document.defaultView?.localStorage; } catch { return undefined; } })();
+  // Second line: grant and runway on the left, the price period on the right;
+  // today's spend stays in the hover hint.
+  const updateDetails = () => {
+    if (!sidebar) return;
+    details.replaceChildren();
+    const view = cache.balance;
+    const label = periodLabel(Date.now(), zh);
+    details.hidden = !view && !label;
+    if (view) {
+      const usage = document.createElement('span');
+      usage.setAttribute('data-ccd-balance-usage', '');
+      const term = document.createElement('span');
+      term.textContent = zh ? '赠金' : 'Granted';
+      const number = document.createElement('span');
+      number.textContent = `¥${view.balance.granted}`;
+      usage.append(term, number);
+      if (view.days !== null) {
+        const days = document.createElement('span');
+        days.setAttribute('data-ccd-balance-days', '');
+        days.textContent = view.days > 999 ? (zh ? '999+ 天' : '999+ days')
+          : zh ? view.days < 1 ? '不足 1 天' : `${view.days} 天` : view.days < 1 ? '< 1 day' : `${view.days} days`;
+        usage.append(days);
+      }
+      details.append(usage);
+    }
+    if (label) {
+      const mark = document.createElement('span');
+      mark.className = 'ccd-balance-period';
+      mark.dataset['peak'] = String(label.peak);
+      mark.append(periodGlyph(document, label.peak), label.label);
+      if (label.until) {
+        const until = document.createElement('span');
+        until.textContent = zh ? `至 ${label.until}` : `→ ${label.until}`;
+        mark.append(until);
+      }
+      details.append(mark);
+    }
+    row.setAttribute('data-balance-state', view ? 'ready' : 'unavailable');
+  };
+  if (sidebar) {
+    row.append(details);
+    menu.append(row);
+    updateDetails();
+  } else anchor!.after(row);
   const hint = mountAccountBalanceHint(menu, row, zh);
-  hint.update(cache.balance, cache.description ?? (zh ? '正在查询余额…' : 'Checking balance…'));
+  hint.update(cache.balance, cache.description ?? (zh ? '正在查询余额…' : 'Checking balance…'), Date.now());
   let disposed = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let clock: ReturnType<typeof setTimeout> | undefined;
+  // Minute clock for the period badge and countdown; stops while hidden.
+  const tick = () => {
+    clearTimeout(clock);
+    if (disposed || document.hidden) return;
+    updateDetails();
+    hint.update(cache.balance, cache.description ?? '', Date.now());
+    clock = setTimeout(tick, 60_000 - Date.now() % 60_000);
+  };
   let deadline: ReturnType<typeof setTimeout> | undefined;
   let controller: AbortController | undefined;
 
@@ -61,11 +125,23 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
       const validAmount = (value: unknown): value is string => typeof value === 'string'
         && /^-?\d+(?:\.\d+)?$/.test(value) && Number.isFinite(Number(value));
       if (data.state === 'ready' && balance && [balance.total, balance.granted, balance.toppedUp].every(validAmount)) {
-        cache.balance = { total: balance.total, toppedUp: balance.toppedUp, granted: balance.granted };
+        const total = toCents(balance.total);
+        const ledger = recordBalance(loadLedger(storage), total, Date.now());
+        saveLedger(storage, ledger);
+        const rate = dailyRate(ledger);
+        const view: AccountBalanceView = {
+          balance: { total: balance.total, toppedUp: balance.toppedUp, granted: balance.granted },
+          today: yuan(ledger.spent),
+          rate: rate.cents > 0 ? yuan(rate.cents) : null,
+          rateDays: rate.days,
+          days: remainingDays(total, rate.cents),
+        };
+        cache.balance = view;
         amount.textContent = `¥${balance.total}`;
+        const runway = view.days === null ? '' : zh ? `，约可用 ${view.days} 天` : `, about ${view.days} days left`;
         row.ariaDescription = zh
-          ? `DeepSeek 官方 API · 人民币\n总余额 ¥${balance.total}\n充值余额 ¥${balance.toppedUp}\n赠金余额 ¥${balance.granted}\n点击刷新`
-          : `DeepSeek API · CNY\nTotal ¥${balance.total}\nTop-up ¥${balance.toppedUp}\nGranted ¥${balance.granted}\nClick to refresh`;
+          ? `DeepSeek 官方 API · 人民币\n总余额 ¥${balance.total}\n今日消耗 ¥${view.today}${runway}\n充值余额 ¥${balance.toppedUp}\n赠金余额 ¥${balance.granted}\n点击刷新`
+          : `DeepSeek API · CNY\nTotal ¥${balance.total}\nSpent today ¥${view.today}${runway}\nTop-up ¥${balance.toppedUp}\nGranted ¥${balance.granted}\nClick to refresh`;
       } else {
         delete cache.balance;
         const messages: Record<string, string> = {
@@ -93,7 +169,8 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
       if (!disposed) {
         cache.text = amount.textContent ?? '';
         cache.description = row.ariaDescription ?? '';
-        hint.update(cache.balance, cache.description);
+        updateDetails();
+        hint.update(cache.balance, cache.description, Date.now());
         row.removeAttribute('aria-busy');
         if (!document.hidden) timer = setTimeout(() => { void refresh(); }, 60_000);
       }
@@ -104,12 +181,15 @@ export function mountAccountBalance(menu: HTMLElement, cache: AccountBalanceCach
     clearTimeout(timer);
     if (document.hidden) controller?.abort();
     else void refresh();
+    tick();
   };
   document.addEventListener('visibilitychange', visibility);
   void refresh();
+  tick();
   return () => {
     disposed = true;
     clearTimeout(timer);
+    clearTimeout(clock);
     clearTimeout(deadline);
     controller?.abort();
     document.removeEventListener('visibilitychange', visibility);

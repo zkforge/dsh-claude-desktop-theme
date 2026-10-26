@@ -359,10 +359,6 @@
   margin-left: 6px;
 }
 
-.ccd-search-palette-compose {
-  margin-left: auto;
-}
-
 @media (max-width: 560px) {
   .ccd-search-palette-footer > span:nth-child(3),
   .ccd-search-palette-footer > span:nth-child(4) {

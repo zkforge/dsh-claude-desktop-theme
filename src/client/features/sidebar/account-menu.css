@@ -244,12 +244,124 @@ html[data-dsh-ccd-style="true"] .ccd-balance-summary { margin: 5px 0 14px; white
 html[data-dsh-ccd-style="true"] .ccd-balance-rates { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin: 0; }
 html[data-dsh-ccd-style="true"] .ccd-balance-rates dt { color: var(--ccd-text-secondary); }
 html[data-dsh-ccd-style="true"] .ccd-balance-rates dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+html[data-dsh-ccd-style="true"] .ccd-balance-funds { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ccd-border-soft); }
+html[data-dsh-ccd-style="true"] .ccd-balance-period-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--ccd-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+html[data-dsh-ccd-style="true"] .ccd-balance-period-row .ccd-balance-period { margin: 0; }
+html[data-dsh-ccd-style="true"] .ccd-balance-note {
+  margin: 8px 0 0;
+  color: var(--ccd-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
 
 html[data-dsh-ccd-style="true"] [data-ccd-balance-amount] {
   margin-inline-start: auto;
   color: var(--ccd-text);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
+}
+
+/* A quiet balance ledger anchored above the account separator. The slot is a
+   flex sibling of the footer, so it reserves real space above the scroll list. */
+html[data-dsh-ccd-style="true"] [data-ccd-balance-slot] {
+  flex: none;
+  min-width: 0;
+  padding: 2px 0 8px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-account-balance][data-ccd-balance-card] {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: 4px 6px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: var(--ccd-radius-row);
+  color: var(--ccd-text-secondary);
+  font: 12px/18px var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-card]:hover {
+  background: var(--ccd-hover);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-card]:focus-visible {
+  outline: 1px solid var(--ccd-text-muted);
+  outline-offset: -1px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-card] > svg {
+  width: 14px;
+  height: 14px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-card] [data-ccd-balance-amount] {
+  grid-column: 3;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ccd-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+  text-align: end;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-card][data-balance-state="unavailable"] [data-ccd-balance-amount] {
+  grid-column: 2 / -1;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0;
+  color: var(--ccd-text-secondary);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-details] {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px 8px;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-usage] {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-usage] > :nth-child(2) { color: var(--ccd-text); }
+html[data-dsh-ccd-style="true"] [data-ccd-balance-days]::before {
+  content: "·";
+  margin-inline-end: 4px;
+  color: var(--ccd-text-muted);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-balance-details][hidden] { display: none; }
+/* Same hue pair as the model picker's peak marks, as a tinted pill. */
+html[data-dsh-ccd-style="true"] .ccd-balance-period {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: auto;
+  padding: 0 5px 0 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--ccd-price-off-peak);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+html[data-dsh-ccd-style="true"] .ccd-balance-period[data-peak="true"] { color: var(--ccd-price-peak); }
+html[data-dsh-ccd-style="true"] .ccd-balance-period > svg { flex: none; width: 12px; height: 9px; }
+html[data-dsh-ccd-style="true"] .ccd-balance-period > span {
+  margin-inline-start: 1px;
+  font-weight: 400;
+  opacity: .8;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-more] {

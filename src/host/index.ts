@@ -8,6 +8,7 @@ import { mountContextBreakdown } from './context/service.ts';
 import { mountDeepSeekBalance } from './balance.ts';
 import { mountGitBranches } from './git.ts';
 import { mountWorktrees } from './worktree.ts';
+import { mountSessionInfo } from './session-info.ts';
 
 /** Same shapes the client normalizer accepts, so both boundaries agree. */
 const HEX_COLOUR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})?$/;
@@ -84,6 +85,8 @@ export const Config = z.object({
       .description('显示顶栏子代理入口（仅控制入口显示）'),
     showHeaderTeam: z.boolean().default(DEFAULT_VIEW.showHeaderTeam)
       .description('显示顶栏团队入口（仅控制入口显示）'),
+    showHeaderJobs: z.boolean().default(DEFAULT_VIEW.showHeaderJobs)
+      .description('显示顶栏后台任务入口（仅控制入口显示，默认关闭）'),
     groupByStatus: z.boolean().default(DEFAULT_VIEW.groupByStatus)
       .description('按会话状态分组（保留原生项目视图选项）'),
     showEmptyGroups: z.boolean().default(DEFAULT_VIEW.showEmptyGroups)
@@ -143,4 +146,5 @@ export function apply(ctx: Context, config: unknown): void {
   mountDeepSeekBalance(ctx, () => readValue(host.enabled, false) === true);
   mountGitBranches(ctx, () => readValue(host.enabled, false) === true);
   mountWorktrees(ctx, () => readValue(host.enabled, false) === true);
+  mountSessionInfo(ctx, () => readValue(host.enabled, false) === true);
 }

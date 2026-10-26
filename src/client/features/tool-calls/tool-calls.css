@@ -86,8 +86,11 @@ html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] :is(.Q2dzhW_ti
   line-height: 20px;
 }
 
+/* Reserve the title's natural width so long summaries cannot wrap labels. */
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] .Q2dzhW_title {
+  flex: none;
   margin-inline-end: 6px;
+  white-space: nowrap;
 }
 
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] .Q2dzhW_fileLink {
@@ -652,6 +655,62 @@ html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool] [c
 
 html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool] [class*="_root"]:has(> :is(ul[class*="_list"], p[class*="_empty"])) dt {
   color: var(--ccd-text-secondary);
+}
+
+/* Job reads are completed tool calls with a historical process snapshot.
+   Do not present that snapshot's info badge (or collapsed status summary) as a
+   live indicator. Final success/error badges and exit/truncation text remain. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"][data-state="ok"] [data-disclosure-row]:not([aria-expanded="true"]) [class*="_summary"],
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] li > [class*="_heading"] > :not([data-tone]),
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"][data-state="ok"] li > [class*="_heading"]:has(> [data-tone="info"]) {
+  display: none;
+}
+
+/* ToolDetails wraps a CodeBlock here. Flatten both layers so output shares
+   the terminal's compact typography instead of nesting two unrelated cards. */
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [class*="_root"]:has(> ul[class*="_list"]) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [class*="_root"] > ul[class*="_list"] > li {
+  padding: 0;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [data-code-wrap] {
+  margin: 0;
+  border: 1px solid var(--ccd-border);
+  border-radius: 9px;
+  background: var(--ccd-card);
+  color: var(--ccd-text-secondary);
+  overflow: hidden;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [data-code-wrap] > *,
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [data-code-block-banner] {
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [data-code-block-banner] {
+  padding: 4px 8px;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [data-code-block-banner] > :first-child {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] [data-code-wrap] pre {
+  margin: 0;
+  padding: 4px 8px 8px;
+  background: transparent;
+  font: 13px/18px var(--ccd-font-code);
+}
+
+html[data-dsh-ccd-style="true"] [data-chat-flow-kind="tool-call"] [data-tool="job_output"] li > [class*="_description"] {
+  margin: 4px 0;
+  color: var(--ccd-text-secondary);
+  font: 12px/18px var(--ccd-font-code);
 }
 
 /* Live calls use the same description/chevron as expanded completed calls.

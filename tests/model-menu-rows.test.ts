@@ -208,10 +208,9 @@ test('selection adds a hover fill only in the dark theme', () => {
   ]);
   assert.equal(selected[0]?.body.trim(), 'background: var(--ccd-hover);');
   assert.deepEqual(controls.filter(rule => /--ccd-selected/u.test(rule.body)), []);
-  /* No weight on any row; the peak/off-peak badge's 500 is a label of its own,
-     not a selection state, and is the one rule allowed one. */
+  /* No weight on any row. */
   const weights = controls.filter(rule => /font-weight/u.test(rule.body));
-  assert.deepEqual(weights.map(rule => rule.selector), ['.ccd-price-badge']);
+  assert.deepEqual(weights.map(rule => rule.selector), []);
 });
 
 test('the card’s model names keep the chosen-value ink through the row’s cascade', () => {

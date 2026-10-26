@@ -5,6 +5,7 @@ const LABELS = new Map([
   ['搜索', 'Search'], ['读取', 'Read'], ['读取文件', 'Read file'], ['读取图片', 'Read image'],
   ['写入', 'Write'], ['编辑', 'Edit'], ['加载技能', 'Skill'], ['运行命令', 'Run command'],
   ['执行命令', 'Run command'], ['运行代码', 'Run code'], ['调用工具', 'Use tool'],
+  ['读取任务输出', 'Read job output'],
   ['网页搜索', 'Search the web'], ['读取网页', 'Read webpage'], ['获取网页', 'Fetch webpage'],
 ]);
 

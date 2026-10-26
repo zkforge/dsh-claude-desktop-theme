@@ -41,7 +41,7 @@ export interface PaletteCopy {
   readonly running: string;
   readonly ended: string;
   readonly more: string;
-  readonly hints: { readonly close: string; readonly tabs: string; readonly filter: string; readonly actions: string; readonly compose: string };
+  readonly hints: { readonly close: string; readonly tabs: string; readonly filter: string; readonly actions: string };
   readonly menu: Readonly<Record<PaletteAction['id'], string>>;
   readonly runs: (count: number, more: boolean) => string;
   readonly sessionCount: (count: number) => string;
@@ -69,7 +69,7 @@ const COPY: { readonly zh: PaletteCopy; readonly en: PaletteCopy } = {
     running: '运行中',
     ended: '已结束',
     more: '更多操作',
-    hints: { close: '关闭', tabs: '切换类型', filter: '筛选条件', actions: '操作', compose: '撰写' },
+    hints: { close: '关闭', tabs: '切换类型', filter: '筛选条件', actions: '操作' },
     menu: {
       open: '打开', pin: '置顶', unpin: '取消置顶', fork: '创建分支', archive: '归档', unarchive: '取消归档',
       'new-session': '新建会话', 'copy-path': '复制路径', 'open-session': '打开所在会话',
@@ -101,7 +101,7 @@ const COPY: { readonly zh: PaletteCopy; readonly en: PaletteCopy } = {
     running: 'Running',
     ended: 'Ended',
     more: 'More actions',
-    hints: { close: 'Close', tabs: 'Switch type', filter: 'Filter', actions: 'Actions', compose: 'Compose' },
+    hints: { close: 'Close', tabs: 'Switch type', filter: 'Filter', actions: 'Actions' },
     menu: {
       open: 'Open', pin: 'Pin', unpin: 'Unpin', fork: 'Fork', archive: 'Archive', unarchive: 'Unarchive',
       'new-session': 'New session', 'copy-path': 'Copy path', 'open-session': 'Open session',

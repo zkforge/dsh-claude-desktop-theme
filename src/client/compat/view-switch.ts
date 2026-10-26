@@ -148,7 +148,8 @@ export function mountViewSwitch(
       /* The label leaves the paint (`conversation.css`), so the button's
          accessible name is written down instead of being inferred. */
       attribute(tab, 'aria-label', label);
-      if (tab.querySelector(`:scope > [${VIEW_GLYPH_ATTRIBUTE}]`) !== null) continue;
+      const existing = tab.querySelector(`:scope > [${VIEW_GLYPH_ATTRIBUTE}]`);
+      if (existing !== null) { glyphs.add(existing); continue; }
       const glyph = document.createElement('span');
       glyph.className = 'ccd-view-glyph';
       glyph.setAttribute(VIEW_GLYPH_ATTRIBUTE, '');

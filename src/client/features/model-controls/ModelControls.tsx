@@ -7,7 +7,6 @@ import { effortDefaultIndex, effortView, modelSelection } from './selection.ts';
 import { EffortPanel } from './EffortPanel.tsx';
 import { ModelIcon } from './model-icons.tsx';
 import { usePopup } from './popup.ts';
-import { PriceMark, PricingHint } from './PricingHint.tsx';
 
 export type ModelControlsProps = Omit<ModelSelectInjected, 'directory'> & PropsLocale<'model'> & {
   readonly showModelIcons: boolean;
@@ -47,12 +46,11 @@ export function ModelControls({ showModelIcons, locked, available, useDirectory,
   }, [busy]);
   if (!available) return null;
   return <div className="ccd-model-controls" data-ccd-model-controls>
-    <PricingHint provider={current?.provider} model={model?.id} compact enabled={open === null} ignoreFocus={() => restoreModelFocus.current}><button ref={modelAnchor} className="ccd-model-trigger" data-ccd-model-trigger type="button" disabled={disabled}
+    <button ref={modelAnchor} className="ccd-model-trigger" data-ccd-model-trigger type="button" disabled={disabled}
       aria-label={current ? t('trigger.aria', { model: label }) : t('trigger.selectAria')} aria-haspopup="dialog" aria-expanded={open === 'model'}
       onClick={() => { setOpen(open === 'model' ? null : 'model'); load(); }}>
       <span className="ccd-model-label">{label}</span>
-      <PriceMark provider={current?.provider} model={model?.id} compact />
-    </button></PricingHint>
+    </button>
     {caption !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || !pickable}
       aria-label={`Effort: ${caption}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
       onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{caption}</span></button>}
@@ -91,8 +89,8 @@ export function ModelPanel({ showModelIcons, anchor, state, disabled, load, t, o
     }}>
       {groups.map(group => <div key={group.id}><div className="ccd-model-provider">{group.name}</div>{group.models.map(model => {
         const chosen = state.current?.provider === group.id && state.current.model === model.id;
-        return <PricingHint key={model.id} provider={group.id} model={model.id}><button type="button" data-model-option aria-pressed={chosen} disabled={disabled}
-          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name"><span className="ccd-model-name-text">{model.name}</span><PriceMark provider={group.id} model={model.id} badge /></span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button></PricingHint>;
+        return <button key={model.id} type="button" data-model-option aria-pressed={chosen} disabled={disabled}
+          onClick={() => onSelect(modelSelection(group.id, model, state.current))}>{showModelIcons && <ModelIcon provider={group} model={model} />}<span className="ccd-model-name"><span className="ccd-model-name-text">{model.name}</span></span><span aria-hidden="true">{chosen ? '✓' : ''}</span></button>;
       })}</div>)}
     </div>
   </div>;

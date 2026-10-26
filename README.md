@@ -45,11 +45,11 @@
 | 组件 | 浅色 | 深色 |
 | --- | --- | --- |
 | 模型选择器 | ![模型选择器 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-picker-light.webp) | ![模型选择器 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-picker-dark.webp) |
-| 模型参考价与峰谷提示 | ![模型参考价 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-pricing-light.webp) | ![模型参考价 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-pricing-dark.webp) |
 | DeepSeek 余额 | ![余额组件 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/account-balance-light.webp) | ![余额组件 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/account-balance-dark.webp) |
 | 上下文圆环与分解面板 | ![上下文圆环与分解面板 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-light.webp) | ![上下文圆环与分解面板 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-dark.webp) |
+| 会话右侧信息卡片 | ![会话信息卡片 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-light.webp) | ![会话信息卡片 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-dark.webp) |
 
-以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标、当前选中项与峰谷标签，价格悬浮卡片展示官方人民币参考价和切换倒计时；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，入口位于左下角账号菜单，悬停可查看充值与赠金明细，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
+以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，常显于左下角账号上方，列出总余额、赠金、预计可用天数和当前峰谷时段，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
 
 ## 细节动效
 
@@ -101,7 +101,7 @@
 
 ### 侧栏
 
-- 左下角账号菜单新增「余额」，显示 DeepSeek 官方 API 的人民币余额（`¥`）；点击刷新，菜单打开时每分钟后台更新，重新打开保留上次读数。复用设置 → 模型中的官方 API Key；未配置或查询失败时显示对应状态。
+- 左下角账号上方常显 DeepSeek 官方 API 的人民币余额（`¥`），第二行显示赠金、按近 7 天日均推算的可用天数，以及峰时/谷时标签与切换时间（峰时琥珀色、谷时绿色）；悬停卡片列出今日消耗、日均、充值、赠金与峰谷倒计时。消耗由本机记录的余额下降推算，充值只重置基线，不计入消耗；点击刷新，侧栏展开时每分钟后台更新，重新展开保留上次读数。折叠侧栏时在账号菜单保留余额入口。复用设置 → 模型中的官方 API Key；未配置或查询失败时显示对应状态。
 
 - DeepSeek Harness 品牌条目默认隐藏，可在「设置 → Claude 主题 → 视图」开启显示。
 - 新建 / 搜索 / 自定义 / 定时任务 / 主题入口与工作区、会话列表、账号菜单共用紧凑行高，当前入口常驻底色；「更多」以三个点表示。原标题行隐藏「最近会话」标题，只保留右侧筛选视图按钮。
@@ -125,12 +125,14 @@
 - 加号位于输入面内左侧；工作区与模式两枚 chip 同长，工作区名过长时省略，模式标签始终完整。
 - 模型选单名称前的图标可在「Claude 主题 → 视图 → 显示模型图标」中开关，默认开启。
 - 模型选择器支持搜索；effort 用滑杆，停在最后一档时实心填充换成一条像素流光。两者都可用键盘操作。
-- 内置 DeepSeek 路由的 Flash / V4 Pro 显示峰谷状态：模型按钮中的 16×12px 趋势折线紧跟模型名，谷时绿色下降、峰时琥珀色上升；选单中则显示带圆圈信息图标（i）的浅色圆角「谷时」/「峰时」标签，沿用绿色 / 琥珀色，距模型名 6px；长名称省略时仍保留状态标记；悬停或键盘聚焦显示官方人民币参考价及距离切换的倒计时。参考价核对于 2026-10-20，节假日日历覆盖 2026 年；目录不提供实际 API 地址，使用代理时应以实际账单为准。价格及后续年度日历需随官方规则更新，未知年度不推算峰谷状态。
 - 发送 / 停止是细线按钮，权限常显文字，上下文圆环在行末；输入面聚焦时边框加深。
 - 上下文圆环点开分段面板：MCP 工具、系统工具、系统提示词、技能、记忆文件、对话消息、自动压缩余量与空闲空间，可逐项展开。
 
 ### 右侧栏
 
+- 信息卡片外侧为阴影保留留白，聊天滚动条位于卡片右边，不再夹在聊天正文与卡片之间。
+- 会话右侧优先显示「上下文 / 环境 / 会话用量」信息卡片，顶部终端按钮左侧的「会话栏」按钮控制开关，选中时与其他工具按钮一样显示蓝色底色，中间以竖线分隔；手动关闭会记住选择。卡片可折叠，拖动标题或卡片内容时整张卡片随指针移动，其余卡片让位，松开后保存顺序，Esc 取消；排序手柄也支持上下方向键。右侧栏收起时，可用聊天区域不足 900px 宽或 400px 高会自动关闭，恢复到 924×424px 后按开关选择重新显示；打开文件、终端或浏览器后，信息卡片改为浮在会话右上方，不再额外压缩正文，可继续用会话栏按钮开关。
+- 环境卡读取实际会话工作目录、Git 分支及工作树状态（主工作树 / 独立工作树）。路径与其他字段均单行省略，悬停或键盘聚焦用黑色提示显示完整内容；若宿主还未加载环境接口，会明确提示完整退出并重新打开 DSH。会话用量展示输入 / 输出 token、缓存命中率、提示次数和输出 TPS；输入包含缓存读写，TPS 为整会话已结算输出的平均生成速度，每个模型步骤结束时更新。分叉会话包含继承历史，无有效数据时显示「—」。
 - Files 与浏览器各占一张浮动卡片，多个终端共用一张并用标签切换；第三块开启右列，两列分隔线各自可拖，比例按会话保留。
 - 卡片可放大到覆盖聊天区（保留左导航）／还原；最后一块关闭时收起右栏。
 - Files 的文件树与预览左右分栏、树宽可拖；标题左侧蓝色清单按钮收起 / 展开文件树；过滤框按名字收窄已加载的行，Esc 清除。
@@ -158,7 +160,7 @@
 | --- | --- |
 | 模块 | 左侧栏、右侧栏（独立启停）、新建页、主页字符水波纹（默认开启）、聊天页、输入框小鲸鱼、统计卡片（默认开启）、状态栏统计读数（默认关闭）、上下文分解面板 |
 | 外观 | 主题（浅色 / 深色 / 跟随系统）、会话背景色、侧栏背景色 |
-| 视图 | 顶栏子代理入口、顶栏团队入口（默认关闭）、显示空分组（默认关闭） |
+| 视图 | 顶栏子代理入口、顶栏团队入口、顶栏后台任务入口、显示空分组（默认均关闭） |
 | 字体 | 界面字体、代码与等宽字体；界面中文字体在设置页不列，需写进 profile 的 `cordis.patch.yml` |
 
 > [!NOTE]

@@ -78,6 +78,16 @@ export function mountAccountMenu(
   const additions = new Map<HTMLElement, Disposer>();
   let balanceAccount = '';
   let balanceCache: AccountBalanceCache = {};
+  let balanceSlot: HTMLElement | null = null;
+  let balanceOwner: HTMLElement | null = null;
+  let disposeSidebarBalance: Disposer = () => {};
+  const clearSidebarBalance = () => {
+    disposeSidebarBalance();
+    disposeSidebarBalance = () => {};
+    balanceSlot?.remove();
+    balanceSlot = null;
+    balanceOwner = null;
+  };
   let trigger: HTMLElement | null = null;
   let scheduled = 0;
   let closeFeedback = () => {};
@@ -108,6 +118,26 @@ export function mountAccountMenu(
   const sync = () => {
     scheduled = 0;
     if (trigger?.parentElement && bug.previousElementSibling !== trigger) trigger.after(bug);
+    const sidebar = trigger?.closest<HTMLElement>(host.sidebarRoot);
+    const expanded = sidebar && !sidebar.matches(host.sidebarCollapsed);
+    const name = trigger?.querySelector(host.accountLabel)?.textContent?.trim() ?? '';
+    if (name !== balanceAccount) {
+      clear();
+      clearSidebarBalance();
+      balanceAccount = name;
+      balanceCache = {};
+    }
+    const foot = (expanded ? trigger?.closest<HTMLElement>(host.sidebarFootArea) : null) ?? null;
+    if (balanceOwner !== foot || (balanceSlot && !balanceSlot.isConnected)) clearSidebarBalance();
+    if (foot?.parentElement && !balanceSlot) {
+      balanceSlot = document.createElement('div');
+      balanceSlot.setAttribute('data-ccd-balance-slot', '');
+      foot.before(balanceSlot);
+      balanceOwner = foot;
+      disposeSidebarBalance = mountAccountBalance(balanceSlot, balanceCache, 'sidebar');
+      // An already-open rail menu no longer needs its own balance reader.
+      clear();
+    }
     const open = trigger?.getAttribute('aria-expanded') === 'true';
     if (!open) {
       clear();
@@ -119,8 +149,6 @@ export function mountAccountMenu(
       if (getComputedStyle(candidate).position === 'fixed') target = candidate;
     }
     if (target === null) return;
-    const sidebar = trigger?.closest<HTMLElement>(host.sidebarRoot);
-    const expanded = sidebar && !sidebar.matches(host.sidebarCollapsed);
     const rect = (expanded ? sidebar : trigger)?.getBoundingClientRect();
     const viewportWidth = document.documentElement.clientWidth;
     if (rect && viewportWidth > 0) {
@@ -138,11 +166,6 @@ export function mountAccountMenu(
       for (const property of MENU_GEOMETRY_PROPERTIES) menu.style.removeProperty(property);
       marked.delete(menu);
     }
-    const name = trigger?.querySelector(host.accountLabel)?.textContent?.trim() ?? '';
-    if (name !== balanceAccount) {
-      balanceAccount = name;
-      balanceCache = {};
-    }
     target.setAttribute(ACCOUNT_MENU_ATTRIBUTE, '');
     /* The stylesheet reads this back as `content`, so it is written as one
        *quoted* CSS string token even when the name carries spaces or quotes. */
@@ -151,7 +174,7 @@ export function mountAccountMenu(
     if (!additions.has(target)) {
       const disposeMore = mountAccountMore(target);
       const disposeTheme = mountAccountTheme(target, theme);
-      const disposeBalance = mountAccountBalance(target, balanceCache);
+      const disposeBalance = balanceSlot ? () => {} : mountAccountBalance(target, balanceCache);
       additions.set(target, () => { disposeBalance(); disposeTheme(); disposeMore(); });
     }
   };
@@ -188,7 +211,9 @@ export function mountAccountMenu(
         }
         if (found !== null) {
           attributes = new MutationObserver(schedule);
-          attributes.observe(found, { attributes: true, attributeFilter: ['aria-expanded'] });
+          attributes.observe(found, { attributes: true, attributeFilter: ['aria-expanded'], childList: true, subtree: true, characterData: true });
+          const sidebar = found.closest(host.sidebarRoot);
+          if (sidebar) attributes.observe(sidebar, { attributes: true, attributeFilter: ['class', 'data-collapsed'] });
         }
       }
       schedule();
@@ -202,7 +227,8 @@ export function mountAccountMenu(
       const sidebar = initial.closest(host.sidebarRoot);
       if (sidebar) resize.observe(sidebar);
       attributes = new MutationObserver(schedule);
-      attributes.observe(initial, { attributes: true, attributeFilter: ['aria-expanded'] });
+      attributes.observe(initial, { attributes: true, attributeFilter: ['aria-expanded'], childList: true, subtree: true, characterData: true });
+      if (sidebar) attributes.observe(sidebar, { attributes: true, attributeFilter: ['class', 'data-collapsed'] });
     }
     sync();
     document.defaultView?.addEventListener('resize', schedule);
@@ -211,6 +237,7 @@ export function mountAccountMenu(
     attributes?.disconnect();
     resize.disconnect();
     clear();
+    clearSidebarBalance();
     bug.remove();
     closeFeedback();
     report(error);
@@ -224,6 +251,7 @@ export function mountAccountMenu(
     resize.disconnect();
     document.defaultView?.removeEventListener('resize', schedule);
     clear();
+    clearSidebarBalance();
     bug.remove();
     closeFeedback();
   };

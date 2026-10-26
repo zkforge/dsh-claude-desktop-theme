@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Render the real balance widget in a demo account menu, without API access.
+/** Render the real persistent balance widget above a demo account footer.
  * Usage: node scripts/account-balance-screenshots.mjs
  */
 import assert from 'node:assert/strict';
@@ -20,7 +20,16 @@ const bundle = await build({
     // Demo data only: do not read credentials or contact the balance endpoint.
     globalThis.fetch = async () => Response.json({state:'ready',
       balance:{total:'128.50',toppedUp:'100.00',granted:'28.50'}});
-    mountAccountBalance(document.getElementById('menu'));
+    // A fixed weekday peak hour and a seeded week of spend keep the shot stable.
+    const now = Date.parse('2026-10-20T10:30:00+08:00'), RealDate = Date;
+    Date.now = () => now;
+    const day = new RealDate(now), key = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const history = [380, 455, 290, 510, 420, 365, 440].map((spent, i) =>
+      [key(new RealDate(day.getFullYear(), day.getMonth(), day.getDate() - 7 + i)), spent]);
+    const items = {'ccd-balance-ledger': JSON.stringify({day:key(day),last:13170,spent:0,history})};
+    Object.defineProperty(window, 'localStorage', {configurable:true, value:{
+      getItem: name => items[name] ?? null, setItem: (name, value) => { items[name] = String(value); }}});
+    mountAccountBalance(document.getElementById('balance'), {}, 'sidebar');
   ` },
   bundle: true, write: false, format: 'iife',
 });
@@ -34,14 +43,14 @@ await withPage({url:'about:blank',width:1392,height:932,scale:2,profile:join(wor
   await page.evaluate(`(async()=>{
     document.documentElement.setAttribute('data-dsh-ccd-style','true');
     document.documentElement.lang='zh-CN';
-    document.body.innerHTML='<div id="menu" role="menu" data-menu-material data-ccd-account-menu style="--ccd-account-name:&quot;演示账号&quot;;--ccd-account-menu-left:560px"><button role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m9 3-1 3-3 1v4l-2 1 2 2v4l3 1 1 3h6l1-3 3-1v-4l2-2-2-1V7l-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/></svg><span>设置</span></button></div>';
+    document.body.innerHTML='<aside id="menu"><div class="demo-space"></div><div id="balance" data-ccd-balance-slot></div><div class="demo-account"><span class="demo-avatar">K</span><span>演示账号</span><span class="demo-chevron">⌄</span></div></aside>';
     const style=document.createElement('style');
     style.textContent=${JSON.stringify(styles)}+
       '@font-face{font-family:Geist;src:url(data:font/ttf;base64,${font}) format("truetype");font-weight:100 900}'+
       'html[data-dsh-ccd-style="true"]{--ccd-font-ui:Geist,"PingFang SC",sans-serif}'+
       'body{margin:0;background:var(--ccd-canvas);font-family:var(--ccd-font-ui)}'+
-      '#menu{position:fixed;top:400px;font-family:var(--ccd-font-ui)}'+
-      '#menu>button{display:flex;align-items:center;gap:6px;width:100%;border:0;background:transparent;font-family:inherit;text-align:left;box-sizing:border-box}';
+      '#menu{position:fixed;left:560px;top:350px;width:240px;padding:0 12px 8px;background:var(--ccd-sidebar);border-right:0.5px solid var(--ccd-border);font-family:var(--ccd-font-ui)}'+
+      '.demo-space{height:40px}.demo-account{display:flex;align-items:center;gap:6px;height:42px;border-top:1px solid var(--ccd-border-soft);padding:4px 6px 0;color:var(--ccd-text-secondary);font-size:13px}.demo-avatar{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ccd-hover);font-size:11px}.demo-chevron{margin-left:8px}';
     document.head.append(style);
     await document.fonts.load('13px Geist');
   })()`);
@@ -55,7 +64,7 @@ await withPage({url:'about:blank',width:1392,height:932,scale:2,profile:join(wor
       return {amount:row.textContent,title:row.title,busy:row.hasAttribute('aria-busy'),
         clip:{x:Math.floor(p.left-32),y:Math.floor(p.top-32),width:Math.ceil(p.width+64),height:Math.ceil(p.height+64),scale:1}};
     })()`);
-    assert.equal(facts.amount, '余额¥128.50');
+    assert.equal(facts.amount, 'API 余额¥128.50赠金¥28.5031 天峰时至 12:00');
     assert.equal(facts.busy, false);
     assert.equal(facts.title, '');
     const shot = await page.send('Page.captureScreenshot',{format:'png',clip:facts.clip});
