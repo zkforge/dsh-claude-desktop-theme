@@ -52,7 +52,6 @@ interface Group {
   readonly label: HTMLSpanElement;
   members: HTMLElement[];
   open: boolean;
-  failed: boolean;
   outgoing?: HTMLElement;
   animations?: Animation[];
   renderKey?: string;
@@ -316,15 +315,13 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
         arrow.setAttribute('aria-hidden', 'true');
         arrow.setAttribute('data-ccd-tool-group-chevron', '');
         button.append(viewport, arrow);
-        group = { button, label, members: [], open: failed, failed };
+        // Failure changes the summary, never the reader's disclosure state.
+        group = { button, label, members: [], open: false };
         const current = group;
         button.addEventListener('click', () => {
           toggle(current);
         });
-      } else if (failed && !group.failed) {
-        group.open = true;
       }
-      group.failed = failed;
       // A run keeps rolling its own calls — live, then the last settled one —
       // until a reply (or a later turn) follows it. Only then does the run
       // fold into its counts summary, so the reader never sees "Thought, read

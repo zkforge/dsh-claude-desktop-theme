@@ -40,7 +40,7 @@ export function mountAccountBalance(
   const details = document.createElement('span');
   details.setAttribute('data-ccd-balance-details', '');
   const storage = (() => { try { return document.defaultView?.localStorage; } catch { return undefined; } })();
-  // Second line: grant and runway on the left, the price period on the right;
+  // Second line: grant on the left, the price period on the right;
   // today's spend stays in the hover hint.
   const updateDetails = () => {
     if (!sidebar) return;
@@ -56,13 +56,6 @@ export function mountAccountBalance(
       const number = document.createElement('span');
       number.textContent = `¥${view.balance.granted}`;
       usage.append(term, number);
-      if (view.days !== null) {
-        const days = document.createElement('span');
-        days.setAttribute('data-ccd-balance-days', '');
-        days.textContent = view.days > 999 ? (zh ? '999+ 天' : '999+ days')
-          : zh ? view.days < 1 ? '不足 1 天' : `${view.days} 天` : view.days < 1 ? '< 1 day' : `${view.days} days`;
-        usage.append(days);
-      }
       details.append(usage);
     }
     if (label) {

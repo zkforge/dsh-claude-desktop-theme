@@ -35,6 +35,44 @@ const pluginCss = PLUGIN_SHEETS
   .map(path => readFileSync(join(root, path), 'utf8'))
   .join('\n');
 
+test('wide table hover and focus keep the following text stationary', {
+  skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 30000,
+}, async () => {
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-table-hover-'));
+  try {
+    await withPage({ url: 'about:blank', width: 900, height: 600, profile, hideScrollbars: false }, async page => {
+      const scrollbarCss = readFileSync(join(root, 'src/client/theme/scrollbars.css'), 'utf8');
+      await page.evaluate(`(() => {
+        document.documentElement.setAttribute('data-dsh-ccd-style', 'true');
+        document.body.innerHTML = '<div class="gKv1-q_root"><div class="gKv1-q_body"><div class="_markdown_1ypvv_5" style="width:400px"><div class="_tableScroll_1ypvv_192 md-table-wide" tabindex="0"><table><tbody><tr><td>Table</td></tr></tbody></table></div><p id="after">Following text</p></div></div></div>';
+        const style = document.createElement('style');
+        style.textContent = ${JSON.stringify(`
+          ._tableScroll_1ypvv_192.md-table-wide { overflow-x:hidden; padding-bottom:var(--dsh-scrollbar-width, 5px) }
+          ._tableScroll_1ypvv_192.md-table-wide:hover,
+          ._tableScroll_1ypvv_192.md-table-wide:focus-visible { overflow-x:scroll; padding-bottom:0 }
+        ` + pluginCss + scrollbarCss)};
+        document.head.append(style);
+      })()`);
+      for (const wide of [false, true]) {
+        await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 800, y: 500 });
+        await page.evaluate(`document.activeElement.blur(); document.querySelector('td').style.minWidth = '${wide ? 700 : 100}px'`);
+        const top = () => page.evaluate(`document.getElementById('after').getBoundingClientRect().top`);
+        const before = await top();
+        await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 30, y: 20 });
+        assert.equal(await top(), before, `hover preserves the following text position (overflow=${wide})`);
+        await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 800, y: 500 });
+        await page.evaluate(`document.querySelector('.md-table-wide').focus()`);
+        assert.equal(await top(), before, `focus preserves the following text position (overflow=${wide})`);
+        if (wide) {
+          assert.ok(await page.evaluate(`(() => { const el = document.querySelector('.md-table-wide'); el.scrollLeft = 100; return el.scrollLeft > 0; })()`), 'overflowing tables remain scrollable');
+        }
+      }
+    });
+  } finally {
+    await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+});
+
 /** The host's own values for everything the copied rules reference. */
 const HOST_TOKENS = `
   :root {

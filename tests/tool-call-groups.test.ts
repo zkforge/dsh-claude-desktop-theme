@@ -229,7 +229,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
       ['Ran 1 command', 'Ran 2 commands', 'Read a file, ran a command']);
     second.row.setAttribute('data-state', 'error');
     await deliver(second.row);
-    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open', 'a newly failed group reveals its error');
+    assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'closed', 'a newly failed group stays folded');
     assert.equal(first.row.getAttribute('data-state'), 'ok');
 
     const childCall = node({ 'data-chat-call-id': 'nested' });
@@ -240,7 +240,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
     assert.equal(third.flow.getAttribute('data-ccd-tool-group-member'), null, 'an active nested call cannot be hidden with its settled parent');
     childRow.setAttribute('data-state', 'ok');
     await deliver(childRow);
-    assert.equal(third.flow.getAttribute('data-ccd-tool-group-member'), 'open');
+    assert.equal(third.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
     assert.equal(parent.querySelectorAll('[data-ccd-tool-group-toggle]')[1]!.children[0]!.children[0]!.textContent, 'Ran 2 commands', 'nested calls are not counted twice');
 
     const specialParent = node();
@@ -275,7 +275,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
     assert.equal(schedule.flow.getAttribute('data-ccd-tool-group-member'), null);
     cordis.row.setAttribute('data-cordis-status', 'failed');
     await deliver(cordis.row);
-    assert.equal(present.flow.getAttribute('data-ccd-tool-group-member'), 'open', 'a Cordis business failure reveals the group');
+    assert.equal(present.flow.getAttribute('data-ccd-tool-group-member'), 'closed', 'a Cordis business failure stays folded');
     assert.deepEqual(errors, []);
   } finally {
     dispose();
@@ -286,6 +286,61 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   assert.equal(parent.querySelectorAll('[data-ccd-tool-group-member]').length, 0);
   assert.equal(parent.querySelectorAll('[data-ccd-tool-group-kind]').length, 0);
   assert.equal(first.flow.parentElement, parent);
+});
+
+test('failed calls keep new and existing groups folded while preserving manual toggles', async () => {
+  const nativeObserver = globalThis.MutationObserver;
+  let notify = (_records: MutationRecord[]) => {};
+  globalThis.MutationObserver = class {
+    constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
+    observe() {} disconnect() {}
+  } as unknown as typeof MutationObserver;
+  const body = node(); body.connectedRoot = true;
+  const scenarios = ['error', 'stopped', 'cordis', 'nested'] as const;
+  const cases = scenarios.map(scenario => {
+    const parent = node(), first = call(), second = call();
+    parent.append(first.flow, second.flow); body.append(parent);
+    const nested = node({ 'data-chat-call-id': 'nested' });
+    const nestedRow = node({ 'data-tool': 'bash', 'data-state': 'ok' });
+    if (scenario === 'nested') { nested.append(nestedRow); second.atomic.append(nested); }
+    const fail = () => {
+      if (scenario === 'nested') nestedRow.setAttribute('data-state', 'error');
+      else if (scenario === 'cordis') second.row.setAttribute('data-cordis-status', 'failed');
+      else second.row.setAttribute('data-state', scenario);
+    };
+    fail();
+    return { parent, first, second, nestedRow, fail };
+  });
+  const errors: unknown[] = [];
+  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+    error => errors.push(error));
+  const deliver = async (parent: ElementDouble) => {
+    notify([{ target: parent, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
+    await Promise.resolve();
+  };
+  try {
+    for (const { parent, first, second, nestedRow, fail } of cases) {
+      const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
+      assert.equal(toggle.getAttribute('aria-expanded'), 'false', 'failed history starts folded');
+      assert.equal(first.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+      assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'closed');
+      second.row.setAttribute('data-state', 'ok');
+      second.row.removeAttribute('data-cordis-status');
+      nestedRow.setAttribute('data-state', 'ok');
+      await deliver(parent);
+      fail();
+      await deliver(parent);
+      assert.equal(toggle.getAttribute('aria-expanded'), 'false', 'a new failure keeps the group folded');
+      toggle.click();
+      assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open', 'errors remain available on demand');
+      await deliver(parent);
+      assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'updates preserve manual expansion');
+      toggle.click();
+      await deliver(parent);
+      assert.equal(toggle.getAttribute('aria-expanded'), 'false', 'a failed group can stay manually folded');
+    }
+    assert.deepEqual(errors, []);
+  } finally { release(); globalThis.MutationObserver = nativeObserver; }
 });
 
 test('a fold that leaves the reader on the floor hands bottom-follow back to the host', async () => {
@@ -437,8 +492,8 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
     second.row.setAttribute('data-state', 'error');
     const beforeFailure = motions.length;
     await deliver();
-    assert.equal(motions.length, beforeFailure, 'failure reveals immediately without a decorative transition');
-    assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'failure details open immediately');
+    assert.equal(motions.length, beforeFailure, 'failure updates immediately without a decorative transition');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true', 'failure preserves a manually opened group');
     assert.equal(second.flow.getAttribute('data-ccd-tool-group-member'), 'open');
     reducedMotion = true;
     body.append(running);

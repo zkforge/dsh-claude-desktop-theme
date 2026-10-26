@@ -64,7 +64,7 @@ await withPage({url:'about:blank',width:1392,height:932,scale:2,profile:join(wor
       return {amount:row.textContent,title:row.title,busy:row.hasAttribute('aria-busy'),
         clip:{x:Math.floor(p.left-32),y:Math.floor(p.top-32),width:Math.ceil(p.width+64),height:Math.ceil(p.height+64),scale:1}};
     })()`);
-    assert.equal(facts.amount, 'API 余额¥128.50赠金¥28.5031 天峰时至 12:00');
+    assert.equal(facts.amount, 'API 余额¥128.50赠金¥28.50峰时至 12:00');
     assert.equal(facts.busy, false);
     assert.equal(facts.title, '');
     const shot = await page.send('Page.captureScreenshot',{format:'png',clip:facts.clip});

@@ -334,11 +334,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-balance-usage] {
   overflow-wrap: anywhere;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-balance-usage] > :nth-child(2) { color: var(--ccd-text); }
-html[data-dsh-ccd-style="true"] [data-ccd-balance-days]::before {
-  content: "·";
-  margin-inline-end: 4px;
-  color: var(--ccd-text-muted);
-}
 html[data-dsh-ccd-style="true"] [data-ccd-balance-details][hidden] { display: none; }
 /* Same hue pair as the model picker's peak marks, as a tinted pill. */
 html[data-dsh-ccd-style="true"] .ccd-balance-period {

@@ -49,7 +49,7 @@
 | 上下文圆环与分解面板 | ![上下文圆环与分解面板 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-light.webp) | ![上下文圆环与分解面板 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-dark.webp) |
 | 会话右侧信息卡片 | ![会话信息卡片 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-light.webp) | ![会话信息卡片 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-dark.webp) |
 
-以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，常显于左下角账号上方，列出总余额、赠金、预计可用天数和当前峰谷时段，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
+以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，常显于左下角账号上方，列出总余额、赠金和当前峰谷时段，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
 
 ## 细节动效
 
@@ -101,7 +101,7 @@
 
 ### 侧栏
 
-- 左下角账号上方常显 DeepSeek 官方 API 的人民币余额（`¥`），第二行显示赠金、按近 7 天日均推算的可用天数，以及峰时/谷时标签与切换时间（峰时琥珀色、谷时绿色）；悬停卡片列出今日消耗、日均、充值、赠金与峰谷倒计时。消耗由本机记录的余额下降推算，充值只重置基线，不计入消耗；点击刷新，侧栏展开时每分钟后台更新，重新展开保留上次读数。折叠侧栏时在账号菜单保留余额入口。复用设置 → 模型中的官方 API Key；未配置或查询失败时显示对应状态。
+- 左下角账号上方常显 DeepSeek 官方 API 的人民币余额（`¥`），第二行显示赠金、峰时/谷时标签与切换时间（峰时琥珀色、谷时绿色）；悬停卡片列出今日消耗、近 7 天日均、预计可用天数、充值、赠金与峰谷倒计时。消耗由本机记录的余额下降推算，充值只重置基线，不计入消耗；点击刷新，侧栏展开时每分钟后台更新，重新展开保留上次读数。折叠侧栏时在账号菜单保留余额入口。复用设置 → 模型中的官方 API Key；未配置或查询失败时显示对应状态。
 
 - DeepSeek Harness 品牌条目默认隐藏，可在「设置 → Claude 主题 → 视图」开启显示。
 - 新建 / 搜索 / 自定义 / 定时任务 / 主题入口与工作区、会话列表、账号菜单共用紧凑行高，当前入口常驻底色；「更多」以三个点表示。原标题行隐藏「最近会话」标题，只保留右侧筛选视图按钮。

@@ -910,12 +910,12 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
   font-family: var(--ccd-font-code);
   font-size: 0.95em !important;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1;
   color: var(--ccd-inline-code-text);
   background: var(--ccd-inline-code-fill);
   border: 1px solid var(--ccd-inline-code-border);
   border-radius: 5px;
-  padding: 1px 4px;
+  padding: 0 4px;
   overflow-wrap: anywhere;
 }
 
@@ -1187,9 +1187,10 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root ._markdown_1ypvv_5:not([data-markdo
  * column are the same width, and a bleeded table left the card and the Composer
  * on different right edges (measured +86px at the reference window, growing with
  * the view area). Dropping the bleed keeps the table on the column; a table
- * whose rows cannot wrap far enough still uses the host's own `md-table-wide`
- * scroll, which needs the wrapper's own `overflow-x` and scrollbar gutter, so
- * neither is touched here.
+ * whose rows cannot wrap far enough still scrolls horizontally. Keep overflow
+ * and bottom padding identical at rest, on hover and on keyboard focus: the
+ * host swaps a 5px pad for a scrollbar on hover, but our scrollbar is 6px,
+ * shifting everything below the table when that swap happens.
  */
 html[data-dsh-ccd-style="true"] .gKv1-q_root .gKv1-q_body .md-table-wide {
   box-sizing: border-box;
@@ -1197,6 +1198,8 @@ html[data-dsh-ccd-style="true"] .gKv1-q_root .gKv1-q_body .md-table-wide {
   max-width: 100%;
   margin-left: 0;
   padding-left: 0;
+  overflow-x: auto;
+  padding-bottom: 0;
 }
 
 html[data-dsh-ccd-style="true"] .icaHSq_column {
