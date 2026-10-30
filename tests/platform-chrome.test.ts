@@ -59,7 +59,9 @@ test('fixed window-control geometry stays inside its desktop platform scope', ()
 });
 
 test('the Windows brand row keeps the CCD navigation inset', () => {
+  /* `:not([data-windows-titlebar])` is the browser-host rule, not this one. */
   const brand = sidebar.filter(rule => rule.selector.includes('[data-windows-titlebar]')
+    && !rule.selector.includes(':not([data-windows-titlebar])')
     && rule.selector.includes('._3WPZCG_brand'));
   assert.equal(brand.length, 1);
   assert.match(brand[0]?.body ?? '', /padding:\s*0 8px/u);

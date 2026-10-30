@@ -270,30 +270,11 @@ test('the cluster ends on the Composer where the Composer fills the column', () 
   assert.ok(!read('../src/client/theme/tokens.css').includes('--ccd-header-trailing-inset-compact'));
 });
 
-test('the three views and the title step aside only for the switcher still in the row', () => {
-  /* The switcher is normally parked in the sidebar's window-control row
-     (`compat/view-switch.ts` marks the tablist with `data-ccd-view-dock`), and
-     the header row is then the title, the team chip and the cluster — the three
-     views and the title fit every width that state can leave (the frame
-     protects a 400px floor for this column while the right panel is open), and
-     with the right panel expanded the views are the only way back to its other
-     tabs. With the switcher still in the row (a Windows build, or a collapsed
-     macOS sidebar) there are four pieces on the line, and the plugin's own three
-     views and the title are the ones that go — the native team chip keeps its
-     full label either way. */
-  const hidden = conversation.filter(rule => rule.body.includes('display: none')
-    && rule.selector.includes('[data-ccd-header-view]'));
-  assert.equal(hidden.length, 1, 'one rule withdraws the views');
-  const selector = hidden[0]?.selector ?? '';
-  assert.ok(selector.includes(':has(.ST7X_W_tabs:not([data-ccd-view-dock]))'), selector);
-  assert.ok(selector.includes('.ST7X_W_headerUtilities'), selector);
-  /* The title is the piece that still yields at that width — to that same
-     switcher, so a parked one leaves the title on the line — and the team chip
-     keeps its own label: nothing hides the crumbs outside the narrow block, and
-     no rule hides the chip. */
-  const crumbs = conversation.filter(rule => rule.selector.endsWith('.ST7X_W_crumbs') && rule.body.includes('display: none'));
-  assert.equal(crumbs.length, 1, 'the title yields once');
-  const titleSelector = crumbs[0]?.selector ?? '';
-  assert.ok(titleSelector.includes(':has(.ST7X_W_tabs:not([data-ccd-view-dock]))'), titleSelector);
-  assert.ok(!conversation.some(rule => rule.selector.includes('_2tNPVa_triggerLabel') && rule.body.includes('display: none')));
+test('native View tabs share the header before utilities without proxy buttons', () => {
+  assert.ok(!conversation.some(rule => rule.body.includes('display: none')
+    && (rule.selector.includes('[data-ccd-header-view]') || rule.selector.endsWith('.ST7X_W_crumbs'))));
+  assert.ok(!conversation.some(rule => /data-ccd-view-(dock|glyph|more-source)|ccd-direct-view/u.test(rule.selector)));
+  const tabs = conversation.find(rule => rule.selector.endsWith('.ST7X_W_header .ST7X_W_tabs'));
+  assert.match(tabs?.body ?? '', /order:\s*2/u);
+  assert.match(tabs?.body ?? '', /-webkit-app-region:\s*no-drag/u);
 });

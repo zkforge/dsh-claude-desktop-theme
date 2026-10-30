@@ -18,11 +18,8 @@ html[data-dsh-ccd-style="true"] ._6Qf49G_sidebarCol {
  * brand row and a global panel list instead of CCD's Home/Code switch; those
  * real entries are kept and compacted rather than replaced by inert lookalikes.
  *
- * The reference's two icon buttons are DSH's own View switcher, which the
- * reference keeps on this row: the tablist itself stays in the conversation
- * header where React rendered it, and `features/conversation/conversation.css`
- * parks it over this strip with the coordinates measured by
- * `compat/view-switch.ts`.
+ * Conversation View tabs stay in the native conversation header; this strip
+ * carries only sidebar and navigation controls.
  */
 /*
  * Navigation overrides below style the *expanded* column. DSH's collapsed sidebar is a
@@ -156,6 +153,14 @@ html[data-dsh-ccd-style="true"][data-windows-titlebar] ._3WPZCG_root:not(._3WPZC
   height: 32px;
   margin-bottom: 6px;
   padding: 0 8px;
+}
+
+/* A browser host has no window-control row above the column and mounts no
+   navigation history, so the expanded sidebar supplies its own top inset. The
+   host keeps the collapse toggle inside the brand row there: the brand switch
+   shows or hides the brand and that toggle as one row. */
+html[data-dsh-ccd-style="true"]:not([data-platform="darwin"]):not([data-windows-titlebar]) ._3WPZCG_root:not(._3WPZCG_collapsed) {
+  padding-top: 10px;
 }
 
 /* Expanded and collapsed native controls share one caption baseline and size.
@@ -639,9 +644,11 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions {
 }
 
 /* Workspace actions share the Search/View options button treatment, including
-   the overflow trigger nested inside the host's menu wrapper. */
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button,
-html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) {
+   the overflow trigger nested inside the host's menu wrapper. The collapsed
+   rail keeps the host's own 36px seats: sizing these buttons there would put
+   its add-workspace trigger off the rail's centre axis. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .jJkEga_projectRow .jJkEga_rowActions button,
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) {
   box-sizing: border-box;
   display: inline-flex;
   flex: none;
@@ -656,14 +663,14 @@ html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, 
   background: transparent;
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button:hover,
-html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton):hover {
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .jJkEga_projectRow .jJkEga_rowActions button:hover,
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton):hover {
   color: var(--ccd-text);
   background: var(--ccd-hover);
 }
 
-html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions button svg,
-html[data-dsh-ccd-style="true"] ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) svg {
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) .jJkEga_projectRow .jJkEga_rowActions button svg,
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_sectionHeader :is(._7514NG_iconButton, ._7514NG_searchButton) svg {
   flex: none;
   width: 14px;
   height: 14px;
@@ -1302,6 +1309,10 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The section heading already identifies pinned Sessions. */
+html[data-dsh-ccd-style="true"] [data-ccd-status-group="pinned"] > .jJkEga_pinIndicator {
+  display: none;
+}
 /* Reserve the native overflow button's seat so hovering a long title does not
    change its measure. Focusing the row also exposes its real menu control. */
 html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions {
@@ -1316,7 +1327,8 @@ html[data-dsh-ccd-style="true"] .ccd-status-heading {
   display: flex;
   align-items: center;
   gap: 4px;
-  align-self: flex-start;
+  align-self: stretch;
+  position: relative;
   max-width: 100%;
   margin: 0;
   border: 0;
@@ -1368,7 +1380,83 @@ html[data-dsh-ccd-style="true"] .ccd-status-heading:focus-visible {
 html[data-dsh-ccd-style="true"] [data-ccd-status-order][data-ccd-status-hidden] {
   display: none;
 }
-/* A section with no Sessions has no heading. */
+html[data-dsh-ccd-style="true"] [data-ccd-pin-dragging] {
+  /* Keep the original slot while the overlay follows the pointer. */
+  visibility: hidden;
+}
+html[data-dsh-ccd-style="true"][data-ccd-pin-gesture],
+html[data-dsh-ccd-style="true"][data-ccd-pin-gesture] * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-pin-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 32px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  padding: 4px 8px;
+  color: var(--ccd-text-secondary);
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+}
+html[data-dsh-ccd-style="true"][data-ccd-pin-gesture] .ccd-status-heading[data-ccd-status-owned="pinned"] {
+  padding-top: 8px;
+}
+html[data-dsh-ccd-style="true"] .ccd-pin-hint svg {
+  flex: none;
+}
+html[data-dsh-ccd-style="true"] .ccd-pin-target-frame {
+  position: fixed;
+  z-index: 2147483646;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 1px solid var(--ccd-view-menu-accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ccd-view-menu-accent) 8%, transparent);
+}
+html[data-dsh-ccd-style="true"] .ccd-pin-floating {
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  pointer-events: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--ccd-canvas);
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-font-menu-shadow);
+  font-family: var(--ccd-font-ui);
+  font-size: var(--ccd-font-size-muted);
+  font-weight: 400;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 80ms, color 80ms, box-shadow 80ms;
+}
+html[data-dsh-ccd-style="true"] .ccd-pin-floating[data-action="unpin"] {
+  background: color-mix(in srgb, var(--ccd-dialog-danger) 14%, var(--ccd-canvas));
+  color: var(--ccd-dialog-danger);
+  box-shadow: none;
+  font-size: 12px;
+  line-height: 18px;
+}
+html[data-dsh-ccd-style="true"] :is(.ccd-pin-floating, .ccd-pin-target-frame, [data-ccd-pin-title], [data-ccd-pin-warning])[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .ccd-pin-floating {
+    transition: none;
+  }
+}
+html[data-dsh-ccd-style="true"] .ccd-pin-error {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ccd-text-secondary);
+}
+/* Empty Pinned is revealed on pickup; activity sections hide when empty. */
 html[data-dsh-ccd-style="true"] .ccd-status-heading[hidden] {
   display: none;
 }

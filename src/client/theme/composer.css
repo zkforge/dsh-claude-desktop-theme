@@ -1152,3 +1152,24 @@ html[data-dsh-ccd-style="true"] .ccd-context-empty-trigger[aria-expanded="true"]
   border-radius: var(--ccd-chip-radius);
   background: var(--ccd-hover);
 }
+/* A persisted clear boundary hides presentation rows without moving host nodes. */
+[data-ccd-clear-hidden] { display: none !important; }
+[data-ccd-clear-notice] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  color: var(--ccd-text-muted);
+  font-size: 12px;
+}
+[data-ccd-clear-notice] button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  padding: 5px 8px;
+  font: inherit;
+  cursor: pointer;
+}
+[data-ccd-clear-notice] button:hover { background: var(--ccd-hover); }

@@ -4,6 +4,10 @@ import { createNavigationHistory, type NavigationHistoryPort } from './navigatio
 
 /** Add only plugin-owned nodes; React's toggle and shortcut nodes stay put. */
 export function mountNavigationHistory(document: Document, port: NavigationHistoryPort, report: (error: unknown) => void): Disposer {
+  /* A browser host carries no `data-platform` (the desktop preload writes it)
+     and its sidebar has no window-control row to hang the arrows on; the web
+     page keeps the header to the brand row alone. */
+  if (document.documentElement.dataset.platform === undefined) return () => {};
   const group = document.createElement('nav');
   group.setAttribute('data-ccd-navigation-history', '');
   const buttons = ([-1, 1] as const).map(direction => {

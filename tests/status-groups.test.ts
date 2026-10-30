@@ -153,7 +153,7 @@ for (const platform of ['darwin', 'win32']) for (const rootStatus of [true, fals
       await Promise.resolve();
       assert.equal(b.dataset.ccdStatusGroup, 'input');
       assert.ok(Number(b.dataset.ccdStatusOrder) < Number(a.dataset.ccdStatusOrder));
-      assert.equal(list.children.filter(node => node.className === 'ccd-status-heading').length, 3);
+      assert.equal(list.children.filter(node => node.className === 'ccd-status-heading').length, 4);
       statuses.set('b', {});
       pending.setAttribute('data-state', 'done');
       arrive();
@@ -265,27 +265,27 @@ test('headings of sections without Sessions are hidden, including a list holding
   try {
     const dispose = mountStatusGroups(f.doc, f.ctx, error => { throw error; });
     const headings = () => f.list.children.filter(node => node.className === 'ccd-status-heading');
-    assert.deepEqual(headings().map(node => node.textContent), ['需要输入', '处理中', '空闲']);
-    assert.deepEqual(headings().map(node => node.style.order), ['0', '2', '4']);
-    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true]);
+    assert.deepEqual(headings().map(node => node.textContent), ['已置顶', '需要输入', '处理中', '空闲']);
+    assert.deepEqual(headings().map(node => node.style.order), ['0', '2', '4', '6']);
+    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true, true]);
     const blank = new Element();
     blank.setAttribute('data-row-key', 'session:blank');
     blank.setAttribute('data-ccd-blank-session', '');
     f.list.append(blank);
     f.mutation(batch('childList', f.list));
     await Promise.resolve();
-    assert.equal(headings().length, 3);
-    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true]);
+    assert.equal(headings().length, 4);
+    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true, true]);
     assert.equal(blank.hasAttribute('data-ccd-status-group'), false);
     f.list.append(f.b);
     f.mutation(batch('childList', f.list));
     await Promise.resolve();
-    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, false], 'the first Session reveals its section');
+    assert.deepEqual(headings().map(node => node.hasAttribute('hidden')), [true, true, true, false], 'the first Session reveals its section');
     f.b.remove();
     f.doc.documentElement.lang = 'en';
     f.mutation(batch('attributes', f.list));
     await Promise.resolve();
-    assert.deepEqual(headings().map(node => node.textContent), ['Needs input', 'Working', 'Idle']);
+    assert.deepEqual(headings().map(node => node.textContent), ['Pinned', 'Needs input', 'Working', 'Idle']);
     dispose();
     assert.deepEqual(f.list.children, [blank]);
   } finally { globalThis.MutationObserver = original; }
@@ -314,7 +314,7 @@ test('unchanged groups release detached wrappers and restore removed headings', 
     f.mutation(batch('childList', f.list));
     await Promise.resolve();
     assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), true, 'replacement wrappers receive layout markers');
-    assert.equal(f.list.children.filter(node => node.className === 'ccd-status-heading').length, 3);
+    assert.equal(f.list.children.filter(node => node.className === 'ccd-status-heading').length, 4);
     dispose();
     assert.equal(nextWrapper.hasAttribute('data-ccd-status-wrapper'), false);
   } finally { globalThis.MutationObserver = original; }
@@ -334,7 +334,7 @@ test('a heading collapses its section, persists the choice and expands again', a
       getItem: (key: string) => stored.get(key) ?? null,
       setItem: (key: string, value: string) => { stored.set(key, value); },
     } },
-    addEventListener: (key: string, listener: (event: unknown) => void) => listeners.set(key, listener),
+    addEventListener: (key: string, listener: (event: unknown) => void, capture?: boolean) => { if (!capture) listeners.set(key, listener); },
     removeEventListener: (key: string) => listeners.delete(key),
   });
   try {

@@ -9,6 +9,7 @@ import { mountDeepSeekBalance } from './balance.ts';
 import { mountGitBranches } from './git.ts';
 import { mountWorktrees } from './worktree.ts';
 import { mountSessionInfo } from './session-info.ts';
+import { mountClearCommand } from './clear.ts';
 
 /** Same shapes the client normalizer accepts, so both boundaries agree. */
 const HEX_COLOUR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})?$/;
@@ -149,4 +150,5 @@ export function apply(ctx: Context, config: unknown): void {
   mountGitBranches(ctx, () => readValue(host.enabled, false) === true);
   mountWorktrees(ctx, () => readValue(host.enabled, false) === true);
   mountSessionInfo(ctx, () => readValue(host.enabled, false) === true);
+  mountClearCommand(ctx, () => readValue(host.enabled, false) === true);
 }

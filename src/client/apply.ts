@@ -27,6 +27,7 @@ import { mountComposerPlaceholder } from './compat/composer-placeholder.ts';
 import { mountComposerStatusOrder } from './compat/composer-status-order.ts';
 import { mountVoiceWaveform } from './compat/voice-waveform.ts';
 import { mountPlanNotices } from './compat/plan-notices.ts';
+import { mountClearHistory } from './compat/clear-history.ts';
 import { permissionPlanPort } from './compat/permission-plan-port.ts';
 import { mountPermissionConfirmation } from './compat/permission-confirmation.ts';
 import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-menu.ts';
@@ -77,7 +78,7 @@ const FEATURES = [
  * a service that is not declared here, so the dependency is named rather than
  * discovered at the point of use.
  */
-export const inject = ['slots', 'theme', 'locale', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession', 'conversation', 'remote', 'remote.commands', 'remote.schedule', 'remote.pluginManager', 'layout'];
+export const inject = ['slots', 'theme', 'locale', 'uiWorkspace', 'configForms', 'sessions', 'workspaces', 'uiSession', 'uiConversation', 'conversation', 'remote', 'remote.commands', 'remote.schedule', 'remote.pluginManager', 'layout'];
 
 /**
  * The only assembly point allowed to import multiple feature domains.
@@ -179,6 +180,7 @@ export function apply(ctx: Context): void {
           error => logger.error('composer: placeholder observer failed', error),
         ));
         scope.add(mountPlanNotices(document, error => logger.error('composer: plan notices failed', error)));
+        scope.add(mountClearHistory(ctx, document, error => logger.error('clear: history display failed', error)));
         /* Both pickers share two-line rows, headings and numeric shortcuts. */
         scope.add(mountPermissionMenu(
           document,

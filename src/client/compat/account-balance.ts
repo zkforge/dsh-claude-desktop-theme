@@ -40,24 +40,14 @@ export function mountAccountBalance(
   const details = document.createElement('span');
   details.setAttribute('data-ccd-balance-details', '');
   const storage = (() => { try { return document.defaultView?.localStorage; } catch { return undefined; } })();
-  // Second line: grant on the left, the price period on the right;
-  // today's spend stays in the hover hint.
+  // The price period sits below the label; the balance breakdown and spend
+  // stay in the hover hint.
   const updateDetails = () => {
     if (!sidebar) return;
     details.replaceChildren();
     const view = cache.balance;
     const label = periodLabel(Date.now(), zh);
-    details.hidden = !view && !label;
-    if (view) {
-      const usage = document.createElement('span');
-      usage.setAttribute('data-ccd-balance-usage', '');
-      const term = document.createElement('span');
-      term.textContent = zh ? '赠金' : 'Granted';
-      const number = document.createElement('span');
-      number.textContent = `¥${view.balance.granted}`;
-      usage.append(term, number);
-      details.append(usage);
-    }
+    details.hidden = !label;
     if (label) {
       const mark = document.createElement('span');
       mark.className = 'ccd-balance-period';

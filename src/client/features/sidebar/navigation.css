@@ -36,6 +36,15 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root [data-ccd-nav="newSession"] .ccd-n
   height: 17px;
 }
 
+/* The collapsed rail draws on the host's 36px seats beside its own 18px
+   artwork, where the expanded layout's 15px inks read small. The New Session
+   plus already reads 17px in both layouts, and the Windows caption owns its
+   own 16px seat for the collapsed button, so neither is restated here. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root._3WPZCG_collapsed [data-ccd-nav]:not([data-ccd-nav="newSession"]) .ccd-nav-glyph > svg {
+  width: 17px;
+  height: 17px;
+}
+
 html[data-dsh-ccd-style="true"] .ccd-nav-glyph :is(.customize-case, .routine-long-hand, .search-glass, .theme-palette) {
   transform-box: view-box;
   transform-origin: 12px 12px;

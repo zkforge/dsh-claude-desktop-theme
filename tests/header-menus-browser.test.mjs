@@ -22,7 +22,7 @@ const markup = `<div data-slot="root"><div class="_6Qf49G_frame"></div></div><as
     <div class="ST7X_W_headerActions"></div></div><div class="ST7X_W_headerUtilities">
     <button data-ccd-header-view="terminal" onclick="calls.push('terminal')">Terminal</button>
     <button class="iq4beG_main" aria-label="VS Code" onclick="calls.push('open')">Open</button></div></div>
-    <div class="ST7X_W_tabs" data-ccd-view-dock="sidebar" role="tablist"><button class="ST7X_W_tab" role="tab" aria-label="Chat" aria-selected="true" onclick="calls.push('chat')">Chat</button><button class="ST7X_W_tab" role="tab" aria-label="Trace" aria-selected="false" onclick="calls.push('trace')">Trace</button></div>
+    <div class="ST7X_W_tabs"><div class="ST7X_W_viewTabs" role="tablist"><button class="ST7X_W_tab" role="tab" aria-label="Chat" aria-selected="true" onclick="calls.push('chat')">Chat</button><button class="ST7X_W_tab" role="tab" aria-label="Trace" aria-selected="false" onclick="calls.push('trace')">Trace</button></div></div>
   </header><div data-conversation-session="s1"></div></main>`;
 const hostCss = `@font-face{font-family:Geist;src:url('file://${root}/assets/fonts/Geist-Variable.ttf')}
 html,body{margin:0;font-family:Geist,sans-serif}body{background:#fafaf9}
@@ -32,9 +32,70 @@ main{margin-left:114px;min-height:300px;background:#fff}
 .ST7X_W_crumb{font-weight:500;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 .ST7X_W_headerActions,.ST7X_W_headerUtilities{display:flex}
 .ST7X_W_headerUtilities{display:none}
-.ST7X_W_tabs{position:fixed!important;left:35.5px;right:auto!important;top:3px!important;margin:0!important}
+.ST7X_W_tabs{width:100%;display:flex;gap:32px;margin-top:10px;padding-left:8px}
 button{font:inherit}`;
 const menu = '[data-ccd-header-menu="session"]';
+
+test('macOS sidebar collapse preserves the session title and its actions', { skip: !chrome, timeout: 30000 }, async () => {
+  const bundle = await build({
+    stdin: { contents: `import { mountHeaderMenus } from './src/client/compat/header-menus.ts'; window.mount = mountHeaderMenus;`, resolveDir: root },
+    bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2022',
+  });
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-collapsed-title-'));
+  try {
+    await withPage({ url: 'about:blank', width: 1392, height: 932, scale: 2, profile }, async page => {
+      await page.evaluate(`document.documentElement.setAttribute('data-dsh-ccd-style', 'true');
+        document.documentElement.setAttribute('data-platform', 'darwin');
+        document.body.innerHTML = ${JSON.stringify(markup)};
+        const frame=document.querySelector('._6Qf49G_frame');frame.append(document.querySelector('main'));
+        const style=document.createElement('style');style.textContent=${JSON.stringify(hostCss + css)};
+        document.head.append(style);window.calls=[];window.errors=[];`);
+      await page.evaluate(bundle.outputFiles[0].text);
+      await page.evaluate(`window.release=mount(document,{
+        read:()=>({title:'问候'}),rename:async(id,title)=>calls.push(['rename',id,title]),
+        fork:async()=>{},archive:async()=>{},subscribe:()=>()=>{}
+      },error=>errors.push(String(error)))`);
+      for (const collapsed of [false, true, false, true]) {
+        for (const fullscreen of [false, true]) {
+          await page.evaluate(`(()=>{document.querySelector('._6Qf49G_frame').toggleAttribute('data-sidebar-collapsed',${collapsed});
+            document.documentElement.toggleAttribute('data-fullscreen',${fullscreen});
+            document.querySelector('main').style.marginLeft=${JSON.stringify(collapsed ? '0' : '114px')};
+            document.querySelector('._6Qf49G_frame').style.setProperty('--dsh-frame-leading-clearance',${JSON.stringify(collapsed ? (fullscreen ? '124px' : '200px') : '0px')});})()`);
+          for (const title of ['问候', '这是一个用于验证收起侧栏后标题仍能显示且长名称正确截断的会话标题'.repeat(8)]) {
+            await page.evaluate(`document.querySelector('.ST7X_W_crumb').textContent=${JSON.stringify(title)}`);
+            const view = await page.evaluate(`(()=>{
+              const title=document.querySelector('.ST7X_W_crumb');const rect=title.getBoundingClientRect();
+              const trigger=document.querySelector('[data-ccd-session-trigger]').getBoundingClientRect();
+              const tabs=document.querySelector('.ST7X_W_viewTabs').getBoundingClientRect();
+              return {display:getComputedStyle(title).display,width:rect.width,left:rect.left,right:rect.right,
+                triggerLeft:trigger.left,triggerRight:trigger.right,triggerBottom:trigger.bottom,headerWidth:document.querySelector('header').scrollWidth,
+                tabsLeft:tabs.left};})()`);
+            assert.notEqual(view.display, 'none', `collapsed=${collapsed}, fullscreen=${fullscreen}: title stays visible`);
+            assert(view.width > 0, 'the name retains space beside the icon and menu');
+            assert(view.left >= (collapsed ? (fullscreen ? 124 : 200) : 114), 'title clears the native window controls');
+            assert(view.right <= view.triggerLeft + .5, 'the title does not overlap its menu');
+            assert(view.triggerRight <= view.tabsLeft + .5, 'title controls clear the native View tabs');
+            assert(view.triggerRight <= 1392 && view.headerWidth <= 1392, 'long names remain inside the window');
+          }
+        }
+      }
+      await page.evaluate(`document.querySelector('[data-ccd-session-trigger]').click()`);
+      assert.equal(await page.evaluate(`document.querySelector('${menu}').matches(':popover-open')`), true);
+      await page.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+        document.querySelector('.ST7X_W_crumb').click();
+        const input=document.querySelector('[data-ccd-session-rename]');input.value='重命名后的会话';
+        input.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));`);
+      assert.deepEqual(await page.evaluate('calls'), [['rename', 's1', '重命名后的会话']]);
+      assert.deepEqual(await page.evaluate('errors'), []);
+      await page.evaluate(`document.querySelector('.ST7X_W_crumb').textContent='问候';
+        document.documentElement.removeAttribute('data-fullscreen');`);
+      const shot = await page.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 1392, height: 70, scale: 1 } });
+      await mkdir(join(root, 'artifacts'), { recursive: true });
+      await writeFile(join(root, 'artifacts/collapsed-session-title.png'), Buffer.from(shot.data, 'base64'));
+      await page.evaluate('release()');
+    });
+  } finally { await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 }); }
+});
 
 test('header reference menus: geometry, real actions, keyboard, boundaries and cleanup on both builds', { skip: !chrome, timeout: 60000 }, async () => {
   const bundle = await build({

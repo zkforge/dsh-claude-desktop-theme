@@ -6,23 +6,16 @@ import { mountConversationStream } from '../../compat/conversation-stream.ts';
 import { mountRunningStatus } from '../../compat/running-status.ts';
 import { mountReplySignature } from '../../compat/reply-signature.ts';
 import { probeHost } from '../../compat/host-dom.ts';
-import { mountViewSwitch } from '../../compat/view-switch.ts';
 import conversationCss from './conversation.css';
-import { VIEW_SWITCH_ICONS } from './view-switch-icons.ts';
 import { mountHeaderVisibility } from './header-actions/visibility.ts';
-import { mountDirectViewTabs } from '../../compat/direct-view-tabs.ts';
 
 /**
  * Conversation page presentation. The transcript, its scroll behaviour, tool
  * rows, approvals and the resident Composer are all DSH's; this module only
  * adapts the header chrome, the transcript column and the message surfaces.
  *
- * The header keeps DSH's own View switcher: the host still owns which View is
- * selected and how it is rendered. This module swaps the two shipped Views'
- * text labels for bundled artwork, publishes the selected segment's geometry so
- * the stylesheet can slide the thumb onto it, and parks the tablist in the
- * sidebar's window-control row while that column has a corner to hold it
- * (`compat/view-switch.ts`).
+ * DSH owns the View tabs and selection. The plugin keeps Chat and Trajectory
+ * together before the header utilities and hides the overflow launcher.
  *
  * The transcript's own edge fade is published the same way: the host owns the
  * scroll position, `compat/conversation-fade.ts` turns it into two attributes,
@@ -51,11 +44,6 @@ export const conversationFeature: ImplementedFeature = {
       error => environment.logger.error('conversation: process expansion failed', error),
     ));
     mountHeaderVisibility(environment.host.slots, environment.config.view, scope);
-    scope.add(mountDirectViewTabs(document, error => environment.logger.error('conversation: direct view tabs failed', error)));
-    scope.add(mountViewSwitch(
-      document, VIEW_SWITCH_ICONS,
-      error => environment.logger.error('conversation: view switcher observer failed', error),
-    ));
     scope.add(mountConversationFade(
       document,
       error => environment.logger.error('conversation: transcript edge fade observer failed', error),

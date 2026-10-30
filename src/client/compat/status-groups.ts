@@ -1,5 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-api-session-controller/client';
+import type {} from '@deepseek-ai/dsh-api-workspace-controller/client';
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client';
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
@@ -18,11 +20,12 @@ export function sessionGroup(status: SessionStatus | undefined, running: boolean
   if (status?.pendingInteraction) return 'input';
   return (status?.running ?? running) ? 'working' : 'ended';
 }
-const GROUPS = ['input', 'working', 'ended'] as const;
+type SidebarGroup = 'pinned' | SessionGroup;
+const GROUPS = ['pinned', 'input', 'working', 'ended'] as const;
 const COLLAPSED_KEY = 'ccd-status-collapsed';
 
 /** Collapsed sections are a per-window view preference; storage may be absent. */
-function readCollapsed(storage: Storage | undefined): Set<SessionGroup> {
+function readCollapsed(storage: Storage | undefined): Set<SidebarGroup> {
   try {
     const value: unknown = JSON.parse(storage?.getItem(COLLAPSED_KEY) ?? '[]');
     return new Set(Array.isArray(value)
@@ -41,6 +44,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
   report: (error: unknown) => void): Disposer {
   const status = (ctx as Context & { uiSession?: { sessionStatus?: StatusStore } }).uiSession?.sessionStatus;
   if (!ctx.sessions?.list) return () => {};
+  const workspaces = ctx.workspaces?.list;
   const host = hostSelectors(document);
   const win = document.defaultView!;
   const motion = win.matchMedia('(prefers-reduced-motion: reduce)');
@@ -53,6 +57,29 @@ export function mountStatusGroups(document: Document, ctx: Context,
   let list: HTMLElement | null = null;
   let queued = false;
   let disposed = false;
+  let dragging: HTMLElement | null = null;
+  let gesture: {
+    row: HTMLElement; pointerId: number; startX: number; startY: number;
+    x: number; y: number; offsetX: number; offsetY: number;
+    width: number; height: number; pinned: boolean; started: boolean;
+    settling: boolean; target: 'pin' | 'unpin' | null;
+  } | null = null;
+  let floating: HTMLElement | null = null;
+  let dropFrame: HTMLElement | null = null;
+  let ignoreClick = false;
+  let releasedRow: HTMLElement | null = null;
+  const endDrag = () => {
+    const previous = gesture;
+    if (!previous) return;
+    gesture = null;
+    dragging?.removeAttribute('data-ccd-pin-dragging');
+    dragging = null;
+    floating?.remove(); floating = null;
+    dropFrame?.remove(); dropFrame = null;
+    document.documentElement.removeAttribute('data-ccd-pin-gesture');
+    if (previous.row.hasPointerCapture(previous.pointerId)) previous.row.releasePointerCapture(previous.pointerId);
+    if (previous.started) { releasedRow = previous.row; ignoreClick = true; schedule(); }
+  };
   const stopAnimations = () => {
     for (const animation of animations.values()) animation.cancel();
     animations.clear();
@@ -74,12 +101,13 @@ export function mountStatusGroups(document: Document, ctx: Context,
     else if (node.getAttribute(key) !== value) node.setAttribute(key, value);
   };
   const restore = () => {
+    endDrag();
     stopAnimations();
     for (const node of owned) node.remove();
     owned.clear();
     for (const [node, values] of saved) restoreNode(node, values);
     saved.clear();
-    list = null;
+    list = null; releasedRow = null;
   };
   const observer = new MutationObserver(records => {
     /* The reordered rows all live in the flat list. A streaming transcript, a
@@ -137,9 +165,11 @@ export function mountStatusGroups(document: Document, ctx: Context,
       }
       const catalog = ctx.sessions.list.getSnapshot();
       const statuses = status?.getSnapshot();
+      const pinOrder = new Map<string, number>((workspaces?.getSnapshot().pinnedSessionIds ?? [])
+        .map((id, index) => [id, index]));
       const childrenOf = readChildren(catalog);
       const zh = document.documentElement.lang.toLowerCase().startsWith('zh');
-      const labels = zh ? ['需要输入', '处理中', '空闲'] : ['Needs input', 'Working', 'Idle'];
+      const labels = zh ? ['已置顶', '需要输入', '处理中', '空闲'] : ['Pinned', 'Needs input', 'Working', 'Idle'];
       const rows = [...list.querySelectorAll<HTMLElement>('[data-row-key^="session:"]')]
         .filter(row => !row.hasAttribute('data-ccd-blank-session'));
       /* Plan every row before touching the document. The plan is a pure
@@ -160,19 +190,28 @@ export function mountStatusGroups(document: Document, ctx: Context,
             ? { pendingInteraction: { kind: 'native' } } : {}),
           running: !!row.querySelector(host.sessionWorking) || summary?.running,
         };
-        const group = sessionGroup({ ...ownStatus,
+        const activity = sessionGroup({ ...ownStatus,
           running: (ownStatus?.running ?? summary?.running ?? false) || runningChild,
         }, false);
+        const group: SidebarGroup = pinOrder.has(id) ? 'pinned' : activity;
         // A folded section still shows the Session the main panel is on.
         const hidden = collapsed.has(group) && !row.matches(host.sessionRowSelected);
-        return { row, id, group, children, hidden };
+        return { row, id, group, activity, children, hidden };
       });
-      const counts = [0, 0, 0];
+      // The host pin set supplies the global order, independent of activity.
+      plan.sort((a, b) => (pinOrder.get(a.id) ?? Infinity) - (pinOrder.get(b.id) ?? Infinity));
+      const counts = [0, 0, 0, 0];
       const stride = (rows.length + 1) * 2;
       const orderedRows = plan.map(entry => {
         const index = GROUPS.indexOf(entry.group);
         return { ...entry, order: index * stride + (++counts[index]!) * 2 };
       });
+      // When every Session is pinned, keep an Idle target for dragging one out.
+      const onlyPins = counts[0]! > 0 && counts.slice(1).every(count => count === 0);
+      const showPinHint = dragging !== null && gesture?.pinned === false;
+      const hiddenHeadings = GROUPS.map((group, index) => group === 'pinned'
+        ? counts[index] === 0 && dragging === null
+        : counts[index] === 0 && !(group === 'ended' && onlyPins));
       const boxes = new Map<string, HTMLElement>();
       for (const node of owned) {
         const key = node.dataset.ccdStatusOwned;
@@ -181,12 +220,12 @@ export function mountStatusGroups(document: Document, ctx: Context,
       /* What this pass wants the document to say, compared with what it says
          now. The comparison itself is free of layout and of writes. */
       const signatures = new Map<string, string>();
-      for (const { id, group, children } of plan) {
-        if (group === 'working' && children.length > 0) {
+      for (const { id, activity, children } of plan) {
+        if (activity === 'working' && children.length > 0) {
           signatures.set(`children:${id}`, JSON.stringify(children.map(child => [child.id, child.displayTitle, child.running])));
         }
       }
-      let changed = false;
+      let changed = boxes.has('pin-hint') !== showPinHint;
       for (const { row, group, order, hidden } of orderedRows) {
         if (row.dataset.ccdStatusOrder !== String(order)
           || row.dataset.ccdStatusGroup !== group
@@ -207,7 +246,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
         for (const [index, group] of GROUPS.entries()) {
           const heading = boxes.get(group);
           if (heading === undefined || heading.textContent !== labels[index]
-            || heading.hasAttribute('hidden') !== (counts[index] === 0)
+            || heading.hasAttribute('hidden') !== hiddenHeadings[index]
             || heading.getAttribute('aria-expanded') !== String(!collapsed.has(group))) { changed = true; break; }
         }
       }
@@ -215,7 +254,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
         const live = new Set([...signatures.keys()]);
         for (const key of boxes.keys()) if (key.startsWith('children:') && !live.has(key)) { changed = true; break; }
       }
-      if (!changed) return;
+      if (!changed) { releasedRow = null; updateDrag(); return; }
       /* A row that moved is the only reason to read layout. The previous rects
          are taken now, after the decision, so an unchanged pass never asks the
          engine to flush. */
@@ -224,7 +263,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
       let layoutChanged = false;
       remember(list, 'data-ccd-status-list', '');
       const ordered: HTMLElement[] = [];
-      for (const { row, id, group, order, children, hidden } of orderedRows) {
+      for (const { row, id, group, activity, order, children, hidden } of orderedRows) {
         if (row.dataset.ccdStatusOrder !== String(order)) layoutChanged = true;
         remember(row, 'data-ccd-status-order', String(order));
         remember(row, 'data-ccd-status-group', group);
@@ -246,7 +285,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
         ordered.push(row);
         const childKey = `children:${id}`;
         let childBox = boxes.get(childKey);
-        if (group === 'working' && children.length) {
+        if (activity === 'working' && children.length) {
           if (!childBox) {
             layoutChanged = true;
             childBox = document.createElement('div');
@@ -286,14 +325,25 @@ export function mountStatusGroups(document: Document, ctx: Context,
         }
         if (heading.style.order !== String(index * stride)) heading.style.order = String(index * stride);
         if (heading.textContent !== labels[index]) heading.textContent = labels[index]!;
-        // A section without Sessions has nothing to fold or show.
-        if (heading.hasAttribute('hidden') !== (counts[index] === 0)) {
+        // Keep the pin destination and the all-pinned fallback reachable.
+        if (heading.hasAttribute('hidden') !== hiddenHeadings[index]) {
           layoutChanged = true;
-          if (counts[index] === 0) heading.setAttribute('hidden', ''); else heading.removeAttribute('hidden');
+          if (hiddenHeadings[index]) heading.setAttribute('hidden', ''); else heading.removeAttribute('hidden');
         }
         const expanded = String(!collapsed.has(group));
         if (heading.getAttribute('aria-expanded') !== expanded) heading.setAttribute('aria-expanded', expanded);
       }
+      let hint = boxes.get('pin-hint');
+      if (showPinHint) {
+        if (!hint) {
+          layoutChanged = true;
+          hint = document.createElement('div');
+          hint.className = 'ccd-pin-hint'; hint.dataset.ccdStatusOwned = 'pin-hint';
+          hint.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5 13.5 6.5 11 8l-.5 3.5-1 1-3-3-3-3 1-1L8 5l1.5-2.5ZM6.5 9.5 3 13"/></svg><span></span>';
+          owned.add(hint); list.append(hint);
+        }
+        hint.style.order = String(counts[0]! * 2 + 1);
+      } else if (hint) { layoutChanged = true; hint.remove(); owned.delete(hint); }
       const liveIds = new Set(rows.map(row => `children:${row.dataset.rowKey!.slice(8)}`));
       for (const node of owned) if (node.dataset.ccdStatusOwned?.startsWith('children:')
         && !liveIds.has(node.dataset.ccdStatusOwned)) { layoutChanged = true; node.remove(); owned.delete(node); }
@@ -304,12 +354,15 @@ export function mountStatusGroups(document: Document, ctx: Context,
         const previous = before.get(row)!;
         const rect = row.getBoundingClientRect();
         const dy = previous.top - rect.top;
-        if (!dy || !previous.height || typeof row.animate !== 'function') continue;
+        // The floating row lands directly in its new slot; it must not also
+        // fly across the list from its old section after the Host confirms.
+        if (row === dragging || row === releasedRow || !dy || !previous.height || typeof row.animate !== 'function') continue;
         const animation = row.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }],
-          { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
+          { duration: dragging ? 160 : 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
         animations.set(row, animation);
         animation.onfinish = () => { if (animations.get(row) === animation) animations.delete(row); };
       }
+      releasedRow = null; updateDrag();
     } catch (error) { restore(); report(error); }
     finally { if (!disposed) observe(); }
   };
@@ -320,6 +373,7 @@ export function mountStatusGroups(document: Document, ctx: Context,
   // Status order must also be the keyboard order on Chromium versions without
   // reading-flow. Enter/Space forward the native row's own click.
   const keydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && gesture) { event.preventDefault(); endDrag(); return; }
     const target = event.target as HTMLElement;
     if (!list?.contains(target) || !target.matches('[data-ccd-status-order]')) return;
     const rows = [...list.querySelectorAll<HTMLElement>('[data-ccd-status-order]')]
@@ -338,33 +392,155 @@ export function mountStatusGroups(document: Document, ctx: Context,
   // re-creation and leaves nothing on the nodes when the view is restored.
   const toggle = (event: MouseEvent) => {
     const heading = (event.target as Element | null)?.closest?.<HTMLElement>('.ccd-status-heading');
-    const group = heading?.dataset.ccdStatusOwned as SessionGroup | undefined;
+    const group = heading?.dataset.ccdStatusOwned as SidebarGroup | undefined;
     if (!heading || !owned.has(heading) || !group || !GROUPS.includes(group)) return;
     if (!collapsed.delete(group)) collapsed.add(group);
     try { storage?.setItem(COLLAPSED_KEY, JSON.stringify([...collapsed])); } catch { /* view-only */ }
     schedule();
   };
-  // Manual native DnD rewrites the saved account order, which is not the order
-  // shown in this view. Keep that gesture for the project's original views.
-  const drag = (event: DragEvent) => {
+  // The reference uses a pointer-driven overlay, not an OS drag image: it
+  // becomes a compact red unpin pill as soon as it leaves the pinned section.
+  function updateDrag() {
+    const active = gesture;
+    if (!active?.started || !list || !floating || !dropFrame) return;
+    if (!active.row.isConnected) { endDrag(); return; }
+    if (active.settling) { floating.hidden = true; dropFrame.hidden = true; return; }
+    const headings = [...owned].filter(node => node.className === 'ccd-status-heading' && !node.hidden)
+      .sort((a, b) => Number(a.style.order) - Number(b.style.order));
+    const heading = headings.find(node => node.dataset.ccdStatusOwned === 'pinned');
+    if (!heading) return;
+    const start = heading.getBoundingClientRect();
+    const pinNodes = [heading, ...list.querySelectorAll<HTMLElement>('[data-ccd-status-group="pinned"], [data-ccd-status-owned="pin-hint"]')];
+    const bottom = Math.max(...pinNodes.map(node => node.getBoundingClientRect().bottom)) + 4;
+    const area = list.getBoundingClientRect();
+    const withinList = active.x >= area.left && active.x <= area.right
+      && active.y >= area.top - 4 && active.y <= area.bottom;
+    const inPinned = withinList && active.y <= bottom;
+    active.target = withinList ? (inPinned ? (active.pinned ? null : 'pin') : (active.pinned ? 'unpin' : null)) : null;
+    const unpin = active.target === 'unpin';
+    floating.dataset.action = unpin ? 'unpin' : 'move';
+    const title = floating.querySelector<HTMLElement>('[data-ccd-pin-title]')!;
+    const warning = floating.querySelector<HTMLElement>('[data-ccd-pin-warning]')!;
+    title.hidden = unpin; warning.hidden = !unpin;
+    floating.style.width = unpin ? 'max-content' : `${active.width}px`;
+    floating.style.left = `${active.x - (unpin ? floating.offsetWidth / 2 : active.offsetX)}px`;
+    floating.style.top = `${active.y - (unpin ? floating.offsetHeight / 2 : active.offsetY)}px`;
+    dropFrame.hidden = active.target !== 'pin';
+    dropFrame.style.left = `${start.left}px`; dropFrame.style.top = `${start.top - 4}px`;
+    dropFrame.style.width = `${start.width}px`; dropFrame.style.height = `${bottom - start.top + 4}px`;
+    const hint = [...owned].find(node => node.dataset.ccdStatusOwned === 'pin-hint');
+    if (hint) {
+      const zh = document.documentElement.lang.toLowerCase().startsWith('zh');
+      const text = active.target === 'pin' ? (zh ? '松开' : 'Release') : (zh ? '拖放到此处' : 'Drop here');
+      const label = hint.querySelector('span')!;
+      if (label.textContent !== text) label.textContent = text;
+    }
+  }
+  const pointerDown = (event: PointerEvent) => {
+    if (event.button !== 0 || !event.isPrimary || gesture?.settling) return;
+    ignoreClick = false;
+    const target = event.target as Element | null;
+    if (target?.closest('button, input, textarea, select, a, [contenteditable="true"]')) return;
+    const row = target?.closest<HTMLElement>('[data-ccd-status-order]');
+    if (!row || !list?.contains(row)) return;
+    endDrag();
+    const rect = row.getBoundingClientRect();
+    gesture = { row, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+      x: event.clientX, y: event.clientY, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top,
+      width: rect.width, height: rect.height, pinned: row.dataset.ccdStatusGroup === 'pinned',
+      started: false, settling: false, target: null };
+  };
+  const pointerMove = (event: PointerEvent) => {
+    const active = gesture;
+    if (!active || active.pointerId !== event.pointerId || active.settling) return;
+    active.x = event.clientX; active.y = event.clientY;
+    if (!active.started) {
+      if (Math.hypot(active.x - active.startX, active.y - active.startY) < 5) return;
+      active.started = true; dragging = active.row; stopAnimations();
+      active.row.setPointerCapture(active.pointerId);
+      active.row.setAttribute('data-ccd-pin-dragging', '');
+      document.documentElement.setAttribute('data-ccd-pin-gesture', '');
+      floating = document.createElement('div'); floating.className = 'ccd-pin-floating';
+      floating.setAttribute('aria-hidden', 'true');
+      const title = document.createElement('span'); title.dataset.ccdPinTitle = '';
+      const id = active.row.dataset.rowKey!.slice(8) as keyof ReturnType<typeof ctx.sessions.list.getSnapshot>['byId'];
+      title.textContent = ctx.sessions.list.getSnapshot().byId[id]?.displayTitle ?? active.row.textContent;
+      const warning = document.createElement('span'); warning.dataset.ccdPinWarning = ''; warning.hidden = true;
+      warning.textContent = document.documentElement.lang.toLowerCase().startsWith('zh')
+        ? '松开以取消置顶' : 'Release to unpin';
+      floating.append(title, warning);
+      dropFrame = document.createElement('div'); dropFrame.className = 'ccd-pin-target-frame';
+      dropFrame.setAttribute('aria-hidden', 'true'); dropFrame.hidden = true;
+      document.body.append(dropFrame, floating);
+      schedule();
+    }
+    event.preventDefault(); event.stopPropagation();
+    updateDrag();
+  };
+  const pointerUp = (event: PointerEvent) => {
+    const active = gesture;
+    if (!active || active.pointerId !== event.pointerId || active.settling) return;
+    if (!active.started) { endDrag(); return; }
+    event.preventDefault(); event.stopPropagation(); ignoreClick = true;
+    updateDrag();
+    if (!active.target) { endDrag(); return; }
+    active.settling = true; updateDrag();
+    const id = active.row.dataset.rowKey!.slice(8) as Parameters<typeof ctx.uiWorkspace.pinSession>[0];
+    const action = active.target === 'pin' ? ctx.uiWorkspace.pinSession(id) : ctx.uiWorkspace.unpinSession(id);
+    for (const node of owned) if (node.dataset.ccdStatusOwned === 'pin-error') { node.remove(); owned.delete(node); }
+    void action.catch(error => {
+      report(error);
+      if (disposed || !list?.isConnected) return;
+      const notice = document.createElement('div');
+      notice.className = 'ccd-pin-error'; notice.dataset.ccdStatusOwned = 'pin-error';
+      notice.setAttribute('role', 'alert'); notice.style.order = '1';
+      notice.textContent = document.documentElement.lang.toLowerCase().startsWith('zh')
+        ? '置顶更新失败，请重试。' : 'Could not update pin. Please try again.';
+      owned.add(notice); list.append(notice);
+    }).finally(() => { if (gesture === active) endDrag(); });
+  };
+  const preventNativeDrag = (event: DragEvent) => {
     if (list?.contains(event.target as Node)) { event.preventDefault(); event.stopPropagation(); }
   };
+  const preventDragClick = (event: MouseEvent) => {
+    if (!ignoreClick) return;
+    ignoreClick = false; event.preventDefault(); event.stopPropagation();
+  };
+  const cancelPointer = (event: PointerEvent) => { if (gesture?.pointerId === event.pointerId) endDrag(); };
+  const visibility = () => { stopAnimations(); if (document.hidden) endDrag(); };
   const offStatus = status?.subscribe(schedule);
+  const offPins = workspaces?.subscribe(schedule);
   /* The catalog is what the subagent index is built from, so its publish is
      what invalidates it. */
   const offList = ctx.sessions.list.subscribe(() => { childrenDirty = true; schedule(); });
   document.addEventListener('keydown', keydown);
   document.addEventListener('click', toggle);
-  document.addEventListener('dragstart', drag, true);
-  document.addEventListener('visibilitychange', stopAnimations);
+  document.addEventListener('pointerdown', pointerDown, true);
+  document.addEventListener('pointermove', pointerMove, true);
+  document.addEventListener('pointerup', pointerUp, true);
+  document.addEventListener('pointercancel', cancelPointer, true);
+  document.addEventListener('click', preventDragClick, true);
+  document.addEventListener('dragstart', preventNativeDrag, true);
+  document.addEventListener('scroll', updateDrag, true);
+  win.addEventListener?.('blur', endDrag);
+  win.addEventListener?.('resize', endDrag);
+  document.addEventListener('visibilitychange', visibility);
   motion.addEventListener?.('change', stopAnimations);
   observe(); sync();
   return () => {
-    disposed = true; observer.disconnect(); offList(); offStatus?.();
+    disposed = true; observer.disconnect(); offList(); offStatus?.(); offPins?.();
     document.removeEventListener('keydown', keydown);
     document.removeEventListener('click', toggle);
-    document.removeEventListener('dragstart', drag, true);
-    document.removeEventListener('visibilitychange', stopAnimations);
+    document.removeEventListener('pointerdown', pointerDown, true);
+    document.removeEventListener('pointermove', pointerMove, true);
+    document.removeEventListener('pointerup', pointerUp, true);
+    document.removeEventListener('pointercancel', cancelPointer, true);
+    document.removeEventListener('click', preventDragClick, true);
+    document.removeEventListener('dragstart', preventNativeDrag, true);
+    document.removeEventListener('scroll', updateDrag, true);
+    win.removeEventListener?.('blur', endDrag);
+    win.removeEventListener?.('resize', endDrag);
+    document.removeEventListener('visibilitychange', visibility);
     motion.removeEventListener?.('change', stopAnimations);
     restore();
   };

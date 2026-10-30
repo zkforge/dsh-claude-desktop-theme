@@ -74,16 +74,15 @@ async function key(page, key, code, windowsVirtualKeyCode) {
   await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode });
 }
 
-test('sidebar balance shows totals and breakdown, refreshes with keyboard, and fits both themes at 200px', options, async () => {
+test('sidebar balance shows total and period, refreshes with keyboard, and fits both themes at 200px', options, async () => {
   await fixture(async page => {
     await page.evaluate(`window.stopBalance=window.mountBalance(document.querySelector('#fixture'),{},'sidebar')`);
     await until(page, `document.querySelector('${card} [data-ccd-balance-amount]')?.textContent==='¥12.30'`, 'sidebar card reaches ready state');
     assert.equal(await page.evaluate(`document.querySelector('${card}').tagName`), 'BUTTON');
     assert.match(await page.evaluate(`document.querySelector('${card}').textContent`), /API balance/);
     const details = await page.evaluate(`document.querySelector('${card} [data-ccd-balance-details]').textContent`);
-    assert.match(details, /Granted¥2\.30/, 'grant sits on the card');
-    assert.doesNotMatch(details, /10\.00|Today/, 'top-up and today\'s spend live in the hover hint');
-    assert.equal(await page.evaluate(`document.querySelector('${card} [data-ccd-balance-details]').getBoundingClientRect().height>0`), true, 'spend line is visible without hover');
+    assert.doesNotMatch(details, /Granted|2\.30|10\.00|Today/, 'breakdown and spend live in the hover hint');
+    assert.equal(await page.evaluate(`document.querySelector('${card} [data-ccd-balance-details]').getBoundingClientRect().height>0`), true, 'period line is visible without hover');
     assert.match(await page.evaluate(`document.querySelector('[data-ccd-balance-hint]').textContent`), /Spent today¥0\.00.*Top-up balance¥10\.00Granted balance¥2\.30/);
 
     await key(page, 'Tab', 'Tab', 9);
@@ -102,14 +101,19 @@ test('sidebar balance shows totals and breakdown, refreshes with keyboard, and f
       await page.evaluate(`document.body.toggleAttribute('data-ds-dark-theme',${theme === 'dark'});document.querySelector('#fixture').style.width='200px'`);
       const layout = await page.evaluate(`(()=>{
         const el=document.querySelector('${card}'),r=el.getBoundingClientRect(),details=el.querySelector('[data-ccd-balance-details]');
+        const label=el.querySelector(':scope > span'),period=details.querySelector('.ccd-balance-period');
         return {width:r.width,overflow:el.scrollWidth>el.clientWidth,detailsVisible:details.getBoundingClientRect().height>0,
+          periodAtLeft:Math.abs(period.getBoundingClientRect().left-label.getBoundingClientRect().left)<1,
+          amountSize:getComputedStyle(el.querySelector('[data-ccd-balance-amount]')).fontSize,
           outside:Array.from(el.querySelectorAll('*')).some(child=>{const c=child.getBoundingClientRect();return c.width>0&&(c.left<r.left-1||c.right>r.right+1)}),
           background:getComputedStyle(document.body).backgroundColor};
       })()`);
       assert.ok(layout.width <= 200, `${theme}: card fits a 200px sidebar`);
       assert.equal(layout.overflow, false, `${theme}: no horizontal overflow`);
       assert.equal(layout.outside, false, `${theme}: children remain inside card`);
-      assert.equal(layout.detailsVisible, true, `${theme}: spend line remains visible`);
+      assert.equal(layout.detailsVisible, true, `${theme}: period line remains visible`);
+      assert.equal(layout.periodAtLeft, true, `${theme}: period aligns with the balance label`);
+      assert.equal(layout.amountSize, '16px', `${theme}: total has the larger type size`);
       backgrounds.push(layout.background);
       if (process.env.CCD_BALANCE_PREVIEW === '1') {
         await page.evaluate(`document.querySelector('#fixture').style.width='264px'`);

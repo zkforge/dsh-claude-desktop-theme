@@ -72,9 +72,11 @@
 
 ### P0-2 `view-switch` 强引用已脱离的 tablist 节点
 
-- 位置：[view-switch.ts:91-106](../../src/client/compat/view-switch.ts)
-  （`attributes` Map）、[:110-129](../../src/client/compat/view-switch.ts)
-  （`decorate` 只清 `glyphs`）、[:218-226](../../src/client/compat/view-switch.ts)
+当前版本已恢复宿主原生视图标签，以下适配与对应测试已移除；本节保留历史审计记录。
+
+- 位置：`view-switch.ts:91-106`
+  （`attributes` Map）、`:110-129`
+  （`decorate` 只清 `glyphs`）、`:218-226`
   （仅 `restore` 清 Map）。
 - 行为：每个被改写属性的 tab 都进入 `Map<Element, …>`；`decorate` 每轮清理
   `glyphs`，但不清理 `attributes`；tablist 被 React 替换时只重置
@@ -317,7 +319,7 @@
 2. `view-switch`：新增 `release` / `prune`，tablist 被替换或 `!isConnected`
    时恢复该节点仍归模块所有的属性，并从 `attributes` 删除；glyph 集合改为
    `Set<Element>`，随记录一起释放。测试
-   [view-switch.test.ts](../../tests/view-switch.test.ts)：替换后旧节点被归还，
+   `view-switch.test.ts`：替换后旧节点被归还，
    连续 5 次重建不积累记录。
 3. `conversation-process`：观察器改为按 `MutationRecord` 增量处理——属性记录
    只认目标是过程按钮且 `aria-expanded="false"`；`childList` 只搜索

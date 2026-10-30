@@ -31,7 +31,7 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
       const path = await page.evaluate(`(()=>{const v=[...document.querySelectorAll('.ccd-info-value')].find(n=>n.firstElementChild.textContent==='工作目录');
         const label=v.firstElementChild.getBoundingClientRect(),value=v.querySelector('.ccd-info-text'),r=value.getBoundingClientRect();value.focus();return {top:Math.abs(label.top-r.top),height:r.height,overflow:value.scrollWidth>value.clientWidth};})()`);
       assert.ok(path.top < 1);
-      assert.equal(path.height, 20);
+      assert.equal(path.height, 22);
       assert.equal(path.overflow, true);
       await page.evaluate('new Promise(resolve=>setTimeout(resolve,450))');
       const tip = await page.evaluate(`(()=>{const t=document.querySelector('.ccd-info-tooltip');return{open:t.matches(':popover-open'),text:t.textContent,bg:getComputedStyle(t).backgroundColor};})()`);

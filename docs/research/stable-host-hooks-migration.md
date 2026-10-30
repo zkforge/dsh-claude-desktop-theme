@@ -23,7 +23,7 @@
 | `.yhfFVG_placeholder` | `[data-composer-card] [data-composer-placeholder]` | ui-conversation `DraftEditor`，独立的覆盖提示层 |
 | `.ST7X_W_tabs` | `[data-conversation-tabs]` | ui-conversation `ConversationSessionHeader`，同时有 `role="tablist"` |
 | `.ST7X_W_tab` | `[data-conversation-tabs] [role="tab"]` | 同上 |
-| `.ST7X_W_tabActive` | `[data-conversation-tabs] [role="tab"][aria-selected="true"]` | 同上；用于 `view-switch.ts` 的活动项量测 |
+| `.ST7X_W_tabActive` | `[data-conversation-tabs] [role="tab"][aria-selected="true"]` | 会话视图现已恢复宿主原生样式，不再量测活动项 |
 | `.ST7X_W_headerLeading` | `[data-conversation-header-leading]` | ui-conversation `ConversationHeader` |
 | `.ST7X_W_headerCorner` | `[data-conversation-header-corner]` | ui-conversation `ConversationSessionHeader` |
 | `._6Qf49G_rightbarCol` | `[data-rightbar-col]` | ui-layout `RightbarColumn` |
@@ -54,7 +54,7 @@
 
 ## 实施顺序与验证
 
-1. 先迁移上表同元素的输入区与会话标签栏：更新 `compat/host-dom.ts`、相应 CSS、`composer-placeholder.ts`、`view-switch.ts`。对阶段查询改用 content 标记时同时更新观察属性与宠物定位。保持宿主编辑器、按钮和事件处理。
+1. 先迁移上表同元素的输入区与会话标签栏：更新 `compat/host-dom.ts`、相应 CSS、`composer-placeholder.ts`。会话标签已恢复原生，不再维护 `view-switch.ts` 适配。对阶段查询改用 content 标记时同时更新观察属性与宠物定位。保持宿主编辑器、按钮和事件处理。
 2. 再迁移会话内容/滚动/输入席位、顶栏已有标记、右栏，以及侧栏行身份/选中状态。逐条检查作用域和 CSS 优先级；不能只做字符串替换。
 3. 让兼容诊断描述仍缺失的具体区域。当前 `watchHostBuild` 通过 frame 哈希识别构建，日志和设置页笼统说样式不生效；迁移后应体现语义标记已命中的部分，避免把已支持功能报成全部不可用。未知构建仍保留余下哈希兼容表的诊断。
 4. 每批迁移验证新会话/已发送/嵌入会话、浅深主题、切换 View、侧栏折叠和右栏开合；SDK/API 检查之外，检查真实 DOM 定位和视觉布局。增加有意义的验证：只改宿主 class 的哈希而保留属性，迁移部分仍能定位和工作。仅检查 CSS 字符串不足以证明视觉等价。

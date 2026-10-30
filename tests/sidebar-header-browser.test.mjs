@@ -337,3 +337,118 @@ test('the separate browsing toolbar and compact project actions support all regi
     }
   }
 });
+
+/* A browser host has no window-control row: the host keeps the collapse toggle
+   inside the brand row, so the brand switch shows or hides the brand and that
+   toggle as one row. With the row gone the column supplies its own top inset,
+   because no window controls sit above it. */
+test('a browser host keeps brand and collapse toggle in one row under the brand switch', {
+  skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 20000,
+}, async () => {
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-sidebar-brand-'));
+  try {
+    const fixture = `<div class="_3WPZCG_root" style="width:264px;height:420px;display:flex;flex-direction:column">
+      <div class="_3WPZCG_logoRow">
+        <span class="_3WPZCG_brand"><span class="_3WPZCG_brandName">DeepSeek Harness</span></span>
+        <button id="collapse" class="_3WPZCG_iconButton _3WPZCG_toggle" aria-label="收起侧边栏">▤</button>
+      </div>
+      <button class="_3WPZCG_newSession"><span class="_3WPZCG_newSessionContent"><svg width="16" height="16"></svg><span class="_3WPZCG_newSessionLabel">新建会话</span></span></button>
+    </div>`;
+    /* The host's own seat for the caption buttons, which the browser build
+       keeps in the brand row. */
+    const sheet = `${hostCss}\n._3WPZCG_iconButton{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;background:0 0}\n${styles}`;
+    await withPage({ url: 'about:blank', width: 300, height: 420, scale: 1, profile }, async devtools => {
+      await devtools.evaluate(`{
+        document.documentElement.lang='zh-CN';
+        document.documentElement.dataset.dshCcdStyle='true';
+        document.body.innerHTML=${JSON.stringify(fixture)};
+        const style=document.createElement('style');
+        style.textContent=${JSON.stringify(sheet)};
+        document.head.append(style);
+      }`);
+      const read = () => devtools.evaluate(`(() => {
+        const row=document.querySelector('._3WPZCG_logoRow');
+        const toggle=document.querySelector('#collapse');
+        const box=toggle.getBoundingClientRect();
+        return {
+          row:getComputedStyle(row).display,
+          brand:getComputedStyle(document.querySelector('._3WPZCG_brand')).display,
+          brandBox:document.querySelector('._3WPZCG_brand').getBoundingClientRect().toJSON(),
+          toggle:{width:box.width,height:box.height},
+          rowBottom:row.getBoundingClientRect().bottom,
+          newSessionTop:document.querySelector('._3WPZCG_newSession').getBoundingClientRect().top,
+          paddingTop:getComputedStyle(document.querySelector('._3WPZCG_root')).paddingTop,
+        };
+      })()`);
+      const off = await read();
+      assert.equal(off.row, 'none', 'the brand switch hides the row and its toggle together');
+      assert.deepEqual({ width: off.brandBox.width, height: off.brandBox.height }, { width: 0, height: 0 }, 'the brand hides with the row');
+      assert.deepEqual(off.toggle, { width: 0, height: 0 }, 'no collapse toggle without the brand row');
+      assert.equal(off.paddingTop, '10px', 'the column supplies its own top inset');
+      assert(off.newSessionTop <= 14, 'New Session is the first row when the brand is off');
+      await devtools.evaluate(`document.documentElement.style.setProperty('--ccd-sidebar-brand-display','flex')`);
+      const on = await read();
+      assert.equal(on.row, 'flex', 'brand and toggle share one row');
+      assert(on.brandBox.width > 0 && on.brandBox.height > 0, 'the brand shows');
+      assert.deepEqual(on.toggle, { width: 28, height: 28 }, 'the collapse toggle shares the row');
+      assert(on.newSessionTop >= on.rowBottom, 'New Session sits below the one header row');
+    });
+  } finally {
+    await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
+  }
+});
+
+/* The collapsed rail is the host's own icon rail: its 36px seats and 18px
+   artwork stay untouched, while the plugin's navigation glyphs lift to the
+   rail's scale instead of the expanded layout's 15px inks. */
+test('the collapsed rail keeps the host button boxes and lifts the nav glyphs', {
+  skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 20000,
+}, async () => {
+  const navigation = await readFile(join(root, 'src/client/features/sidebar/navigation.css'), 'utf8');
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-sidebar-rail-'));
+  try {
+    const fixture = `<div class="_3WPZCG_root _3WPZCG_collapsed" style="width:56px;height:420px;display:flex;flex-direction:column">
+      <div class="_7514NG_root _7514NG_rail">
+        <div class="_7514NG_sectionHeader">
+          <div class="_7514NG_headerActions">
+            <button id="add" class="_7514NG_iconButton" aria-label="添加工作区"><svg width="18" height="18"></svg></button>
+          </div>
+        </div>
+      </div>
+      <button class="_3WPZCG_panelRow" data-ccd-nav="customize"><span class="_3WPZCG_panelGlyph"><span class="ccd-nav-glyph"><svg width="24" height="24"></svg></span></span></button>
+    </div>`;
+    const sheet = `${hostCss}\n${styles}\n${navigation}`;
+    await withPage({ url: 'about:blank', width: 300, height: 420, scale: 1, profile }, async devtools => {
+      await devtools.evaluate(`{
+        document.documentElement.lang='zh-CN';
+        document.documentElement.dataset.dshCcdStyle='true';
+        document.body.innerHTML=${JSON.stringify(fixture)};
+        const style=document.createElement('style');
+        style.textContent=${JSON.stringify(sheet)};
+        document.head.append(style);
+      }`);
+      const read = () => devtools.evaluate(`(() => {
+        const box = selector => {
+          const rect=document.querySelector(selector).getBoundingClientRect();
+          return {width:rect.width,height:rect.height};
+        };
+        return {
+          add:box('#add'),
+          addIcon:box('#add svg'),
+          glyph:box('[data-ccd-nav] .ccd-nav-glyph > svg'),
+        };
+      })()`);
+      const rail = await read();
+      assert.deepEqual(rail.add, { width: 28, height: 28 }, 'the rail keeps the host button box');
+      assert.deepEqual(rail.addIcon, { width: 18, height: 18 }, 'the rail keeps the host artwork');
+      assert.deepEqual(rail.glyph, { width: 17, height: 17 }, 'the nav glyph uses the rail scale');
+      await devtools.evaluate(`document.querySelector('._3WPZCG_root').classList.remove('_3WPZCG_collapsed')`);
+      const expanded = await read();
+      assert.deepEqual(expanded.add, { width: 22, height: 22 }, 'the expanded toolbar keeps its 22px seat');
+      assert.deepEqual(expanded.addIcon, { width: 14, height: 14 }, 'the expanded toolbar keeps its 14px artwork');
+      assert.deepEqual(expanded.glyph, { width: 15, height: 15 }, 'the expanded rows keep their 15px inks');
+    });
+  } finally {
+    await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
+  }
+});

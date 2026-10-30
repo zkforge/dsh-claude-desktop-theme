@@ -240,17 +240,11 @@ html[data-dsh-ccd-style="true"] .ST7X_W_header {
    * width leaves the header's own height untouched.
    */
   border-bottom-color: transparent;
-  /*
-   * One header row. DSH stacks a title row and, below it, its View tablist; the
-   * reference keeps every piece of header chrome on the title line. The two
-   * wrapper boxes dissolve (`display: contents`) instead of being re-parented,
-   * so the host's own children stay where React put them and only their order
-   * changes: title, View switcher, Agent-preset chip, utilities, corner.
-   */
+  /* Title, native View tabs and utilities share a single row. React's title
+     wrappers dissolve without moving their children. */
   display: flex;
   align-items: center;
-  /* The host reserves the second row only while its tablist is a row of its
-     own; that row is gone, so its `min-height: 76px` goes with it. */
+  /* Let the actual title controls and native tabs determine the height. */
   min-height: 0;
   padding: 10px var(--ccd-header-trailing-inset) 10px 12px;
   /*
@@ -276,21 +270,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerSessionless {
   min-height: 50px;
 }
 
-/*
- * On macOS the title line shares the window-control row's centre line: the
- * traffic lights, the collapse toggle (`top: 11px` + 28 / 2) and the parked
- * switcher (`top: 12px` + 26 / 2) all centre on y = 25. The flex items above
- * centre on the header's content box, and with the base padding (10px top and
- * bottom) that box centred on 20 — the title, the team chip and the right-hand
- * panel buttons sat 5px above the line they are meant to share.
- *
- * Holding the header at 40px — the height it already has, with 20px items —
- * and dropping the bottom padding leaves a 30px content box from y = 10 to
- * y = 40 whatever the items' own heights (up to 30px): its centre is 25. A
- * collapsed inline switcher (26px) therefore centres on the same line too.
- * Windows has no such row, so its header keeps the base rule, and the
- * sessionless header already centres on 25 with its own 10px bottom padding.
- */
+/* Title controls and View tabs share the traffic lights' 25px centre line. */
 /* Only macOS shares the conversation header with the window drag surface.
    The host excludes its controls from dragging only on darwin; Windows has a
    separate caption strip, so making this row draggable swallows button clicks. */
@@ -309,9 +289,8 @@ html[data-dsh-ccd-style="true"] .ST7X_W_titleCluster {
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_crumbs {
-  /* Stable natural title width (capped at 112px) keeps the following switcher
-     anchored while the rightbar changes column width. */
-  flex: none;
+  /* Long names yield space to the native View controls and window chrome. */
+  flex: 0 1 auto;
   box-sizing: border-box;
   max-width: calc(112px + max(0px, var(--dsh-frame-leading-clearance, 0px) - 12px));
   padding-inline-start: max(0px, calc(var(--dsh-frame-leading-clearance, 0px) - 12px));
@@ -319,14 +298,9 @@ html[data-dsh-ccd-style="true"] .ST7X_W_crumbs {
 
 html[data-dsh-ccd-style="true"] .ST7X_W_headerActions {
   order: 2;
-  /* Stable gap between switcher and team entry.
-     `margin-right: auto` is the header's flexible gap: the title, the View
-     switcher and the chip stay grouped at the leading edge, as in the
-     reference, and the utilities keep the trailing edge they had before. The
-     chip always renders, so the gap survives an empty tools group. */
-  /* The preceding title has 8px end padding + the track's 2px margin.
-     Give the track-to-team boundary the same visible 10px separation. */
-  margin-left: var(--ccd-header-group-gap, 10px);
+  /* The title supplies 8px end padding; the team entry adds the group gap.
+     The flexible trailing margin keeps utilities at the column's right edge. */
+  margin-left: var(--ccd-header-group-gap, 2px);
   gap: 4px;
   margin-right: auto;
 }
@@ -354,209 +328,79 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
   margin: 0;
 }
 
-/*
- * View switcher: the host's own `role="tablist"`, reshaped into the reference's
- * segmented control. The selected segment is drawn by one thumb — the
- * `::before` of the tablist — moved with the geometry published by
- * `compat/view-switch.ts`; the buttons keep their roles, labels and handlers,
- * and the host's own underline is dropped.
- *
- * Geometry is the reference's own pill (DESIGN.md §6.5, @2x): a 66 × 26 track
- * — 131 × 52 device px, so two 33px segments — 6px
- * corner, with the raised thumb inset 1px top and bottom and carrying a 5px
- * corner, a 1px outline and the segment shadow. The two segments are the icon
- * buttons below, not text: `compat/view-switch.ts` swaps each shipped View's
- * label for the bundled artwork in `view-switch-icons.ts`.
- */
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs {
-  order: 1;
-  position: relative;
-  /* Never squeezed: a narrow header truncates the title instead. */
-  flex: none;
-  display: inline-flex;
-  align-items: stretch;
+/* The host needs a 288px measured row to keep both native tabs mounted.
+   Reserve only their 64px of visible text and spacing in this single-line
+   header. The transparent budget overlaps preceding chrome, so only the real
+   tablist receives pointer input. No selection handlers or nodes are replaced. */
+html[data-dsh-ccd-style="true"] .ST7X_W_header .ST7X_W_tabs {
+  order: 2;
+  flex: 0 0 288px;
+  width: 288px;
+  min-width: 288px;
   flex-wrap: nowrap;
-  width: max-content;
-  max-width: 100%;
-  gap: 0;
-  /* The switcher sits directly after the Session title; later header chrome
-     (the Agent-preset chip today, more to come) follows it. */
-  margin: 0 0 0 var(--ccd-header-group-gap, 2px);
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0 16px 0 -224px;
   padding: 0;
-  border-radius: 6px;
-  background: var(--ccd-track);
+  pointer-events: none;
   -webkit-app-region: no-drag;
 }
 
-/* Newer hosts wrap the tabs in a separate tablist and append a More menu.
-   Keep one compact track across both structures; native menu handlers and
-   responsive view selection remain on their original React nodes. */
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs > [role="tablist"] {
-  display: contents;
+html[data-dsh-ccd-style="true"] .ST7X_W_viewTabs {
+  flex-wrap: nowrap;
+  gap: 12px;
+  min-height: 28px;
+  pointer-events: auto;
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs button[aria-haspopup="menu"] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  flex: none;
-  width: 26px;
-  height: 26px;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--ccd-text-muted);
-  -webkit-app-region: no-drag;
-}
-
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs button[aria-haspopup="menu"]:is(:hover, :focus-visible, [aria-expanded="true"]) {
-  background: var(--ccd-hover);
-  color: var(--ccd-text);
-}
-
-html[data-dsh-ccd-style="true"] [data-ccd-view-more-source] {
-  display: none !important;
-}
-
-/* Opening the hidden native menu is only a bridge to its Trajectory action.
-   Resolve it before paint; the native action still owns selection and state. */
-html[data-dsh-ccd-style="true"][data-ccd-direct-view-opening] [class*="_viewsMoreMenu"] {
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* The docked pill sits over the sidebar's native window-drag strip. Let its
-   empty chrome participate in dragging while keeping the view buttons clickable. */
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] {
-  -webkit-app-region: drag;
-}
-
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] .ST7X_W_tab {
-  -webkit-app-region: no-drag;
-}
-
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs::before {
-  content: "";
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  left: 0;
-  box-sizing: border-box;
-  width: var(--ccd-view-w, 0px);
-  transform: translateX(var(--ccd-view-x, 0px));
-  border: 1px solid var(--ccd-border-soft);
-  border-radius: 5px;
-  background: var(--ccd-card);
-  box-shadow: var(--ccd-shadow-segment);
-  pointer-events: none;
-  transition: transform var(--ccd-view-duration, 0ms) var(--ds-ease-in-out, ease),
-    width var(--ccd-view-duration, 0ms) var(--ds-ease-in-out, ease);
-}
-
-html[data-dsh-ccd-style="true"] .ST7X_W_tab {
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  /* The reference's 33px segment is a floor, not a fixed width: a View this
-     plugin has no artwork for keeps its own label and its own room. */
-  flex: 0 1 auto;
-  min-width: 33px;
-  height: 26px;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--ccd-text-muted);
-  font-size: var(--ccd-font-size-muted);
-  font-weight: 500;
-  line-height: 20px;
-  white-space: nowrap;
-}
-
-/* A decorated tab draws bundled artwork in place of the host's label text;
-   `compat/view-switch.ts` writes the marker and the button's accessible name.
-   An unknown View keeps its label and is left alone. */
-html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  font-size: 0;
-  line-height: 0;
-}
-
-/*
- * The artwork seat leaves the button's own flow and centres on the button's
- * box — not on a line box beside the host's label, and not inside whatever
- * content box the host's own rules leave here. The host's `.tab` gives this
- * button `padding: 0 0 9px`, its own 16px line and its own alignment, and any
- * of them winning back even one of those declarations moved the icon ~4.5px
- * above the segment; the seat is absolutely centred on the padding box
- * instead, which is the box the sliding thumb is drawn on. Measured in
- * `tests/view-switch-browser.test.mjs`, including a state that hands the
- * button's inner layout back to the host's rules.
- */
-html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] > [data-ccd-view-glyph] {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  line-height: 0;
-  pointer-events: none;
-}
-
-html[data-dsh-ccd-style="true"] .ST7X_W_tab[data-ccd-view] > [data-ccd-view-glyph] > svg {
-  display: block;
-}
-
-html[data-dsh-ccd-style="true"] .ST7X_W_tab::after {
+/* Withdrawing the real launcher also removes its hover/focus tooltip source.
+   Hide an already-open native menu as well, without driving it or its state. */
+html[data-dsh-ccd-style="true"] .ST7X_W_viewsMoreAnchor,
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs button[aria-haspopup="menu"],
+html[data-dsh-ccd-style="true"] .ST7X_W_viewsMoreMenu {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_tabActive {
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_tab {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 26px;
+  height: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ccd-text-secondary);
+  font-family: var(--ccd-font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 28px;
+  pointer-events: auto;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_tab:hover {
   color: var(--ccd-text);
 }
 
-/*
- * Docked: the switcher leaves the header for the sidebar's window-control row.
- *
- * The reference keeps it at the top-right of the sidebar column, on the same
- * row as the traffic lights and the collapse toggle — measured at 8px inside
- * the column's right edge (its divider sits 16 device px right of the pill),
- * with the pill's 26px centre on the toggle's own centre (11px + 28 / 2 = 25).
- * The node stays in the header where React rendered it: `position: fixed` takes
- * it out of that row and the coordinates come from `compat/view-switch.ts`,
- * measured live from the sidebar column — the same way the macOS sidebar toggle
- * is parked. It is written only where the column has the corner to hold it:
- * macOS with the sidebar expanded, so the host's own row (Windows, or the
- * collapsed shell's 0px column) keeps the switcher inline.
- */
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs[data-ccd-view-dock="sidebar"] {
-  position: fixed;
-  top: 12px;
-  right: var(--ccd-view-dock-right, 8px);
-  z-index: 15;
-  margin: 0;
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_tab[aria-selected="true"] {
+  color: var(--ccd-link);
 }
 
-/* With the switcher parked, native crumbs supply 8px end padding. The custom
-   title has no end padding, so its team entry uses the full group gap. */
-html[data-dsh-ccd-style="true"] .ST7X_W_header:has(.ST7X_W_tabs[data-ccd-view-dock]) .ST7X_W_headerActions {
-  margin-left: var(--ccd-header-group-gap, 2px);
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] .ST7X_W_tabs::before {
-    transition: none;
-  }
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_tab[aria-selected="true"]::after {
+  background: currentColor;
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_crumbs,
@@ -572,17 +416,6 @@ html[data-dsh-ccd-style="true"] .ST7X_W_crumb {
 html[data-dsh-ccd-style="true"] .ST7X_W_headerActions button,
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities button {
   color: var(--ccd-text-secondary);
-}
-
-/* The collapsed macOS shell consumes 160px for native window controls. Keep
-   that reservation stable and omit title crumbs in this shell state, so a
-   400px column still fits the complete team entry and every native button. */
-html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-sidebar-collapsed] .ST7X_W_header:not(.ST7X_W_headerBlank) .ST7X_W_crumbs {
-  max-width: none;
-}
-
-html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-sidebar-collapsed] .ST7X_W_header:not(.ST7X_W_headerBlank) .ST7X_W_crumb {
-  display: none;
 }
 
 /* Keep the actionable team entry complete; omit the passive header mode. */
@@ -738,56 +571,6 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
   html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([role="tooltip"]) {
     width: var(--ccd-header-action-compact);
     height: var(--ccd-header-action-compact);
-  }
-}
-
-/*
- * The title yields before the cluster does — and, like the three views below,
- * only to a switcher that is still in the row.
- *
- * With the switcher in it, the row is four pieces — title, switcher, native team
- * entry, cluster — and at this width they cannot share one line. The title is
- * the only piece the sidebar also shows, so it goes: the same trade the
- * collapsed macOS shell already makes, and every native control keeps its full
- * label.
- *
- * Parked in the sidebar's window-control row (`compat/view-switch.ts` writes
- * `data-ccd-view-dock`; macOS with the sidebar expanded, which is where an
- * expanded right panel leaves the column), the switcher takes its 66px track and
- * the two margins around it out of the row, and the three pieces that remain
- * occupy 377px of the 400px floor the frame protects for this column while the
- * right panel is open (`ui-layout`'s `CENTER_MIN`) — so they fit, with the 72px
- * between the chip and the cluster left to `margin-right: auto`. Withdrawing the
- * title there bought nothing and cost the one place a narrow column still names
- * its session.
- */
-@container ccd-conversation (max-width: 420px) {
-  html[data-dsh-ccd-style="true"] .ST7X_W_header:not(.ST7X_W_headerBlank):has(.ST7X_W_tabs:not([data-ccd-view-dock]))
-    .ST7X_W_crumbs {
-    display: none;
-  }
-}
-
-/*
- * The three views this plugin adds — the project folder among them — step aside
- * only while the row still carries the View switcher.
- *
- * The switcher is normally parked in the sidebar's window-control row
- * (`compat/view-switch.ts` writes `data-ccd-view-dock` on the tablist wherever
- * that column has the corner to hold it), and the row is then the title, the
- * team chip and the cluster: at most ~235px of chrome, so all three stay drawn
- * at any width the Composer can still be used at — including the column an
- * expanded right panel leaves, where they are the only way to switch the
- * panel's view back. With the switcher still in the row — a Windows build, or a
- * collapsed macOS sidebar whose window is narrow — there are four pieces on the
- * line, and these three are the ones that go: they are the plugin's own
- * controls, they have a second entry in the right panel's own tab strip, and
- * the native team chip keeps its full label either way.
- */
-@container ccd-conversation (max-width: 420px) {
-  html[data-dsh-ccd-style="true"] .ST7X_W_header:has(.ST7X_W_tabs:not([data-ccd-view-dock]))
-    .ST7X_W_headerUtilities [data-ccd-header-view] {
-    display: none;
   }
 }
 

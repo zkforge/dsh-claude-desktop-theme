@@ -261,9 +261,6 @@ export const HOST = Object.freeze({
    * what is hidden, and the selector a later build can be re-checked against.
    */
   conversationWidthHandle: '.ST7X_W_root [data-width-handle]',
-  conversationTabs: '.ST7X_W_tabs',
-  conversationTab: '.ST7X_W_tab',
-  conversationTabActive: '.ST7X_W_tabActive',
   composerSeat: '.ST7X_W_composerSeat',
   composerStack: '.ST7X_W_composerStack',
   composerRoot: '.yhfFVG_root',
@@ -413,8 +410,7 @@ export const ANCHOR = Object.freeze({
    * The host writes `data-sidebar-collapsed` from the layout store, and on the
    * desktop builds the collapsed sidebar is not a rail — the frame solves its
    * grid track to 0px and `sidebarCol`'s `overflow: hidden` clips the whole
-   * column. `compat/view-switch.ts` reads it as the state in which the parked
-   * View switcher has no corner to sit in.
+   * column. Navigation controls use the host's collapsed state.
    */
   sidebarCollapsed: '[data-slot="root"] > div[data-sidebar-collapsed]',
   /** The element that actually scrolls the Conversation page. In the pinned

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,9 +15,8 @@ import { aliasHostClasses, PINNED_BUILD, WINDOWS_BUILD } from '../src/client/com
  * status bar stays one line (its model name clips rather than wrapping the
  * trailing cluster onto a second row), the header's cluster ends on the input
  * surface's own right border, the three right-panel views this plugin adds stay
- * on the header's line while the View switcher is parked in the sidebar, and the
- * Session title stays on that line with them — it yields only to a switcher that
- * is still in the row.
+ * on the header's line, and the Session title stays beside them. Native View
+ * tabs sit just before the utilities in the same row.
  *
  * The fixture is the host's own tree for the region — the frame's center
  * column, ConversationRoot's header with its title row / team chip / utilities
@@ -58,6 +57,7 @@ body{margin:0;background:#fbfbfa;font:13px/1.4 system-ui;--dsh-scrollbar-width:5
 .ST7X_W_root[data-phase=active]{overflow:hidden}
 .ST7X_W_header{box-sizing:border-box;border-bottom:.5px solid var(--dsw-alias-border-l3);flex:none;
   grid-template-columns:auto minmax(0,1fr);min-height:76px;padding:10px 28px 0 20px;display:grid}
+.ST7X_W_tabs{width:100%;display:flex;gap:32px;margin-top:10px;padding-left:8px}
 .ST7X_W_headerBlank{border-bottom:none;min-height:0;padding-bottom:0}
 .ST7X_W_titleRow{min-height:30px;grid-column:2;align-items:center;gap:0;display:flex;container-type:inline-size}
 .ST7X_W_titleCluster{flex:1;align-items:center;gap:10px;min-width:0;display:flex}
@@ -113,15 +113,15 @@ const styles = (await Promise.all([
 const GLYPH = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor"><path d="M3 8h10"/></svg>';
 
 /** One Conversation page: the header over the page's scroller and Composer. */
-function page({ dock = true } = {}) {
-  const tabs = `<div class="ST7X_W_tabs" role="tablist"${dock ? ' data-ccd-view-dock="sidebar"' : ''}>`
+function page() {
+  const tabs = '<div class="ST7X_W_tabs"><div class="ST7X_W_viewTabs" role="tablist">'
     + '<button class="ST7X_W_tab" role="tab" aria-selected="true"><span class="ST7X_W_tabLabel">对话</span></button>'
-    + '<button class="ST7X_W_tab" role="tab" aria-selected="false"><span class="ST7X_W_tabLabel">轨迹</span></button></div>';
+    + '<button class="ST7X_W_tab" role="tab" aria-selected="false"><span class="ST7X_W_tabLabel">轨迹</span></button></div><span class="ST7X_W_viewsMoreAnchor"><button aria-haspopup="menu" class="ST7X_W_viewsMore" aria-label="更多会话视图"><svg width="13" height="13"></svg></button></span></div>';
   return `<div class="ST7X_W_root" data-phase="active">
 <div class="ST7X_W_header">
+<div data-slot="conversation.session.header">
 <div class="ST7X_W_titleRow"><div class="ST7X_W_titleCluster">
 <div class="ST7X_W_crumbs"><span class="ST7X_W_crumbCurrent">当前的添加工作区的按钮</span></div>
-${tabs}
 <div class="ST7X_W_headerActions"><button class="_2tNPVa_trigger">${GLYPH}<span class="_2tNPVa_triggerLabel">智能体团队</span></button></div>
 </div>
 <div class="ST7X_W_headerUtilities"><div data-slot="conversation.session.header.utilities">
@@ -132,6 +132,8 @@ ${tabs}
 </div></div>
 </div>
 <div class="ST7X_W_headerCorner" data-conversation-header-corner></div>
+${tabs}
+</div>
 </div>
 <div class="ST7X_W_body" data-conversation-body>
 <div class="ST7X_W_scrollBody" data-conversation-scroll>
@@ -182,12 +184,12 @@ const geometry = `(() => {
 })()`;
 
 /** Lay one state out with the host's geometry and the plugin's stylesheets. */
-const lay = (devtools, { width, dock = true }) => devtools.evaluate(`(() => {
+const lay = (devtools, { width }) => devtools.evaluate(`(() => {
   document.documentElement.lang = 'zh';
   document.documentElement.dataset.dshCcdStyle = 'true';
   document.documentElement.dataset.platform = 'darwin';
   document.body.innerHTML = '<div id="col" style="width:${width}px;height:100vh"></div>';
-  document.getElementById('col').innerHTML = ${JSON.stringify(aliasHostClasses(page({ dock }), PINNED_BUILD))};
+  document.getElementById('col').innerHTML = ${JSON.stringify(aliasHostClasses(page(), PINNED_BUILD))};
   const sheet = document.createElement('style');
   sheet.textContent = ${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, PINNED_BUILD))};
   document.head.append(sheet);
@@ -278,82 +280,47 @@ test('the header cluster ends on the Composer where the Composer fills the colum
   }
 });
 
-test('the three right-panel views stay on the line while the switcher is parked in the sidebar', {
+test('native View tabs align before utilities on a single header row', {
   skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 30000,
 }, async () => {
-  const profile = await mkdtemp(join(tmpdir(), 'ccd-narrow-column-'));
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-native-tabs-narrow-'));
   try {
     await withPage({ url: 'about:blank', width: 1400, height: 800, scale: 1, profile }, async devtools => {
-      await lay(devtools, { width: 380, dock: true });
-      let view = await devtools.evaluate(geometry);
-      for (const [index, name] of ['terminal', 'browser', 'files'].entries()) {
-        const box = view.views[index];
-        assert.notEqual(box, null, `${name}: the view is drawn`);
-        assert.equal(Math.round(box.width), 24, `${name}: it keeps the narrow column's 24px box (${box.width})`);
-      }
-      assert(view.views[2].right <= view.dots.left + 0.5, 'the views stand ahead of the Session menu');
-      assert(view.cluster.right <= view.column.right + 0.5, 'the cluster stays inside the column');
-      assert.equal(view.actions.width > 0, true, 'the team chip keeps its own box');
-
-      /* The switcher back in the row (a Windows build, or a collapsed macOS
-         sidebar): the four pieces do not fit, and the views are the ones that
-         step aside — the native chip keeps its full label either way. */
-      await lay(devtools, { width: 380, dock: false });
-      view = await devtools.evaluate(geometry);
-      for (const [index, name] of ['terminal', 'browser', 'files'].entries()) {
-        assert.equal(view.views[index], null, `${name}: the view steps aside for the switcher`);
-      }
-      assert.equal(
-        await devtools.evaluate('document.querySelector("._2tNPVa_triggerLabel").getBoundingClientRect().width > 30'),
-        true,
-        'the native team chip keeps its label',
-      );
-    });
-  } finally {
-    await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
-  }
-});
-
-test('the title yields only to the switcher still in the row', {
-  skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 30000,
-}, async () => {
-  const profile = await mkdtemp(join(tmpdir(), 'ccd-narrow-column-'));
-  try {
-    await withPage({ url: 'about:blank', width: 1400, height: 800, scale: 1, profile }, async devtools => {
-      /* Parked in the sidebar, the switcher leaves the row three pieces — the
-         title, the team chip and the cluster — and 400px is the floor the frame
-         protects for this column while the right panel is open (ui-layout's
-         CENTER_MIN). The three come to 377px of that 400px at their widest
-         natural size — a 112px title, an 89px chip, a 102px cluster — so the row
-         still leaves 72px between the chip and the cluster and nothing has to
-         yield. */
-      for (const width of [400, 460, 560]) {
-        await lay(devtools, { width, dock: true });
+      for (const width of [380, 400, 460, 560]) {
+        await lay(devtools, { width });
         const view = await devtools.evaluate(geometry);
         assert.notEqual(view.title, null, `${width}px: the title stays drawn`);
-        assert(
-          view.actions.right <= view.cluster.left + 0.5,
-          `${width}px: the chip stands ahead of the cluster (${view.actions.right} vs ${view.cluster.left})`,
-        );
-        assert(
-          view.cluster.right <= view.column.right + 0.5,
-          `${width}px: the cluster stays inside the column (${view.cluster.right} vs ${view.column.right})`,
-        );
+        for (const [index, name] of ['terminal', 'browser', 'files'].entries()) {
+          assert.notEqual(view.views[index], null, `${width}px: ${name} stays drawn`);
+        }
+        assert(view.actions.right <= view.cluster.left + .5, `${width}px: the team chip clears the utilities`);
+        assert(view.cluster.right <= view.column.right + .5, `${width}px: the controls stay inside the column`);
+        const tabs = await devtools.evaluate(`(() => {
+          const tabs = document.querySelector('.ST7X_W_viewTabs').getBoundingClientRect();
+          const budget = document.querySelector('.ST7X_W_tabs').clientWidth;
+          const title = document.querySelector('.ST7X_W_crumbs').getBoundingClientRect();
+          const utilities = document.querySelector('.ST7X_W_headerUtilities').getBoundingClientRect();
+          const team = document.querySelector('.ST7X_W_headerActions').getBoundingClientRect();
+          const more = document.querySelector('button[aria-haspopup=menu]');
+          return { top: tabs.top, bottom: tabs.bottom, left: tabs.left, right: tabs.right,
+            titleTop: title.top, titleBottom: title.bottom, teamRight: team.right, utilitiesLeft: utilities.left,
+            budget, moreDisplay: getComputedStyle(more).display,
+            titleHit: document.elementFromPoint(title.left + title.width / 2, title.top + title.height / 2)?.closest('.ST7X_W_crumbs') !== null,
+            tabHit: document.elementFromPoint(tabs.right - 13, tabs.top + 14)?.closest('[role=tab]') !== null,
+            activeColor: getComputedStyle(document.querySelector('[role=tab][aria-selected=true]')).color,
+            inactiveColor: getComputedStyle(document.querySelector('[role=tab][aria-selected=false]')).color,
+            underline: getComputedStyle(document.querySelector('[role=tab][aria-selected=true]'), '::after').backgroundColor };
+        })()`);
+        assert(tabs.top < tabs.titleBottom && tabs.bottom > tabs.titleTop, `${width}px: native tabs share the title row`);
+        assert(tabs.left >= tabs.teamRight - .5, `${width}px: tabs follow the team entry`);
+        assert(tabs.right <= tabs.utilitiesLeft + .5, `${width}px: tabs clear the utilities`);
+        assert.equal(tabs.moreDisplay, 'none');
+        assert.equal(tabs.budget, 288, 'the host retains room for both native tabs');
+        assert(tabs.titleHit, 'the transparent budget does not intercept title clicks');
+        assert(tabs.tabHit, 'the visible native tabs remain clickable');
+        assert.notEqual(tabs.activeColor, tabs.inactiveColor, 'the selected View remains distinct');
+        assert.equal(tabs.underline, tabs.activeColor, 'the underline follows the native selected state');
       }
-      /* Back in the row, the switcher is the fourth piece and the title is the
-         one that goes — the three views above cover the rest of that trade. */
-      await lay(devtools, { width: 400, dock: false });
-      const view = await devtools.evaluate(geometry);
-      assert.equal(view.title, null, 'the title yields to the switcher in the row');
-      assert.equal(view.actions.width > 0, true, 'the team chip keeps its own box');
-
-      /* The proof shot: the 402px column an expanded right panel leaves — the
-         width the plugin's own screenshots of this state are taken in, and the
-         one the title used to disappear at. */
-      await lay(devtools, { width: 402, dock: true });
-      const shot = await devtools.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 402, height: 52, scale: 2 } });
-      await mkdir(join(root, 'artifacts'), { recursive: true });
-      await writeFile(join(root, 'artifacts/narrow-column-header-parked.png'), Buffer.from(shot.data, 'base64'));
     });
   } finally {
     await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
@@ -372,7 +339,7 @@ test('the browsing column speaks both shipped builds', {
           document.documentElement.dataset.dshCcdStyle = 'true';
           document.documentElement.dataset.platform = 'darwin';
           document.body.innerHTML = '<div id="col" style="width:420px;height:100vh"></div>';
-          document.getElementById('col').innerHTML = ${JSON.stringify(aliasHostClasses(page({ dock: true }), hostBuild))};
+          document.getElementById('col').innerHTML = ${JSON.stringify(aliasHostClasses(page(), hostBuild))};
           const sheet = document.createElement('style');
           sheet.textContent = ${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, hostBuild))};
           document.head.append(sheet);
