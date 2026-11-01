@@ -11,6 +11,11 @@ export interface FileSummaryPart {
   readonly tone: 'plain' | 'file' | 'added' | 'removed';
 }
 
+export function fileActionLabel(action: ToolFileSummary['action'], language: 'zh' | 'en'): string {
+  if (language === 'zh') return action === 'edit' ? '已编辑' : '已写入';
+  return action === 'edit' ? 'Edited' : 'Wrote';
+}
+
 export function toolFileSummary(row: Element): ToolFileSummary | null {
   const action = row.getAttribute('data-tool');
   if ((action !== 'write' && action !== 'edit') || row.getAttribute('data-state') !== 'ok') return null;
@@ -29,15 +34,17 @@ export function toolFileSummary(row: Element): ToolFileSummary | null {
   return { action, name, added: count('diffAdded', '\\+'), removed: count('diffRemoved', '[-−]') };
 }
 
-export function fileSummaryParts(files: readonly ToolFileSummary[], others: readonly string[]): FileSummaryPart[] {
+export function fileSummaryParts(files: readonly ToolFileSummary[], others: readonly string[], language: 'zh' | 'en' = 'en'): FileSummaryPart[] {
   const parts: FileSummaryPart[] = [];
+  const separator = language === 'zh' ? '、' : ', ';
   for (const file of files.slice(0, 2)) {
-    if (parts.length) parts.push({ text: ', ', tone: 'plain' });
-    parts.push({ text: file.action === 'edit' ? 'Edited ' : 'Wrote ', tone: 'plain' },
+    if (parts.length) parts.push({ text: separator, tone: 'plain' });
+    parts.push({ text: `${fileActionLabel(file.action, language)} `, tone: 'plain' },
       { text: file.name, tone: 'file' });
   }
-  if (files.length > 2) parts.push({ text: ` (${files.length} file operations)`, tone: 'plain' });
-  if (others.length) parts.push({ text: `, ${others.join(', ')}`, tone: 'plain' });
+  if (files.length > 2) parts.push({ text: language === 'zh' ? `（共 ${files.length} 次文件操作）`
+    : ` (${files.length} file operations)`, tone: 'plain' });
+  if (others.length) parts.push({ text: `${separator}${others.join(separator)}`, tone: 'plain' });
   // Missing statistics are unknown, never zero. Avoid presenting a partial sum.
   if (files.length && files.every(file => file.added !== undefined && file.removed !== undefined)) {
     parts.push({ text: `+${files.reduce((sum, file) => sum + file.added!, 0)}`, tone: 'added' },

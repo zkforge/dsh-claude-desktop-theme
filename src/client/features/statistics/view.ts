@@ -18,6 +18,7 @@ import {
   type StatsDay, type StatsModelTokens, type StatsRangeId, type StatsSnapshot,
 } from '../../../shared/stats.ts';
 import { bookNote } from './books.ts';
+import { STATS_COPY } from './locales.ts';
 import {
   HEAT_COLUMNS, HEAT_ROWS, LEGEND_LIMIT, heatLevel,
   type ChartDay, type HeatCell, type LegendRow, type StatsCardData, type StatsModelsData,
@@ -164,22 +165,24 @@ export function buildOverview(
   range: StatsRangeId,
   random: () => number,
   now: Date = new Date(),
+  language: 'zh' | 'en' = 'zh',
 ): StatsOverviewData {
+  const copy = STATS_COPY[language];
   const totals = snapshot.ranges[range];
   const window = heatWindow(snapshot.days, now);
   const tiles: StatsTile[] = [
-    { label: '会话数', value: formatCount(totals.sessions) },
-    { label: '消息数', value: formatCount(totals.messages) },
-    { label: 'Token 总量', value: formatTokens(totals.tokens) },
-    { label: '活跃天数', value: formatCount(totals.activeDays) },
-    { label: '高峰时段', value: snapshot.busyHour === null ? EMPTY : formatHour(snapshot.busyHour) },
-    { label: '常用模型', value: totals.topModel ?? EMPTY, small: true },
+    { label: copy.tiles[0], value: formatCount(totals.sessions) },
+    { label: copy.tiles[1], value: formatCount(totals.messages) },
+    { label: copy.tiles[2], value: formatTokens(totals.tokens) },
+    { label: copy.tiles[3], value: formatCount(totals.activeDays) },
+    { label: copy.tiles[4], value: snapshot.busyHour === null ? EMPTY : formatHour(snapshot.busyHour) },
+    { label: copy.tiles[5], value: totals.topModel ?? EMPTY, small: true },
   ];
   return {
     tiles,
     heat: window.heat,
     futureFrom: window.futureFrom,
-    note: bookNote(totals.tokens, random),
+    note: bookNote(totals.tokens, random, language),
   };
 }
 
@@ -195,7 +198,9 @@ export function buildModels(
   snapshot: StatsSnapshot,
   range: StatsRangeId,
   now: Date = new Date(),
+  language: 'zh' | 'en' = 'zh',
 ): StatsModelsData {
+  const copy = STATS_COPY[language];
   const totals = snapshot.ranges[range];
   const start = rangeStart(range, now.getTime());
   const visible: readonly StatsModelTokens[] = totals.models.filter(([, tokens]) =>
@@ -220,7 +225,7 @@ export function buildModels(
       }));
     return {
       date,
-      label: formatDayLabel(date),
+      label: formatDayLabel(date, language),
       tokens: segments.reduce((sum, segment) => sum + segment.tokens, 0),
       segments,
     };
@@ -233,7 +238,7 @@ export function buildModels(
     return {
       model,
       color: modelColor(at),
-      usage: `输入 ${formatTokens(counters.input)} \u00B7 输出 ${formatTokens(counters.output)}`,
+      usage: `${copy.input} ${formatTokens(counters.input)} \u00B7 ${copy.output} ${formatTokens(counters.output)}`,
       percent: `${((tokens / (totals.tokens || 1)) * 100).toFixed(1)}%`,
     };
   });
@@ -261,13 +266,15 @@ export function buildCardData(
   state: StatsViewState,
   random: () => number,
   now: Date = new Date(),
+  language: 'zh' | 'en' = 'zh',
 ): StatsCardData {
+  const copy = STATS_COPY[language];
   return {
     tab: state.tab,
-    tabs: STATS_TABS,
-    ranges: STATS_RANGE_OPTIONS,
+    tabs: STATS_TABS.map((option, index) => ({ ...option, label: copy.tabs[index]! })),
+    ranges: STATS_RANGE_OPTIONS.map((option, index) => ({ ...option, label: copy.ranges[index]! })),
     range: state.range,
-    overview: state.tab === 'overview' ? buildOverview(snapshot, state.range, random, now) : null,
-    models: state.tab === 'models' ? buildModels(snapshot, state.range, now) : null,
+    overview: state.tab === 'overview' ? buildOverview(snapshot, state.range, random, now, language) : null,
+    models: state.tab === 'models' ? buildModels(snapshot, state.range, now, language) : null,
   };
 }

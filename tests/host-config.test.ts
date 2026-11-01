@@ -85,4 +85,8 @@ test('unusable values are refused at the settings boundary', () => {
     assert.doesNotThrow(() => schema({ view: { showApiBalance } }));
   }
   assert.throws(() => schema({ view: { showApiBalance: 'false' } }), /showApiBalance/);
+  for (const expandConversationProcess of [true, false]) {
+    assert.doesNotThrow(() => schema({ view: { expandConversationProcess } }));
+  }
+  assert.throws(() => schema({ view: { expandConversationProcess: 'false' } }), /expandConversationProcess/);
 });

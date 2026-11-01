@@ -15,7 +15,7 @@ export function englishToolLabel(text: string, running = false): string | undefi
   return LABELS.get(text);
 }
 
-/** Keep React's title nodes intact and add English presentation siblings. */
+/** Keep native Chinese titles; add English presentation siblings in English UI. */
 export function mountToolCallLabels(document: Document, report: (error: unknown) => void): Disposer {
   const labels = new Map<Element, HTMLElement>();
   const scopes = new Set<Element>();
@@ -39,6 +39,7 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
     pending = false;
     if (released) return;
     try {
+      const chinese = document.documentElement.lang.toLowerCase().startsWith('zh');
       // Text growth cannot detach historical titles. Sweep ownership only
       // after structural removals or attributes that may change a scope.
       if (cleanup) for (const [source, label] of labels) {
@@ -53,7 +54,7 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
         if (!source.closest('[data-disclosure-row]') && !source.closest('[data-tool="skill"]')) continue;
         // TextShimmer paints its aria-hidden copy from a pseudo-element. Its
         // textContent is empty; translate the attribute so both layers match.
-        const text = source.hasAttribute('data-ccd-file-title-source') ? undefined
+        const text = chinese || source.hasAttribute('data-ccd-file-title-source') ? undefined
           : englishToolLabel(source.getAttribute('data-shimmer-text') ?? source.textContent?.trim() ?? '',
             source.closest('[data-variant="think"]')?.getAttribute('data-state') === 'running');
         let label = labels.get(source);
@@ -73,6 +74,10 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
   };
   const observer = new MutationObserver(records => {
     for (const record of records) {
+      if (record.target === document.documentElement) {
+        collect(document.body);
+        continue;
+      }
       if (record.type !== 'characterData' && (record.type !== 'childList' || record.removedNodes?.length)) cleanup = true;
       collect(record.target, record.type !== 'childList' && record.type !== 'characterData');
       for (const node of record.addedNodes) collect(node);
@@ -81,6 +86,7 @@ export function mountToolCallLabels(document: Document, report: (error: unknown)
   });
   observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true,
     attributeFilter: ['data-state', 'data-ccd-file-title-source', 'data-shimmer-text', 'class', 'data-chat-flow-kind', 'data-variant'] });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   collect(document.body);
   sync();
   return () => {

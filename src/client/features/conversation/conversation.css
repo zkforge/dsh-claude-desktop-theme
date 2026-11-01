@@ -180,20 +180,6 @@ html[data-dsh-ccd-style="true"] [data-turn-usage-details] > dd > span {
   white-space: normal;
 }
 
-/* Process containers stay open via compat/conversation-process.ts. Only hide
-   their controls after expansion, so a failed adaptation stays operable. */
-html[data-dsh-ccd-style="true"] button[data-turn-process]:not([aria-expanded="false"]),
-html[data-dsh-ccd-style="true"] [data-step-process] > div:has(> button[data-process-activity][aria-expanded="true"]) {
-  display: none;
-}
-
-html[data-dsh-ccd-style="true"] [data-step-process-body]:not([hidden]) {
-  max-height: none;
-  overflow: visible;
-  scrollbar-gutter: auto;
-  mask-image: none;
-}
-
 /*
  * Transcript width handles: hidden here, because this interface removed what
  * they control (17).

@@ -18,6 +18,7 @@
  */
 import type { StatsRangeId } from '../../../shared/stats.ts';
 import { formatCount, formatDayLabel, formatTokens } from './format.ts';
+import { STATS_COPY } from './locales.ts';
 
 /** Marks the card container; the compatibility layer positions it. */
 export const CARD_ATTRIBUTE = 'data-ccd-stats-card';
@@ -160,8 +161,8 @@ export function heatLevel(value: number, peak: number): number {
  * @param count - that day's count.
  * @returns the line the tooltip shows.
  */
-export function heatTip(date: string, count: number): string {
-  return `${formatDayLabel(date)} \u2014 ${formatCount(count)}`;
+export function heatTip(date: string, count: number, language: 'zh' | 'en' = 'zh'): string {
+  return `${formatDayLabel(date, language)} \u2014 ${formatCount(count)}`;
 }
 
 /** One segmented control: buttons in a labelled group, the active one pilled. */
@@ -191,7 +192,7 @@ function createSegments<T extends string>(
 }
 
 /** The `Overview` body: tiles, heatmap and the footer sentence. */
-function createOverview(document: Document, data: StatsOverviewData, tips: Map<HTMLElement, Tip>): HTMLElement {
+function createOverview(document: Document, data: StatsOverviewData, tips: Map<HTMLElement, Tip>, language: 'zh' | 'en'): HTMLElement {
   const body = document.createElement('div');
   body.className = 'ccd-stats-overview';
 
@@ -215,7 +216,7 @@ function createOverview(document: Document, data: StatsOverviewData, tips: Map<H
   const heat = document.createElement('div');
   heat.className = 'ccd-stats-heat';
   heat.setAttribute('role', 'img');
-  heat.setAttribute('aria-label', '每日活跃热力图');
+  heat.setAttribute('aria-label', STATS_COPY[language].heat);
   for (let column = 0; column < HEAT_COLUMNS; column += 1) {
     const col = document.createElement('div');
     col.className = 'ccd-stats-heat-col';
@@ -226,7 +227,7 @@ function createOverview(document: Document, data: StatsOverviewData, tips: Map<H
       const entry = data.heat[index];
       cell.dataset.level = entry === undefined || entry.level === null ? 'future' : String(entry.level);
       if (entry !== undefined && entry.level !== null) {
-        tips.set(cell, { title: heatTip(entry.date, entry.count), rows: [] });
+        tips.set(cell, { title: heatTip(entry.date, entry.count, language), rows: [] });
       }
       col.append(cell);
     }
@@ -244,14 +245,15 @@ function createOverview(document: Document, data: StatsOverviewData, tips: Map<H
 }
 
 /** The `Models` body: the stacked bar chart and its legend. */
-function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLElement, Tip>): HTMLElement {
+function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLElement, Tip>, language: 'zh' | 'en'): HTMLElement {
+  const copy = STATS_COPY[language];
   const body = document.createElement('div');
   body.className = 'ccd-stats-models';
 
   const chart = document.createElement('div');
   chart.className = 'ccd-stats-chart';
   chart.setAttribute('role', 'img');
-  chart.setAttribute('aria-label', '各模型每日 Token 用量');
+  chart.setAttribute('aria-label', copy.chart);
 
   const axis = document.createElement('div');
   axis.className = 'ccd-stats-chart-y';
@@ -276,7 +278,7 @@ function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLE
       column.append(bar);
     }
     tips.set(column, {
-      title: formatDayLabel(day.date),
+      title: formatDayLabel(day.date, language),
       rows: day.segments.map(segment => ({
         color: segment.color,
         text: `${segment.model}: ${formatTokens(segment.tokens)}`,
@@ -312,7 +314,7 @@ function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLE
   if (data.legend.length === 0) {
     const empty = document.createElement('span');
     empty.className = 'ccd-stats-empty';
-    empty.textContent = '此时间范围内暂无模型用量';
+    empty.textContent = copy.empty;
     legend.append(empty);
   }
   data.legend.forEach((row, index) => {
@@ -340,13 +342,13 @@ function createModels(document: Document, data: StatsModelsData, tips: Map<HTMLE
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'ccd-stats-more';
-    more.textContent = `展开其余 ${String(data.moreCount)} 个模型`;
+    more.textContent = copy.more(data.moreCount);
     more.setAttribute('aria-expanded', 'false');
     more.addEventListener('click', () => {
       const expanded = more.getAttribute('aria-expanded') === 'true';
       const next = !expanded;
       more.setAttribute('aria-expanded', String(next));
-      more.textContent = next ? '收起' : `展开其余 ${String(data.moreCount)} 个模型`;
+      more.textContent = next ? copy.less : copy.more(data.moreCount);
       for (const [index, row] of [...legend.querySelectorAll<HTMLElement>('.ccd-stats-legend-row')].entries()) {
         row.hidden = !next && index >= LEGEND_LIMIT;
       }
@@ -370,23 +372,25 @@ export function createStatsCard(
   document: Document,
   data: StatsCardData,
   handlers: StatsCardHandlers,
+  language: 'zh' | 'en' = 'zh',
 ): StatsCard {
+  const copy = STATS_COPY[language];
   const card = document.createElement('div');
   card.setAttribute(CARD_ATTRIBUTE, 'true');
 
   const header = document.createElement('div');
   header.className = 'ccd-stats-header';
-  const tabs = createSegments(document, '统计视图', data.tabs, data.tab, handlers.onTab);
+  const tabs = createSegments(document, copy.view, data.tabs, data.tab, handlers.onTab);
   const spacer = document.createElement('span');
   spacer.className = 'ccd-stats-spacer';
-  const ranges = createSegments(document, '时间范围', data.ranges, data.range, handlers.onRange);
+  const ranges = createSegments(document, copy.range, data.ranges, data.range, handlers.onRange);
   header.append(tabs, spacer, ranges);
 
   const body = document.createElement('div');
   body.className = 'ccd-stats-body';
   const tips = new Map<HTMLElement, Tip>();
-  if (data.tab === 'models' && data.models !== null) body.append(createModels(document, data.models, tips));
-  else if (data.overview !== null) body.append(createOverview(document, data.overview, tips));
+  if (data.tab === 'models' && data.models !== null) body.append(createModels(document, data.models, tips, language));
+  else if (data.overview !== null) body.append(createOverview(document, data.overview, tips, language));
 
   const tooltip = document.createElement('div');
   tooltip.className = 'ccd-stats-tooltip';

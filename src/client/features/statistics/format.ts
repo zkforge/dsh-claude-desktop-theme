@@ -15,7 +15,10 @@ const HOUR = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit
 /* The day key is a local calendar day, so it is read back in UTC: parsing
    `YYYY-MM-DD` yields UTC midnight and formatting it in the local zone could
    shift the label by a day. */
-const DAY = new Intl.DateTimeFormat(LOCALE, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const DAY = {
+  zh: new Intl.DateTimeFormat(LOCALE, { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+  en: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+};
 
 /**
  * One metric as the reference writes it: `1,556`.
@@ -60,6 +63,6 @@ export function formatHour(hour: number): string {
  * @param date - local day key.
  * @returns the short label.
  */
-export function formatDayLabel(date: string): string {
-  return DAY.format(new Date(`${date}T00:00:00Z`));
+export function formatDayLabel(date: string, language: 'zh' | 'en' = 'zh'): string {
+  return DAY[language].format(new Date(`${date}T00:00:00Z`));
 }

@@ -10,10 +10,10 @@ import { ANCHOR } from './host-dom.ts';
 export function mountConversationProcess(document: Document, report: (error: unknown) => void): Disposer {
   let released = false;
   let pending = false;
+  const opened = new Set<HTMLButtonElement>();
 
-  /** Open one disclosure without taking the reader's caret or scroll position. */
-  const open = (button: HTMLButtonElement) => {
-    if (button.disabled || button.getAttribute('aria-expanded') !== 'false') return;
+  /** Change one disclosure without taking the reader's caret or scroll position. */
+  const toggle = (button: HTMLButtonElement) => {
     const focused = document.activeElement;
     button.click();
     // Host handlers focus their disclosure; background expansion must not
@@ -24,6 +24,12 @@ export function mountConversationProcess(document: Document, report: (error: unk
         (focused as HTMLElement).focus({ preventScroll: true });
       }
     }
+  };
+
+  const open = (button: HTMLButtonElement) => {
+    if (button.disabled || button.getAttribute('aria-expanded') !== 'false') return;
+    opened.add(button);
+    toggle(button);
   };
 
   /**
@@ -127,7 +133,15 @@ export function mountConversationProcess(document: Document, report: (error: unk
   }
   sync();
   return () => {
+    if (released) return;
     released = true;
     observer?.disconnect();
+    // Restore only disclosures we opened, inner groups before outer turns.
+    // Native open disclosures and leaf reasoning/tool details remain untouched.
+    for (const button of [...opened].reverse()) {
+      if (!button.isConnected || button.disabled || button.getAttribute('aria-expanded') !== 'true') continue;
+      try { toggle(button); } catch (error) { report(error); }
+    }
+    opened.clear();
   };
 }

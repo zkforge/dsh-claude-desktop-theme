@@ -130,6 +130,22 @@ test('the card data uses Chinese labels and keeps tile order and hidden metrics'
   assert.equal(data.overview?.note, '已使用的 Token 量约相当于《小王子》的 22413 倍。');
 });
 
+test('English statistics localize labels, dates, legends and book notes without changing totals', () => {
+  const snap = snapshot({ modelIO: [['opencode-go/deepseek-v4.1-flash', 400, 200]] });
+  const state = { tab: 'overview', range: 'all' } as const;
+  const chinese = buildCardData(snap, state, () => 0, NOW, 'zh');
+  const english = buildCardData(snap, state, () => 0, NOW, 'en');
+  assert.deepEqual(english.tabs.map(option => option.label), ['Overview', 'Models']);
+  assert.deepEqual(english.ranges.map(option => option.label), ['All', 'Last 30 days', 'Last 7 days']);
+  assert.deepEqual(english.overview!.tiles.map(tile => tile.label), ['Sessions', 'Messages', 'Total tokens', 'Active days', 'Peak hour', 'Favorite model']);
+  assert.deepEqual(english.overview!.tiles.map(tile => tile.value), chinese.overview!.tiles.map(tile => tile.value));
+  assert.equal(english.overview!.note, "You've used about 22413× as many tokens as The Little Prince.");
+  assert.equal(bookNote(22_000, () => 0, 'en'), "You've used about as many tokens as The Little Prince.");
+  assert.equal(bookNote(1000, () => 0, 'en'), null);
+  assert.equal(heatTip('2026-09-30', 1387, 'en'), 'Sep 30 — 1,387');
+  assert.equal(buildModels(snap, 'all', NOW, 'en').legend[0]?.usage, 'Input 400 · Output 200');
+});
+
 test('the range switch moves the tiles and the footer, but not the heatmap', () => {
   const snap = snapshot({
     ranges: {

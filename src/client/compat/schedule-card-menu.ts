@@ -1,5 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { prepareScheduleDeletion, type ScheduleDeletePort } from './schedule-delete-port.ts';
+import { scheduleCopy } from './schedule-locales.ts';
 
 /** Add sibling controls without nesting buttons or replacing React-owned rows. */
 export function mountScheduleCardMenus(document: Document, port: ScheduleDeletePort, report: (error: unknown) => void): Disposer {
@@ -11,11 +12,12 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
   const menu = document.createElement('div');
   menu.className = 'ccd-schedule-card-menu';
   menu.setAttribute('role', 'menu');
-  menu.setAttribute('aria-label', '任务操作');
   menu.hidden = true;
   const remove = document.createElement('button');
   remove.type = 'button'; remove.setAttribute('role', 'menuitem');
-  remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg><span>删除任务</span>';
+  remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>';
+  const removeLabel = document.createElement('span');
+  remove.append(removeLabel);
   menu.append(remove);
   const close = (focus = false) => {
     menu.hidden = true;
@@ -24,6 +26,7 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
     anchor = undefined; selected = undefined;
   };
   remove.onclick = () => {
+    const copy = scheduleCopy(document);
     const row = selected;
     if (!row || dismissDialog) return;
     const metadata = row.getAttribute('aria-describedby');
@@ -31,15 +34,15 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
     close();
     const dialog = document.createElement('dialog');
     dialog.className = 'ccd-schedule-delete-dialog';
-    dialog.setAttribute('aria-label', '删除定时任务？');
-    const title = document.createElement('h2'); title.textContent = '删除定时任务？';
+    dialog.setAttribute('aria-label', copy.deleteTitle);
+    const title = document.createElement('h2'); title.textContent = copy.deleteTitle;
     const description = document.createElement('p');
-    description.textContent = `删除“${row.getAttribute('aria-label') ?? '此任务'}”？其过往运行记录也将被删除。此操作无法撤销。原会话及其消息仍然保留。`;
+    description.textContent = copy.deleteDescription(row.getAttribute('aria-label') ?? copy.thisTask);
     const notice = document.createElement('p'); notice.setAttribute('role', 'status');
-    notice.textContent = '正在读取任务…';
+    notice.textContent = copy.loadingTask;
     const actions = document.createElement('div'); actions.className = 'ccd-schedule-delete-actions';
-    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = '取消';
-    const confirm = document.createElement('button'); confirm.type = 'button'; confirm.textContent = '删除';
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = copy.cancel;
+    const confirm = document.createElement('button'); confirm.type = 'button'; confirm.textContent = copy.remove;
     confirm.className = 'ccd-schedule-delete-confirm'; confirm.disabled = true;
     actions.append(cancel, confirm); dialog.append(title, description, notice, actions);
     let busy = false;
@@ -58,37 +61,40 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
     confirm.onclick = async () => {
       if (!prepared || busy || closed) return;
       busy = true; confirm.disabled = true; cancel.disabled = true;
-      confirm.textContent = '正在删除…'; notice.textContent = '';
+      confirm.textContent = copy.deleting; notice.textContent = '';
       try {
         await prepared.confirm();
         if (active && !closed) dismiss();
       } catch (error) {
         if (active && !closed) {
           report(error); notice.setAttribute('role', 'alert');
-          notice.textContent = error instanceof Error ? error.message : '删除失败，请稍后重试';
-          confirm.disabled = false; cancel.disabled = false; confirm.textContent = '删除';
+          notice.textContent = error instanceof Error ? error.message : copy.deleteError;
+          confirm.disabled = false; cancel.disabled = false; confirm.textContent = copy.remove;
         }
       } finally { busy = false; }
     };
     document.body.append(dialog); dialog.showModal(); cancel.focus();
     void (async () => {
       try {
-        if (!metadata) throw new Error('无法识别任务，请刷新后重试');
+        if (!metadata) throw new Error(copy.identifyError);
         const result = await prepareScheduleDeletion(port, metadata);
         if (!active || closed) return;
-        if (!row.isConnected || row.getAttribute('aria-describedby') !== metadata) throw new Error('任务已变化，请重新选择');
+        if (!row.isConnected || row.getAttribute('aria-describedby') !== metadata) throw new Error(copy.changedError);
         prepared = result;
-        description.textContent = `删除“${result.task.title}”？其过往运行记录也将被删除。此操作无法撤销。原会话及其消息仍然保留。`;
+        description.textContent = copy.deleteDescription(result.task.title);
         notice.textContent = ''; confirm.disabled = false;
       } catch (error) {
         if (active && !closed) {
           report(error); notice.setAttribute('role', 'alert');
-          notice.textContent = error instanceof Error ? error.message : '无法读取任务，请稍后重试';
+          notice.textContent = error instanceof Error ? error.message : copy.readError;
         }
       }
     })();
   };
   const sync = () => {
+    const copy = scheduleCopy(document);
+    if (menu.getAttribute('aria-label') !== copy.actions) menu.setAttribute('aria-label', copy.actions);
+    if (removeLabel.textContent !== copy.deleteTask) removeLabel.textContent = copy.deleteTask;
     for (const [row, trigger] of controls) {
       if (!row.isConnected) {
         if (selected === row) close();
@@ -96,10 +102,15 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
       }
     }
     for (const row of document.querySelectorAll<HTMLButtonElement>('[data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more)')) {
-      if (controls.has(row)) continue;
+      const label = copy.actionLabel(row.getAttribute('aria-label') ?? '');
+      const existing = controls.get(row);
+      if (existing) {
+        if (existing.getAttribute('aria-label') !== label) existing.setAttribute('aria-label', label);
+        continue;
+      }
       const trigger = document.createElement('button');
       trigger.className = 'ccd-schedule-card-more'; trigger.type = 'button';
-      trigger.textContent = '⋮'; trigger.setAttribute('aria-label', `任务操作：${row.getAttribute('aria-label') ?? ''}`);
+      trigger.textContent = '⋮'; trigger.setAttribute('aria-label', label);
       trigger.setAttribute('aria-haspopup', 'menu'); trigger.setAttribute('aria-expanded', 'false');
       trigger.onclick = () => {
         const wasOpen = anchor === trigger && !menu.hidden;
@@ -129,6 +140,7 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
   const reposition = () => close();
   const observer = new MutationObserver(sync);
   observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   document.addEventListener('pointerdown', outside);
   document.addEventListener('keydown', keys, true);
   document.addEventListener('scroll', reposition, true);

@@ -43,3 +43,12 @@ test('mixed summaries retain filenames, bound the file list and aggregate comple
   assert.ok(many.some(part => part.text === ' (4 file operations)'));
   assert.equal(fileSummaryParts([files[0]!, { action: 'edit', name: 'unknown.ts' }], []).some(part => part.tone === 'added'), false);
 });
+
+test('Chinese file summaries preserve paths and diff counts while translating actions and totals', () => {
+  const files = [{ action: 'write', name: 'Thought.ts', added: 2, removed: 0 },
+    { action: 'edit', name: '路径/文件.md', added: 1, removed: 3 }] as const;
+  const parts = fileSummaryParts(files, ['思考、运行 1 条命令'], 'zh');
+  assert.equal(parts.map(part => part.text).join(''), '已写入 Thought.ts、已编辑 路径/文件.md、思考、运行 1 条命令+3−3');
+  assert.deepEqual(parts.filter(part => part.tone === 'file').map(part => part.text), ['Thought.ts', '路径/文件.md']);
+  assert.ok(fileSummaryParts([...files, files[0]], [], 'zh').some(part => part.text === '（共 3 次文件操作）'));
+});

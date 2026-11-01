@@ -1,15 +1,23 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { taskForMetadata, type ScheduleDetailPort, type ScheduleTask } from './schedule-detail-port.ts';
+import { scheduleCopy } from './schedule-locales.ts';
 
 const ROWS = '[data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more)';
 
 /** Wall-clock label relative to today: 今天 9:51 / 明天 9:51 / 10月25日 9:51. */
-export function scheduleTimeLabel(iso: string, now = new Date()): string {
+export function scheduleTimeLabel(iso: string, now = new Date(), language: 'zh' | 'en' = 'zh'): string {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return '';
   const time = `${at.getHours()}:${String(at.getMinutes()).padStart(2, '0')}`;
   const day = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const offset = Math.round((day(at) - day(now)) / 86_400_000);
+  if (language === 'en') {
+    const relative = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : offset === -1 ? 'Yesterday' : null;
+    const date = relative ?? new Intl.DateTimeFormat('en-US', {
+      month: 'short', day: 'numeric', ...(at.getFullYear() !== now.getFullYear() ? { year: 'numeric' } as const : {}),
+    }).format(at);
+    return `${date} ${time}`;
+  }
   if (offset === 0) return `今天 ${time}`;
   if (offset === 1) return `明天 ${time}`;
   if (offset === -1) return `昨天 ${time}`;
@@ -29,7 +37,7 @@ function frequencyOf(row: Element): string {
  * sibling the plugin owns; the native list pane is only hidden by CSS. */
 export function mountScheduleDetail(document: Document, port: ScheduleDetailPort, report: (error: unknown) => void): Disposer {
   let records: readonly ScheduleTask[] = [];
-  let view: { page: Element; root: HTMLElement; task: ScheduleTask; row: HTMLElement; token: number } | undefined;
+  let view: { page: Element; root: HTMLElement; task: ScheduleTask; row: HTMLElement; token: number; localize(): void } | undefined;
   let token = 0;
   let active = true;
   const prompts = new Set<HTMLElement>();
@@ -55,19 +63,21 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
       if (!active || view?.token !== mine) return;
       list.replaceChildren();
       if (history.records.length === 0) {
-        const empty = document.createElement('p'); empty.className = 'ccd-schedule-detail-empty'; empty.textContent = '暂无运行记录';
+        const empty = document.createElement('p'); empty.className = 'ccd-schedule-detail-empty'; empty.textContent = scheduleCopy(document).emptyHistory;
+        empty.setAttribute('data-ccd-history-state', 'empty');
         list.append(empty); return;
       }
       for (const record of history.records) {
         const item = document.createElement('li');
-        const time = document.createElement('time'); time.dateTime = record.deliveredAt; time.textContent = scheduleTimeLabel(record.deliveredAt);
+        const time = document.createElement('time'); time.dateTime = record.deliveredAt;
+        time.textContent = scheduleTimeLabel(record.deliveredAt, new Date(), document.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en');
         item.append(time); list.append(item);
       }
     } catch (error) {
       if (!active || view?.token !== mine) return;
       report(error);
       const failure = document.createElement('p'); failure.className = 'ccd-schedule-detail-empty'; failure.setAttribute('role', 'alert');
-      failure.textContent = error instanceof Error ? error.message : '无法读取运行记录';
+      failure.textContent = error instanceof Error ? error.message : scheduleCopy(document).historyError;
       list.replaceChildren(failure);
     }
   };
@@ -80,8 +90,8 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
     const root = document.createElement('div'); root.className = 'ccd-schedule-detail';
     root.setAttribute('role', 'region'); root.setAttribute('aria-label', task.title);
 
-    const crumbs = document.createElement('nav'); crumbs.className = 'ccd-schedule-detail-crumbs'; crumbs.setAttribute('aria-label', '位置');
-    const back = document.createElement('button'); back.type = 'button'; back.textContent = '定时任务'; back.onclick = () => close();
+    const crumbs = document.createElement('nav'); crumbs.className = 'ccd-schedule-detail-crumbs';
+    const back = document.createElement('button'); back.type = 'button'; back.onclick = () => close();
     const divider = document.createElement('span'); divider.textContent = '/'; divider.setAttribute('aria-hidden', 'true');
     const current = document.createElement('span'); current.textContent = task.title; current.setAttribute('aria-current', 'page');
     crumbs.append(back, divider, current);
@@ -89,23 +99,41 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
     const header = document.createElement('header'); header.className = 'ccd-schedule-detail-header';
     const title = document.createElement('h1'); title.textContent = task.title; title.tabIndex = -1;
     const next = document.createElement('p');
-    next.textContent = task.status === 'active' ? `下次运行：${scheduleTimeLabel(task.scheduledAt)}` : '已结束';
     header.append(title, next);
 
     const body = document.createElement('div'); body.className = 'ccd-schedule-detail-body';
     const history = document.createElement('ul'); history.className = 'ccd-schedule-detail-history';
-    const loading = document.createElement('p'); loading.className = 'ccd-schedule-detail-empty'; loading.textContent = '正在读取运行记录…';
+    const loading = document.createElement('p'); loading.className = 'ccd-schedule-detail-empty';
+    loading.setAttribute('data-ccd-history-state', 'loading');
     history.append(loading);
-    const historyBlock = section('历史记录', history); historyBlock.classList.add('ccd-schedule-detail-records');
+    const historyBlock = section('', history); historyBlock.classList.add('ccd-schedule-detail-records');
     const aside = document.createElement('div'); aside.className = 'ccd-schedule-detail-aside';
     const prompt = document.createElement('p'); prompt.className = 'ccd-schedule-detail-prompt'; prompt.textContent = task.prompt;
     const frequency = document.createElement('p'); frequency.textContent = frequencyOf(row);
-    aside.append(section('指令', prompt), section('重复频率', frequency));
+    const promptBlock = section('', prompt), frequencyBlock = section('', frequency);
+    aside.append(promptBlock, frequencyBlock);
     body.append(historyBlock, aside);
 
     root.append(crumbs, header, body);
     page.append(root); page.setAttribute('data-ccd-schedule-detail', '');
-    view = { page, root, task, row, token: mine };
+    const text = (element: Element, value: string) => { if (element.textContent !== value) element.textContent = value; };
+    const localize = () => {
+      const copy = scheduleCopy(document);
+      const language = document.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+      crumbs.setAttribute('aria-label', copy.location);
+      text(back, copy.title);
+      text(next, task.status === 'active' ? copy.nextRun(scheduleTimeLabel(task.scheduledAt, new Date(), language)) : copy.ended);
+      text(historyBlock.querySelector('h2')!, copy.history);
+      text(promptBlock.querySelector('h2')!, copy.prompt);
+      text(frequencyBlock.querySelector('h2')!, copy.frequency);
+      text(frequency, frequencyOf(row));
+      for (const status of history.querySelectorAll('[data-ccd-history-state]')) {
+        text(status, status.getAttribute('data-ccd-history-state') === 'loading' ? copy.loadingHistory : copy.emptyHistory);
+      }
+      for (const time of history.querySelectorAll('time')) text(time, scheduleTimeLabel(time.dateTime, new Date(), language));
+    };
+    localize();
+    view = { page, root, task, row, token: mine, localize };
     title.focus();
     void renderHistory(history, task, mine);
   };
@@ -150,6 +178,7 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
     if (view) {
       const fresh = records.find(task => task.id === view!.task.id);
       if (!view.page.isConnected || !view.row.isConnected || (records.length > 0 && !fresh)) close(false);
+      else view.localize();
     }
   };
 
@@ -159,6 +188,7 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
 
   const observer = new MutationObserver(decorate);
   observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   document.addEventListener('click', intercept, true);
   document.addEventListener('keydown', keys, true);
   let unsubscribe: () => void = () => {};

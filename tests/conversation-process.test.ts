@@ -227,3 +227,43 @@ test('a replacement delivered while a pass is already queued is not dropped', as
     f.dispose();
   }
 });
+
+test('release restores only plugin-opened disclosures and preserves focus and native open choices', async () => {
+  const makeConnected = (expanded = 'false') => {
+    const button = {
+      ...makeButton(expanded), isConnected: true,
+      click() {
+        this.clicks++;
+        this.expanded = this.expanded === 'true' ? 'false' : 'true';
+        doc.activeElement = this;
+      },
+    };
+    return button;
+  };
+  const turn = makeConnected();
+  const nativeOpen = makeConnected('true');
+  const disabled = makeConnected();
+  const removed = makeConnected();
+  const f = fixture([turn, nativeOpen, disabled, removed]);
+  const step = makeConnected();
+  f.deliver(insertionRecord(step));
+  await f.settle();
+  disabled.disabled = true;
+  removed.isConnected = false;
+  const pending = makeConnected();
+  f.deliver(insertionRecord(pending));
+  f.dispose();
+  await f.settle();
+  assert.equal(turn.expanded, 'false');
+  assert.equal(step.expanded, 'false', 'inserted steps are restored too');
+  assert.equal(nativeOpen.expanded, 'true');
+  assert.equal(nativeOpen.clicks, 0, 'native open choices remain unchanged');
+  assert.equal(disabled.clicks, 1);
+  assert.equal(removed.clicks, 1);
+  assert.equal(pending.clicks, 0, 'queued expansion cannot run after restore');
+  assert.equal(doc.activeElement, f.composer);
+  assert.deepEqual(f.focusOptions, { preventScroll: true });
+  f.dispose();
+  assert.equal(turn.clicks, 2, 'release is idempotent');
+  assert.deepEqual(f.errors, []);
+});

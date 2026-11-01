@@ -50,7 +50,7 @@ export function mountStatisticsCard(
   const selectors = hostSelectors(document);
   let snapshot: StatsSnapshot | null = source.current;
   let view: StatsViewState = INITIAL_STATS_VIEW;
-  let rendered: { snapshot: StatsSnapshot; view: StatsViewState; day: string } | null = null;
+  let rendered: { snapshot: StatsSnapshot; view: StatsViewState; day: string; language: 'zh' | 'en' } | null = null;
   let hero: HTMLElement | null = null;
   let card: StatsCard | null = null;
   let host: HTMLElement | null = null;
@@ -80,8 +80,9 @@ export function mountStatisticsCard(
       return;
     }
     const now = Date.now(), day = localDayKey(now);
-    if (rendered === null || !sameStatsDisplay(rendered.snapshot, snapshot) || rendered.view !== view || rendered.day !== day) {
-      rendered = { snapshot, view, day };
+    const language = document.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    if (rendered === null || !sameStatsDisplay(rendered.snapshot, snapshot) || rendered.view !== view || rendered.day !== day || rendered.language !== language) {
+      rendered = { snapshot, view, day, language };
       remove();
     }
     if (card !== null && card.element.isConnected && host === stack) {
@@ -89,7 +90,7 @@ export function mountStatisticsCard(
       return;
     }
     remove();
-    card = createStatsCard(document, buildCardData(snapshot, view, random, new Date(now)), {
+    card = createStatsCard(document, buildCardData(snapshot, view, random, new Date(now), language), {
       onTab: tab => {
         /* Re-selecting the current view must not rebuild the card under the
            pointer that just clicked it. */
@@ -102,7 +103,7 @@ export function mountStatisticsCard(
         view = { ...view, range };
         sync();
       },
-    });
+    }, language);
     // Keep the card between the native greeting and input when the new-page
     // layout is disabled. Only our node moves; React retains its own children.
     const greeting = stack.querySelector<HTMLElement>(selectors.heroRoot);
@@ -131,6 +132,7 @@ export function mountStatisticsCard(
    * chat page, the right pane, the sidebar — cannot.
    */
   const relevant = (records: readonly MutationRecord[]): boolean => {
+    if (records.some(record => record.target === document.documentElement && record.attributeName === 'lang')) return true;
     if (records.some(record => record.type === 'attributes' && record.attributeName === 'data-phase')) return true;
     if (hero !== null && recordsTouch(records, hero)) return true;
     return recordsIntroduce(records, HERO);
@@ -142,6 +144,7 @@ export function mountStatisticsCard(
     /* The phase swap replaces the whole conversation body, so the card has to
        follow it; a guarded insert keeps our own write from feeding the loop. */
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-phase'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     sync();
   } catch (error) {
     frames.cancel();

@@ -80,6 +80,15 @@ test('API balance defaults on, persists choices and rejects invalid writes', () 
   assert.throws(() => resolveConfig({ view: { showApiBalance: 'false' } }), /view.showApiBalance/);
 });
 
+test('process expansion defaults on and preserves explicit off through the settings transport', () => {
+  assert.equal(resolveConfig().view.expandConversationProcess, true);
+  assert.equal(adoptConfig({ view: {} }).view.expandConversationProcess, true);
+  assert.equal(adoptConfig({ view: { expandConversationProcess: false } }).view.expandConversationProcess, false);
+  assert.equal(resolveConfig({ view: { expandConversationProcess: false } }).view.expandConversationProcess, false);
+  assert.equal(adoptConfig({ view: { expandConversationProcess: 'false' } }).view.expandConversationProcess, true);
+  assert.throws(() => resolveConfig({ view: { expandConversationProcess: 'false' } }), /view.expandConversationProcess/);
+});
+
 test('sidebar branding defaults off, persists explicit choices and rejects invalid writes', () => {
   assert.equal(resolveConfig().view.showSidebarBrand, false);
   assert.equal(adoptConfig({}).view.showSidebarBrand, false);

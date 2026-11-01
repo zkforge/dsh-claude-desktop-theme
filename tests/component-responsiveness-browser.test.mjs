@@ -25,6 +25,8 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
   import {mountStatisticsCard} from './src/client/features/statistics/mount.ts';
   import {CleanupScope} from './src/client/core/cleanup.ts';
   import {mountSchedulePage} from './src/client/compat/schedule-page.ts';
+  import {mountScheduleDetail} from './src/client/compat/schedule-detail.ts';
+  import {mountScheduleCardMenus} from './src/client/compat/schedule-card-menu.ts';
   let app, release;
   window.errors=[];
   const listeners=new Set();
@@ -37,6 +39,12 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
       snapshot={status:'ready',revision:snapshot.revision+1,value:config};listeners.forEach(l=>l());return true;
     }};
   window.unmount=()=>{app?.unmount();app=null;release?.();release=null;};
+  window.mountScheduleExtras=()=>{
+    const task={id:'demo-task',sessionId:'demo-session',title:'用户任务',prompt:'保留我的原始指令。',scheduledAt:new Date().toISOString(),status:'active'};
+    const detail=mountScheduleDetail(document,{list:async()=>[task],history:async()=>({id:task.id,records:[]}),subscribe:()=>()=>{}},e=>window.errors.push(String(e)));
+    const menus=mountScheduleCardMenus(document,{find:async()=>task,remove:async()=>window.deleted=true},e=>window.errors.push(String(e)));
+    const previous=release;release=()=>{menus();detail();previous?.();};
+  };
   window.mount=kind=>{
     window.unmount();
     if(kind==='ripples'){
@@ -48,7 +56,7 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
     if(kind==='statistics'){
       const totals={sessions:1000,messages:10000,tokens:1000000,activeDays:182,topModel:'demo',models:[['demo',1000000]]};
       const current={version:2,ranges:{all:totals,'30d':totals,'7d':totals},busyHour:10,
-        days:[],modelDays:[],modelIO:[['demo',1000000,800000,200000]],pending:0,missed:0,computedAt:1};
+        days:[],modelDays:[],modelIO:[['demo',800000,200000]],pending:0,missed:0,computedAt:1};
       const subs=new Set();
       const source={current,subscribe:l=>{subs.add(l);return()=>subs.delete(l);},setActive(){},dispose(){}};
       window.updateStats=()=>subs.forEach(l=>l({...current,computedAt:2}));
@@ -97,7 +105,7 @@ async function fixture(callback) {
   try {
     await withPage({ url: 'about:blank', width: 1392, height: 932, scale: 2, profile }, async page => {
       await page.evaluate(`
-        document.documentElement.setAttribute('data-dsh-ccd-style','true');
+        document.documentElement.setAttribute('data-dsh-ccd-style','true');document.documentElement.lang='zh-CN';
         document.body.innerHTML='<button id="anchor" style="position:fixed;right:30px;bottom:30px">Anchor</button><div id="root"></div>';
         const style=document.createElement('style');style.textContent=${JSON.stringify(styles)};document.head.append(style);
         window.pendingFrames=new Set();
@@ -137,6 +145,42 @@ test('effort opens, responds to keyboard choice, draws ultra and cancels animati
   assert.ok(await page.evaluate('document.querySelector(".pixel-field").width') > 0);
 }));
 
+test('effort language changes update the open panel and help without changing the selected tier', options, async () => fixture(async page => {
+  await page.evaluate("measure('effort:locale-open',()=>mount('effort'),()=>!!document.querySelector('.ccd-effort:popover-open'))");
+  await page.evaluate("measure('effort:locale-select',()=>document.querySelector('.ccd-effort .range').dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true})),()=>window.committed===3)");
+  for (const [language,title,tier,faster,smarter,marker] of [
+    ['en-US','Effort','Ultra','Faster','Smarter','Default'],
+    ['zh-CN','努力程度','超高','更快','更深入','默认'],
+  ]) {
+    await page.evaluate(`measure('effort:language',()=>document.documentElement.lang=${JSON.stringify(language)},()=>document.querySelector('.ccd-effort').getAttribute('aria-label')===${JSON.stringify(title)})`);
+    const state=await page.evaluate(`(()=>{const panel=document.querySelector('.ccd-effort');return {
+      tier:panel.querySelector('.level-current').textContent,value:panel.querySelector('.range').value,
+      axis:[...panel.querySelectorAll('.axis span')].map(e=>e.textContent),marker:panel.querySelector('.default-marker').textContent,
+      help:panel.querySelector('.tooltip').textContent};})()`);
+    assert.equal(state.tier,tier);assert.equal(state.value,'3');assert.deepEqual(state.axis,[faster,smarter]);assert.equal(state.marker,marker);
+    assert.equal(/[\u3400-\u9fff]/u.test(state.help),language.startsWith('zh'));
+    assert.equal(await page.evaluate('window.committed'),3);
+  }
+}));
+
+test('statistics language changes preserve tabs and range and translate all card copy', options, async () => fixture(async page => {
+  await page.evaluate(`document.querySelector('#root').innerHTML='<div data-phase="hero"><div class="ST7X_W_composerStack ST7X_W_composerHero"><div class="bocITq_root">Hello</div></div></div>';
+    measure('statistics:locale-mount',()=>mount('statistics'),()=>!!document.querySelector('[data-ccd-stats-card]'))`);
+  await page.evaluate("measure('statistics:locale-models',()=>document.querySelector('[data-option=models]').click(),()=>!!document.querySelector('.ccd-stats-models'))");
+  await page.evaluate("measure('statistics:locale-range',()=>document.querySelector('[data-option=\"7d\"]').click())");
+  await page.evaluate("measure('statistics:locale-en',()=>document.documentElement.lang='en-US',()=>!!document.querySelector('[aria-label=\"Daily token usage by model\"]'))");
+  assert.equal(await page.evaluate('document.querySelector("[data-option=models]").getAttribute("aria-pressed")'),'true');
+  assert.equal(await page.evaluate('document.querySelector(\'[data-option="7d"]\').getAttribute("aria-pressed")'),'true');
+  assert.equal(await page.evaluate('document.querySelector(".ccd-stats-legend-usage").textContent'),'Input 800k · Output 200k');
+  await page.evaluate("measure('statistics:locale-overview',()=>document.querySelector('[data-option=overview]').click(),()=>!!document.querySelector('.ccd-stats-overview'))");
+  const labels=await page.evaluate('[...document.querySelectorAll(".ccd-stats-label")].map(e=>e.textContent)');
+  assert.deepEqual(labels,['Sessions','Messages','Total tokens','Active days','Peak hour','Favorite model']);
+  assert.match(await page.evaluate('document.querySelector(".ccd-stats-note").textContent'),/^You've used about /);
+  await page.evaluate("measure('statistics:locale-zh',()=>document.documentElement.lang='zh-CN',()=>!!document.querySelector('[aria-label=\"每日活跃热力图\"]'))");
+  assert.equal(await page.evaluate('document.querySelector(".ccd-stats-label").textContent'),'会话数');
+  assert.equal(await page.evaluate('document.querySelector(\'[data-option="7d"]\').getAttribute("aria-pressed")'),'true');
+}));
+
 test('both pets mount and animate without retaining frames after unmount', options, async () => fixture(async page => {
   for (const kind of ['whale', 'claude']) {
     await page.evaluate("measure(" + JSON.stringify(kind + ':mount') + ",()=>mount(" + JSON.stringify(kind) + "),()=>!!document.querySelector('.ccd-composer-pet'))");
@@ -171,6 +215,56 @@ test('schedule page mounts templates, filters and search with native actions int
   await page.evaluate("measure('schedule:mine',()=>document.querySelector('.ccd-schedule-tabs button:first-child').click())");
   await page.evaluate("measure('schedule:filter',()=>document.querySelector('[aria-label=\"筛选任务\"]').click(),()=>document.querySelector('[data-testid]').hasAttribute('data-ccd-filter-open'))");
   await page.evaluate("measure('schedule:search',()=>document.querySelector('[aria-label=\"搜索任务\"]').click(),()=>document.activeElement.tagName==='INPUT')");
+}));
+
+test('schedule language changes preserve controls and query and use the matching template draft', options, async () => fixture(async page => {
+  await page.evaluate(`document.querySelector('#root').innerHTML='<div data-testid="task-manager-page"><div><div><h1>自动化任务</h1><button id="new-task">新建</button></div><div><button>全部</button></div><div><input placeholder="搜索"/></div><div role="status"><h2>还没有自动化任务，在会话中创建的任务会显示在这里</h2><button>新建</button></div></div></div>';
+    window.newTasks=0;document.querySelector('#new-task').onclick=()=>window.newTasks++;
+    measure('schedule:locale-mount',()=>mount('schedule'),()=>!!document.querySelector('.ccd-schedule-tabs'))`);
+  await page.evaluate(`document.querySelector('.ccd-schedule-tabs button:last-child').click();
+    document.querySelector('[data-ccd-schedule-tool=search]').click();document.querySelector('input').value='My task';
+    window.firstTemplate=document.querySelector('.ccd-schedule-template');
+    measure('schedule:locale-en',()=>document.documentElement.lang='en-US',()=>document.querySelector('h1').textContent==='Scheduled tasks')`);
+  assert.deepEqual(await page.evaluate('[...document.querySelectorAll(".ccd-schedule-tabs button")].map(e=>e.textContent)'),['Mine','Templates']);
+  assert.equal(await page.evaluate('document.querySelector("[data-testid]").getAttribute("data-ccd-schedule")'),'templates');
+  assert.equal(await page.evaluate('document.querySelector("input").value'),'My task');
+  assert.equal(await page.evaluate('document.querySelector("h2").textContent'),'No scheduled tasks yet.');
+  assert.equal(await page.evaluate('document.querySelector("#new-task").textContent'),'New task');
+  assert.equal(await page.evaluate('document.querySelector(".ccd-schedule-template-name").textContent'),'Daily briefing');
+  assert.equal(await page.evaluate('document.querySelector(".ccd-schedule-template-frequency").textContent'),'Weekdays at 09:00');
+  assert.equal(await page.evaluate('document.querySelectorAll(".ccd-schedule-frequency-clock svg").length'),8);
+  await page.evaluate(`document.querySelector('[data-ccd-schedule-tool=filter]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+    measure('schedule:locale-template',()=>firstTemplate.click(),()=>typeof window.template==='string')`);
+  assert.match(await page.evaluate('window.template'),/^Every weekday at 9 AM/);
+  assert.equal(await page.evaluate('window.newTasks'),1);
+  await page.evaluate("measure('schedule:locale-zh',()=>document.documentElement.lang='zh-CN',()=>document.querySelector('h1').textContent==='定时任务')");
+  assert.equal(await page.evaluate('document.querySelector(".ccd-schedule-template")===firstTemplate'),true);
+  assert.equal(await page.evaluate('document.querySelector("input").value'),'My task');
+  assert.equal(await page.evaluate('document.querySelector("[data-testid]").getAttribute("data-ccd-schedule")'),'templates');
+  await page.evaluate("measure('schedule:locale-release',()=>window.unmount())");
+  assert.equal(await page.evaluate('document.querySelector("h1").textContent'),'自动化任务');
+  assert.equal(await page.evaluate('document.querySelector("input").getAttribute("placeholder")'),'搜索');
+}));
+
+test('schedule details and delete confirmation localize without translating saved task content', options, async () => fixture(async page => {
+  await page.evaluate(`document.documentElement.lang='en-US';
+    document.querySelector('#root').innerHTML='<div data-testid="task-manager-page"><div><div><h1>Tasks</h1><button>New</button></div><div></div><div><input/></div><div><ul><li><button id="task" aria-label="用户任务" aria-describedby="detail-metadata-demo-task"><span><span>用户任务</span><span><span>Daily at 09:00</span></span></span></button></li></ul></div></div></div>';
+    measure('schedule:detail-mount',()=>mount('schedule'),()=>!!document.querySelector('.ccd-schedule-tabs'));
+    mountScheduleExtras()`);
+  await page.evaluate("measure('schedule:detail-open',()=>document.querySelector('#task').click(),()=>document.querySelector('.ccd-schedule-detail-history').textContent==='No runs yet')");
+  assert.deepEqual(await page.evaluate('[...document.querySelectorAll(".ccd-schedule-detail h2")].map(e=>e.textContent)'),['History','Instructions','Repeat frequency']);
+  assert.equal(await page.evaluate('document.querySelector(".ccd-schedule-detail h1").textContent'),'用户任务');
+  assert.equal(await page.evaluate('document.querySelector(".ccd-schedule-detail-prompt").textContent'),'保留我的原始指令。');
+  await page.evaluate("measure('schedule:detail-zh',()=>document.documentElement.lang='zh-CN',()=>document.querySelector('.ccd-schedule-detail-history').textContent==='暂无运行记录')");
+  assert.deepEqual(await page.evaluate('[...document.querySelectorAll(".ccd-schedule-detail h2")].map(e=>e.textContent)'),['历史记录','指令','重复频率']);
+  await page.evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));measure('schedule:menu-en',()=>document.documentElement.lang='en-US',()=>document.querySelector('h1').textContent==='Scheduled tasks')");
+  await page.evaluate("measure('schedule:menu-open',()=>document.querySelector('.ccd-schedule-card-more').click(),()=>!document.querySelector('.ccd-schedule-card-menu').hidden)");
+  assert.equal(await page.evaluate('document.querySelector(".ccd-schedule-card-menu [role=menuitem]").textContent'),'Delete task');
+  await page.evaluate("measure('schedule:confirmation',()=>document.querySelector('.ccd-schedule-card-menu [role=menuitem]').click(),()=>!!document.querySelector('dialog:modal button.ccd-schedule-delete-confirm:not(:disabled)'))");
+  assert.equal(await page.evaluate('document.querySelector("dialog h2").textContent'),'Delete scheduled task?');
+  assert.match(await page.evaluate('document.querySelector("dialog p").textContent'),/Delete “用户任务”/);
+  assert.equal(await page.evaluate('window.deleted'),undefined);
+  await page.evaluate("document.querySelector('dialog button').click()");
 }));
 
 test('large model and session catalogs open, filter and select without losing native actions', options, async () => fixture(async page => {

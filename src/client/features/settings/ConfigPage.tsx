@@ -328,6 +328,13 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.view')}</h4>
         <SwitchRow
+          id="ccd-settings-expand-conversation-process"
+          label={translate('field.expandConversationProcess')}
+          hint={translate('hint.expandConversationProcess')}
+          checked={served.view.expandConversationProcess}
+          onChange={value => void write([setOperation(['view', 'expandConversationProcess'], value)])}
+        />
+        <SwitchRow
           id="ccd-settings-show-model-icons"
           label={translate('field.showModelIcons')}
           hint={translate('hint.showModelIcons')}

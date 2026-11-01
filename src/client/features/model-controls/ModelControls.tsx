@@ -7,6 +7,7 @@ import { effortDefaultIndex, effortView, modelSelection } from './selection.ts';
 import { EffortPanel } from './EffortPanel.tsx';
 import { ModelIcon } from './model-icons.tsx';
 import { usePopup } from './popup.ts';
+import { EFFORT_COPY, effortLabel, useEffortLanguage } from './locales.ts';
 
 export type ModelControlsProps = Omit<ModelSelectInjected, 'directory'> & PropsLocale<'model'> & {
   readonly showModelIcons: boolean;
@@ -17,6 +18,7 @@ export type ModelControlsProps = Omit<ModelSelectInjected, 'directory'> & PropsL
 
 /** SDK-derived values/hooks and callbacks only; DSH retains all business state. */
 export function ModelControls({ showModelIcons, locked, available, useDirectory, load, select, selectEffort, t }: ModelControlsProps) {
+  const language = useEffortLanguage();
   const state = useDirectory();
   const alive = useRef(true);
   const restoreModelFocus = useRef(false);
@@ -52,8 +54,8 @@ export function ModelControls({ showModelIcons, locked, available, useDirectory,
       <span className="ccd-model-label">{label}</span>
     </button>
     {caption !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || !pickable}
-      aria-label={`Effort: ${caption}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
-      onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{caption}</span></button>}
+      aria-label={`${EFFORT_COPY[language].title}: ${effortLabel(caption, language)}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
+      onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span>{effortLabel(caption, language)}</span></button>}
     {open === 'effort' && current && pickable && <EffortPanel key={`${current.provider}/${current.model}`} anchor={effortAnchor} choices={choices} selected={preview} defaultIndex={effortDefaultIndex(model)} disabled={locked || !available} busy={busy} error={state.error}
       onClose={close} onCommit={index => { const choice = choices[index]; if (choice && choice.id !== effort) selectEffort(current, choice.id); }} />}
     {open === 'model' && <ModelPanel showModelIcons={showModelIcons} anchor={modelAnchor} state={state} disabled={disabled} load={load} t={t} onClose={close}

@@ -39,6 +39,14 @@ test('reasoning joins consecutive tools without inflating tool counts or crossin
   assert.equal(toolGroupLabel(['reasoning', 'read', 'command']), 'Thought, read a file, ran a command');
 });
 
+test('Chinese summaries localize each category and keep reasoning separate from tool counts', () => {
+  assert.equal(toolGroupLabel(['reasoning', 'read', 'read', 'command'], 'zh'), '思考、读取 2 个文件、运行 1 条命令');
+  assert.equal(toolGroupLabel(['reasoning', 'reasoning', 'tool', 'tool'], 'zh'), '思考、调用 2 个工具');
+  assert.equal(toolGroupLabel(['read'], 'zh'), '读取 1 个文件');
+  assert.equal(toolGroupLabel(['reasoning'], 'zh'), '思考');
+  assert.equal(toolGroupLabel([], 'zh'), '');
+});
+
 /** Minimal DOM double: assert identity and ownership without launching a browser. */
 class ElementDouble {
   readonly nodeType = 1;
@@ -123,7 +131,7 @@ test('streaming leaves settled entries and markers untouched while native update
   parent.append(history.flow, reply, active.flow);
   body.append(node({ 'data-chat-running': '' }));
   const errors: unknown[] = [];
-  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, e => errors.push(e));
+  const dispose = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document, e => errors.push(e));
   let queries = 0, writes = 0;
   const query = history.flow.querySelectorAll.bind(history.flow);
   history.flow.querySelectorAll = selector => { queries++; return query(selector); };
@@ -190,7 +198,7 @@ test('DOM mixed groups retain native reasoning and leave mixed response seats vi
   const last = thinking();
   parent.append(first.flow, command.flow, second.flow, read.flow, response, last.flow);
   const errors: unknown[] = [];
-  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const dispose = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document, error => errors.push(error));
   const deliver = async (target: ElementDouble) => {
     notify([{ target, addedNodes: [], type: 'attributes' }] as unknown as MutationRecord[]);
     await Promise.resolve();
@@ -234,7 +242,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   let observedAttributes: string[] = [];
   globalThis.MutationObserver = class {
     constructor(callback: (records: MutationRecord[]) => void) { notify = callback; }
-    observe(_target: Node, options: MutationObserverInit) { observedAttributes = options.attributeFilter ?? []; }
+    observe(_target: Node, options: MutationObserverInit) { observedAttributes.push(...options.attributeFilter ?? []); }
     disconnect() { disconnected = true; }
   } as unknown as typeof MutationObserver;
   const body = node();
@@ -249,7 +257,7 @@ test('DOM grouping preserves native parents, toggles independently, follows upda
   const fourth = call('read'), live = call('bash', 'running');
   parent.append(first.flow, second.flow, third.flow, reply, fourth.flow, live.flow);
   const errors: unknown[] = [];
-  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const dispose = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document, error => errors.push(error));
   const deliver = async (target: ElementDouble, addedNodes: ElementDouble[] = []) => {
     notify([{ target, addedNodes, type: 'childList' }] as unknown as MutationRecord[]);
     await Promise.resolve();
@@ -363,7 +371,7 @@ test('failed calls keep new and existing groups folded while preserving manual t
     return { parent, first, second, nestedRow, fail };
   });
   const errors: unknown[] = [];
-  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+  const release = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   const deliver = async (parent: ElementDouble) => {
     notify([{ target: parent, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
@@ -419,7 +427,7 @@ test('a fold that leaves the reader on the floor hands bottom-follow back to the
   const first = call(), second = call();
   parent.append(first.flow, second.flow);
   const errors: unknown[] = [];
-  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const dispose = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document, error => errors.push(error));
   const atFloor = () => { scroller.scrollHeight = 900; scroller.clientHeight = 600; scroller.scrollTop = 300; };
   try {
     const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
@@ -487,7 +495,7 @@ test('live tool labels coalesce rapid updates, settle gently and retain native d
   const motions: { frames: Keyframe[]; options: KeyframeAnimationOptions; cancelled: boolean; onfinish?: () => void }[] = [];
   const errors: unknown[] = [];
   let reducedMotion = false;
-  const document = { body, defaultView: { matchMedia: () => ({ matches: reducedMotion }) }, createElement: () => Object.assign(node(), {
+  const document = { documentElement: { lang: 'en' }, body, defaultView: { matchMedia: () => ({ matches: reducedMotion }) }, createElement: () => Object.assign(node(), {
     animate(frames: Keyframe[], options: KeyframeAnimationOptions) {
       const motion = { frames, options, cancelled: false, cancel() { this.cancelled = true; } };
       motions.push(motion);
@@ -586,7 +594,7 @@ test('a working turn keeps rolling each call and only summarises once the reply 
   body.append(running);
   parent.append(first.flow);
   const errors: unknown[] = [];
-  const document = { body, createElement: () => node() } as unknown as Document;
+  const document = { documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document;
   const deliver = async () => {
     notify([{ target: parent, addedNodes: [], type: 'childList' }] as unknown as MutationRecord[]);
     await Promise.resolve();
@@ -681,7 +689,7 @@ test('a streaming thought after a call rolls in the same line instead of opening
   seat.append(thought);
   parent.append(first.flow, seat);
   const errors: unknown[] = [];
-  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+  const release = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   const deliver = async () => {
     notify([
@@ -732,7 +740,7 @@ test('removing the running row folds the last run into its summary', async (cont
   const only = call('bash', 'running'); only.row.textContent = 'Still working';
   parent.append(only.flow);
   const errors: unknown[] = [];
-  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+  const release = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   const deliver = async (record: Record<string, unknown> = {}) => {
     notify([{ target: parent, addedNodes: [], removedNodes: [], type: 'childList', ...record }] as unknown as MutationRecord[]);
@@ -775,7 +783,7 @@ test('a finished reply folds its run even while another transcript is still runn
   reply.append(thought, markdown);
   parent.append(only.flow, reply);
   const errors: unknown[] = [];
-  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+  const release = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   try {
     const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
@@ -801,7 +809,7 @@ test('an interrupted thought left running stops rolling once the turn has ended'
   seat.append(thought);
   parent.append(only.flow, seat);
   const errors: unknown[] = [];
-  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+  const release = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   try {
     const toggle = parent.querySelector('[data-ccd-tool-group-toggle]')!;
@@ -829,7 +837,7 @@ test('a run inside a host step group folds once a reply follows the group', asyn
   // The turn is still running.
   list.append(group, reply, node({ 'data-chat-running': '' }));
   const errors: unknown[] = [];
-  const release = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document,
+  const release = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document,
     error => errors.push(error));
   try {
     const toggle = content.querySelector('[data-ccd-tool-group-toggle]')!;
@@ -865,7 +873,7 @@ test('file groups use native header metadata, update totals and restore titles w
   file.row.append(header);
   parent.append(file.flow, command.flow);
   const errors: unknown[] = [];
-  const dispose = mountToolCallGroups({ body, createElement: () => node() } as unknown as Document, error => errors.push(error));
+  const dispose = mountToolCallGroups({ documentElement: { lang: 'en' }, body, createElement: () => node() } as unknown as Document, error => errors.push(error));
   const deliver = async () => {
     notify([{ target: file.row, addedNodes: [] }] as unknown as MutationRecord[]);
     await Promise.resolve();

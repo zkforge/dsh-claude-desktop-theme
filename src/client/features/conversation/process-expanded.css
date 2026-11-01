@@ -1,0 +1,13 @@
+/* Mounted only with automatic expansion. Without it, native process controls,
+   height limits and scrolling follow DSH's work-step presentation settings. */
+html[data-dsh-ccd-style="true"] button[data-turn-process]:not([aria-expanded="false"]),
+html[data-dsh-ccd-style="true"] [data-step-process] > div:has(> button[data-process-activity][aria-expanded="true"]) {
+  display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-step-process-body]:not([hidden]) {
+  max-height: none;
+  overflow: visible;
+  scrollbar-gutter: auto;
+  mask-image: none;
+}

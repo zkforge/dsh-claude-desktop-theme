@@ -200,6 +200,7 @@ test('the table is one entry per preset, and every entry says something', () => 
     assert.equal(copy.presets.length, 4, 'four presets, one row each');
     for (const preset of copy.presets) {
       assert.ok(preset.value.length > 0 && preset.label.length > 0, preset.value);
+      assert.ok(preset.description, preset.value);
       assert.ok(preset.description.length > 0, preset.value);
       assert.notEqual(preset.description, preset.label, preset.value);
     }
@@ -217,7 +218,7 @@ test('reference labels retain host identities and describe the read-only limit',
   ] as const) {
     const copy = permissionCopy(languageDouble(language));
     assert.deepEqual(copy.presets.map(preset => preset.label), [...labels]);
-    assert.match(copy.presets[0]!.description, /只读|Read-only/u);
+    assert.match(copy.presets[0]!.description!, /只读|Read-only/u);
     assert.equal(copy.presets.find(preset => preset.value === 'auto')?.badge?.host, 'EXP');
   }
   assert.deepEqual(permissionCopy(languageDouble('zh-CN')).presets[3]?.badge,

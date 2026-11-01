@@ -7,6 +7,7 @@ import { mountRunningStatus } from '../../compat/running-status.ts';
 import { mountReplySignature } from '../../compat/reply-signature.ts';
 import { probeHost } from '../../compat/host-dom.ts';
 import conversationCss from './conversation.css';
+import processExpandedCss from './process-expanded.css';
 import { mountHeaderVisibility } from './header-actions/visibility.ts';
 
 /**
@@ -28,7 +29,8 @@ export const conversationFeature: ImplementedFeature = {
   mount(environment, scope) {
     const probe = probeHost(document);
     if (!probe.conversation) environment.logger.debug('conversation: body not mounted yet');
-    scope.add(environment.dom.mountStyles(conversationCss));
+    scope.add(environment.dom.mountStyles(conversationCss
+      + (environment.config.view.expandConversationProcess ? processExpandedCss : '')));
     scope.add(mountConversationStream(document,
       error => environment.logger.error('conversation: streaming text failed', error)));
     scope.add(mountChangedFiles(document, error => environment.logger.error('conversation: changed files failed', error)));
@@ -39,10 +41,12 @@ export const conversationFeature: ImplementedFeature = {
       error => environment.logger.error('conversation: reply signature failed', error),
       environment.config.personalization.replySignatureStyle,
     ));
-    scope.add(mountConversationProcess(
-      document,
-      error => environment.logger.error('conversation: process expansion failed', error),
-    ));
+    if (environment.config.view.expandConversationProcess) {
+      scope.add(mountConversationProcess(
+        document,
+        error => environment.logger.error('conversation: process expansion failed', error),
+      ));
+    }
     mountHeaderVisibility(environment.host.slots, environment.config.view, scope);
     scope.add(mountConversationFade(
       document,

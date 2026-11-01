@@ -20,8 +20,8 @@ export interface PermissionPresetCopy {
   readonly aliases?: readonly string[];
   /** The preset's trailing badge: the word DSH prints, and the word to print instead. */
   readonly badge?: { readonly host: string; readonly text: string };
-  /** The row's second line, saying what the mode does. */
-  readonly description: string;
+  /** Permission row copy; Agent preset descriptions remain owned by DSH. */
+  readonly description?: string;
 }
 
 /** The card's copy in one language. */
@@ -76,25 +76,23 @@ export function permissionCopy(document: Document): PermissionCopy {
   return language.startsWith('zh') ? ZH : EN;
 }
 
-/** Short summaries of DSH's four built-in Agent presets. */
+/** Recognize built-in Agent presets without replacing their native copy. */
 export function agentPresetCopy(document: Document): PermissionCopy {
   const zh = permissionCopy(document) === ZH;
   const names = zh
     ? ['标准模式', 'PTC 模式', '极简模式', '创造模式']
-    : ['Standard', 'PTC', 'Minimal', 'Creator'];
-  const descriptions = zh
-    ? ['处理代码、文件和资料', '批量调用工具，筛选和汇总结果', '使用终端和图片读取工具', '编写插件、扩展界面和创建模式']
-    : ['Work with code, files and documents', 'Run tools in batches, filter and summarize results', 'Use terminal and image-reading tools', 'Build plugins, extend the UI and create presets'];
+    : ['Standard mode', 'PTC mode', 'Minimal mode', 'Creator mode'];
   return {
     heading: zh ? 'Agent 预设' : 'Agent presets',
     presets: ['standard', 'ptc', 'minimal', 'cordis'].map((value, index) => ({
-      value, name: names[index]!, label: names[index]!, description: descriptions[index]!,
+      value, name: names[index]!, label: names[index]!,
+      ...(!zh ? { aliases: [['Standard'], ['PTC'], ['Minimal'], ['Creator']][index]! } : {}),
     })),
   };
 }
 
 export function mountAgentPresetMenu(document: Document, report: (error: unknown) => void): Disposer {
-  return mountChoiceMenu(document, report, agentPresetCopy(document), true);
+  return mountChoiceMenu(document, report, () => agentPresetCopy(document), true);
 }
 
 /** One text node this module rewrote, and both ends of the rewrite. */
@@ -108,20 +106,23 @@ interface Drawn {
 export function mountPermissionMenu(
   document: Document, report: (error: unknown) => void, plan?: PermissionPlanPort,
 ): Disposer {
-  const copy = permissionCopy(document);
   const order = ['auto', 'read-only', 'workspace-write', 'plan', 'danger-full-access'];
-  const zh = copy === ZH;
-  const presets = [...copy.presets, ...(plan === undefined ? [] : [{
-    value: 'plan', name: zh ? '计划' : 'Plan', label: zh ? '计划' : 'Plan',
-    description: zh ? '在进行更改前制定计划' : 'Make a plan before making changes',
-  }])].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
-  return mountChoiceMenu(document, report, { ...copy, presets }, false, plan);
+  return mountChoiceMenu(document, report, () => {
+    const copy = permissionCopy(document);
+    const zh = copy === ZH;
+    const presets = [...copy.presets, ...(plan === undefined ? [] : [{
+      value: 'plan', name: zh ? '计划' : 'Plan', label: zh ? '计划' : 'Plan',
+      description: zh ? '在进行更改前制定计划' : 'Make a plan before making changes',
+    }])].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
+    return { ...copy, presets };
+  }, false, plan);
 }
 
 /** Shared two-line rows, heading, numeric selection and reversible DOM writes. */
 function mountChoiceMenu(
-  document: Document, report: (error: unknown) => void, copy: PermissionCopy, agent = false, plan?: PermissionPlanPort,
+  document: Document, report: (error: unknown) => void, readCopy: () => PermissionCopy, agent = false, plan?: PermissionPlanPort,
 ): Disposer {
+  let copy = readCopy();
   const host = hostSelectors(document);
   const modeAttribute = agent ? 'data-ccd-agent-mode' : PERMISSION_MODE_ATTRIBUTE;
   const menuAttribute = agent ? 'data-ccd-agent-menu' : PERMISSION_MENU_ATTRIBUTE;
@@ -140,7 +141,7 @@ function mountChoiceMenu(
   let busy = false;
   let forwarding = false;
   const orders = new Map<HTMLElement, Element[]>();
-  const recognised = new WeakMap<Element, PermissionPresetCopy>();
+  let recognised = new WeakMap<Element, PermissionPresetCopy>();
   const sessionId = () => trigger?.closest('[data-conversation-session]')
     ?.getAttribute('data-conversation-session') ?? null;
   const planState = () => {
@@ -270,10 +271,10 @@ function mountChoiceMenu(
     const badge = row.querySelector<HTMLElement>(host.permissionSelectBadge);
     const preset = presetOf(label);
     if (preset === undefined) return;
-    drawName(label, badge, preset);
+    if (!agent) drawName(label, badge, preset);
     row.setAttribute(modeAttribute, preset.value);
     if (!marked.includes(row)) marked.push(row);
-    if (row.querySelector(`:scope > [${descriptionAttribute}]`) === null) {
+    if (preset.description !== undefined && row.querySelector(`:scope > [${descriptionAttribute}]`) === null) {
       const description = document.createElement('span');
       description.setAttribute(descriptionAttribute, '');
       description.textContent = preset.description;
@@ -447,6 +448,14 @@ function mountChoiceMenu(
        carries an observer of its own; it is re-attached whenever the host
        replaces the control. */
     tree = new MutationObserver(records => {
+      if (records.some(record => record.target === document.documentElement)) {
+        const next = readCopy();
+        if (next.heading !== copy.heading) {
+          restore();
+          recognised = new WeakMap();
+          copy = next;
+        }
+      }
       if (recordsInTranscript(records)) return;
       const found = agent ? null : document.querySelector<HTMLElement>(host.permissionSelectTrigger);
       if (found !== attached) {
@@ -460,7 +469,8 @@ function mountChoiceMenu(
       }
       schedule();
     });
-    tree.observe(document.body, { childList: true, subtree: true });
+    tree.observe(document.body, { childList: true, subtree: true, characterData: true });
+    tree.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     const initial = agent ? null : document.querySelector<HTMLElement>(host.permissionSelectTrigger);
     if (initial !== null) {
       attached = initial;

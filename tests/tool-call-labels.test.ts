@@ -38,8 +38,9 @@ test('English title siblings follow native changes and restore original nodes on
         : selector === '[data-variant="think"]' ? { getAttribute: () => running ? 'running' : 'ok' } : null,
   };
   const body = { closest: () => null, querySelectorAll: () => [scope], nodeType: 1 };
+  const documentElement = { lang: 'en' };
   const errors: unknown[] = [];
-  const dispose = mountToolCallLabels({ body, createElement() {
+  const dispose = mountToolCallLabels({ documentElement, body, createElement() {
     const view = { textContent: '', nextElementSibling: null as unknown, removed: false,
       setAttribute() {}, remove() { this.removed = true; } };
     views.push(view); return view;
@@ -74,8 +75,17 @@ test('English title siblings follow native changes and restore original nodes on
     assert.equal(views[1]?.removed, true);
     source.textContent = '加载技能'; await deliver();
     assert.equal(views[2]?.textContent, 'Skill');
+    documentElement.lang = 'zh-CN';
+    notify([{ target: documentElement, addedNodes: [], type: 'attributes' }]);
+    await Promise.resolve();
+    assert.equal(views[2]?.removed, true, 'Chinese UI restores the native title');
+    assert.equal(attributes.has('data-ccd-english-source'), false);
+    documentElement.lang = 'en-US';
+    notify([{ target: documentElement, addedNodes: [], type: 'attributes' }]);
+    await Promise.resolve();
+    assert.equal(views[3]?.textContent, 'Skill');
     dispose();
-    assert.equal(views[2]?.removed, true);
+    assert.equal(views[3]?.removed, true);
     assert.equal(attributes.has('data-ccd-english-source'), false);
     assert.equal(source.textContent, '加载技能');
     assert.deepEqual(errors, []);

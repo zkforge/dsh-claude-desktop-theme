@@ -3,6 +3,14 @@ import test from 'node:test';
 import type { ModelCatalogModel, ModelSelection } from '@deepseek-ai/dsh-api-session-controller/types';
 import type { ModelDirectoryState } from '@deepseek-ai/dsh-client-ui-model-selection/client';
 import { effortChoices, effortDefaultIndex, effortSelection, effortView, modelSelection } from '../src/client/features/model-controls/selection.ts';
+import { effortLabel } from '../src/client/features/model-controls/locales.ts';
+
+test('effort labels translate standard display names while retaining provider-specific names', () => {
+  assert.deepEqual(['Low', 'Medium', 'High', 'Ultra', 'Max'].map(name => effortLabel(name, 'zh')), ['低', '中等', '高', '超高', '最高']);
+  for (const name of ['Low', 'Max', 'Custom provider tier', 'Max throughput']) assert.equal(effortLabel(name, 'en'), name);
+  assert.equal(effortLabel('Custom provider tier', 'zh'), 'Custom provider tier');
+  assert.equal(effortLabel('Max throughput', 'zh'), 'Max throughput');
+});
 
 const copy = { defaultName: 'Default' };
 const tiers = [{ id: 'off', name: 'Off' }, { id: 'low', name: 'Low' }, { id: 'high', name: 'High' }, { id: 'max', name: 'Max' }];

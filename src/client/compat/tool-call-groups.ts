@@ -1,6 +1,6 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { ANCHOR, hostSelectors } from './host-dom.ts';
-import { fileSummaryParts, toolFileSummary, type ToolFileSummary } from './tool-file-summary.ts';
+import { fileActionLabel, fileSummaryParts, toolFileSummary, type ToolFileSummary } from './tool-file-summary.ts';
 
 export type ToolGroupKind = 'read' | 'command' | 'tool' | 'reasoning';
 
@@ -33,10 +33,15 @@ export function consecutiveToolGroups<T>(entries: readonly ToolGroupEntry<T>[], 
   return groups;
 }
 
-export function toolGroupLabel(kinds: readonly ToolGroupKind[]): string {
+export function toolGroupLabel(kinds: readonly ToolGroupKind[], language: 'zh' | 'en' = 'en'): string {
   const counts = { read: 0, command: 0, tool: 0, reasoning: 0 };
   for (const kind of kinds) counts[kind]++;
   const categories = (['read', 'command', 'tool'] as const).filter(kind => counts[kind] > 0);
+  if (language === 'zh') {
+    const parts = categories.map(kind => kind === 'read' ? `读取 ${counts.read} 个文件`
+      : kind === 'command' ? `运行 ${counts.command} 条命令` : `调用 ${counts.tool} 个工具`);
+    return (counts.reasoning ? ['思考', ...parts] : parts).join('、');
+  }
   const parts = categories.map((kind, index) => {
     const count = counts[kind];
     const verb = kind === 'read' ? 'read' : kind === 'command' ? 'ran' : 'used';
@@ -160,9 +165,10 @@ export function resumeTailAtFloor(document: Document, from: Element): boolean {
  * paint the expanded list without wrapping or moving host nodes.
  */
 export function mountToolCallGroups(document: Document, report: (error: unknown) => void): Disposer {
+  let language: 'zh' | 'en' = document.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
   const groups = new Map<HTMLElement, Map<HTMLElement, Group>>();
   // A streaming seat invalidates itself, not every settled call in history.
-  const entries = new WeakMap<HTMLElement, ToolGroupEntry<HTMLElement>>();
+  let entries = new WeakMap<HTMLElement, ToolGroupEntry<HTMLElement>>();
   const dirty = new Set<HTMLElement>();
   const fileTitles = new Map<Element, { title: Element; label: HTMLElement }>();
   const restoreFileTitle = (row: Element) => {
@@ -218,7 +224,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
         value: element, kind: thoughts.length ? 'reasoning' : 'barrier',
         turn: element.getAttribute('data-chat-turn'),
         settled: thoughts.length > 0 && thoughts.every(thought => thought.getAttribute('data-state') === 'ok'),
-        live: thinking, description: 'Thinking',
+        live: thinking, description: language === 'zh' ? '思考中' : 'Thinking',
         failed: false,
       };
     }
@@ -227,7 +233,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     if (thinking && element.getAttribute('data-chat-flow-kind') === 'assistant-step' && !replyStarted(element)) {
       return {
         value: element, kind: 'reasoning', turn: element.getAttribute('data-chat-turn'),
-        settled: false, live: true, description: 'Thinking', failed: false,
+        settled: false, live: true, description: language === 'zh' ? '思考中' : 'Thinking', failed: false,
       };
     }
     const call = element.querySelector<HTMLElement>(ANCHOR.toolCall);
@@ -258,13 +264,13 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       let previous = fileTitles.get(row);
       if (previous && (!file || previous.title !== title)) { restoreFileTitle(row); previous = undefined; }
       if (file && previous) {
-        const text = file.action === 'edit' ? 'Edited' : 'Wrote';
+        const text = fileActionLabel(file.action, language);
         if (previous.label.textContent !== text) previous.label.textContent = text;
       }
       if (file && title && !previous) {
         const label = document.createElement('span');
         label.setAttribute('data-ccd-file-action', '');
-        label.textContent = file.action === 'edit' ? 'Edited' : 'Wrote';
+        label.textContent = fileActionLabel(file.action, language);
         title.setAttribute('data-ccd-file-title-source', '');
         title.after(label);
         row.setAttribute('data-ccd-file-row', '');
@@ -345,10 +351,10 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
       const answered = !failed && followed;
       const files = run.flatMap(item => item.file ? [item.file] : []);
       const otherKinds = run.filter(item => !item.file).map(item => item.kind);
-      const remaining = toolGroupLabel(otherKinds as ToolGroupKind[]);
+      const remaining = toolGroupLabel(otherKinds as ToolGroupKind[], language);
       const others = remaining ? [remaining] : [];
-      const parts = (answered || failed) && !live && files.length ? fileSummaryParts(files, others) : null;
-      const summary = toolGroupLabel(run.map(item => item.kind as ToolGroupKind));
+      const parts = (answered || failed) && !live && files.length ? fileSummaryParts(files, others, language) : null;
+      const summary = toolGroupLabel(run.map(item => item.kind as ToolGroupKind), language);
       const current = [...run].reverse().find(item => item.kind !== 'reasoning')?.description;
       const text = live?.description || (answered || failed ? summary : current || summary);
       const renderKey = JSON.stringify(parts ?? text);
@@ -479,6 +485,15 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
   };
   const observer = new MutationObserver(records => {
     for (const record of records) {
+      if (record.target === document.documentElement) {
+        const next = document.documentElement.lang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+        if (next !== language) {
+          language = next;
+          entries = new WeakMap();
+          collect(document.body);
+        }
+        continue;
+      }
       // Native row state/structure can change in place. Sibling replies can
       // also be inserted or removed between calls, including empty live seats.
       if (groups.has(record.target as HTMLElement)) dirty.add(record.target as HTMLElement);
@@ -507,6 +522,7 @@ export function mountToolCallGroups(document: Document, report: (error: unknown)
     attributeFilter: ['data-state', 'data-tool', 'data-cordis-status', 'disabled', 'data-chat-flow-kind',
       'data-chat-turn', 'data-chat-group-part', 'data-variant', 'data-streaming', 'data-chat-running'],
   });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   collect(document.body);
   flush();
   return () => {
