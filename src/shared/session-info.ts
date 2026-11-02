@@ -8,6 +8,8 @@ export interface SessionEnvironment {
   readonly detached: boolean;
   readonly git: 'ready' | 'not-repo' | 'error';
   readonly worktree: boolean | null;
+  /** Host directories behind the roots instruction paths are displayed under. */
+  readonly homes: Readonly<Record<string, string>>;
 }
 
 export interface SessionMetrics {
@@ -23,6 +25,19 @@ export interface SessionMetrics {
 export function infoRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? value as Record<string, unknown> : {};
+}
+
+/**
+ * Turn an instruction file's display path into one the host can read.
+ * `dsh-agent-instructions` records project files relative to the working
+ * directory and global files under `~` or an environment variable.
+ * @returns the readable path, or null when its root directory is unknown.
+ */
+export function instructionFilePath(path: string, cwd: string, homes: SessionEnvironment['homes']): string | null {
+  const at = path.indexOf('/');
+  const root = path.slice(0, Math.max(at, 0));
+  if (root === '~' || root.startsWith('$')) return homes[root] === undefined ? null : `${homes[root]}${path.slice(at)}`;
+  return /^(?:\/|[A-Za-z]:[\\/])/u.test(path) || cwd === '' ? path : `${cwd.replace(/[\\/]+$/u, '')}/${path}`;
 }
 
 function count(value: unknown): number | null {

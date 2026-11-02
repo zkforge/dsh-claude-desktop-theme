@@ -82,7 +82,7 @@ html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-inf
 .ccd-session-cards[data-ccd-info-dragging] .ccd-info-card .ccd-info-text { user-select: none; -webkit-user-select: none; }
 
 .ccd-info-header { display: flex; align-items: center; min-height: 32px; padding: 0 6px 0 10px; touch-action: none; }
-.ccd-info-toggle, .ccd-info-grip, .ccd-info-retry {
+.ccd-info-toggle, .ccd-info-grip, .ccd-info-retry, .ccd-info-link {
   border: 0;
   background: transparent;
   color: inherit;
@@ -106,6 +106,10 @@ html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-inf
 .ccd-info-value > span:first-child { flex: none; color: var(--ccd-info-secondary); white-space: nowrap; }
 .ccd-info-value > span:last-child { min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ccd-info-text { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; user-select: text; -webkit-user-select: text; }
+.ccd-info-link { padding: 0; max-width: 100%; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+.ccd-info-link:hover { text-decoration-color: currentColor; }
+.ccd-info-text.ccd-info-link { flex: 0 1 auto; }
+.ccd-info-link:focus-visible { outline: 1px solid var(--ccd-text-secondary); outline-offset: -1px; border-radius: 3px; }
 .ccd-info-text:focus-visible { outline: 1px solid var(--ccd-text-secondary); outline-offset: -1px; border-radius: 3px; }
 .ccd-info-tooltip {
   position: fixed;

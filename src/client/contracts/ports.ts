@@ -82,6 +82,8 @@ export interface SidebarTabRecord {
  * unchanged; a partial service means no header views rather than a dead button.
  */
 export interface SidebarRightPort {
+  /** Open a `dsh-resource://` address and expand the column; an unclaimed address throws. */
+  openResource(address: string): void;
   /** Open one page kind for the on-screen Session; an unregistered kind throws. */
   openTab(kind: string, options?: { readonly params?: Record<string, string>; readonly revealIfOpened?: boolean }): void;
   /** Focus a tab and the pane holding it; a missing tab is left alone. */
@@ -108,6 +110,8 @@ export interface SidebarRightPort {
    * keeps that row out rather than offering one that cannot act.
    */
   toggleExpanded?(): void;
+  /** Whether the column is expanded; a tab focus alone does not expand it. */
+  isExpanded?(): boolean;
   /**
    * Take one docked tab out into a floating pane, and put one back.
    *

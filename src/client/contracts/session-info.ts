@@ -21,5 +21,11 @@ export interface SessionInfoPort {
   subscribe(listener: () => void): Disposer;
   toggle(): void;
   retry(): void;
+  /** Preview one file in the right column; `path` is absolute or Session-relative. */
+  openFile(path: string): void;
+  /** Preview the SKILL.md the Session's catalog lists under `name`. */
+  openSkill(name: string): void;
+  /** Reveal the Session's Files tree. */
+  openFilesView(): void;
   dispose(): void;
 }

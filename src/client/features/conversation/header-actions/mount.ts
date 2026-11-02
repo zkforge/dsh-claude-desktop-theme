@@ -10,7 +10,7 @@ import { DSH_SLOTS } from '../../../compat/slots.ts';
 import { HeaderActionButton } from './HeaderActionButton.tsx';
 import { BlankHeaderActions } from './BlankHeaderActions.tsx';
 import { CORNER_ENTRY, VIEWS, cornerRetirement, sidebarExpandRow, utilitiesEntry } from './entries.ts';
-import { openView, resolveSidebarRight, resolveSidebarTabs } from './sidebar-view.ts';
+import { openView, resolveSidebarRight, resolveSidebarTabs } from '../../../compat/sidebar-view.ts';
 import css from './header-actions.css';
 import menuCss from './header-menus.css';
 

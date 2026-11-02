@@ -76,6 +76,20 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
       assert.match(await text(), /92k \/ 200k/);
       await page.evaluate(`document.querySelector('.ccd-info-group summary').click()`); await pause();
       assert.match(await text(), /docs · search/);
+      await page.evaluate(`document.querySelectorAll('.ccd-info-group').forEach(group=>{group.open=true})`); await pause();
+      const links = await page.evaluate(`(()=>{const links=[...document.querySelectorAll('.ccd-info-link')];
+        links.forEach(link=>link.click());return {names:links.map(link=>link.textContent),line:getComputedStyle(links[0]).textDecorationLine}})()`);
+      const worktree = '/demo/desktop-theme/worktrees/a-very-long-worktree-checkout-directory';
+      assert.deepEqual(links.names, ['code-review', 'AGENTS.md', '~/.dsh/AGENTS.md', worktree], 'tools and unresolved roots stay plain text');
+      assert.equal(links.line, 'underline');
+      await pause();
+      assert.deepEqual(await page.evaluate(`window.opened`), [
+        'dsh-resource://file/session/demo/worktrees/a-very-long-worktree-checkout-directory/AGENTS.md',
+        'dsh-resource://file/session/demo//home/demo/.dsh/AGENTS.md',
+        'tab:files',
+        'dsh-resource://file/session/demo//skills/code-review/SKILL.md',
+      ]);
+      await page.evaluate(`document.querySelectorAll('.ccd-info-group').forEach(group=>{group.open=false})`); await pause();
       await page.evaluate(`document.querySelector('.ccd-info-grip').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`); await pause();
       assert.match(await page.evaluate(`document.querySelector('.ccd-info-toggle').textContent`), /环境/);
       const drag = await page.evaluate(`(()=>{const rail=document.querySelector('[data-ccd-session-cards]'),card=rail.querySelector('[data-ccd-info-card="usage"]'),label=card.querySelector('.ccd-info-value > span'),r=label.getBoundingClientRect(),first=rail.firstElementChild.getBoundingClientRect();window.dragCard=card;

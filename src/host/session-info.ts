@@ -1,3 +1,4 @@
+import { homedir } from 'node:os';
 import type { Context } from '@deepseek-ai/cordis';
 import type { SessionEvent, SessionId } from '@deepseek-ai/dsh-session';
 import type { SessionQueryEngine } from '@deepseek-ai/dsh-session-query';
@@ -32,8 +33,17 @@ export const sessionInfoProjection: Omit<ProjectionDefinition<typeof SESSION_INF
   wire: { viewSchema: promptSchema, view: state => state },
 };
 
+/** The roots `dsh-home-paths` displays global instruction files under. */
+export function instructionHomes(env: NodeJS.ProcessEnv, home: string): SessionEnvironment['homes'] {
+  return {
+    '~': home,
+    ...env['DSH_HOME'] ? { $DSH_HOME: env['DSH_HOME'] } : {},
+    ...env['DSH_AGENTS_HOME'] ? { $DSH_AGENTS_HOME: env['DSH_AGENTS_HOME'] } : {},
+  };
+}
+
 /** Inspect only this checkout. Never list the repository or invoke a shell. */
-export async function readSessionEnvironment(cwd: string, signal: AbortSignal, run: GitRunner = runGit): Promise<SessionEnvironment> {
+export async function readSessionEnvironment(cwd: string, signal: AbortSignal, run: GitRunner = runGit): Promise<Omit<SessionEnvironment, 'homes'>> {
   const base = { cwd, branch: null, detached: false, worktree: null } as const;
   try {
     const paths = (await run(cwd, ['rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'], signal)).trim().split('\n');
@@ -79,7 +89,7 @@ export function mountSessionInfo(ctx: Context, enabled: () => boolean): void {
             cwd = typeof recorded === 'string' && recorded !== '' ? recorded : observation.header.cwd;
           } finally { observation[Symbol.dispose](); }
           if (!cwd) return reply({ error: 'missing-directory' }, 404);
-          return reply(await readSessionEnvironment(cwd, request.signal));
+          return reply({ ...await readSessionEnvironment(cwd, request.signal), homes: instructionHomes(process.env, homedir()) });
         } catch { return reply({ error: 'unavailable' }, 503); }
       },
     }), 'session info: environment route');

@@ -1,6 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis';
 import type { SessionId } from '@deepseek-ai/dsh-session/types';
-import type { ContextProjectionPort } from '../contracts/ports.ts';
+import type { ContextProjectionPort, SidebarRightPort } from '../contracts/ports.ts';
 import type { SessionInfoPort, SessionInfoSnapshot } from '../contracts/session-info.ts';
 import {
   SESSION_ENVIRONMENT_PATH, infoRecord, sessionMetrics, showSessionInfo, type SessionEnvironment,
@@ -8,10 +8,18 @@ import {
 import { frameScheduler } from './frame.ts';
 import { hostSelectors } from './host-dom.ts';
 import { recordsInTranscript } from './mutation-scope.ts';
+import { fileAddress, openView, resolveSidebarRight } from './sidebar-view.ts';
 
 const MARKER = 'data-ccd-session-info';
 const RESERVE = 280;
 const OPEN_STORAGE = 'ccd-session-info-open';
+
+/** The Remote `dsh-client-ui-skill` reads the Session's catalog through. */
+interface SkillCatalogRemote {
+  list(scope: { sessionId: SessionId }, signal?: AbortSignal): Promise<
+    { ok: true; value: { skills: readonly { name: string; path?: string }[] } }
+    | { ok: false; error: { message: string } }>;
+}
 
 /** Owns only added marks and subscriptions; host React nodes keep their parents. */
 export function createSessionInfoPort(ctx: Context, document: Document, projections: ContextProjectionPort | null): SessionInfoPort {
@@ -58,6 +66,7 @@ export function createSessionInfoPort(ctx: Context, document: Document, projecti
           cwd: raw['cwd'], branch: typeof raw['branch'] === 'string' ? raw['branch'] : null,
           detached: raw['detached'] === true, git: raw['git'] as SessionEnvironment['git'],
           worktree: typeof raw['worktree'] === 'boolean' ? raw['worktree'] : null,
+          homes: Object.fromEntries(Object.entries(infoRecord(raw['homes'])).filter((entry): entry is [string, string] => typeof entry[1] === 'string')),
         };
         if (!disposed && !controller.signal.aborted && snapshot.session === session) {
           publish({ ...snapshot, environment, environmentState: 'ready' });
@@ -72,6 +81,29 @@ export function createSessionInfoPort(ctx: Context, document: Document, projecti
       }
     })();
   };
+
+  /* The plugin does not require these services, so reading `ctx.sidebarRight`
+     or `ctx.remote.skills` throws "without inject"; only an injected scope can reach them. */
+  let sidebar: SidebarRightPort | undefined;
+  const sidebarService = ctx.inject(['sidebarRight'], scope => {
+    sidebar = resolveSidebarRight(scope);
+    return () => { sidebar = undefined; };
+  });
+  let skills: SkillCatalogRemote | undefined;
+  const skillService = ctx.inject(['remote', 'remote.skills'], scope => {
+    skills = (scope.remote as unknown as { skills: SkillCatalogRemote }).skills;
+    return () => { skills = undefined; };
+  });
+
+  /** Run one navigation against the on-screen Session; the panel throws without one. */
+  const navigate = (open: (sidebar: SidebarRightPort, session: SessionId) => void) => {
+    if (sidebar === undefined || snapshot.session === null) return;
+    try { open(sidebar, snapshot.session as SessionId); }
+    catch (error) { console.error('[ccd] session card link failed:', error); }
+  };
+  const openFile = (path: string) => navigate((sidebar, session) => {
+    sidebar.openResource(fileAddress(session, ctx.sessions.list.getSnapshot().byId[session]?.cwd, path));
+  });
 
   const resize = new ResizeObserver(() => frames.schedule());
   const sync = () => {
@@ -141,9 +173,30 @@ export function createSessionInfoPort(ctx: Context, document: Document, projecti
       sync();
     },
     retry: () => loadEnvironment(true),
+    openFile,
+    openSkill(name) {
+      const session = snapshot.session as SessionId | null;
+      const catalog = skills;
+      if (session === null || catalog === undefined) return;
+      void (async () => {
+        try {
+          const result = await ctx.sessions.using(session, { source: 'workspaceOperation' }, () => catalog.list({ sessionId: session }));
+          if (!result.ok) throw new Error(result.error.message);
+          const path = result.value.skills.find(skill => skill.name === name)?.path;
+          if (path === undefined) throw new Error(`Skill "${name}" has no file`);
+          if (!disposed && snapshot.session === session) openFile(path);
+        } catch (error) { console.error('[ccd] session card link failed:', error); }
+      })();
+    },
+    openFilesView: () => navigate((sidebar, session) => {
+      openView(sidebar, 'files', session);
+      if (sidebar.isExpanded?.() === false) sidebar.toggleExpanded?.();
+    }),
     dispose() {
       disposed = true;
       request?.abort(); request = null;
+      void sidebarService.dispose();
+      void skillService.dispose();
       clearInterval(timer); frames.cancel(); observer.disconnect(); language.disconnect(); resize.disconnect();
       offSessions(); offWorkspaces(); listeners.clear(); body?.removeAttribute(MARKER);
       document.removeEventListener('visibilitychange', schedule);
