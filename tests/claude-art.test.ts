@@ -90,9 +90,22 @@ test('typing overlaps square hands within one hand’s width and alternates thei
     for (const [x, y] of farEdge) assert.ok(shade.has(`${x},${y}`), 'the exposed rear edge keeps its depth shading');
     const stroke = Math.sign(farTop - nearTop);
     if (stroke !== 0 && stroke !== strokes.at(-1)) strokes.push(stroke);
-    assert.equal(pose[3], sequence[0]![3], 'the keyboard stays still beneath the hands');
   }
-  assert.deepEqual(strokes, [1, -1, 1, -1, 1, -1, 1, -1, 1, -1], 'the hands take turns pressing');
+  assert.deepEqual(strokes, [1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1], 'the hands take turns pressing');
+});
+
+test('the laptop hops one step on every third beat of the typing cycle', () => {
+  const sequence = CLAUDE_TRACK.slice(16, 46).map(index => CLAUDE_FRAMES[index]!);
+  const rest = sequence[0]![3];
+  const hop = sequence.find(pose => pose[3] !== rest)![3];
+  const top = (path: string) => Math.min(...[...pixels(path)].map(key => Number(key.split(',')[1])));
+  assert.equal(top(rest) - top(hop), 3, 'the hop is one 1.5px step upward');
+  assert.equal(new Set(sequence.map(pose => pose[3])).size, 2, 'the laptop only moves between two heights');
+
+  const beats = sequence.map(pose => pose[3] === hop ? 'hop' : 'rest');
+  const hops = beats.filter((beat, i) => beat === 'hop' && beats[i - 1] !== 'hop').length;
+  assert.equal(hops, 6, 'one hop per 250ms cycle');
+  assert.equal(beats.filter(beat => beat === 'hop').length, 10, 'the hop keeps its recorded third of the time');
 });
 
 test('the laptop keeps a continuous edge when it is folded back against the hand', () => {
