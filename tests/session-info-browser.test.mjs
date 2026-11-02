@@ -28,9 +28,8 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
       assert.match(await text(), /需重启 DSH/);
       await page.evaluate(`window.environmentStatus=200;window.environmentWorktree=true;window.environmentCwd='/demo/desktop-theme/worktrees/a-very-long-worktree-checkout-directory';window.demo.port.retry()`); await pause();
       assert.match(await text(), /独立工作树/);
-      const path = await page.evaluate(`(()=>{const v=[...document.querySelectorAll('.ccd-info-value')].find(n=>n.firstElementChild.textContent==='工作目录');
-        const label=v.firstElementChild.getBoundingClientRect(),value=v.querySelector('.ccd-info-text'),r=value.getBoundingClientRect();value.focus();return {top:Math.abs(label.top-r.top),height:r.height,overflow:value.scrollWidth>value.clientWidth};})()`);
-      assert.ok(path.top < 1);
+      const path = await page.evaluate(`(()=>{const v=document.querySelector('[aria-label="工作目录"]').parentElement;
+        const value=v.querySelector('.ccd-info-text'),r=value.getBoundingClientRect();value.focus();return {height:r.height,overflow:value.scrollWidth>value.clientWidth};})()`);
       assert.equal(path.height, 22);
       assert.equal(path.overflow, true);
       await page.evaluate('new Promise(resolve=>setTimeout(resolve,450))');
@@ -62,38 +61,37 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
       await page.evaluate(`document.querySelector('${toggle}').click()`); await pause();
       assert.match(await text(), /会话用量/);
       assert.equal(await page.evaluate(`document.getElementById('chat').hasAttribute('data-ccd-session-info')`), true);
-      assert.equal(await page.evaluate(`getComputedStyle(document.getElementById('chat')).paddingRight`), '280px');
+      assert.equal(await page.evaluate(`getComputedStyle(document.getElementById('chat')).paddingRight`), '316px');
       const railGeometry = await page.evaluate(`(()=>{const rail=document.querySelector('[data-ccd-session-cards]'),card=rail.firstElementChild,scroll=document.querySelector('[data-conversation-scroll]');
         const r=rail.getBoundingClientRect(),c=card.getBoundingClientRect(),s=scroll.getBoundingClientRect(),body=document.getElementById('chat').getBoundingClientRect();
         return{shadowLeft:c.left-r.left,shadowRight:r.right-c.right,scrollRight:s.right- r.right,edge:body.right-s.right,width:c.width};})()`);
       assert.equal(railGeometry.shadowLeft, 10);
       assert.equal(railGeometry.shadowRight, 10);
-      assert.equal(railGeometry.width, 252, 'shadow clearance does not narrow the card body');
+      assert.equal(railGeometry.width, 288, 'shadow clearance does not narrow the card body');
       assert.equal(railGeometry.scrollRight, 6, 'the native chat scrollbar is beyond the cards');
       assert.equal(railGeometry.edge, 2);
-      await page.evaluate(`document.querySelector('.ccd-info-toggle').click()`); await pause();
       assert.match(await text(), /MCP 工具/);
       assert.match(await text(), /92k \/ 200k/);
       await page.evaluate(`document.querySelector('.ccd-info-group summary').click()`); await pause();
       assert.match(await text(), /docs · search/);
       await page.evaluate(`document.querySelectorAll('.ccd-info-group').forEach(group=>{group.open=true})`); await pause();
       const links = await page.evaluate(`(()=>{const links=[...document.querySelectorAll('.ccd-info-link')];
-        links.forEach(link=>link.click());return {names:links.map(link=>link.textContent),line:getComputedStyle(links[0]).textDecorationLine}})()`);
+        links.forEach(link=>link.click());return {names:links.map(link=>link.textContent),line:getComputedStyle(links.at(-1)).textDecorationLine}})()`);
       const worktree = '/demo/desktop-theme/worktrees/a-very-long-worktree-checkout-directory';
-      assert.deepEqual(links.names, ['code-review', 'AGENTS.md', '~/.dsh/AGENTS.md', worktree], 'tools and unresolved roots stay plain text');
+      assert.deepEqual(links.names, [worktree, 'code-review', 'AGENTS.md', '~/.dsh/AGENTS.md'], 'tools and unresolved roots stay plain text');
       assert.equal(links.line, 'underline');
       await pause();
       assert.deepEqual(await page.evaluate(`window.opened`), [
+        'tab:files',
         'dsh-resource://file/session/demo/worktrees/a-very-long-worktree-checkout-directory/AGENTS.md',
         'dsh-resource://file/session/demo//home/demo/.dsh/AGENTS.md',
-        'tab:files',
         'dsh-resource://file/session/demo//skills/code-review/SKILL.md',
       ]);
       await page.evaluate(`document.querySelectorAll('.ccd-info-group').forEach(group=>{group.open=false})`); await pause();
       await page.evaluate(`document.querySelector('.ccd-info-grip').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`); await pause();
-      assert.match(await page.evaluate(`document.querySelector('.ccd-info-toggle').textContent`), /环境/);
+      assert.match(await page.evaluate(`document.querySelector('.ccd-info-toggle').textContent`), /上下文/);
       const drag = await page.evaluate(`(()=>{const rail=document.querySelector('[data-ccd-session-cards]'),card=rail.querySelector('[data-ccd-info-card="usage"]'),label=card.querySelector('.ccd-info-value > span'),r=label.getBoundingClientRect(),first=rail.firstElementChild.getBoundingClientRect();window.dragCard=card;
-        return {x:r.left+r.width/2,y:r.top+r.height/2,destination:first.top+10,top:card.getBoundingClientRect().top};})()`);
+        return {x:r.left+r.width/2,y:r.top+r.height/2,destination:first.top+30,top:card.getBoundingClientRect().top};})()`);
       await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: drag.x, y: drag.y });
       await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: drag.x, y: drag.y, button: 'left', buttons: 1, clickCount: 1 });
       await page.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: drag.x + 24, y: drag.destination, buttons: 1 });
@@ -135,7 +133,7 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
        assert.match(await text(), /会话用量/, 'the toggle can reopen cards while tools stay open');
        assert.equal(await page.evaluate(`document.getElementById('native-rightbar').hasAttribute('data-sidebar-right-open')`), true);
        await page.evaluate(`document.getElementById('native-rightbar').remove();document.getElementById('chat').style.width='1100px'`); await pause();
-       assert.equal(await page.evaluate(`getComputedStyle(document.getElementById('chat')).paddingRight`), '280px', 'closing tools restores the rail');
+       assert.equal(await page.evaluate(`getComputedStyle(document.getElementById('chat')).paddingRight`), '316px', 'closing tools restores the rail');
        await page.evaluate(`document.body.setAttribute('data-ccd-pane-expanded','')`); await pause();
       assert.equal(await text(), '', 'maximized native tools take priority over the information cards');
       await page.evaluate(`document.body.removeAttribute('data-ccd-pane-expanded')`); await pause();

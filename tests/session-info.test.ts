@@ -24,23 +24,23 @@ test('missing projections and zero denominators stay unavailable, not invented z
 
 test('the card rail closes before crowding chat, with a stable reopen threshold', () => {
   assert.equal(showSessionInfo(1000, 700, false), true);
-  assert.equal(showSessionInfo(899, 700, true), false);
-  assert.equal(showSessionInfo(910, 700, false), false);
-  assert.equal(showSessionInfo(910, 700, true), true);
+  assert.equal(showSessionInfo(935, 700, true), false);
+  assert.equal(showSessionInfo(950, 700, false), false);
+  assert.equal(showSessionInfo(950, 700, true), true);
   assert.equal(showSessionInfo(1100, 399, true), false);
-  assert.equal(showSessionInfo(924, 424, false), true);
+  assert.equal(showSessionInfo(960, 424, false), true);
   assert.equal(showSessionInfo(750, 700, false, true), true);
-  assert.equal(showSessionInfo(295, 700, true, true), false);
-  assert.equal(showSessionInfo(310, 700, false, true), false);
-  assert.equal(showSessionInfo(310, 700, true, true), true);
+  assert.equal(showSessionInfo(331, 700, true, true), false);
+  assert.equal(showSessionInfo(345, 700, false, true), false);
+  assert.equal(showSessionInfo(345, 700, true, true), true);
   assert.equal(showSessionInfo(750, 399, true, true), false);
 });
 
 test('card preferences preserve valid order and discard invalid storage', () => {
   assert.deepEqual(readCardPreferences({ order: ['usage', 'usage', 'invalid'], collapsed: ['environment', 4] }), {
-    order: ['usage', 'context', 'environment'], collapsed: ['environment'],
+    order: ['usage', 'environment', 'context'], collapsed: ['environment'],
   });
-  assert.deepEqual(readCardPreferences(null).order, ['context', 'environment', 'usage']);
+  assert.deepEqual(readCardPreferences(null), { order: ['environment', 'context', 'usage'], collapsed: [] });
 });
 
 test('prompt count covers inherited human prompts and excludes machine messages', () => {

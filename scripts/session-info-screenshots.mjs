@@ -17,7 +17,7 @@ await withPage({ url: 'about:blank', width: 1392, height: 932, scale: 2, profile
   await page.evaluate(`(async()=>{const style=document.createElement('style');style.textContent=
     '@font-face{font-family:Geist;src:url(data:font/ttf;base64,${font}) format("truetype");font-weight:100 900}'+
     'html[data-dsh-ccd-style="true"]{--ccd-font-ui:Geist,"PingFang SC",sans-serif}';
-    document.head.append(style);document.querySelector('.ccd-info-toggle').click();
+    document.head.append(style);
     await document.fonts.load('12px Geist');})()`);
   await page.evaluate('new Promise(resolve=>setTimeout(resolve,200))');
   for (const theme of ['light', 'dark']) {

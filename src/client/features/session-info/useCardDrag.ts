@@ -88,7 +88,7 @@ export function useCardDrag(session: string | null, visible: boolean, reorder: (
       let top = cards[0]!.rect.top;
       for (const card of preview) {
         if (card !== source) card.node.style.transform = `translateY(${top - card.rect.top - scrollShift}px)`;
-        top += card.rect.height + 8;
+        top += card.rect.height + 12;
       }
     }, { ...options, passive: false });
     document.addEventListener('pointerup', next => { if (next.pointerId === pointer) end(true); }, options);
