@@ -66,12 +66,12 @@ export function sessionMetrics(values: Readonly<Record<string, unknown>>): Sessi
 
 /** Rail mode reserves readable chat space; overlays need only their own width. */
 export function showSessionInfo(width: number, height: number, shown: boolean, overlay = false): boolean {
-  const minWidth = overlay ? (shown ? 296 : 320) : (shown ? 900 : 924);
+  const minWidth = overlay ? (shown ? 332 : 356) : (shown ? 936 : 960);
   return Number.isFinite(width) && Number.isFinite(height)
     && width >= minWidth && height >= (shown ? 400 : 424);
 }
 
-export const SESSION_CARD_IDS = ['context', 'environment', 'usage'] as const;
+export const SESSION_CARD_IDS = ['environment', 'context', 'usage'] as const;
 export type SessionCardId = typeof SESSION_CARD_IDS[number];
 
 export interface SessionCardPreferences {
@@ -85,6 +85,6 @@ export function readCardPreferences(value: unknown): SessionCardPreferences {
   const order = Array.isArray(raw['order']) ? [...new Set(raw['order'].filter(valid))] : [];
   return {
     order: [...order, ...SESSION_CARD_IDS.filter(id => !order.includes(id))],
-    collapsed: Array.isArray(raw['collapsed']) ? [...new Set(raw['collapsed'].filter(valid))] : ['context'],
+    collapsed: Array.isArray(raw['collapsed']) ? [...new Set(raw['collapsed'].filter(valid))] : [],
   };
 }
