@@ -39,7 +39,7 @@ function frameAt(elapsed: number, width: number, height: number): WaveFrame {
   // Keep the field moving continuously: no dark interval or cycle reset.
   const time = elapsed / 1000;
   return {
-    time,
+    time: time * .45,
     scale: Math.max(320, Math.min(width, height, 900)),
     offsetX: hash(0, 17) * 13,
     offsetY: hash(0, 43) * 13,
@@ -59,14 +59,32 @@ function fieldAt(x: number, y: number, frame: WaveFrame): number {
     + .055 * Math.sin(nx * 4.7 - t * .37);
   const distanceA = Math.hypot((u - .17) * .84, v - .62);
   const distanceB = Math.hypot(u - 1.1, (v + .18) * .78);
-  const frontA = Math.sin(distanceA * 12.2 - t * 2.05 + phase);
-  const frontB = Math.sin(distanceB * 10.6 - t * 1.53 - phase * .7);
-  const cross = Math.sin(u * 5.8 + v * 4.3 + t * .71 + phase);
-  const crest = smooth(.12, .94, frontA * .65 + frontB * .43 + cross * .2);
-  const secondary = smooth(.48, 1, frontB * .7 - frontA * .3);
-  const patches = .3 + .7 * smooth(-.5, .55,
-    noise(u * 3.3 + offsetX - t * .12, v * 3.3 + offsetY + t * .08));
-  return strength * (crest * .46 + secondary * .14) * patches;
+  const frontA = Math.sin(distanceA * 9.6 - t * 2.05 + phase);
+  const frontB = Math.sin(distanceB * 8.2 - t * 1.53 - phase * .7);
+  const cross = Math.sin(u * 3.5 + v * 2.6 + t * .71 + phase);
+  const crest = smooth(.66, .98, frontA * .65 + frontB * .43 + cross * .2);
+  // Crests this thin, cut along their length, leave only short dashes.
+  const dashes = smooth(.12, .42, noise(u * 8.5 + offsetX - t * .12, v * 8.5 + offsetY + t * .08));
+  return strength * crest * .5 * dashes;
+}
+
+/** Between neighbouring fronts, and the leading front to the last one. */
+const FRONT_SPACING = .2, FRONT_SPAN = FRONT_SPACING * 2;
+/**
+ * A heart's outline seen from a point low inside it, as a cosine series in the
+ * angle from straight up. So few terms keep the cleft and tip soft, and the
+ * click's fronts run furthest into the lobes. Dividing by it makes hearts.
+ */
+const HEART_OUTLINE = [0.808, 0.237, -0.047, -0.187, -0.048, -0.046, -0.005, -0.035];
+/** The extremes of the outline, for culling. */
+const HEART_MIN = 0.52, HEART_MAX = 1.17;
+/** How much wider a heart runs than its outline, so the lobes sit plump. */
+const HEART_WIDEN = 1.18;
+
+function heartReach(angle: number): number {
+  let reach = 0;
+  for (let i = 0; i < HEART_OUTLINE.length; i++) reach += HEART_OUTLINE[i]! * Math.cos(i * angle);
+  return reach;
 }
 
 interface ClickFrame {
@@ -75,7 +93,11 @@ interface ClickFrame {
   readonly scale: number;
   readonly age: number;
   readonly seed: number;
-  readonly growth: number;
+  readonly tilt: number;
+  /** 0 is a round front, 1 a heart. */
+  readonly shape: number;
+  readonly loose: number;
+  readonly warped: number;
   readonly radius: number;
   readonly thickness: number;
   readonly fade: number;
@@ -91,39 +113,47 @@ function clicksAt(elapsed: number, width: number, height: number,
   for (const impulse of impulses) {
     const age = (elapsed - impulse.startedAt) / HERO_RIPPLE_DURATION;
     if (age < 0 || age >= 1) continue;
-    // Overlapping soft crests read as one folded band, rather than three thin
-    // rings. Let the band broaden as it travels, like the light reference.
-    const growth = smooth(0, .2, age), radius = age * 1.25, thickness = .028 + age * .035;
+    // Three separate bands follow each other out of the click, each broadening
+    // as it travels. Some clicks fold into a plump heart, the rest stay a
+    // lumpy circle: the seed decides, so a click keeps its shape as it spreads.
+    const growth = smooth(0, .1, age), radius = age * 1.25, thickness = .028 + age * .035;
     const contact = (1 - smooth(.025, .12, age)) * .24;
-    // Domain warp changes radius by at most sqrt(2)*.12 + .035 + .018.
+    const seed = impulse.x * 7 + impulse.y * 11 + impulse.startedAt / 10000;
+    const heart = hash(Math.floor(seed * 997), 31) < .5;
+    const shape = heart ? growth : 0;
+    // Fronts wobble in proportion to their radius, so a small one stays clean
+    // and a circle wanders more than a heart. The warp only joins further out.
+    const loose = growth * (heart ? .55 : 1), warped = growth * smooth(.05, .5, radius);
+    // Wobble stretches a front by at most 1/.85 and the warp moves a point by sqrt(2)*.07.
     // Four Gaussian widths include all visible crests (tail < 0.00000012).
-    const margin = growth * (Math.SQRT2 * .12 + .053) + thickness * 4;
-    const inner = contact > 0 ? 0 : Math.max(0, radius - .16 - margin);
-    const outer = Math.max(radius + margin, contact > 0 ? .4 : 0);
-    frames.push({ x: impulse.x * width, y: impulse.y * height, scale, age,
-      seed: impulse.x * 7 + impulse.y * 11 + impulse.startedAt / 10000,
-      growth, radius, thickness, contact,
+    const front = radius * loose * .18 + thickness * 4, warp = warped * Math.SQRT2 * .07;
+    const least = mix(1, HEART_MIN, shape), most = mix(1, HEART_MAX * HEART_WIDEN, shape);
+    const inner = contact > 0 ? 0 : Math.max(0, (radius - FRONT_SPAN - front) * least - warp);
+    const outer = Math.max((radius + front) * most + warp, contact > 0 ? .4 : 0);
+    frames.push({ x: impulse.x * width, y: impulse.y * height, scale, age, seed,
+      tilt: .08 * Math.sin(seed * 5.3), shape, loose, warped, radius, thickness, contact,
       fade: smooth(0, .045, age) * (1 - smooth(.4, 1, age)),
       innerSquared: inner * inner, outerSquared: outer * outer });
   }
   return frames;
 }
 
-/** Evaluate only the annulus that can contain a visible folded crest. */
+/** Evaluate only the band of fronts that can contain a visible crest. */
 function clickLightAt(x: number, y: number, frame: ClickFrame): number {
-  const { scale, age, seed, growth, radius, thickness, fade, contact } = frame;
+  const { scale, age, seed, tilt, shape, loose, warped, radius, thickness, fade, contact } = frame;
   const dx = (x - frame.x) / scale, dy = (y - frame.y) / scale;
   const squared = dx * dx + dy * dy;
   if (squared < frame.innerSquared || squared > frame.outerSquared) return 0;
-  const u = dx + growth * .12 * noise(dx * 3.2 + seed + age * .5, dy * 3.2 - age * .4);
-  const v = dy + growth * .12 * noise(dx * 3.1 + 23 - age * .5, dy * 3.1 + seed);
+  const u = dx + warped * .07 * noise(dx * 3.2 + seed + age * .5, dy * 3.2 - age * .4);
+  const v = dy + warped * .07 * noise(dx * 3.1 + 23 - age * .5, dy * 3.1 + seed);
   const angle = Math.atan2(v, u);
-  const distance = Math.hypot(u, v)
-    + growth * (.035 * Math.sin(angle * 3 + seed + age * 2)
-      + .018 * Math.sin(angle * 5 - age * 3));
+  const across = u / mix(1, HEART_WIDEN, shape);
+  const distance = Math.hypot(across, v) / mix(1, heartReach(Math.atan2(across, -v) + tilt), shape)
+    * (1 + loose * (.1 * Math.sin(angle * 2 + seed * 7 + age * 2)
+      + .05 * Math.sin(angle * 3 - seed * 5 - age * 3)));
   let crests = 0;
   for (let i = 0; i < 3; i++) {
-    const front = (distance - radius + i * .08) / thickness;
+    const front = (distance - radius + i * FRONT_SPACING) / thickness;
     if (Math.abs(front) <= 4) crests += Math.exp(-front * front) * (1 - i * .23);
   }
   // Most points between the crests need neither patch noise nor exponentials.
@@ -132,6 +162,12 @@ function clickLightAt(x: number, y: number, frame: ClickFrame): number {
   const point = contact > 0 ? Math.exp(-(u * u + v * v) / .009) * contact : 0;
   return (crests * patches * .72 + point) * fade;
 }
+
+/**
+ * How fully click light replaces the field. It closes at the crest's faintest
+ * edge, so a fading wave keeps its ink rather than sliding towards the grey.
+ */
+const coverOf = (clicked: number) => smooth(.0005, .006, clicked);
 
 function characterAt(x: number, y: number, illumination: number,
   elapsed: number, textureFade = 1): { alpha: number; glyph: string } {
@@ -149,9 +185,9 @@ function characterAt(x: number, y: number, illumination: number,
 /** One cell's independently changing character and moving light, before edge fade. */
 export function rippleCell(x: number, y: number, elapsed: number,
   width: number, height: number, impulses: readonly HeroRippleImpulse[] = []): { alpha: number; glyph: string } {
-  let light = fieldAt(x, y, frameAt(elapsed, width, height));
-  for (const frame of clicksAt(elapsed, width, height, impulses)) light += clickLightAt(x, y, frame);
-  return characterAt(x, y, light, elapsed);
+  let clicked = 0;
+  for (const frame of clicksAt(elapsed, width, height, impulses)) clicked += clickLightAt(x, y, frame);
+  return characterAt(x, y, fieldAt(x, y, frameAt(elapsed, width, height)) * (1 - coverOf(clicked)) + clicked, elapsed);
 }
 
 /**
@@ -175,6 +211,7 @@ interface RippleSurface {
   readonly rows: number;
   /** Reused between frames: the interpolation reads it, nothing retains it. */
   readonly light: Float32Array;
+  readonly clickLight: Float32Array;
   readonly cells: readonly GlyphCell[];
   readonly scheme: string;
   atlas?: HTMLCanvasElement;
@@ -186,6 +223,7 @@ interface RippleSurface {
     pixels: ImageData;
   };
   ink: string;
+  idleInk: string;
 }
 
 interface GlyphCell {
@@ -232,25 +270,38 @@ function surfaceOf(canvas: HTMLCanvasElement, scheme: string): RippleSurface {
     bitmapWidth: canvas.width, bitmapHeight: canvas.height,
     width, height, ratio, step, columns, rows, cells,
     light: new Float32Array(columns * rows),
+    clickLight: new Float32Array(columns * rows),
     scheme,
     ink: cached?.scheme === scheme ? cached.ink : '',
+    idleInk: cached?.scheme === scheme ? cached.idleInk : '',
   };
   surfaces.set(canvas, surface);
   return surface;
 }
 
-/** Shimmering ASCII rows lit by an autonomous, slowly swelling wave field. */
+const channels = (ink: string) => {
+  const value = Number.parseInt(ink.slice(1), 16);
+  return [value >> 16, value >> 8 & 255, value & 255] as const;
+};
+
+/** Shimmering ASCII rows: a grey wave field, with clicks spreading in the ink. */
 export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
   impulses: readonly HeroRippleImpulse[] = []): void {
   const context = canvas.getContext('2d');
   if (!context) return;
   const surface = surfaceOf(canvas, schemeOf(canvas));
-  const { width, height, ratio, step, columns, rows, light } = surface;
+  const { width, height, ratio, step, columns, rows, light, clickLight } = surface;
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.clearRect(0, 0, width, height);
   if (!width || !height) return;
-  if (surface.ink === '') surface.ink = getComputedStyle(canvas).getPropertyValue('--ccd-hero-ripple-ink').trim();
-  context.fillStyle = surface.ink;
+  if (surface.ink === '') {
+    const style = getComputedStyle(canvas);
+    surface.ink = style.getPropertyValue('--ccd-hero-ripple-ink').trim();
+    surface.idleInk = style.getPropertyValue('--ccd-hero-ripple-idle-ink').trim();
+  }
+  const [inkRed, inkGreen, inkBlue] = channels(surface.ink);
+  const [idleRed, idleGreen, idleBlue] = channels(surface.idleInk);
+  context.fillStyle = surface.idleInk;
   context.font = '12px monospace'; context.textBaseline = 'top';
   // Rasterize each glyph once at device density; frames only composite sprites.
   if (!surface.atlas && canvas.ownerDocument.createElement) {
@@ -275,9 +326,6 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
     if (glyphContext && maskContext?.createImageData) {
       glyphContext.setTransform(ratio, 0, 0, ratio, 0, 0);
       const pixels = maskContext.createImageData(mask.width, mask.height);
-      // Only alpha changes; the mask's RGB remains white.
-      pixels.data.fill(255);
-      for (let i = 3; i < pixels.data.length; i += 4) pixels.data[i] = 0;
       surface.layers = { glyphs, mask, context: glyphContext, maskContext, pixels };
     }
   }
@@ -287,6 +335,7 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
   for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++) {
     light[row * columns + col] = fieldAt(col * step, row * step, frame) * fadeIn;
   }
+  clickLight.fill(0);
   // Add each click only inside its bounding box, rather than testing every
   // active click at every point of the full-screen ambient mesh.
   for (const click of clicksAt(elapsed, width, height, impulses)) {
@@ -296,17 +345,23 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
     const top = Math.max(0, Math.ceil((click.y - reach) / step));
     const bottom = Math.min(rows - 1, Math.floor((click.y + reach) / step));
     for (let row = top; row <= bottom; row++) for (let col = left; col <= right; col++) {
-      light[row * columns + col]! += clickLightAt(col * step, row * step, click);
+      clickLight[row * columns + col]! += clickLightAt(col * step, row * step, click);
     }
   }
   for (const cell of surface.cells) {
     const { x, y, index, fx, fy, grain, edge } = cell;
-    const illumination = mix(mix(light[index]!, light[index + 1]!, fx),
+    const ambient = mix(mix(light[index]!, light[index + 1]!, fx),
       mix(light[index + columns]!, light[index + columns + 1]!, fx), fy);
+    const clicked = mix(mix(clickLight[index]!, clickLight[index + 1]!, fx),
+      mix(clickLight[index + columns]!, clickLight[index + columns + 1]!, fx), fy);
+    const tint = coverOf(clicked), illumination = ambient * (1 - tint) + clicked;
     const alpha = Math.min(.72, (.012 + grain * .013) * fadeIn
       + illumination * 1.65 * (.45 + .55 * grain)) * edge;
     if (layers) {
       const pixel = (Math.floor(y / GLYPH_HEIGHT) * layers.mask.width + Math.floor(x / GLYPH_WIDTH)) * 4 + 3;
+      layers.pixels.data[pixel - 3] = mix(idleRed, inkRed, tint);
+      layers.pixels.data[pixel - 2] = mix(idleGreen, inkGreen, tint);
+      layers.pixels.data[pixel - 1] = mix(idleBlue, inkBlue, tint);
       layers.pixels.data[pixel] = alpha > .006 ? Math.round(alpha * 255) : 0;
     }
     if (alpha <= .006) continue;
@@ -329,18 +384,22 @@ export function drawHeroRipples(canvas: HTMLCanvasElement, elapsed: number,
     if (surface.atlas) {
       context.drawImage(surface.atlas, cell.glyph * GLYPH_WIDTH * ratio, 0,
         GLYPH_WIDTH * ratio, GLYPH_HEIGHT * ratio, x, y, GLYPH_WIDTH, GLYPH_HEIGHT);
-    } else context.fillText(GLYPHS[cell.glyph]!, x, y);
+    } else {
+      context.fillStyle = tint > .5 ? surface.ink : surface.idleInk;
+      context.fillText(GLYPHS[cell.glyph]!, x, y);
+    }
   }
   context.globalAlpha = 1;
   if (layers) {
+    // The mask carries each cell's colour and brightness; the characters cut it.
     layers.maskContext.putImageData(layers.pixels, 0, 0);
-    context.drawImage(layers.glyphs, 0, 0, width, height);
     const smoothing = context.imageSmoothingEnabled;
     context.imageSmoothingEnabled = false;
-    context.globalCompositeOperation = 'destination-in';
     context.drawImage(layers.mask, 0, 0,
       layers.mask.width * GLYPH_WIDTH, layers.mask.height * GLYPH_HEIGHT);
-    context.globalCompositeOperation = 'source-over';
     context.imageSmoothingEnabled = smoothing;
+    context.globalCompositeOperation = 'destination-in';
+    context.drawImage(layers.glyphs, 0, 0, width, height);
+    context.globalCompositeOperation = 'source-over';
   }
 }
