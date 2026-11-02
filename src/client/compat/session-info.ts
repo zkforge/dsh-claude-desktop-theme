@@ -11,7 +11,7 @@ import { recordsInTranscript } from './mutation-scope.ts';
 import { fileAddress, openView, resolveSidebarRight } from './sidebar-view.ts';
 
 const MARKER = 'data-ccd-session-info';
-const RESERVE = 280;
+const RESERVE = 316;
 const OPEN_STORAGE = 'ccd-session-info-open';
 
 /** The Remote `dsh-client-ui-skill` reads the Session's catalog through. */

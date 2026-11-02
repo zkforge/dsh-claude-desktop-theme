@@ -377,6 +377,10 @@ html[data-dsh-ccd-style="true"] {
   --ccd-context-messages: #8b6fd4;
   --ccd-context-buffer: #c2c0b8;
   --ccd-context-free: #eeeeee;
+  --ccd-info-slice-tools: #608fe2;
+  --ccd-info-slice-messages: #ca6937;
+  --ccd-info-slice-mcp: #55a67d;
+  --ccd-info-slice-skills: #c2922e;
 
   /* The plugin's one emphasis blue: the selected check in every Menu surface,
      the context ring, and whatever else has to read as "this one is chosen".
@@ -761,6 +765,10 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-context-messages: #a58fe6;
   --ccd-context-buffer: #5f5b53;
   --ccd-context-free: #3f3f3b;
+  --ccd-info-slice-tools: #608fe2;
+  --ccd-info-slice-messages: #ca6937;
+  --ccd-info-slice-mcp: #55a67d;
+  --ccd-info-slice-skills: #c2922e;
 
   /* The accent, dark side: the same hue and the same 55% → 68% lightness step
      the statistics heat ramp takes on this canvas, so the check keeps its blue
