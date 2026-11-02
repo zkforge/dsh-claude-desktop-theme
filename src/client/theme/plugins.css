@@ -1,12 +1,11 @@
 /* Host nodes annotated by compat/plugin-page.ts; no build-specific hashes. */
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] {
-  --ccd-management-search-height: var(--ccd-management-control-height);
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr) max-content;
   align-content: start;
   align-items: start;
-  gap: 28px 16px;
-  padding: 54px 40px 40px;
+  gap: var(--ccd-management-row-gap) var(--ccd-management-toolbar-gap);
+  padding: var(--ccd-management-page-top) var(--ccd-management-page-inset) 40px;
   color: var(--ccd-text);
   background: var(--ccd-canvas);
   container: ccd-plugins / inline-size;
@@ -19,7 +18,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] > * {
 }
 /* Keep the back action in the content area, below the window title bar. */
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] {
-  padding: 47px 50px 40px;
+  padding: 47px var(--ccd-management-page-inset) 40px;
   font: 400 14px/22px var(--ccd-font-ui);
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detail"] {
@@ -46,15 +45,15 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"] {
   align-items: center;
   gap: 6px;
   box-sizing: border-box;
-  height: 28px;
-  min-height: 28px;
+  height: var(--ccd-management-control-height);
+  min-height: var(--ccd-management-control-height);
   margin: 0 0 4px -9px;
-  padding: 4px 8px;
+  padding: 0 8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--ccd-management-control-radius);
   background: var(--ccd-plugin-back-bg);
   color: var(--ccd-text);
-  font: 400 15px/20px var(--ccd-font-ui);
+  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
   cursor: pointer;
   -webkit-app-region: no-drag;
 }
@@ -95,12 +94,19 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailMain"] > [d
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detail"] > :not([data-ccd-plugin-part="manager-detailTop"], [data-ccd-plugin-part="manager-detailMain"]) {
   grid-column: 1 / -1;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageHead"],
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageHeading"] {
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageHead"] {
   display: contents;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTitle"] {
+/* The intro shares the title row: an extra line here would push the toolbar
+   below the one on Scheduled tasks, which has no intro. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageHeading"] {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
   grid-column: 1 / -1;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTitle"] {
+  flex: none;
   margin: 0;
   font-size: 26px;
   font-weight: 600;
@@ -109,23 +115,28 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTitle"] {
 }
 /* Keep the host's explanatory tooltip available to keyboard and pointer users. */
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageIntro"] {
-  grid-column: 1 / -1;
-  margin: -24px 0 -12px;
+  min-width: 0;
+  margin: 0;
   font-size: 12px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageIntro"] > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-toolbar"] {
   grid-column: 3;
-  grid-row: 3;
+  grid-row: 2;
   align-self: start;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ccd-management-toolbar-gap);
   min-height: var(--ccd-management-control-height);
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabs"] {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: 2;
   align-self: start;
   margin: 0;
 }
@@ -152,7 +163,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-pageTabList"] [ro
   min-height: var(--ccd-management-control-height);
   padding: 0 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--ccd-management-control-radius);
   background: transparent;
   box-shadow: none;
   outline: none;
@@ -192,13 +203,13 @@ html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"]:not(:has([data-mark
 html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] { grid-column: 1 / -1; min-width: 0; }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"] {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 2;
   align-self: start;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: var(--ccd-management-toolbar-gap);
   min-width: 0;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"]::before {
@@ -234,7 +245,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"] {
 }
 html[data-dsh-ccd-style="true"] .ccd-plugin-search {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 2;
   align-self: start;
   width: min(100%, 280px);
   justify-self: end;
@@ -364,20 +375,13 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"] {
   justify-content: center;
   flex: none;
   height: var(--ccd-management-control-height);
-  padding: 0 12px;
+  padding: 0 var(--ccd-management-primary-padding);
   border: 0;
   border-radius: var(--ccd-management-control-radius);
   background: var(--ccd-text-strong);
   color: var(--ccd-text-inverse);
   font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
   cursor: pointer;
-}
-/* The host ghost Button supplies a higher-specificity hover background. Keep
-   the filled action's background and foreground paired in that state too. */
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:hover:not(:disabled) {
-  background: var(--ccd-text-strong);
-  color: var(--ccd-text-inverse);
-  opacity: .85;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"], [data-ccd-plugin-part="market-main"]) { display: contents; }
@@ -415,7 +419,7 @@ html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardEnd"], [d
 /* Distinguish the install action from the completed installation state. */
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] button {
   min-height: var(--ccd-management-control-height);
-  padding: 0 8px;
+  padding: 0 var(--ccd-management-primary-padding);
   border-radius: var(--ccd-management-control-radius);
   font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
   border: 1px solid var(--ccd-border);
@@ -428,7 +432,6 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] [data-cc
   background: var(--ccd-text-strong);
   color: var(--ccd-text-inverse);
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"]:hover:not(:disabled) { opacity: .85; }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-installed="true"] {
   border-color: var(--ccd-plugin-installed-border);
   background: var(--ccd-plugin-installed-bg);
@@ -454,9 +457,5 @@ html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] > :not([data-ccd-pl
 @container ccd-plugins (max-width: 760px) {
   html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardHead"], [data-ccd-plugin-part="market-card"]) { grid-template-columns: 24px minmax(0, calc(38% - 36px)) minmax(0, 1fr) 60px; }
   html[data-dsh-ccd-style="true"] .ccd-plugin-list-heading:not(.ccd-plugin-list-heading-basic) { grid-template-columns: 38% minmax(0, 1fr) 60px; }
-  html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"] { grid-column: 1 / -1; grid-row: 4; }
-}
-@media (max-width: 800px) {
-  html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] { padding: 40px 24px 32px; column-gap: 10px; }
-  html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] { padding: 47px 24px 40px; }
+  html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"] { grid-column: 1 / -1; grid-row: 3; }
 }

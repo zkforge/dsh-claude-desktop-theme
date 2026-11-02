@@ -37,9 +37,15 @@ html[data-dsh-ccd-style="true"] {
   --ccd-management-control-radius: 7px;
   --ccd-management-control-font-size: 13px;
   --ccd-management-control-line-height: 20px;
-  --ccd-management-search-height: 32px;
-  --ccd-management-action-size: 28px;
+  --ccd-management-search-height: var(--ccd-management-control-height);
+  --ccd-management-action-size: var(--ccd-management-control-height);
   --ccd-management-icon-size: 18px;
+  /* One page frame: title, tabs and actions land on the same pixels on both pages. */
+  --ccd-management-page-top: 54px;
+  --ccd-management-page-inset: 40px;
+  --ccd-management-row-gap: 24px;
+  --ccd-management-toolbar-gap: 8px;
+  --ccd-management-primary-padding: 10px;
   --ccd-command-tooltip-fill: #111111;
   --ccd-command-tooltip-ink: #ffffff;
   /* View-options reference: 20 device px corners at @2x. */

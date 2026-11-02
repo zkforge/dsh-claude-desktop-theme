@@ -6,12 +6,19 @@ html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-page], [data-ccd-schedule])
 html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-page], [data-ccd-schedule]) :is(button, input, select) {
   font-family: var(--ccd-font-ui);
 }
+@media (max-width: 850px) {
+  html[data-dsh-ccd-style="true"] {
+    --ccd-management-page-top: 40px;
+    --ccd-management-page-inset: 24px;
+  }
+}
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
   .ccd-schedule-toolbar button,
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
 ) {
@@ -23,15 +30,116 @@ html[data-dsh-ccd-style="true"] :is(
 }
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
-  [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
-):hover:not(:disabled) {
+) { padding: 0 var(--ccd-management-primary-padding); }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addMore"] { padding: 0; }
+
+/* Every page action moves the same way. Filled actions keep their color and
+   dim; ghost and outline actions take the shared hover and press fills. */
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
+  [data-ccd-plugin-part="manager-toolbar"] button,
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="manager-groupMore"],
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
+  [data-ccd-plugin-part="market-toolbar"] button,
+  [data-ccd-plugin-part="market-cardEnd"] button,
+  .ccd-schedule-toolbar button,
+  .ccd-schedule-search-close,
+  .ccd-schedule-card-more,
+  .ccd-schedule-detail-crumbs button,
+  .ccd-schedule-delete-actions button,
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+) {
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease, opacity .12s ease, transform .12s ease;
+}
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-addPrimary"],
+  [data-ccd-plugin-part="manager-addMore"],
+  [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-part="manager-groupMore"],
+  [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+):is(:hover, :active):not(:disabled) {
   background: var(--ccd-text-strong);
   color: var(--ccd-text-inverse);
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addMore"] { padding: 0; }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-addPrimary"],
+  [data-ccd-plugin-part="manager-addMore"],
+  [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="manager-groupMore"],
+  [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+):hover:not(:disabled) { opacity: .85; }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-addPrimary"],
+  [data-ccd-plugin-part="manager-addMore"],
+  [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="manager-groupMore"],
+  [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+):active:not(:disabled) { opacity: .7; }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
+  [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
+  [data-ccd-plugin-tool],
+  [data-ccd-plugin-part="market-cardEnd"] button:not([data-ccd-plugin-install="true"], [data-ccd-plugin-installed="true"]),
+  .ccd-schedule-toolbar button,
+  [data-ccd-schedule-part="search"] .ccd-schedule-search-close,
+  [data-ccd-schedule-part="list"] .ccd-schedule-card-more,
+  .ccd-schedule-detail-crumbs button
+):hover:not(:disabled) { background: var(--ccd-hover); }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
+  [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
+  [data-ccd-plugin-tool],
+  [data-ccd-plugin-part="market-cardEnd"] button:not([data-ccd-plugin-install="true"], [data-ccd-plugin-installed="true"]),
+  .ccd-schedule-toolbar button,
+  [data-ccd-schedule-part="search"] .ccd-schedule-search-close,
+  [data-ccd-schedule-part="list"] .ccd-schedule-card-more,
+  .ccd-schedule-detail-crumbs button
+):active:not(:disabled) { background: var(--ccd-hover-strong); }
+/* The split Add control presses as one piece, without a seam between its halves. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addGroup"] { transition: transform .12s ease; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-addGroup"]:has(button:active:not(:disabled)),
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
+  [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
+  [data-ccd-plugin-part="manager-toolbar"] > [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="manager-groupMore"],
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
+  [data-ccd-plugin-tool],
+  [data-ccd-plugin-part="market-cardEnd"] button:not([data-ccd-plugin-installed="true"]),
+  .ccd-schedule-toolbar button,
+  .ccd-schedule-card-more,
+  .ccd-schedule-detail-crumbs button,
+  .ccd-schedule-delete-actions button,
+  [data-ccd-schedule-part="new"],
+  [data-ccd-schedule-part="empty"] button
+):active:not(:disabled) { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-page], [data-ccd-schedule]) :is(button, [data-ccd-plugin-part="manager-addGroup"]) {
+    transition: none;
+    transform: none !important;
+  }
+}
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
   [data-ccd-plugin-part="market-toolbar"] button:not([data-ccd-plugin-part="market-marketButton"]),
@@ -79,7 +187,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-marketButton"] {
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-tool],
   [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part])
-):is(:hover:not(:disabled), [aria-expanded="true"]) { background: var(--ccd-hover); }
+)[aria-expanded="true"] { background: var(--ccd-hover); }
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-toolbar"] button,
   [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
