@@ -11,7 +11,7 @@ const MANAGER_PARTS = new Set([
   'cards', 'card', 'cardHead', 'cardIcon', 'cardMain', 'titleRow', 'cardTitle',
   'cardDesc', 'cardEnd', 'addGroup', 'addPrimary', 'addMore', 'addButton',
   'detail', 'detailTop', 'detailHead', 'detailMain', 'detailActions', 'crumb', 'crumbIcon',
-  'detailTitle', 'detailDescription', 'moreHead', 'groupMore',
+  'detailTitle', 'detailDescription', 'moreHead', 'moreBack', 'groupMore',
 ]);
 const MARKET_PARTS = new Set([
   'toolbar', 'marketButton', 'search', 'categories', 'cards', 'card', 'icon',

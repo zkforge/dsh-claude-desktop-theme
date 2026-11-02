@@ -146,3 +146,46 @@ test('plugin detail keeps the native back action below the title bar and above t
     });
   } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
 });
+
+test('Customize and Scheduled tasks place title, tabs and primary action on the same pixels', {
+  skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
+}, async () => {
+  const bundle = await build({
+    stdin: { resolveDir: process.cwd(), contents: `
+      import {mountPluginPage} from './src/client/compat/plugin-page.ts';
+      import {mountSchedulePage} from './src/client/compat/schedule-page.ts';
+      window.stop=[mountPluginPage(document,()=>{}),mountSchedulePage(document,()=>{})];
+    ` }, bundle: true, write: false, format: 'iife',
+  });
+  const css = (await Promise.all(['tokens', 'plugins', 'schedule', 'management'].map(name => readFile(`src/client/theme/${name}.css`, 'utf8')))).join('\n');
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-management-frame-'));
+  const box = selector => `(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {top:r.top,left:r.left,right:r.right,height:r.height}})()`;
+  try {
+    await withPage({ url: 'about:blank', width: 1392, height: 932, profile }, async page => {
+      await page.evaluate(`
+        document.documentElement.lang='zh-CN';
+        document.documentElement.setAttribute('data-dsh-ccd-style','true');
+        document.body.innerHTML='<section data-plugin-panel class="build_page" style="width:1128px">'+
+          '<header class="build_pageHead"><div class="build_pageHeading"><h1 class="build_pageTitle">插件</h1><div class="build_pageIntro"><span>安装、启用和配置插件</span></div></div><div class="build_toolbar"><button id="refresh">R</button><span class="build_addGroup"><button class="build_addPrimary">添加插件</button><button class="build_addMore">V</button></span></div></header>'+
+          '<div class="build_pageTabs"><div class="build_pageTabList" role="tablist"><button role="tab" id="demo-installed" aria-selected="true">我的</button></div></div>'+
+          '<div class="build_installedPanel"></div></section>'+
+          '<section data-testid="task-manager-page" style="width:1128px"><div><div><h1>定时任务</h1><div><button>新建任务</button></div></div><div role="group"><button>全部</button></div><label><input></label><div></div></div></div></section>';
+        const style=document.createElement('style');
+        style.textContent=${JSON.stringify(css)}+'*{box-sizing:border-box}body{margin:0}section{position:absolute;top:0;left:0}';document.head.append(style);
+      `);
+      await page.evaluate(bundle.outputFiles[0].text);
+      await page.evaluate('new Promise(resolve=>setTimeout(resolve,60))');
+      for (const [plugin, schedule, keys] of [
+        ['[data-ccd-plugin-part="manager-pageTitle"]', '[data-ccd-schedule-part="heading"] h1', ['top', 'left']],
+        ['[data-ccd-plugin-part="manager-pageTabList"] [role="tab"]', '.ccd-schedule-tabs button', ['top', 'left', 'height']],
+        ['[data-ccd-plugin-part="manager-addMore"]', '[data-ccd-schedule-part="new"]', ['top', 'right', 'height']],
+        ['#refresh', '.ccd-schedule-tool', ['top', 'height']],
+      ]) {
+        const [a, b] = [await page.evaluate(box(plugin)), await page.evaluate(box(schedule))];
+        for (const key of keys) assert.equal(a[key], b[key], `${plugin} ${key}`);
+      }
+    });
+  } finally {
+    await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+});
