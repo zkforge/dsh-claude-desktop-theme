@@ -53,7 +53,7 @@ test('macOS sidebar collapse preserves the session title and its actions', { ski
       await page.evaluate(bundle.outputFiles[0].text);
       await page.evaluate(`window.release=mount(document,{
         read:()=>({title:'问候'}),rename:async(id,title)=>calls.push(['rename',id,title]),
-        fork:async()=>{},archive:async()=>{},subscribe:()=>()=>{}
+        fork:async()=>{},archive:async()=>{},openApps:async()=>[],openApp:async()=>{},subscribe:()=>()=>{}
       },error=>errors.push(String(error)))`);
       for (const collapsed of [false, true, false, true]) {
         for (const fullscreen of [false, true]) {
@@ -116,6 +116,7 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
           read:id=>id==='s1' ? data : {title:'其他会话'},
           rename:async(id,title)=>{calls.push(['rename',id,title]);data.title=title;listener()},
           fork:async id=>calls.push(['fork',id]),archive:async id=>calls.push(['archive',id]),
+          openApps:async()=>window.openApps?.()??[],openApp:async(app,path)=>calls.push(['openApp',app,path]),
           subscribe:fn=>{listener=fn;return ()=>{listener=null}}
         },error=>errors.push(String(error)))`);
         const click = selector => page.evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
@@ -164,6 +165,28 @@ test('header reference menus: geometry, real actions, keyboard, boundaries and c
         assert.deepEqual(await page.evaluate('calls.slice(1)'), [['fork', 's1'], ['archive', 's1']]);
         await click('[data-ccd-session-trigger]'); await choose(menu, '打开方式'); await choose('[data-ccd-header-menu="打开方式"]', 'VS Code');
         assert.equal(await page.evaluate('calls.at(-1)'), 'open');
+        // Installed applications replace the forwarded row, grouped and icon-backed; a failed read keeps that row.
+        await page.evaluate(`document.documentElement.lang='en';window.failedIcons=[];document.addEventListener('error',event=>failedIcons.push(event.target.getAttribute('src')),true);window.openApps=()=>['konsole-next','terminal','cursor','finder','fork'];data.cwd='/work';release();
+          window.release=window.mount(document,{read:()=>data,rename:async()=>{},fork:async()=>{},archive:async()=>{},
+            openApps:async()=>openApps(),openApp:async(app,path)=>calls.push(['openApp',app,path]),subscribe:fn=>{listener=fn;return ()=>{listener=null}}},error=>errors.push(String(error)))`);
+        await page.evaluate('new Promise(requestAnimationFrame)');
+        await click('[data-ccd-session-trigger]'); await choose(menu, '打开方式');
+        const apps = '[data-ccd-header-menu="打开方式"]';
+        assert.deepEqual(await page.evaluate(`[...document.querySelector('${apps}').children].map(node=>node.tagName==='HR'?'-':node.querySelector('[data-ccd-header-row-label]').textContent)`), ['Finder', '-', 'Cursor', '-', 'Fork', '-', 'Terminal']);
+        // about:blank cannot resolve the icon route, which exercises the missing-icon glyph too.
+        await page.evaluate('new Promise(requestAnimationFrame)');
+        assert.equal((await page.evaluate('failedIcons'))[0], 'open-in-app/icon/finder');
+        assert.equal(await page.evaluate(`document.querySelectorAll('${apps} [data-ccd-header-row-icon] svg').length`), 4);
+        await choose(apps, 'Cursor');
+        assert.deepEqual(await page.evaluate('calls.at(-1)'), ['openApp', 'cursor', '/work']);
+        await page.evaluate(`document.documentElement.lang='zh-CN'`);
+        await click('[data-ccd-session-trigger]'); await choose(menu, '打开方式');
+        assert.equal(await page.evaluate(`document.querySelector('${apps} [data-ccd-header-row-label]').textContent`), '访达');
+        await key('Escape'); await key('Escape');
+        await page.evaluate(`document.documentElement.removeAttribute('lang');window.openApps=()=>[]`);
+        await page.evaluate(`release();window.release=window.mount(document,{read:()=>data,rename:async(id,title)=>{calls.push(['rename',id,title]);data.title=title;listener()},
+          fork:async()=>{},archive:async()=>{},openApps:async()=>[],openApp:async()=>{},subscribe:fn=>{listener=fn;return ()=>{listener=null}}},error=>errors.push(String(error)))`);
+        await page.evaluate('new Promise(requestAnimationFrame)');
         await click('[data-ccd-session-trigger]'); await key('d');
         assert.equal(await page.evaluate(`document.querySelector('dialog')`), null);
         assert.equal(await page.evaluate(`document.querySelector('${menu}').matches(':popover-open')`), true);
