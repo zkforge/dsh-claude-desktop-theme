@@ -2,7 +2,6 @@
  * Colours are centralized here; the dark palette follows the host's body marker.
  */
 html[data-dsh-ccd-style="true"] {
-  --ccd-plugin-back-bg: #e5e5e5;
   --ccd-plugin-installed-bg: #e7f4eb;
   --ccd-plugin-installed-border: #b7d8c1;
   --ccd-plugin-installed-text: #24633c;
@@ -615,7 +614,6 @@ html[data-dsh-ccd-style="true"] body {
  * separate; text keeps the light palette's descending tone order.
  */
 html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
-  --ccd-plugin-back-bg: #484848;
   --ccd-plugin-installed-bg: #193b29;
   --ccd-plugin-installed-border: #315f43;
   --ccd-plugin-installed-text: #a1dfb5;

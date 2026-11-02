@@ -17,7 +17,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] > * {
   max-width: none;
 }
 /* Keep the back action in the content area, below the window title bar. */
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] {
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-page="detail"], [data-ccd-plugin-page="more"]) {
   padding: 47px var(--ccd-management-page-inset) 40px;
   font: 400 14px/22px var(--ccd-font-ui);
 }
@@ -37,34 +37,69 @@ html[data-dsh-ccd-style="true"] :is(
   padding-top: 0;
   margin: 0;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"] {
-  grid-column: 1 / -1;
-  grid-row: 1;
-  justify-self: start;
+/* Back and More are one ghost button; Add stays the page's only filled action. */
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-groupMore"]
+) {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  flex: none;
+  gap: 4px;
   box-sizing: border-box;
+  width: auto;
   height: var(--ccd-management-control-height);
   min-height: var(--ccd-management-control-height);
-  margin: 0 0 4px -9px;
   padding: 0 8px;
   border: 0;
   border-radius: var(--ccd-management-control-radius);
-  background: var(--ccd-plugin-back-bg);
-  color: var(--ccd-text);
+  background: transparent;
+  color: var(--ccd-text-secondary);
   font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
   cursor: pointer;
   -webkit-app-region: no-drag;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:hover { background: var(--ccd-plugin-back-bg); color: var(--ccd-text); }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumb"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-crumbIcon"] {
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-groupMore"]
+):hover { color: var(--ccd-text); }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-groupMore"]
+):focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] :is(
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="manager-moreBack"],
+  [data-ccd-plugin-part="manager-groupMore"]
+) svg {
   display: block;
   flex: none;
   width: 16px;
   height: 16px;
 }
+html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-crumb"], [data-ccd-plugin-part="market-crumb"]) {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: start;
+  margin: 0 0 4px -9px;
+}
+/* The list behind More opens with the same back row and title as a detail page. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-moreHead"] {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding-top: 0;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-moreBack"] { margin-left: -9px; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-moreBack"]::after { content: attr(data-ccd-plugin-back-label); }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-detailHead"] > [data-ccd-plugin-part="manager-cardIcon"] {
   grid-column: 1;
   grid-row: 2;
@@ -224,8 +259,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-marketButton"] {
   color: var(--ccd-text-secondary);
   font-size: 12px;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"],
-html[data-dsh-ccd-style="true"] .ccd-plugin-search {
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"] {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -239,19 +273,9 @@ html[data-dsh-ccd-style="true"] .ccd-plugin-search {
   background: var(--ccd-card);
   color: var(--ccd-text-muted);
   box-shadow: none;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"] {
   flex: 1 1 120px;
 }
-html[data-dsh-ccd-style="true"] .ccd-plugin-search {
-  grid-column: 2;
-  grid-row: 2;
-  align-self: start;
-  width: min(100%, 280px);
-  justify-self: end;
-}
-html[data-dsh-ccd-style="true"] .ccd-plugin-search > svg { width: 16px; height: 16px; flex: none; }
-html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search, [data-ccd-plugin-part="market-search"]) input {
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"] input {
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -265,7 +289,7 @@ html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search, [data-ccd-plugin-part="m
   font-size: var(--ccd-management-control-font-size);
   line-height: var(--ccd-management-control-line-height);
 }
-html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search, [data-ccd-plugin-part="market-search"]):focus-within {
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-search"]:focus-within {
   border-color: var(--ccd-accent);
   box-shadow: 0 0 0 1px var(--ccd-accent);
 }
@@ -369,21 +393,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupHead"] {
   justify-content: space-between;
   gap: 12px;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  height: var(--ccd-management-control-height);
-  padding: 0 var(--ccd-management-primary-padding);
-  border: 0;
-  border-radius: var(--ccd-management-control-radius);
-  background: var(--ccd-text-strong);
-  color: var(--ccd-text-inverse);
-  font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui);
-  cursor: pointer;
-}
-html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"]:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="manager-groupMore"] { margin-right: -8px; }
 html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"], [data-ccd-plugin-part="market-main"]) { display: contents; }
 html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-cardMain"] > [data-ccd-plugin-part="manager-titleRow"], [data-ccd-plugin-part="market-main"] > [data-ccd-plugin-part="market-titleRow"], [data-ccd-plugin-part="manager-cardMain"] > [data-ccd-plugin-part="manager-cardTitle"]) {
   grid-column: 2;
@@ -443,15 +453,8 @@ html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-detailTitle"]
   font-size: 26px;
   line-height: 36px;
   font-weight: 600;
+  letter-spacing: -.6px;
 }
-html[data-dsh-ccd-style="true"] .ccd-plugin-search-empty {
-  margin: 0;
-  padding: 24px 0;
-  color: var(--ccd-text-muted);
-  font-size: 14px;
-  text-align: center;
-}
-html[data-dsh-ccd-style="true"] :is(.ccd-plugin-search[hidden], .ccd-plugin-search-empty[hidden], [data-ccd-plugin-search-hidden="true"]) { display: none; }
 /* Details and empty/error states span the same grid as populated catalogs. */
 html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] > :not([data-ccd-plugin-part="market-toolbar"]) { grid-column: 1 / -1; }
 @container ccd-plugins (max-width: 760px) {
