@@ -28,18 +28,25 @@
 
 源码安装见[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
 
+### 0.8.0 更新
+
+- 重做会话右侧的环境、上下文与用量卡片；支持折叠、拖动排序，从工作目录、技能和指令文件直接打开右栏。
+- 会话标题的「打开方式」列出本机已安装的文件管理器、编辑器、Git 客户端与终端。
+- 统一「自定义」与「定时任务」页面布局，调整插件卡片、返回导航与任务详情，支持中英文切换。
+- 首页灰色字符背景支持心形与不规则圆形点击波纹，修正 Claude 宠物敲键盘时的电脑跳动，并更新浅深色界面截图。
+
 会话中输入 `/clear` 可以清空当前对话上下文，继续使用同一个会话：会话 ID、名称、项目、模型、项目指令与技能目录保留，旧消息和工具结果不再发送给模型。原始日志仍在，「查看历史记录」可展开旧内容，查看不会恢复模型上下文。命令不调用模型、不生成摘要；请在回复结束且没有排队消息时执行。安装后需完整退出并重新打开 DSH，加载宿主命令。
 
 
 ## 界面预览
 
-以下展示 macOS 浅色与深色主题的完整窗口。首页使用 Claude 像素宠物与问候样式，开启水波纹和统计卡片；会话页展示工具调用摘要与文件栏。两种宠物的点击回应与 Effort 拉到底的动效见下一节。
+以下展示 macOS 浅色与深色主题的完整窗口。首页使用 Claude 像素宠物与问候样式，开启水波纹和统计卡片；会话页展示终端、浏览器与文件栏，信息卡片单独展示环境、上下文分解与会话用量。两种宠物的点击回应与 Effort 拉到底的动效见下一节。
 
 | 界面 | 浅色 | 深色 |
 | --- | --- | --- |
 | 新会话页 | ![新会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-light.webp) | ![新会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/fullscreen-dark.webp) |
 | 会话页 | ![会话页 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-light.webp) | ![会话页 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/chat-dark.webp) |
-| 模型选单展开 | ![模型选单完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-light.webp) | ![模型选单完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/model-menu-fullscreen-dark.webp) |
+| 右侧信息卡片 | ![右侧信息卡片完整窗口 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-fullscreen-light.webp) | ![右侧信息卡片完整窗口 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-fullscreen-dark.webp) |
 | 插件设置 | ![插件设置 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-light.webp) | ![插件设置 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/settings-dark.webp) |
 
 ### 组件特写
@@ -51,7 +58,7 @@
 | 上下文圆环与分解面板 | ![上下文圆环与分解面板 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-light.webp) | ![上下文圆环与分解面板 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-dark.webp) |
 | 会话右侧信息卡片 | ![会话信息卡片 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-light.webp) | ![会话信息卡片 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-dark.webp) |
 
-以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，常显于左下角账号上方，右侧突出总余额，左下显示当前峰谷时段，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。
+以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，常显于左下角账号上方，右侧突出总余额，左下显示当前峰谷时段，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。会话信息卡片特写展示环境图标行、按占用排序的上下文分类与会话用量。
 
 ## 细节动效
 
@@ -106,6 +113,7 @@
 - 「显示 API 余额」默认开启，可在「设置 → Claude 主题 → 视图」关闭；关闭后隐藏余额与峰谷时段并停止查询。开启时，左下角账号上方以较大字号显示 DeepSeek 官方 API 的人民币总余额（`¥`），左下显示峰时/谷时标签与切换时间（峰时琥珀色、谷时绿色）；悬停卡片列出今日消耗、近 7 天日均、预计可用天数、充值、赠金与峰谷倒计时。消耗由本机记录的余额下降推算，充值只重置基线，不计入消耗；点击刷新，侧栏展开时每分钟后台更新，重新展开保留上次读数。折叠侧栏时在账号菜单保留余额入口。复用设置 → 模型中的官方 API Key；未配置或查询失败时显示对应状态。
 
 - DeepSeek Harness 品牌条目默认隐藏，可在「设置 → Claude 主题 → 视图」开启显示。
+- 桌面窗口左上角的后退／前进按钮可在最近访问的会话与主面板之间切换。
 - 新建 / 搜索 / 自定义 / 定时任务 / 主题入口与工作区、会话列表、账号菜单共用紧凑行高，当前入口常驻底色；「更多」以三个点表示。原标题行隐藏「最近会话」标题，只保留右侧筛选视图按钮。
 - 「主题」入口在主区域打开本插件的配置页，内容与「设置 → Claude 主题」相同；关闭 Claude 主题后入口仍在，用来重新开启。
 - 点击「更多」，在「浏览插件…」「创建插件…」下方选「编辑侧边栏…」，勾选要在侧栏中显示的面板；取消勾选的面板移到「更多」菜单顶部，选择保存在本机。
@@ -117,7 +125,7 @@
 ### 会话页
 
 - 新会话页、输入卡片与聊天页共用一套布局，正文边缘随滚动渐隐。
-- 顶栏左侧是电脑图标与标题下拉（Open in、Rename、Fork、Transcript view、Output style、Archive、Delete）；不显示项目名，标题按自然宽度完整展示，只在空间不足时截断。有宿主接口的动作接真实操作，其余点击说明限制。
+- 顶栏左侧是电脑图标与标题下拉（Open in、Rename、Fork、Transcript view、Output style、Archive、Delete）；不显示项目名，标题按自然宽度完整展示，只在空间不足时截断。「打开方式」按文件管理器、编辑器、Git 客户端与终端列出本机已安装应用，点击交由宿主打开。有宿主接口的动作接真实操作，其余点击说明限制。
 - 新建会话页与聊天页顶栏右侧依次是终端、浏览器、项目文件夹三个右栏入口；展开右栏的动作在会话 ⋯ 菜单第一项。
 - 整轮过程默认展开，「已完成，用时…」与步骤分组标题不再显示。可在「设置 → Claude 主题 → 视图」关闭「过程默认展开」，恢复 DSH「通用设置」中的工作步骤展示与收起时机；工具计数摘要仍可独立展开。
 - Markdown 的链接、行内代码、表格与代码块按 CCD 风格重绘。
@@ -135,12 +143,19 @@
 ### 右侧栏
 
 - 信息卡片按 Claude Desktop 参考图重做：平面描边卡片、细线箭头、环境图标行、按占用排序的上下文明细；聊天滚动条位于卡片右边，不再夹在聊天正文与卡片之间。
-- 会话右侧优先显示「环境 / 上下文 / 会话用量」信息卡片，顶部终端按钮左侧的「会话栏」按钮控制开关，选中时与其他工具按钮一样显示蓝色底色，中间以竖线分隔；手动关闭会记住选择。卡片可折叠，拖动标题或卡片内容时整张卡片随指针移动，其余卡片让位，松开后保存顺序，Esc 取消；排序手柄也支持上下方向键。右侧栏收起时，可用聊天区域不足 900px 宽或 400px 高会自动关闭，恢复到 924×424px 后按开关选择重新显示；打开文件、终端或浏览器后，信息卡片改为浮在会话右上方，不再额外压缩正文，可继续用会话栏按钮开关。
+- 会话右侧优先显示「环境 / 上下文 / 会话用量」信息卡片，顶部终端按钮左侧的「会话栏」按钮控制开关，选中时与其他工具按钮一样显示蓝色底色，中间以竖线分隔；手动关闭会记住选择。卡片可折叠，拖动标题或卡片内容时整张卡片随指针移动，其余卡片让位，松开后保存顺序，Esc 取消；排序手柄也支持上下方向键。右侧栏收起时，可用聊天区域不足 936px 宽或 400px 高会自动关闭，恢复到 960×424px 后按开关选择重新显示；打开文件、终端或浏览器后，信息卡片改为浮在会话右上方，不再额外压缩正文，可继续用会话栏按钮开关。
 - 环境卡读取实际会话工作目录、Git 分支及工作树状态（主工作树 / 独立工作树）。路径与其他字段均单行省略，悬停或键盘聚焦用黑色提示显示完整内容；若宿主还未加载环境接口，会明确提示完整退出并重新打开 DSH。会话用量展示输入 / 输出 token、缓存命中率、提示次数和输出 TPS；输入包含缓存读写，TPS 为整会话已结算输出的平均生成速度，每个模型步骤结束时更新。分叉会话包含继承历史，无有效数据时显示「—」。
+- 点击环境卡的工作目录可打开并定位文件树；展开上下文里的技能或指令文件，点击条目可在右栏预览，包括宿主内置技能文件。上下文总占用与输入框圆环一致，分类与明细为估算值。
 - Files 与浏览器各占一张浮动卡片，多个终端共用一张并用标签切换；第三块开启右列，两列分隔线各自可拖，比例按会话保留。
 - 卡片可放大到覆盖聊天区（保留左导航）／还原；最后一块关闭时收起右栏。
 - Files 的文件树与预览左右分栏、树宽可拖；标题左侧蓝色清单按钮收起 / 展开文件树；过滤框按名字收窄已加载的行，Esc 清除。
 - 浏览器带 Servers / Files / Settings 分组菜单与 Save screenshot；标题栏可直接输入服务地址并回车访问。
+
+### 自定义与定时任务
+
+- 「自定义」保留宿主的「我的 / 发现」页签、搜索与筛选、安装及配置功能，插件列表使用双列卡片，窄窗口自动切为单列；「我的」页不额外增加搜索框。详情与更多页面共用返回导航。
+- 「定时任务」使用「我的 / 模板」工具栏与任务卡片，点击任务进入整页详情，查看下次运行、历史记录、指令与重复频率。模板会新建会话并预填指令，可编辑后发送；详情页的立即运行与启用开关暂未实现。
+- 两页与主题设置共用页面布局；定时任务的标签、模板和详情跟随界面语言，已保存的任务名称与指令保留原文。
 
 ### 菜单与滚动条
 
@@ -162,9 +177,10 @@
 
 | 分组 | 可调项 |
 | --- | --- |
-| 模块 | 左侧栏、右侧栏（独立启停）、新建页、主页字符水波纹（默认开启）、聊天页、输入框小鲸鱼、统计卡片（默认开启）、状态栏统计读数（默认关闭）、上下文分解面板 |
+| 模块 | 左侧栏、右侧栏（独立启停）、新建页、主页字符水波纹（默认开启）、聊天页、工具调用展示、输入框宠物、统计卡片（默认开启）、状态栏统计读数（默认关闭）、上下文分解面板 |
 | 外观 | 主题（浅色 / 深色 / 跟随系统）、会话背景色、侧栏背景色 |
-| 视图 | 显示 API 余额（默认开启）；顶栏子代理入口、顶栏团队入口、顶栏后台任务入口、显示空分组（默认均关闭） |
+| 视图 | 显示 API 余额、显示模型图标、过程默认展开（默认开启）；DeepSeek Harness 品牌条目、顶栏子代理入口、顶栏团队入口、顶栏后台任务入口、显示空分组（默认均关闭） |
+| 个性化 | 宠物样式、输出中状态、回复签名、首页问候（默认 Claude 样式，可分别关闭） |
 | 字体 | 界面字体、代码与等宽字体；界面中文字体在设置页不列，需写进 profile 的 `cordis.patch.yml` |
 
 > [!NOTE]
@@ -172,7 +188,7 @@
 
 ## 环境要求
 
-兼容目标为 DSH Desktop `0.2.1-rc.3`，已验证 macOS（Apple 芯片）。Windows 10 及以上（64 位）的安装入口保留，新版宿主的 Windows 构建尚未完成验证。源码构建另需 Node.js ≥ 22.18.0。
+支持 DSH Desktop `0.2.1-rc.3` 与 `0.2.1-rc.5`，macOS（Apple 芯片）已使用 rc5 实机核验，开发 SDK 保持 rc3 基线。Windows 10 及以上（64 位）的安装入口保留，Windows rc5 实机尚未验证。源码构建另需 Node.js ≥ 22.18.0。升级后请完整退出并重新打开 DSH，以加载宿主接口与会话投影。
 
 ## 反馈与许可
 
