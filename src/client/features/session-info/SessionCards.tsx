@@ -8,7 +8,7 @@ import {
   barSegments, contextBreakdown, formatPercent, formatTokens, shortenPath, toolLabel,
 } from '../../../shared/context.ts';
 import {
-  readCardPreferences, type SessionCardId, type SessionCardPreferences,
+  instructionFilePath, readCardPreferences, type SessionCardId, type SessionCardPreferences,
 } from '../../../shared/session-info.ts';
 
 const STORAGE = 'ccd-session-cards';
@@ -40,13 +40,13 @@ function readPreferences(): SessionCardPreferences {
   catch { return readCardPreferences(null); }
 }
 
-function ValueRow({ label, value, hint, tooltip = true }: { label: string; value: ReactNode; hint?: string; tooltip?: boolean }) {
+function ValueRow({ label, value, hint, tooltip = true, onOpen }: { label: string; value: ReactNode; hint?: string; tooltip?: boolean; onOpen?: () => void }) {
   return <div className="ccd-info-value"><span>{label}</span>{typeof value === 'string' || typeof value === 'number'
-    ? tooltip ? <InfoText text={String(value)} {...(hint === undefined ? {} : { hint })} /> : <span className="ccd-info-text">{value}</span> : <span>{value}</span>}</div>;
+    ? tooltip ? <InfoText text={String(value)} {...(hint === undefined ? {} : { hint })} {...(onOpen === undefined ? {} : { onOpen })} /> : <span className="ccd-info-text">{value}</span> : <span>{value}</span>}</div>;
 }
 
 /** Shares the popup's pure pricing and bar functions, with a narrow persistent layout. */
-function ContextReading({ source, zh }: { source: ContextProjectionRead | null; zh: boolean }) {
+function ContextReading({ source, zh, opener }: { source: ContextProjectionRead | null; zh: boolean; opener: (group: string, name: string) => (() => void) | null }) {
   const copy = zh ? COPY.zh : COPY.en;
   if (source === null) return <p className="ccd-info-empty">{copy.waiting}</p>;
   const extra = source.breakdown;
@@ -76,9 +76,13 @@ function ContextReading({ source, zh }: { source: ContextProjectionRead | null; 
     {groups.filter(group => group.rows.length > 0).map(group => <details className="ccd-info-group" key={group.key}>
       <summary><span>{copy.rows[group.key]}</span><span>{group.rows.length}</span></summary>
       <div className="ccd-info-details">
-        {group.rows.map(([name, tokens]) => <div className="ccd-info-value" key={name} title={name}>
-          <span>{shortenPath(toolLabel(name), 26)}</span><span>{formatTokens(tokens)}</span>
-        </div>)}
+        {group.rows.map(([name, tokens]) => {
+          const label = shortenPath(toolLabel(name), 26);
+          const open = opener(group.key, name);
+          return <div className="ccd-info-value" key={name} title={name}>
+            <span>{open === null ? label : <button type="button" className="ccd-info-link" onClick={open}>{label}</button>}</span><span>{formatTokens(tokens)}</span>
+          </div>;
+        })}
       </div>
     </details>)}
   </>;
@@ -112,11 +116,17 @@ export function SessionCards({ port, contextEnabled }: { port: SessionInfoPort; 
     environment: state.workspace || cwd.split(/[\\/]/u).filter(Boolean).at(-1) || '—',
     usage: state.metrics.tps === null ? '—' : `${state.metrics.tps.toFixed(1)} tok/s`,
   };
+  const opener = (group: string, name: string) => {
+    if (group === 'skills') return () => port.openSkill(name);
+    if (group !== 'memory') return null;
+    const path = instructionFilePath(name, cwd, environment?.homes ?? {});
+    return path === null ? null : () => port.openFile(path);
+  };
   const contents: Record<SessionCardId, ReactNode> = {
-    context: <ContextReading key={state.session} source={state.context} zh={state.zh} />,
+    context: <ContextReading key={state.session} source={state.context} zh={state.zh} opener={opener} />,
     environment: <>
       <ValueRow label={copy.local} value={state.workspace || '—'} />
-      <ValueRow label={copy.path} value={cwd || '—'} />
+      <ValueRow label={copy.path} value={cwd || '—'} {...(cwd === '' ? {} : { onOpen: port.openFilesView })} />
       <ValueRow label={copy.branch} value={branch} {...(state.environmentState === 'restart' ? { hint: copy.restartHint } : {})} />
       {environment?.worktree !== null && environment?.worktree !== undefined
         && <ValueRow label={copy.worktreeLabel} value={environment.worktree ? copy.worktree : copy.checkout} hint={`${environment.worktree ? copy.worktree : copy.checkout}：${cwd}`} />}

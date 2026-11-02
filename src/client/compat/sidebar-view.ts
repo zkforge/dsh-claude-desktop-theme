@@ -1,5 +1,5 @@
 import type { Context } from '@deepseek-ai/cordis';
-import type { SidebarRightPort, SidebarRightTabsPort } from '../../../contracts/ports.ts';
+import type { SidebarRightPort, SidebarRightTabsPort } from '../contracts/ports.ts';
 
 /** Read the cross-plugin right-Sidebar face, or nothing when this build lacks it. */
 export function resolveSidebarRight(scope: Context): SidebarRightPort | undefined {
@@ -12,6 +12,26 @@ export function resolveSidebarRight(scope: Context): SidebarRightPort | undefine
 export function resolveSidebarTabs(scope: Context): SidebarRightTabsPort | undefined {
   const registry = (scope as Context & { sidebarRightTabs?: SidebarRightTabsPort }).sidebarRightTabs;
   return typeof registry?.get === 'function' ? registry : undefined;
+}
+
+/**
+ * Address one file the way the Files tree does, so both share a preview tab.
+ *
+ * Restates `fileAddressFor` from `dsh-util-workspace-path`, which is not part
+ * of this plugin's runtime baseline: a path inside the Session's root becomes
+ * relative, any other keeps its leading slash, and the host owns resolution.
+ *
+ * @param sessionId - Session authorizing the read.
+ * @param root - that Session's root, when known.
+ * @param path - absolute or root-relative path, in either separator spelling.
+ */
+export function fileAddress(sessionId: string, root: string | undefined, path: string): string {
+  const encode = (value: string) => encodeURIComponent(value).replace(/%3A/giu, ':');
+  const normalized = path.replaceAll('\\', '/');
+  const base = root?.replaceAll('\\', '/').replace(/\/+$/u, '') ?? '';
+  const inside = base !== '' && normalized.startsWith(`${base}/`);
+  const relative = inside ? normalized.slice(base.length + 1) : normalized.replace(/^(?:\.\/)+/u, '');
+  return `dsh-resource://file/session/${encode(sessionId)}/${relative.split('/').map(encode).join('/')}`;
 }
 
 /**

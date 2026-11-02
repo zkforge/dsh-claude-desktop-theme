@@ -1,8 +1,9 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 
-/** A single-line value with a full-text tooltip outside the card's clipping box. */
-export function InfoText({ text, hint = text }: { text: string; hint?: string }) {
-  const anchor = useRef<HTMLSpanElement>(null);
+/** A single-line value, optionally a link, with a full-text tooltip outside the card's clipping box. */
+export function InfoText({ text, hint = text, onOpen }: { text: string; hint?: string; onOpen?: () => void }) {
+  const anchor = useRef<HTMLElement>(null);
   const tip = useRef<HTMLSpanElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const [open, setOpen] = useState(false);
@@ -27,10 +28,14 @@ export function InfoText({ text, hint = text }: { text: string; hint?: string })
       if (node.matches(':popover-open')) node.hidePopover();
     };
   }, [open]);
+  const describe = {
+    'aria-describedby': open ? id : undefined, onPointerEnter: show, onPointerLeave: hide, onPointerDown: hide, onFocus: show, onBlur: hide,
+    onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Escape') hide(); },
+  };
   return <>
-    <span ref={anchor} className="ccd-info-text" tabIndex={0} aria-describedby={open ? id : undefined}
-      onPointerEnter={show} onPointerLeave={hide} onPointerDown={hide} onFocus={show} onBlur={hide}
-      onKeyDown={event => { if (event.key === 'Escape') hide(); }}>{text}</span>
+    {onOpen === undefined
+      ? <span ref={anchor} className="ccd-info-text" tabIndex={0} {...describe}>{text}</span>
+      : <button ref={anchor as RefObject<HTMLButtonElement>} type="button" className="ccd-info-text ccd-info-link" onClick={onOpen} {...describe}>{text}</button>}
     {open && <span ref={tip} id={id} className="ccd-info-tooltip" role="tooltip">{hint}</span>}
   </>;
 }

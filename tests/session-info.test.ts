@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SessionEvent } from '@deepseek-ai/dsh-session';
-import { readCardPreferences, sessionMetrics, showSessionInfo } from '../src/shared/session-info.ts';
-import { applyPromptEvent, readSessionEnvironment } from '../src/host/session-info.ts';
+import { instructionFilePath, readCardPreferences, sessionMetrics, showSessionInfo } from '../src/shared/session-info.ts';
+import { applyPromptEvent, instructionHomes, readSessionEnvironment } from '../src/host/session-info.ts';
 
 test('session metrics use disjoint cache buckets and weighted decode time', () => {
   assert.deepEqual(sessionMetrics({
@@ -72,4 +72,19 @@ test('non-repositories and Git errors have distinct empty states; cancellation p
   assert.equal(failed.git, 'error');
   const controller = new AbortController(); controller.abort();
   await assert.rejects(readSessionEnvironment('/demo', controller.signal, async () => { throw new Error('aborted'); }));
+});
+
+test('instruction display paths resolve against the session and the host homes', () => {
+  const homes = { '~': '/home/me', $DSH_HOME: '/opt/dsh' };
+  assert.equal(instructionFilePath('AGENTS.md', '/work/app/', homes), '/work/app/AGENTS.md');
+  assert.equal(instructionFilePath('packages/ui/AGENTS.md', '/work/app', homes), '/work/app/packages/ui/AGENTS.md');
+  assert.equal(instructionFilePath('~/.dsh/AGENTS.md', '/work/app', homes), '/home/me/.dsh/AGENTS.md');
+  assert.equal(instructionFilePath('$DSH_HOME/AGENTS.md', '/work/app', homes), '/opt/dsh/AGENTS.md');
+  assert.equal(instructionFilePath('/etc/AGENTS.md', '/work/app', homes), '/etc/AGENTS.md');
+  assert.equal(instructionFilePath('C:\\work\\AGENTS.md', 'D:\\app', homes), 'C:\\work\\AGENTS.md');
+  assert.equal(instructionFilePath('~/.dsh/AGENTS.md', '/work/app', {}), null);
+  assert.equal(instructionFilePath('$DSH_AGENTS_HOME/AGENTS.md', '/work/app', homes), null);
+  assert.deepEqual(instructionHomes({}, '/home/me'), { '~': '/home/me' });
+  assert.deepEqual(instructionHomes({ DSH_HOME: '/opt/dsh', DSH_AGENTS_HOME: '/opt/agents' }, '/home/me'),
+    { '~': '/home/me', $DSH_HOME: '/opt/dsh', $DSH_AGENTS_HOME: '/opt/agents' });
 });
