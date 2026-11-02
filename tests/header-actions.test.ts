@@ -9,7 +9,7 @@ import { HOST } from '../src/client/compat/host-dom.ts';
 import { mountOpenTargetMode } from '../src/client/compat/open-target.ts';
 import { DSH_SLOTS, OVERRIDE_PRIORITY } from '../src/client/compat/slots.ts';
 import { VIEWS, cornerRetirement, sidebarExpandRow, utilitiesEntry } from '../src/client/features/conversation/header-actions/entries.ts';
-import { openView, resolveSidebarRight, resolveSidebarTabs } from '../src/client/features/conversation/header-actions/sidebar-view.ts';
+import { fileAddress, openView, resolveSidebarRight, resolveSidebarTabs } from '../src/client/compat/sidebar-view.ts';
 
 /** Narrow element double: attributes only, like the renderer's own nodes. */
 function element(initial: Record<string, string> = {}) {
@@ -80,12 +80,13 @@ test('the Session menu\u2019s expand row follows the panel\u2019s own state', ()
   } as unknown as Document;
   const expanded = { querySelector: () => null } as unknown as Document;
   const face = {
+    openResource: () => {},
     openTab: () => {},
     focus: () => {},
     openTabs: { getSnapshot: () => [] },
     toggleExpanded: () => { calls.push('toggle'); },
   } as SidebarRightPort;
-  const bare = { openTab: () => {}, focus: () => {}, openTabs: { getSnapshot: () => [] } } as SidebarRightPort;
+  const bare = { openResource: () => {}, openTab: () => {}, focus: () => {}, openTabs: { getSnapshot: () => [] } } as SidebarRightPort;
 
   const row = sidebarExpandRow(face, collapsed, '打开侧边栏');
   assert.equal(row.label, '打开侧边栏');
@@ -277,4 +278,12 @@ test('native View tabs share the header before utilities without proxy buttons',
   const tabs = conversation.find(rule => rule.selector.endsWith('.ST7X_W_header .ST7X_W_tabs'));
   assert.match(tabs?.body ?? '', /order:\s*2/u);
   assert.match(tabs?.body ?? '', /-webkit-app-region:\s*no-drag/u);
+});
+
+test('file addresses match the host grammar the Files tree uses', async () => {
+  const { fileAddressFor } = await import('@deepseek-ai/dsh-util-workspace-path');
+  for (const [root, path] of [
+    ['/work/app', '/work/app/src/a b.md'], ['/work/app/', 'AGENTS.md'], ['/work/app', './AGENTS.md'], ['/work/app', '/home/me/.dsh/AGENTS.md'],
+    ['/work/app', '/work/application/x.md'], [undefined, '/etc/hosts'], ['C:\\work', 'C:\\work\\AGENTS.md'], ['C:\\work', 'D:\\x\\y#z.md'],
+  ] as const) assert.equal(fileAddress('s:1/a', root, path), fileAddressFor('s:1/a', root, path), path);
 });
