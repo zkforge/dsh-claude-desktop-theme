@@ -43,6 +43,7 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
   [data-ccd-plugin-part="manager-toolbar"] button,
   [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
   [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="manager-moreBack"],
   [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
@@ -62,7 +63,6 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
-  [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
@@ -74,8 +74,6 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
-  [data-ccd-plugin-part="manager-crumb"],
-  [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
@@ -84,8 +82,6 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
-  [data-ccd-plugin-part="manager-crumb"],
-  [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
@@ -93,6 +89,9 @@ html[data-dsh-ccd-style="true"] :is(
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
   [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="manager-moreBack"],
   [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
   [data-ccd-plugin-tool],
@@ -105,6 +104,9 @@ html[data-dsh-ccd-style="true"] :is(
 html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-pageTabList"] [role="tab"],
   [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
+  [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="manager-moreBack"],
   [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
   [data-ccd-plugin-tool],
@@ -122,6 +124,8 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-toolbar"] button:not([data-ccd-plugin-part]),
   [data-ccd-plugin-part="manager-toolbar"] > [data-ccd-plugin-part="manager-addButton"],
   [data-ccd-plugin-part="manager-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
+  [data-ccd-plugin-part="market-crumb"],
   [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="manager-moreBack"],
   [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
@@ -177,7 +181,7 @@ html[data-dsh-ccd-style="true"] :is([data-ccd-plugin-part="manager-addPrimary"],
   height: 14px;
 }
 html[data-dsh-ccd-style="true"] :is(
-  .ccd-plugin-search, [data-ccd-plugin-part="market-search"], [data-ccd-schedule-part="search"]
+  [data-ccd-plugin-part="market-search"], [data-ccd-schedule-part="search"]
 ) input { font: 400 var(--ccd-management-control-font-size)/var(--ccd-management-control-line-height) var(--ccd-font-ui); }
 html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-marketButton"] {
   height: var(--ccd-management-control-height);

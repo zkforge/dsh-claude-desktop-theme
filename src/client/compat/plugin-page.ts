@@ -16,7 +16,7 @@ const MANAGER_PARTS = new Set([
 const MARKET_PARTS = new Set([
   'toolbar', 'marketButton', 'search', 'categories', 'cards', 'card', 'icon',
   'main', 'titleRow', 'cardOpen', 'description', 'meta', 'cardEnd', 'detail',
-  'detailTitle', 'detailDescription', 'empty', 'more',
+  'crumb', 'crumbIcon', 'detailTitle', 'detailDescription', 'empty', 'more',
 ]);
 
 /**
@@ -27,9 +27,6 @@ const MARKET_PARTS = new Set([
  */
 export function mountPluginPage(document: Document, report: (error: unknown) => void, catalog?: PluginCatalogPort): Disposer {
   let page: HTMLElement | null = null;
-  let search: HTMLLabelElement | null = null;
-  let empty: HTMLParagraphElement | null = null;
-  let query = '';
   let released = false;
   const headings = new Map<Element, HTMLElement>();
   const versions = new Map<Element, HTMLElement>();
@@ -72,7 +69,6 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
     versions.clear();
     for (const heading of headings.values()) heading.remove();
     headings.clear();
-    search?.remove(); empty?.remove(); search = null; empty = null;
     for (const [node, saved] of attributes) for (const [key, { from, to }] of saved) {
       if (node.getAttribute(key) !== to) continue;
       if (from === null) node.removeAttribute(key); else node.setAttribute(key, from);
@@ -101,7 +97,8 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
     const discover = page.querySelector('[data-plugin-tab="discover"]');
     if (discover) annotate(discover, 'section', 'market', MARKET_PARTS);
     const heading = page.querySelector(`[${PART}="manager-pageHeading"] h1`);
-    const mode = discover ? 'discover' : heading ? 'mine' : 'detail';
+    const more = page.querySelector(`[${PART}="manager-moreHead"]`);
+    const mode = discover ? 'discover' : heading ? 'mine' : more ? 'more' : 'detail';
     attribute(page, 'data-ccd-plugin-page', mode);
     const zh = document.documentElement.lang.toLowerCase().startsWith('zh');
     if (catalog && !loaded && !loading) void loadCatalog();
@@ -138,7 +135,15 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
       }
       if (list.previousElementSibling !== header) list.before(header);
     }
-    label(heading, zh ? '自定义' : 'Customize');
+    const root = zh ? '自定义' : 'Customize';
+    label(heading, root);
+    // Both back actions name the page they return to; the host's says "Plugins".
+    for (const crumb of page.querySelectorAll(`[${PART}="manager-crumb"]`)) {
+      if (/^(?:插件|Plugins)$/u.test(crumb.textContent?.trim() ?? '')) label(crumb, root);
+    }
+    // The icon-only back button keeps its React children and accessible name.
+    const moreBack = page.querySelector(`[${PART}="manager-moreBack"]`);
+    if (moreBack) attribute(moreBack, 'data-ccd-plugin-back-label', root);
     for (const tab of page.querySelectorAll('[role="tab"]')) {
       // Only the native Installed tab; other contributed tabs keep their labels.
       if (tab.id.endsWith('-installed')) label(tab, zh ? '我的' : 'My plugins');
@@ -156,39 +161,6 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
     for (const button of page.querySelectorAll(`[${PART}="market-cardEnd"] button`)) {
       attribute(button, 'data-ccd-plugin-install', String(/^(安装 |Install )/u.test(button.getAttribute('aria-label') ?? '')));
       attribute(button, 'data-ccd-plugin-installed', String(/^(?:[✓✔]\s*)?(?:已安装|Installed)$/iu.test(button.textContent?.trim() ?? '')));
-    }
-    // Search only the installed/configuration cards already loaded by the host.
-    if (!search) {
-      search = document.createElement('label'); search.className = 'ccd-plugin-search';
-      search.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>';
-      const input = document.createElement('input'); input.type = 'search'; input.value = query;
-      input.addEventListener('input', () => { query = input.value; scheduler.schedule(); });
-      search.append(input);
-      empty = document.createElement('p'); empty.className = 'ccd-plugin-search-empty'; empty.setAttribute('role', 'status');
-    }
-    if (search.parentElement !== page) page.append(search);
-    if (empty && empty.parentElement !== page) page.append(empty);
-    search.hidden = mode !== 'mine';
-    const input = search.querySelector('input')!;
-    input.placeholder = zh ? '搜索插件' : 'Search plugins';
-    input.setAttribute('aria-label', input.placeholder);
-    const needle = query.trim().toLocaleLowerCase();
-    let count = 0;
-    const cards = page.querySelectorAll('[data-plugin-group] [data-plugin-package], [data-plugin-group] [data-plugin-item]');
-    for (const card of cards) {
-      const hidden = mode === 'mine' && needle !== '' && !`${card.getAttribute('data-plugin-package') ?? ''} ${card.getAttribute('data-plugin-item') ?? ''} ${card.textContent}`.toLocaleLowerCase().includes(needle);
-      attribute(card, 'data-ccd-plugin-search-hidden', String(hidden));
-      if (!hidden) count++;
-    }
-    for (const group of page.querySelectorAll('[data-plugin-group]')) {
-      const members = group.querySelectorAll('[data-plugin-package], [data-plugin-item]');
-      const hidden = members.length > 0 && Array.from(members).every(card => card.getAttribute('data-ccd-plugin-search-hidden') === 'true');
-      attribute(group, 'data-ccd-plugin-search-hidden', String(hidden));
-    }
-    if (empty) {
-      empty.hidden = mode !== 'mine' || needle === '' || count > 0 || page.getAttribute('aria-busy') === 'true';
-      const message = zh ? '没有匹配的插件' : 'No plugins match';
-      if (empty.textContent !== message) empty.textContent = message;
     }
   };
   const scheduler = frameScheduler(() => { if (!released) try { sync(); } catch (error) { report(error); } }, document.defaultView);

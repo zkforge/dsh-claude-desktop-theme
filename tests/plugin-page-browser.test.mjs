@@ -9,7 +9,7 @@ import { findChrome, withPage } from '../scripts/lib/headless-chrome.mjs';
 let chrome;
 try { chrome = findChrome(); } catch { /* CI supplies Chrome. */ }
 
-test('plugin page preserves host actions and parents across filtering, Discover, locale and disposal', {
+test('plugin page preserves host actions and parents across Discover, locale and disposal', {
   skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
 }, async () => {
   const bundle = await build({
@@ -43,18 +43,11 @@ test('plugin page preserves host actions and parents across filtering, Discover,
       assert.equal(await page.evaluate('document.querySelector("#demo-installed").textContent'), '我的');
       assert.equal(await page.evaluate('getComputedStyle(document.querySelector(".build_cards")).gridTemplateColumns.split(" ").length'), 1);
       assert.deepEqual(await page.evaluate('Array.from(document.querySelector(".ccd-plugin-list-heading").children, cell => cell.textContent)'), ['插件', '说明', '状态']);
-      await page.evaluate(`openButton.click();const input=document.querySelector('.ccd-plugin-search input');input.value='alpha';input.dispatchEvent(new Event('input'));`);
+      assert.equal(await page.evaluate('document.querySelector("[data-plugin-panel] > label, [data-plugin-panel] input")'), null);
+      await page.evaluate('openButton.click()');
       await settle(page);
       assert.equal(await page.evaluate('window.openCount'), 1);
       assert.equal(await page.evaluate('openButton.parentNode===originalParent'), true);
-      assert.equal(await page.evaluate('getComputedStyle(document.querySelector("[data-plugin-package=beta]")).display'), 'none');
-      // A refreshed catalog must join the current search without replacing controls.
-      await page.evaluate(`const card=document.createElement('li');card.className='build_card';card.dataset.pluginPackage='alpha-extra';card.textContent='Alpha extra';document.querySelector('.build_cards').append(card);`);
-      await settle(page);
-      assert.notEqual(await page.evaluate('getComputedStyle(document.querySelector("[data-plugin-package=alpha-extra]")).display'), 'none');
-      await page.evaluate(`{const field=document.querySelector('.ccd-plugin-search input');field.value='missing';field.dispatchEvent(new Event('input'));}`);
-      await settle(page);
-      assert.equal(await page.evaluate('document.querySelector(".ccd-plugin-search-empty").hidden'), false);
       // Discover uses its own host search and keeps Add reachable despite native hidden.
       await page.evaluate(`
         document.querySelector('#installed').remove();document.querySelector('#actions').hidden=true;
@@ -63,7 +56,6 @@ test('plugin page preserves host actions and parents across filtering, Discover,
         document.querySelector('[data-plugin-panel]').append(panel);window.installs=0;document.querySelector('#install').onclick=()=>window.installs++;
       `);
       await settle(page);
-      assert.equal(await page.evaluate('document.querySelector(".ccd-plugin-search").hidden'), true);
       assert.notEqual(await page.evaluate('getComputedStyle(document.querySelector("#actions")).display'), 'none');
       assert.equal(await page.evaluate('document.querySelector("[data-ccd-plugin-tool=sort]").getAttribute("aria-label")'), '排序：默认顺序');
       await page.evaluate('document.querySelector("#install").click();document.documentElement.lang="en"');
@@ -79,7 +71,7 @@ test('plugin page preserves host actions and parents across filtering, Discover,
       assert.deepEqual(await page.evaluate('window.pluginErrors'), []);
       assert.equal(await page.evaluate('document.querySelector("h1").textContent'), '插件');
       assert.equal(await page.evaluate('document.querySelector("#demo-installed").textContent'), '已安装');
-      assert.equal(await page.evaluate('document.querySelector("[data-ccd-plugin-page], [data-ccd-plugin-part], .ccd-plugin-search, .ccd-plugin-list-heading")'), null);
+      assert.equal(await page.evaluate('document.querySelector("[data-ccd-plugin-page], [data-ccd-plugin-part], .ccd-plugin-list-heading")'), null);
       assert.equal(await page.evaluate('document.querySelector("#install").getAttribute("aria-label")'), '安装 Alpha');
     });
   } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
@@ -134,7 +126,7 @@ test('plugin detail keeps the native back action below the title bar and above t
         assert.ok(layout.sections.top >= layout.description.bottom, JSON.stringify(layout));
       }
       assert.equal(await page.evaluate('document.querySelector(".ccd-plugin-detail-current")'), null);
-      assert.equal(await page.evaluate('document.querySelector(".host_crumb").textContent'), '插件');
+      assert.equal(await page.evaluate('document.querySelector(".host_crumb").textContent'), '自定义');
       assert.equal(await page.evaluate('getComputedStyle(document.querySelector(".host_crumbIcon")).display'), 'block');
       await page.evaluate('document.querySelector(".host_crumb").click();document.querySelector("#toggle").click()');
       assert.equal(await page.evaluate('window.backCount'), 1);
@@ -188,4 +180,41 @@ test('Customize and Scheduled tasks place title, tabs and primary action on the 
   } finally {
     await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
+});
+
+test('back and More share one ghost button, and the More list opens like a detail page', {
+  skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
+}, async () => {
+  const bundle = await build({
+    stdin: { resolveDir: process.cwd(), contents: `
+      import {mountPluginPage} from './src/client/compat/plugin-page.ts';
+      window.stopPlugins=mountPluginPage(document,error=>{throw error;});
+    ` }, bundle: true, write: false, format: 'iife',
+  });
+  const css = (await Promise.all(['tokens', 'plugins', 'management'].map(name => readFile(`src/client/theme/${name}.css`, 'utf8')))).join('\n');
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-plugin-more-'));
+  const chevron = '<svg width="20" height="20" viewBox="0 0 20 20"></svg>';
+  try {
+    await withPage({ url: 'about:blank', width: 1392, height: 932, profile }, async page => {
+      await page.evaluate(`
+        document.documentElement.lang='zh-CN';
+        document.documentElement.setAttribute('data-dsh-ccd-style','true');
+        document.body.innerHTML='<section data-plugin-panel class="host_page"><header class="host_moreHead" data-window-drag style="display:flex">'+
+          '<button class="host_moreBack" aria-label="返回插件" style="width:28px">${chevron}</button><h1 class="host_pageTitle">实验性插件</h1></header>'+
+          '<section data-plugin-group="experimental" class="host_group"><div class="host_groupHead"><h3 class="host_groupTitle">实验性</h3><button class="host_groupMore">More${chevron}</button></div></section></section>';
+        const style=document.createElement('style');style.textContent=${JSON.stringify(css)}+'*{box-sizing:border-box}body{margin:0}';document.head.append(style);
+      `);
+      await page.evaluate(bundle.outputFiles[0].text);
+      const styles = await page.evaluate(`[document.querySelector('.host_moreBack'),document.querySelector('.host_groupMore')].map(node=>{const s=getComputedStyle(node);return [s.height,s.fontSize,s.fontWeight,s.color,s.backgroundColor,s.borderRadius,getComputedStyle(node.querySelector('svg')).width].join('|');})`);
+      assert.equal(styles[0], styles[1]);
+      assert.match(styles[0], /^26px\|13px\|400\|.*\|rgba\(0, 0, 0, 0\)\|7px\|16px$/);
+      assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.host_moreBack'),'::after').content`), '"自定义"');
+      assert.equal(await page.evaluate(`document.querySelector('.host_moreBack').getAttribute('aria-label')`), '返回插件');
+      const layout = await page.evaluate(`(()=>{const back=document.querySelector('.host_moreBack').getBoundingClientRect(),title=document.querySelector('.host_pageTitle').getBoundingClientRect();return {back:back.top,bottom:back.bottom,title:title.top,left:title.left-back.left};})()`);
+      assert.equal(layout.back, 47, JSON.stringify(layout));
+      assert.equal(layout.title, layout.bottom + 16, JSON.stringify(layout));
+      await page.evaluate('stopPlugins()');
+      assert.equal(await page.evaluate('document.querySelector("[data-ccd-plugin-back-label],[data-ccd-plugin-page]")'), null);
+    });
+  } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
 });
