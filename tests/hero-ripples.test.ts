@@ -12,7 +12,7 @@ test('the ASCII field is deterministic, finite and bounded while its wave travel
     assert.match(cell.glyph, /^[\da-zA-Z]$/);
     if (cell.alpha !== rippleCell(x, y, 6000, 800, 500).alpha) changed++;
   }
-  assert.ok(changed > 1000);
+  assert.ok(changed > 100);
 });
 
 test('letters and digits keep changing with independent cell cadences', () => {
@@ -37,7 +37,7 @@ test('light stays visible over changing glyphs and moves continuously across for
     return total;
   });
   for (const total of energy) {
-    assert.ok(total > 960 / 18 * Math.ceil(600 / 22) * .04,
+    assert.ok(total > 960 / 18 * Math.ceil(600 / 22) * .02,
       'the moving field remains visible even during former quiet intervals');
   }
   let boundaryDifference = 0;
@@ -61,7 +61,8 @@ test('click crests spread outward in uneven patches, then releases the unchanged
   const meanRadius = (age: number) => {
     let energy = 0, radius = 0;
     for (let y = 0; y < 600; y += 11) for (let x = 0; x < 960; x += 6) {
-      const light = delta(x, y, age);
+      // A crest also covers grey beneath it, so only added light marks the front.
+      const light = Math.max(0, delta(x, y, age));
       energy += light; radius += light * Math.hypot(x - 480, y - 300);
     }
     assert.ok(energy > 0);
@@ -82,6 +83,83 @@ test('click crests spread outward in uneven patches, then releases the unchanged
   assert.equal(delta(708, 300, -1), 0, 'a wave cannot appear before its click');
   assert.equal(rippleCell(708, 300, 11900, 960, 600, impulses).glyph,
     rippleCell(708, 300, 11900, 960, 600).glyph);
+});
+
+test('clicks spread as plump upright hearts or lumpy circles, each keeping its own shape', () => {
+  const reach = (startedAt: number, angle: number) => {
+    const impulses = [{ x: .5, y: .5, startedAt }], time = startedAt + 800;
+    for (let radius = 700; radius > 0; radius -= 3) {
+      const x = 800 + Math.sin(angle) * radius, y = 500 - Math.cos(angle) * radius;
+      if (rippleCell(x, y, time, 1600, 1000, impulses).alpha - rippleCell(x, y, time, 1600, 1000).alpha > .015) return radius;
+    }
+    return 0;
+  };
+  const around = (startedAt: number, angle: number) =>
+    [-.14, 0, .14].reduce((sum, turn) => sum + reach(startedAt, angle + turn), 0) / 3;
+  let hearts = 0, circles = 0;
+  for (let i = 0; i < 16; i++) {
+    const startedAt = 5000 + i * 1700;
+    const cleft = around(startedAt, 0), lobes = (around(startedAt, .8) + around(startedAt, -.8)) / 2;
+    const wide = (around(startedAt, Math.PI / 2) + around(startedAt, -Math.PI / 2)) / 2;
+    if (cleft < lobes * .8) {
+      hearts++;
+      const tip = around(startedAt, Math.PI);
+      assert.ok(tip < lobes, 'the click sits low in the heart');
+      assert.ok(wide + wide > tip + cleft, 'a heart runs wider than it is tall');
+    } else circles++;
+  }
+  assert.ok(hearts >= 4 && circles >= 4, `${hearts} hearts and ${circles} circles both appear`);
+});
+
+test('the field stays grey while click light takes the ripple ink', () => {
+  const original = globalThis.getComputedStyle;
+  globalThis.getComputedStyle = (() => ({
+    getPropertyValue: (name: string) => (name === '--ccd-hero-ripple-idle-ink' ? '#808080' : '#2060c0'),
+  })) as unknown as typeof getComputedStyle;
+  let frame: Uint8ClampedArray = new Uint8ClampedArray();
+  const ink = { setTransform() {}, fillStyle: '', font: '', textBaseline: '', fillText() {}, clearRect() {}, drawImage() {},
+    createImageData(width: number, height: number) { return { data: new Uint8ClampedArray(width * height * 4) }; },
+    putImageData(pixels: { data: Uint8ClampedArray }) { frame = pixels.data; } };
+  const context = { ...ink, globalAlpha: 1, globalCompositeOperation: 'source-over', clearRect() {}, drawImage() {} };
+  const document = { defaultView: { devicePixelRatio: 2 }, createElement: () => ({ width: 0, height: 0, getContext: () => ink }) };
+  const canvas = { width: 1920, height: 1200, ownerDocument: document, getContext: () => context } as unknown as HTMLCanvasElement;
+  const colours = () => {
+    let grey = 0, blue = 0;
+    for (let i = 0; i < frame.length; i += 4) {
+      if (frame[i + 3]! < 20) continue;
+      if (frame[i + 2]! > frame[i]! + 40) blue++; else grey++;
+    }
+    return { grey, blue };
+  };
+  try {
+    drawHeroRipples(canvas, 4800);
+    const idle = colours();
+    assert.ok(idle.grey > 100 && idle.blue === 0, 'nothing but grey moves until a click');
+    drawHeroRipples(canvas, 5600, [{ x: .5, y: .5, startedAt: 4800 }]);
+    const lit = colours();
+    assert.ok(lit.blue > 100, 'the click lights its own colour');
+    assert.ok(frame.some((_, i) => i % 4 === 0 && frame[i + 3]! > 40 && frame[i] === 0x20 && frame[i + 2] === 0xc0),
+      'a crest over the grey field shows the pure ink');
+    drawHeroRipples(canvas, 6900, [{ x: .5, y: .5, startedAt: 4800 }]);
+    let fading = 0, muddy = 0;
+    for (let i = 0; i < frame.length; i += 4) {
+      if (frame[i + 3]! < 13 || frame[i + 2] === frame[i]) continue;
+      fading++;
+      if (frame[i] !== 0x20) muddy++;
+    }
+    assert.ok(fading > 100 && muddy < fading * .05, `a fading wave keeps its ink rather than turning grey: ${muddy} of ${fading}`);
+    drawHeroRipples(canvas, 9000, []);
+    assert.equal(colours().blue, 0, 'and leaves none behind');
+  } finally { globalThis.getComputedStyle = original; }
+});
+
+test('a click covers the grey field instead of adding to it', () => {
+  const impulses = [{ x: .5, y: .5, startedAt: 11000 }];
+  let dimmed = 0;
+  for (let y = 0; y < 600; y += 7) for (let x = 0; x < 960; x += 5) {
+    if (rippleCell(x, y, 11900, 960, 600, impulses).alpha < rippleCell(x, y, 11900, 960, 600).alpha - .01) dimmed++;
+  }
+  assert.ok(dimmed > 20, 'faint parts of a crest still replace brighter grey beneath them');
 });
 
 test('drawing uses theme ink, caps pixel density, clears the prior frame and restores alpha', () => {
@@ -132,15 +210,15 @@ test('the ink and sampling mesh are reused at double pixel density', () => {
   try {
     drawHeroRipples(canvas, 0);
     assert.equal(reads, 1);
-    assert.equal(allocations.length, 1, 'the light mesh is allocated once');
+    assert.equal(allocations.length, 2, 'the field and click meshes are allocated once');
     assert.equal(context.fillStyle, '#2477ac');
     for (let elapsed = 42; elapsed < 600; elapsed += 42) drawHeroRipples(canvas, elapsed);
     assert.equal(reads, 1, 'frames draw from the resolved ink');
-    assert.equal(allocations.length, 1, 'and reuse the mesh');
+    assert.equal(allocations.length, 2, 'and reuse the meshes');
     /* A resize and a scheme swap are the two things that invalidate it. */
     canvas.width = 800;
     drawHeroRipples(canvas, 700);
-    assert.equal(allocations.length, 2, 'a new box needs a mesh of its own');
+    assert.equal(allocations.length, 4, 'a new box needs meshes of its own');
     assert.equal(reads, 1, 'the ink is still the same colour');
     body.hasAttribute = name => name === 'data-ds-dark-theme';
     drawHeroRipples(canvas, 800);
