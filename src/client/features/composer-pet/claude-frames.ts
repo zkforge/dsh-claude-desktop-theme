@@ -66,8 +66,9 @@ const turn: ClaudeFrame = [turningBody + straightFeet(17.5, [4.5, 10.5, 19, 25])
   box(25, -1.5, 3, 19) + box(25, 17.5, 3, 6), eyes(6, 20.5, 4.5), laptopSteps(13)];
 
 /** The recording staggers two square hands by one 1.5px step horizontally.
- * The near hand masks the far one, whose keystroke reaches lower. */
-function typing(farY: number, nearY: number): ClaudeFrame {
+ * The near hand masks the far one, whose keystroke reaches lower. Between
+ * strokes both hands come back up and the laptop hops one step with them. */
+function typing(farY: number, nearY: number, laptopY = 14.5): ClaudeFrame {
   const farHand = box(-3, farY, 6, 6);
   const nearHand = box(-1.5, nearY, 6, 6);
   const above = Math.min(6, Math.max(0, nearY - farY));
@@ -77,7 +78,7 @@ function typing(farY: number, nearY: number): ClaudeFrame {
     + (below > 0 ? box(-1.5, farY + 6 - below, 4.5, below) : '');
   return [box(3, 3, 23.5, 16.5) + farHand + nearHand + projectedFeet(19.5),
     box(20.5, 3, 6, 16.5) + bentFoot(23.5, 25, 19.5) + farShade,
-    eyes(3, 14.5, 7.5), laptopSteps(14.5)];
+    eyes(3, 14.5, 7.5), laptopSteps(laptopY)];
 }
 
 const lean: ClaudeFrame = [box(3, 1.5, 23.5, 16) + box(-3, 6, 6, 7.5)
@@ -96,8 +97,9 @@ const returnArms = box(-3, 11, 9, 3) + box(0, 9.5, 6, 1.5) + box(3, 8, 3, 1.5)
 const returning = upright(0, 17.5, returnArms, eyes(6, 20.5, 4.5), laptopFold,
   box(26.5, 0, 3, 17.5) + box(26.5, 17.5, 3, 6) + box(29.5, 12, 5.5, 1.5));
 
-/** Reuse clean silhouettes for the recorded sequence; typing uses a steady
- * far / passing / near cadence instead of changing the hands' contours. */
+/** Reuse clean silhouettes for the recorded sequence; typing repeats the
+ * recording's far / near / hop cycle instead of changing the hands' contours.
+ * That cycle runs at 12fps, so sampling it at 20fps gives uneven 2-2-1 runs. */
 export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
   upright(1.5, 19, winkArms, box(9, 7.5, 3, 3) + box(22, 9, 4.5, 1.5)),
   upright(0, 17.5, reachingArm + box(29.5, 7.5, 5.5, 6), eyes(9, 23.5, 3), laptopOut),
@@ -107,7 +109,7 @@ export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
   upright(0, 17.5, box(0, 6, 6, 6) + box(29.5, 4.5, 5.5, 6), eyes(9, 23.5, 4.5), laptopFlat),
   turn,
   lean,
-  typing(13.5, 13.5),
+  typing(13.5, 12, 13),
   typing(17.5, 10.5),
   typing(10.5, 13.5),
   fold,
@@ -119,6 +121,6 @@ export const CLAUDE_FRAMES: readonly ClaudeFrame[] = [
 ];
 export const CLAUDE_TRACK: readonly number[] = [
   0,0,0,1,1,2,2,2,3,3,4,5,5,6,6,7,
-  8,9,9,8,10,10,8,9,9,8,10,10,8,9,9,8,10,10,8,9,9,8,10,10,8,9,9,8,10,10,
+  9,9,10,10,8,9,9,10,8,8,9,10,10,8,8,9,9,10,10,8,9,9,10,8,8,9,10,10,8,8,
   11,11,12,12,13,13,13,14,14,15,16,
 ];
