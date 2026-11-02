@@ -25,11 +25,12 @@ export async function sessionInfoDemo() {
           files:[['AGENTS.md',600],['~/.dsh/AGENTS.md',200],['$DSH_AGENTS_HOME/AGENTS.md',100]],skills:[['code-review',4800],['office-pdf',30]],skillTokens:4800,fileTokens:600,compaction:null}};
       const store={getSnapshot:()=>list,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)}};
       window.opened=[];
-      const skills={list:async()=>({ok:true,value:{skills:[{name:'code-review',path:'/skills/code-review/SKILL.md'},{name:'office-pdf',resourceBase:{kind:'directory',path:'/app/office-skills/office-pdf'}}]}})};
+      const skills={list:async()=>({ok:true,value:{skills:[{name:'code-review',path:'/skills/code-review/SKILL.md'},{name:'office-pdf'}]}})};
       const sidebarRight={openResource:address=>window.opened.push(address),openTab:kind=>window.opened.push('tab:'+kind),focus:id=>window.opened.push('focus:'+id),openTabs:{getSnapshot:()=>[]}};
       const ctx={inject:(_names,fn)=>({dispose:fn({sidebarRight,remote:{skills}})}),sessions:{list:store,using:(id,options,run)=>run()},workspaces:{list:{getSnapshot:()=>({items:[{workspaceId:'workspace',title:'desktop-theme',path:'/demo/desktop-theme',sessionIds:['demo','other']}]}),subscribe:()=>()=>{}}}};
       window.requests=[];
-      window.fetch=async(url,{signal})=>{window.requests.push(url);await new Promise(resolve=>setTimeout(resolve,30));
+      window.fetch=async(url,options)=>{if(url.startsWith('/api/ccd-session-skill?'))return {json:async()=>({path:'/app/office-skills/office-pdf/SKILL.md'})};
+        const {signal}=options;window.requests.push(url);await new Promise(resolve=>setTimeout(resolve,30));
         if(signal.aborted)throw new Error('aborted');
         return {ok:window.environmentStatus!==404,status:window.environmentStatus??200,json:async()=>({cwd:window.environmentCwd??'/demo/desktop-theme',branch:'main',detached:false,git:'ready',worktree:window.environmentWorktree??false,homes:{'~':'/home/demo'}})};};
       const port=createSessionInfoPort(ctx,document,{read:()=>context,subscribe:()=>()=>{}});

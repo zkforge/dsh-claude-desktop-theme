@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SessionEvent } from '@deepseek-ai/dsh-session';
 import { instructionFilePath, readCardPreferences, sessionMetrics, showSessionInfo } from '../src/shared/session-info.ts';
-import { applyPromptEvent, instructionHomes, readSessionEnvironment } from '../src/host/session-info.ts';
+import { applyPromptEvent, instructionHomes, readSessionEnvironment, skillFilePath } from '../src/host/session-info.ts';
 
 test('session metrics use disjoint cache buckets and weighted decode time', () => {
   assert.deepEqual(sessionMetrics({
@@ -87,4 +87,23 @@ test('instruction display paths resolve against the session and the host homes',
   assert.deepEqual(instructionHomes({}, '/home/me'), { '~': '/home/me' });
   assert.deepEqual(instructionHomes({ DSH_HOME: '/opt/dsh', DSH_AGENTS_HOME: '/opt/agents' }, '/home/me'),
     { '~': '/home/me', $DSH_HOME: '/opt/dsh', $DSH_AGENTS_HOME: '/opt/agents' });
+});
+
+test('skill files resolve from a provider path or a packaged directory, and only for registered names', async () => {
+  const cwds: string[] = [];
+  const registry = {
+    list: async ({ cwd }: { cwd: string }) => {
+      cwds.push(cwd);
+      return [
+        { name: 'code-review', path: '/skills/code-review/SKILL.md' },
+        { name: 'office-xlsx', resourceBase: { kind: 'directory', path: '/app/office-skills/office-xlsx' } },
+        { name: 'remote', resourceBase: { kind: 'url' } },
+      ];
+    },
+  };
+  assert.equal(await skillFilePath(registry, '/repo', 'code-review'), '/skills/code-review/SKILL.md');
+  assert.equal(await skillFilePath(registry, '/repo', 'office-xlsx'), '/app/office-skills/office-xlsx/SKILL.md');
+  assert.equal(await skillFilePath(registry, '/repo', 'remote'), null);
+  assert.equal(await skillFilePath(registry, '/repo', '../../etc/passwd'), null);
+  assert.deepEqual(new Set(cwds), new Set(['/repo']));
 });
