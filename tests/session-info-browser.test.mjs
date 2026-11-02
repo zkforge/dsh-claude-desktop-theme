@@ -78,7 +78,7 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
       const links = await page.evaluate(`(()=>{const links=[...document.querySelectorAll('.ccd-info-link')];
         links.forEach(link=>link.click());return {names:links.map(link=>link.textContent),line:getComputedStyle(links.at(-1)).textDecorationLine}})()`);
       const worktree = '/demo/desktop-theme/worktrees/a-very-long-worktree-checkout-directory';
-      assert.deepEqual(links.names, [worktree, 'code-review', 'AGENTS.md', '~/.dsh/AGENTS.md'], 'tools and unresolved roots stay plain text');
+      assert.deepEqual(links.names, [worktree, 'code-review', 'office-pdf', 'AGENTS.md', '~/.dsh/AGENTS.md'], 'tools and unresolved roots stay plain text');
       assert.equal(links.line, 'underline');
       await pause();
       assert.deepEqual(await page.evaluate(`window.opened`), [
@@ -86,6 +86,7 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
         'dsh-resource://file/session/demo/worktrees/a-very-long-worktree-checkout-directory/AGENTS.md',
         'dsh-resource://file/session/demo//home/demo/.dsh/AGENTS.md',
         'dsh-resource://file/session/demo//skills/code-review/SKILL.md',
+        'dsh-resource://file/session/demo//app/office-skills/office-pdf/SKILL.md',
       ]);
       await page.evaluate(`document.querySelectorAll('.ccd-info-group').forEach(group=>{group.open=false})`); await pause();
       await page.evaluate(`document.querySelector('.ccd-info-grip').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))`); await pause();

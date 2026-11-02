@@ -17,7 +17,7 @@ const OPEN_STORAGE = 'ccd-session-info-open';
 /** The Remote `dsh-client-ui-skill` reads the Session's catalog through. */
 interface SkillCatalogRemote {
   list(scope: { sessionId: SessionId }, signal?: AbortSignal): Promise<
-    { ok: true; value: { skills: readonly { name: string; path?: string }[] } }
+    { ok: true; value: { skills: readonly { name: string; path?: string; resourceBase?: { kind: string; path?: string } }[] } }
     | { ok: false; error: { message: string } }>;
 }
 
@@ -182,7 +182,10 @@ export function createSessionInfoPort(ctx: Context, document: Document, projecti
         try {
           const result = await ctx.sessions.using(session, { source: 'workspaceOperation' }, () => catalog.list({ sessionId: session }));
           if (!result.ok) throw new Error(result.error.message);
-          const path = result.value.skills.find(skill => skill.name === name)?.path;
+          const skill = result.value.skills.find(entry => entry.name === name);
+          /* Packaged skills such as the bundled Office set publish only their directory. */
+          const base = skill?.resourceBase?.kind === 'directory' ? skill.resourceBase.path : undefined;
+          const path = skill?.path ?? (base === undefined ? undefined : `${base}/SKILL.md`);
           if (path === undefined) throw new Error(`Skill "${name}" has no file`);
           if (!disposed && snapshot.session === session) openFile(path);
         } catch (error) { console.error('[ccd] session card link failed:', error); }

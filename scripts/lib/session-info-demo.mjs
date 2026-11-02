@@ -22,10 +22,10 @@ export async function sessionInfoDemo() {
       let list={byId:{demo:{cwd:'/demo/desktop-theme'}},projectionsBySession:{demo:{values}}};
       const context={window:200000,used:92000,systemTokens:4600,toolsTokens:44000,messageTokens:43400,
         breakdown:{tools:[['mcp__docs__search',18000],['mcp__docs__read',10000],['bash',16000]],
-          files:[['AGENTS.md',600],['~/.dsh/AGENTS.md',200],['$DSH_AGENTS_HOME/AGENTS.md',100]],skills:[['code-review',4800]],skillTokens:4800,fileTokens:600,compaction:null}};
+          files:[['AGENTS.md',600],['~/.dsh/AGENTS.md',200],['$DSH_AGENTS_HOME/AGENTS.md',100]],skills:[['code-review',4800],['office-pdf',30]],skillTokens:4800,fileTokens:600,compaction:null}};
       const store={getSnapshot:()=>list,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)}};
       window.opened=[];
-      const skills={list:async()=>({ok:true,value:{skills:[{name:'code-review',path:'/skills/code-review/SKILL.md'}]}})};
+      const skills={list:async()=>({ok:true,value:{skills:[{name:'code-review',path:'/skills/code-review/SKILL.md'},{name:'office-pdf',resourceBase:{kind:'directory',path:'/app/office-skills/office-pdf'}}]}})};
       const sidebarRight={openResource:address=>window.opened.push(address),openTab:kind=>window.opened.push('tab:'+kind),focus:id=>window.opened.push('focus:'+id),openTabs:{getSnapshot:()=>[]}};
       const ctx={inject:(_names,fn)=>({dispose:fn({sidebarRight,remote:{skills}})}),sessions:{list:store,using:(id,options,run)=>run()},workspaces:{list:{getSnapshot:()=>({items:[{workspaceId:'workspace',title:'desktop-theme',path:'/demo/desktop-theme',sessionIds:['demo','other']}]}),subscribe:()=>()=>{}}}};
       window.requests=[];
