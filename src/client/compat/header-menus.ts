@@ -2,6 +2,7 @@ import type { Disposer } from '../contracts/ports.ts';
 import type { HeaderMenuActions } from './header-menu-actions.ts';
 import { hostSelectors } from './host-dom.ts';
 import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
+import { openAppGroups } from './open-apps.ts';
 
 const CHEVRON = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>';
 // Reference: rounded screen above a wider, shallow base with rounded ends.
@@ -27,6 +28,8 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   let submenu: HTMLElement | null = null;
   let subAnchor: HTMLButtonElement | null = null;
   let dialog: HTMLDialogElement | null = null;
+  /** Null until the host answers; a failed read retries when the menu next opens. */
+  let openApps: readonly string[] | null = null;
   let editing: { seat: Seat; input: HTMLInputElement; finish: (restoreFocus?: boolean) => void } | null = null;
   const seats = new Map<HTMLElement, Seat>();
   let headers: HTMLElement[] = [];
@@ -88,16 +91,18 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
     try { Promise.resolve(action()).catch(error => { report(error); if (!disposed) notice(`操作失败：${error instanceof Error ? error.message : String(error)}`); }); }
     catch (error) { report(error); notice(`操作失败：${error instanceof Error ? error.message : String(error)}`); }
   };
+  const rowIcon = (artwork: string) => {
+    const icon = document.createElement('span');
+    icon.setAttribute('data-ccd-header-row-icon', '');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">${artwork}</svg>`;
+    return icon;
+  };
+  const loadOpenApps = () => { actions.openApps().then(apps => { openApps = apps; }, report); };
   const row = (menu: HTMLElement, label: string, act: () => void, mark = '', unavailable = '') => {
     const node = button(''); node.setAttribute('role', 'menuitem');
     const artwork = HEADER_MENU_ICONS[label];
-    if (artwork !== undefined) {
-        const icon = document.createElement('span');
-        icon.setAttribute('data-ccd-header-row-icon', '');
-        icon.setAttribute('aria-hidden', 'true');
-        icon.innerHTML = `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">${artwork}</svg>`;
-        node.append(icon);
-    }
+    if (artwork !== undefined) node.append(rowIcon(artwork));
     const text = document.createElement('span'); text.setAttribute('data-ccd-header-row-label', ''); text.textContent = label; node.append(text);
     if (mark !== '') {
       const end = document.createElement('span'); end.setAttribute('data-ccd-menu-mark', '');
@@ -168,9 +173,27 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   const show = (seat: Seat, trigger: HTMLButtonElement, keyboard = false) => {
     if (anchor === trigger) { close(true); return; }
     close(); anchor = trigger; owner = seat; trigger.setAttribute('aria-expanded', 'true');
+    if (openApps === null) loadOpenApps();
     const id = seat.id;
     const menu = surface('session'); popup = menu;
     sub(menu, '打开方式', content => {
+      const cwd = actions.read(id)?.cwd;
+      const groups = cwd === undefined ? [] : openAppGroups(openApps ?? [], document);
+      if (cwd !== undefined && groups.length > 0) {
+        groups.forEach((group, index) => {
+          if (index > 0) separator(content);
+          for (const app of group) {
+            const item = row(content, app.name, () => run(() => actions.openApp(app.id, cwd)));
+            const seat = rowIcon('');
+            const image = document.createElement('img');
+            image.alt = ''; image.src = `open-in-app/icon/${app.id}`;
+            // Not every application has an extractable icon; the host answers 404 for those.
+            image.addEventListener('error', () => seat.replaceWith(rowIcon(HEADER_MENU_ICONS['打开方式']!)));
+            seat.replaceChildren(image); item.prepend(seat);
+          }
+        });
+        return;
+      }
       const target = seat.header.querySelector<HTMLButtonElement>(host.openTargetMain);
       if (target !== null && !target.disabled) row(content, target.getAttribute('aria-label') ?? '默认应用', () => run(() => target.click()));
       else unavailable(content, '默认应用', 'DSH 当前没有可用的外部应用打开入口。');
@@ -255,6 +278,7 @@ export function mountHeaderMenus(document: Document, actions: HeaderMenuActions,
   const unsubscribe = actions.subscribe(safelySync);
   document.addEventListener('pointerdown', pointer, true); document.addEventListener('keydown', keydown, true);
   window.addEventListener('resize', position); window.addEventListener('scroll', position, true);
+  loadOpenApps();
   safelySync();
   return () => {
     disposed = true; observer.disconnect(); unsubscribe(); close(); dialog?.remove(); dialog = null;

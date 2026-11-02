@@ -6,7 +6,7 @@
 
 ## 代码结构
 
-会话顶栏的参考菜单由 `compat/header-menus.ts` 添加电脑图标与标题下拉（不显示项目名，让标题占满可用宽度），React 所属的标题和祖先导航节点保留原位置。`compat/header-menu-actions.ts` 从 Session 权威快照读取名称，通过 `sessions.using` 重命名，通过 `uiWorkspace` Fork 与归档。其余可用动作转发真实宿主控件；未公开的能力用明确说明对话框保留外观。菜单使用顶层 popover，支持二级菜单、键盘和边界避让，切换会话或卸载时清理菜单、标记、监听器和订阅。尺寸与配色由 `features/conversation/header-actions/header-menus.css` 和主题 token 提供。macOS 收起侧栏后保留会话标题与重命名入口，沿用宿主窗口控制区的宽度预留；原生视图入口与标题同排，长标题在空间不足时截断。
+会话顶栏的参考菜单由 `compat/header-menus.ts` 添加电脑图标与标题下拉（不显示项目名，让标题占满可用宽度），React 所属的标题和祖先导航节点保留原位置。`compat/header-menu-actions.ts` 从 Session 权威快照读取名称，通过 `sessions.using` 重命名，通过 `uiWorkspace` Fork 与归档。「打开方式」子菜单经 `compat/open-apps.ts` 列出宿主 `open-in-app` 路由报告的已安装应用，按文件管理器、编辑器、Git 客户端、终端分组，由宿主负责各平台的检测与启动；从这里打开不改宿主记住的默认应用，列表为空或读取失败时退回转发宿主打开按钮。其余可用动作转发真实宿主控件；未公开的能力用明确说明对话框保留外观。菜单使用顶层 popover，支持二级菜单、键盘和边界避让，切换会话或卸载时清理菜单、标记、监听器和订阅。尺寸与配色由 `features/conversation/header-actions/header-menus.css` 和主题 token 提供。macOS 收起侧栏后保留会话标题与重命名入口，沿用宿主窗口控制区的宽度预留；原生视图入口与标题同排，长标题在空间不足时截断。
 
 | 目录 | 职责 |
 | --- | --- |

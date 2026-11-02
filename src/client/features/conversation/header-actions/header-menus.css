@@ -240,3 +240,9 @@ html[data-dsh-ccd-style="true"] [data-ccd-header-row-icon] svg {
   width: 16px;
   height: 16px;
 }
+
+html[data-dsh-ccd-style="true"] [data-ccd-header-menu] [data-ccd-header-row-icon] img {
+  display: block;
+  width: 16px;
+  height: 16px;
+}

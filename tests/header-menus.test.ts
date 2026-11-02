@@ -47,8 +47,9 @@ test('header menus skip transcript churn and still follow catalog changes and he
   const readIds: string[] = [];
   try {
     const dispose = mountHeaderMenus(doc, {
-      read(id) { reads++; readIds.push(id); return { title: 'Title' }; },
+      read(id) { reads++; readIds.push(id); return { title: 'Title', cwd: undefined }; },
       rename: async () => {}, fork: async () => {}, archive: async () => {},
+      openApps: async () => [], openApp: async () => {},
       subscribe(listener) { notify = listener; return () => { notify = () => {}; }; },
     }, error => errors.push(error));
     assert.equal(reads, 1);
