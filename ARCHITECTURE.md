@@ -175,7 +175,7 @@ Host `Config` 的 `.volatile()` 字段通过 DSH 设置服务投影到 `configFo
 
 环境卡的工作目录、工作区与工作树值保持单行并在溢出时省略；`InfoText` 在悬停或聚焦 400ms 后用顶层 popover 黑色提示显示完整值，避让视口边缘，滚动、失焦、Escape 或卸载关闭。宿主未注册环境接口的 404 单独显示「需重启 DSH」，与目录缺失和 Git 查询错误区分；新增宿主接口或投影需完整退出并重新打开应用，仅重载 renderer 不会更新宿主。
 
-上下文卡的指令文件和技能行是带下划线的按钮，环境卡的工作目录是悬停才显示下划线的按钮。指令文件的 `~`、`$DSH_HOME`、`$DSH_AGENTS_HOME` 显示路径由环境接口的 `homes` 还原（`shared/session-info.ts` 的 `instructionFilePath`），项目内路径相对工作目录；根目录未知时该行保持纯文本。`sidebarRight` 与 `remote.skills` 不在插件必需依赖里，都经 `ctx.inject` 取得。技能行点击时经 `remote.skills.list` 查 SKILL.md 路径，不在渲染时拉取目录。文件用 `compat/sidebar-view.ts` 的 `fileAddress`（重述宿主 `fileAddressFor`，测试比对两者）组地址后经 `sidebarRight.openResource` 打开，与文件树同址，因而复用已打开的预览；工作目录经 `compat/sidebar-view.ts` 聚焦文件树并在右栏收起时展开。工具行和 Git 分支在宿主没有对应视图，保持纯文本。
+上下文卡的指令文件和技能行是带下划线的按钮，环境卡的工作目录是悬停才显示下划线的按钮。指令文件的 `~`、`$DSH_HOME`、`$DSH_AGENTS_HOME` 显示路径由环境接口的 `homes` 还原（`shared/session-info.ts` 的 `instructionFilePath`），项目内路径相对工作目录；根目录未知时该行保持纯文本。`sidebarRight` 与 `remote.skills` 不在插件必需依赖里，都经 `ctx.inject` 取得。技能行点击时经 `remote.skills.list` 查 SKILL.md 路径（内置 Office 技能没有 `path`，只发布 `resourceBase` 目录，由目录拼出），不在渲染时拉取目录。文件用 `compat/sidebar-view.ts` 的 `fileAddress`（重述宿主 `fileAddressFor`，测试比对两者）组地址后经 `sidebarRight.openResource` 打开，与文件树同址，因而复用已打开的预览；工作目录经 `compat/sidebar-view.ts` 聚焦文件树并在右栏收起时展开。工具行和 Git 分支在宿主没有对应视图，保持纯文本。
 
 `useCardDrag` 以 Pointer Events 驱动整张卡片：标题与非交互内容均可起拖，移动超过 5px 后捕获指针，直接平移原卡片节点并为其余卡片预览插入位置，松开才提交顺序；不使用只拖动手柄图像的 HTML Drag and Drop。Escape、指针取消、失焦、窗口缩放、会话切换和卸载撤销几何及监听。会话用量字段只渲染文字，不挂载 InfoText 或 tooltip；TPS 保留原有已结算平均值口径。
 
