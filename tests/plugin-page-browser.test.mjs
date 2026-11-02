@@ -202,7 +202,7 @@ test('back and More share one ghost button, and the More list opens like a detai
         document.body.innerHTML='<section data-plugin-panel class="host_page"><header class="host_moreHead" data-window-drag style="display:flex">'+
           '<button class="host_moreBack" aria-label="返回插件" style="width:28px">${chevron}</button><h1 class="host_pageTitle">实验性插件</h1></header>'+
           '<section data-plugin-group="experimental" class="host_group"><div class="host_groupHead"><h3 class="host_groupTitle">实验性</h3><button class="host_groupMore">More${chevron}</button></div></section></section>';
-        const style=document.createElement('style');style.textContent=${JSON.stringify(css)}+'*{box-sizing:border-box}body{margin:0}';document.head.append(style);
+        const style=document.createElement('style');style.textContent=${JSON.stringify(css)}+'*{box-sizing:border-box;transition:none!important}body{margin:0}';document.head.append(style);
       `);
       await page.evaluate(bundle.outputFiles[0].text);
       const styles = await page.evaluate(`[document.querySelector('.host_moreBack'),document.querySelector('.host_groupMore')].map(node=>{const s=getComputedStyle(node);return [s.height,s.fontSize,s.fontWeight,s.color,s.backgroundColor,s.borderRadius,getComputedStyle(node.querySelector('svg')).width].join('|');})`);
