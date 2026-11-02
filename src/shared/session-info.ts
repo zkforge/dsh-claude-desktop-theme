@@ -1,5 +1,7 @@
 /** Read-only information for the current Session's right-hand cards. */
 export const SESSION_ENVIRONMENT_PATH = '/api/ccd-session-environment';
+/** Resolves one registered skill's SKILL.md, which `skills/list` omits for packaged skills. */
+export const SESSION_SKILL_PATH = '/api/ccd-session-skill';
 export const SESSION_INFO_KEY = 'ccdSessionInfo';
 
 export interface SessionEnvironment {
