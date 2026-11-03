@@ -118,9 +118,14 @@ export function createSessionInfoPort(ctx: Context, document: Document, projecti
     }
     const rect = body?.getBoundingClientRect();
     const session = body?.getAttribute('data-conversation-session') ?? null;
-    const overlay = document.querySelector('[data-sidebar-right-panel][data-sidebar-right-open]') !== null;
+    // The host retains hidden rightbars for background sessions, including
+    // their open/fullscreen state. Only this Session's visible panel counts.
+    const panel = [...document.querySelectorAll<HTMLElement>('[data-sidebar-right-panel][data-sidebar-right-open]')]
+      .find(node => node.getAttribute('data-sidebar-right-session') === session
+        && node.closest('[hidden], [aria-hidden="true"]') === null) ?? null;
+    const overlay = panel !== null;
     const visible = requested && !document.hidden && rect !== undefined && showSessionInfo(rect.width, rect.height, snapshot.visible, overlay)
-      && !document.querySelector('[data-sidebar-right-panel="fullscreen"][data-sidebar-right-open], [data-ccd-pane-expanded]');
+      && panel?.getAttribute('data-sidebar-right-panel') !== 'fullscreen' && !document.querySelector('[data-ccd-pane-expanded]');
     if (visible) body?.setAttribute(MARKER, overlay ? 'overlay' : 'rail');
     else body?.removeAttribute(MARKER);
     const list = ctx.sessions.list.getSnapshot();
@@ -154,7 +159,7 @@ export function createSessionInfoPort(ctx: Context, document: Document, projecti
     if (records.some(record => !(record.target instanceof Element && record.target.closest('[data-ccd-session-cards]')))) schedule();
   });
   observer.observe(document.body, { childList: true, subtree: true, attributes: true,
-    attributeFilter: ['data-content-phase', 'data-conversation-session', 'data-sidebar-right-panel', 'data-sidebar-right-open', 'data-ccd-pane-expanded', 'hidden', 'style'] });
+    attributeFilter: ['data-content-phase', 'data-conversation-session', 'data-sidebar-right-session', 'data-sidebar-right-panel', 'data-sidebar-right-open', 'data-ccd-pane-expanded', 'hidden', 'aria-hidden', 'style'] });
   const language = new MutationObserver(schedule);
   language.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   const offSessions = ctx.sessions.list.subscribe(schedule);

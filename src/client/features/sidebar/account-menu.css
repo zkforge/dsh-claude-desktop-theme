@@ -361,7 +361,6 @@ html[data-dsh-ccd-style="true"] .ccd-balance-period > span {
 html[data-dsh-ccd-style="true"] [data-ccd-account-more] {
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-more] > [data-ccd-account-more-original] {
@@ -380,6 +379,14 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-more] svg,
 html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] svg {
   width: 14px;
   height: 14px;
+}
+
+/* Signed-out rows use 16px icons and an 8px gap. The replacement icon is
+   after the hidden native cells, so the host's first-child rule misses it. */
+html[data-dsh-ccd-style="true"] .ZogL4G_signedOutMenu [data-ccd-account-more] > span[aria-hidden]:not([data-ccd-account-more-chevron]),
+html[data-dsh-ccd-style="true"] .ZogL4G_signedOutMenu [data-ccd-account-more] > span[aria-hidden]:not([data-ccd-account-more-chevron]) svg {
+  width: 16px;
+  height: 16px;
 }
 
 html[data-dsh-ccd-style="true"] [data-ccd-account-more-chevron] {

@@ -29,7 +29,9 @@ html[data-dsh-ccd-style="true"] ._description_o6lrb_106 {
   font: 400 14px/20px var(--ccd-font-ui);
 }
 
-html[data-dsh-ccd-style="true"] ._body_o6lrb_115 {
+/* Only compact confirmations reduce the native body spacing. Feedback forms
+ * already pull their categories upward; reducing both makes them hit the title. */
+html[data-dsh-ccd-style="true"] ._confirmation_cjd8z_1 ._body_o6lrb_115 {
   margin-top: 8px;
 }
 

@@ -9,6 +9,50 @@ import { sessionInfoDemo, mountSessionInfoDemo } from '../scripts/lib/session-in
 let chrome;
 try { chrome = findChrome(); } catch { /* Optional local browser. */ }
 
+test('retained right panels from inactive sessions do not cover the active transcript', {
+  skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
+}, async () => {
+  const demo = await sessionInfoDemo();
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-session-info-retained-'));
+  try {
+    await withPage({ url: 'about:blank', width: 1392, height: 932, scale: 2, profile }, async page => {
+      await mountSessionInfoDemo(page, demo);
+      await page.evaluate(`document.querySelector('[data-conversation-scroll]').innerHTML='<p id="reading-column">正文应在卡片左侧保持完整可读。</p>'`);
+      for (const { mode, owner, hidden } of ['push', 'fullscreen'].flatMap(mode => [
+        { mode, owner: 'other', hidden: true },
+        { mode, owner: 'demo', hidden: true },
+        { mode, owner: 'other', hidden: false },
+      ])) {
+        await page.evaluate(`(() => {
+          document.getElementById('retained-session')?.remove();
+          const session=document.createElement('div');
+          session.id='retained-session';session.hidden=${hidden};
+          session.innerHTML='<div data-sidebar-right-session="${owner}" data-sidebar-right-panel="${mode}" data-sidebar-right-open></div>';
+          document.body.append(session);
+        })()`);
+        await page.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+        const layout = await page.evaluate(`(() => {
+          const chat=document.getElementById('chat'),rail=document.querySelector('[data-ccd-session-cards]');
+          const textRight=document.getElementById('reading-column').getBoundingClientRect().right;
+          return {mode:chat.getAttribute('data-ccd-session-info'),padding:getComputedStyle(chat).paddingRight,visible:!!rail,
+            unobscured:rail!==null&&textRight<=rail.firstElementChild.getBoundingClientRect().left};
+        })()`);
+        assert.equal(layout.mode, 'rail', `${mode}, owner=${owner}, hidden=${hidden}: inactive panels must not change the active chat layout`);
+        assert.equal(layout.padding, '316px', 'cards retain a separate column for readable chat');
+        assert.equal(layout.visible, true, 'an inactive fullscreen panel must not hide the active cards');
+        assert.equal(layout.unobscured, true, 'the text column ends before the cards begin');
+      }
+      await page.evaluate(`document.querySelector('#retained-session > div').setAttribute('data-sidebar-right-session','demo')`);
+      await page.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+      assert.equal(await page.evaluate('window.demo.port.getSnapshot().visible'), false, 'the active fullscreen panel still takes priority');
+      await page.evaluate(`document.getElementById('retained-session').setAttribute('aria-hidden','true')`);
+      await page.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+      assert.equal(await page.evaluate(`document.getElementById('chat').getAttribute('data-ccd-session-info')`), 'rail', 'hiding a retained panel restores the rail immediately');
+      await page.evaluate('window.demo.dispose()');
+    });
+  } finally { await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
+});
+
 test('session cards follow data, overlay chat beside tools, reorder and clean up', {
   skip: chrome ? false : 'Chrome unavailable', timeout: 30000,
 }, async () => {
@@ -117,7 +161,7 @@ test('session cards follow data, overlay chat beside tools, reorder and clean up
       assert.equal(await page.evaluate(`document.getElementById('chat').hasAttribute('data-ccd-session-info')`), false);
       await page.evaluate(`document.getElementById('chat').style.width='1100px'`); await pause();
       assert.match(await text(), /会话用量/);
-      await page.evaluate(`const panel=document.createElement('aside');panel.id='native-rightbar';panel.setAttribute('data-sidebar-right-panel','docked');panel.setAttribute('data-sidebar-right-open','');document.body.append(panel);document.getElementById('chat').style.width='750px'`); await pause();
+      await page.evaluate(`const panel=document.createElement('aside');panel.id='native-rightbar';panel.setAttribute('data-sidebar-right-session','demo');panel.setAttribute('data-sidebar-right-panel','push');panel.setAttribute('data-sidebar-right-open','');document.body.append(panel);document.getElementById('chat').style.width='750px'`); await pause();
        assert.match(await text(), /会话用量/, 'opening native tools keeps information cards available');
        const overlay = await page.evaluate(`(()=>{const chat=document.getElementById('chat'),rail=document.querySelector('[data-ccd-session-cards]'),card=rail.firstElementChild;
          const r=rail.getBoundingClientRect(),b=chat.getBoundingClientRect(),c=card.getBoundingClientRect(),s=document.querySelector('[data-conversation-scroll]').getBoundingClientRect();
