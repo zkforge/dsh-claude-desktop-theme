@@ -56,31 +56,10 @@
   transition-timing-function: ease-in;
 }
 
-.ccd-effort .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 20px;
-  gap: 8px;
-}
-
-.ccd-effort .title {
-  display: flex;
-  align-items: baseline;
-  min-width: 0;
-  color: var(--effort-text);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-
 .ccd-effort .level-stage {
   position: relative;
   display: inline-block;
   height: 1.3em;
-  margin-left: 8px;
   color: var(--effort-text-strong);
   line-height: inherit;
   vertical-align: baseline;
@@ -89,10 +68,11 @@
 .ccd-effort .level-stage > span {
   position: absolute;
   top: 0;
+  right: 0;
   left: 0;
   line-height: inherit;
+  text-align: center;
   white-space: nowrap;
-  transform-origin: left center;
 }
 
 .ccd-effort .level-current {
@@ -132,88 +112,10 @@
   color: var(--effort-accent);
 }
 
-.ccd-effort .help-wrap {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.ccd-effort .help-button {
-  position: relative;
-  display: grid;
-  width: 20px;
-  height: 20px;
-  margin: 0;
-  padding: 2px;
-  place-items: center;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--effort-muted);
-  cursor: help;
-  transition-property: color, background-color, scale;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
-}
-
-.ccd-effort .help-button:hover {
-  color: var(--ccd-effort-color-14);
-  background: var(--ccd-effort-color-15);
-}
-
-.ccd-effort .help-button:active {
-  scale: 0.96;
-}
-
-.ccd-effort .help-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--effort-accent) 35%, transparent);
-  outline-offset: 2px;
-}
-
-.ccd-effort .help-button svg {
-  width: 14px;
-  height: 14px;
-}
-
-.ccd-effort .tooltip {
-  position: absolute;
-  z-index: 8;
-  top: auto;
-  bottom: calc(100% + 6px);
-  right: 0;
-  width: min(220px, calc(100vw - 24px));
-  padding: 10px 12px;
-  border: 1px solid var(--ccd-effort-color-16);
-  border-radius: 0.5rem;
-  background: var(--ccd-effort-color-17);
-  box-shadow:
-    0 2px 5px var(--ccd-effort-color-18),
-    0 8px 18px var(--ccd-effort-color-18);
-  color: var(--ccd-effort-color-19);
-  font-size: 12px;
-  font-weight: 450;
-  line-height: 1.35;
-  text-wrap: pretty;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-2px);
-  transition-property: opacity, transform, visibility;
-  transition-duration: 120ms;
-  transition-timing-function: ease-in;
-}
-
-.ccd-effort .help-wrap:hover .tooltip,
-.ccd-effort .help-button:focus-visible + .tooltip,
-.ccd-effort .help-wrap[data-tip-open] .tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition-timing-function: ease-out;
-}
-
 .ccd-effort .axis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
   color: var(--effort-muted);
   font-size: 12px;
   font-weight: 400;
@@ -221,10 +123,15 @@
   letter-spacing: -0.01em;
 }
 
+.ccd-effort .axis > :last-child {
+  text-align: right;
+}
+
 .ccd-effort .track-shell {
   position: relative;
   height: 32px;
   margin-top: 2px;
+  margin-bottom: -6px;
 }
 
 .ccd-effort .track {
@@ -343,21 +250,6 @@
   height: 9px;
 }
 
-.ccd-effort .default-marker-row {
-  height: 16px;
-  color: var(--effort-muted);
-  line-height: 16px;
-  text-align: center;
-}
-
-.ccd-effort .default-marker {
-  transition: color 150ms ease-out;
-}
-
-.ccd-effort .default-marker.is-selected {
-  color: var(--ccd-text);
-}
-
 .ccd-effort .range {
   position: absolute;
   z-index: 3;
@@ -443,11 +335,8 @@
   .ccd-effort .panel,
   .ccd-effort .track::before,
   .ccd-effort .track-fill,
-  .ccd-effort .default-marker,
   .ccd-effort .range::-webkit-slider-thumb,
-  .ccd-effort .range::-moz-range-thumb,
-  .ccd-effort .help-button,
-  .ccd-effort .tooltip {
+  .ccd-effort .range::-moz-range-thumb {
     transition-duration: 0.001ms;
   }
 

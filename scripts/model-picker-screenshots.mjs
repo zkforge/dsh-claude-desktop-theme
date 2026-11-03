@@ -53,7 +53,7 @@ const bundle = await build({
 });
 const styles = (await Promise.all([
   'src/client/theme/tokens.css', 'src/client/theme/scrollbars.css',
-  'src/client/features/model-controls/controls.css',
+  'src/client/features/model-controls/controls.css', 'src/client/features/model-controls/effort.css',
 ].map(path => readFile(join(root, path), 'utf8')))).join('\n');
 const font = (await readFile(join(root, 'assets/fonts/Geist-Variable.ttf'))).toString('base64');
 
@@ -78,19 +78,18 @@ await withPage({
   await page.evaluate(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
   await page.evaluate(`document.querySelector('[data-ccd-model-trigger]').click()`);
   await page.evaluate(`new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))`);
+  await page.evaluate(`document.querySelector('[data-model-submenu="more"]').click()`);
+  await page.evaluate(`new Promise(resolve=>setTimeout(resolve,80))`);
 
   for (const theme of ['light', 'dark']) {
     const facts = await page.evaluate(`(async()=>{
       document.body.toggleAttribute('data-ds-dark-theme', ${theme === 'dark'});
-      const list=document.querySelector('.ccd-model-options');
-      list.scrollTop=1;
-      list.dispatchEvent(new Event('scroll'));
+      const panel=document.querySelector('.ccd-model-menu'), list=panel.querySelector('.ccd-model-options');
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const panel=document.querySelector('.ccd-model-panel');
-      const p=panel.getBoundingClientRect(), c=document.querySelector('.ccd-model-controls').getBoundingClientRect();
-      const left=Math.floor(Math.min(p.left,c.left)-32), top=Math.floor(p.top-32);
+      const p=panel.getBoundingClientRect(), m=document.querySelector('.ccd-model-panel:not(.ccd-model-menu)').getBoundingClientRect(), c=document.querySelector('.ccd-model-controls').getBoundingClientRect();
+      const left=Math.floor(Math.min(p.left,m.left,c.left)-32), top=Math.floor(Math.min(p.top,m.top)-32);
       return {
-        clip:{x:left,y:top,width:Math.ceil(Math.max(p.right,c.right)+32)-left,height:Math.ceil(c.bottom+32)-top,scale:1},
+        clip:{x:left,y:top,width:Math.ceil(Math.max(p.right,m.right,c.right)+32)-left,height:Math.ceil(Math.max(m.bottom,c.bottom)+32)-top,scale:1},
         open:panel.matches(':popover-open'),
         icons:list.querySelectorAll('.ccd-model-glyph svg').length,
         chosen:list.querySelector('button[aria-pressed="true"] .ccd-model-name-text')?.textContent,
@@ -109,10 +108,11 @@ await withPage({
     console.log(`assets/screenshots/model-picker-${theme}.webp (${facts.clip.width * 2}×${facts.clip.height * 2})`);
   }
   // Short catalogs must not reserve an empty scrollbar strip on the right.
-  await page.send('Input.insertText', {text:'DeepSeek'});
+  await page.evaluate(`document.querySelector('.ccd-model-search').focus()`);
+  await page.send('Input.insertText', {text:'GPT'});
   await page.evaluate('new Promise(resolve=>requestAnimationFrame(resolve))');
   assert.equal(await page.evaluate(`(()=>{
-    const list=document.querySelector('.ccd-model-options'), row=list.querySelector('[data-model-option]');
+    const list=document.querySelector('.ccd-model-panel:not(.ccd-model-menu) .ccd-model-options'), row=list.querySelector('[data-model-option]');
     return list.scrollHeight<=list.clientHeight && list.offsetWidth===list.clientWidth && Math.abs(row.getBoundingClientRect().right-list.getBoundingClientRect().right)<1;
   })()`), true, 'short lists extend to the same inset on both sides');
 });

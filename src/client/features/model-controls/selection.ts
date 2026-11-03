@@ -104,10 +104,13 @@ export function effortView(model: ModelCatalogModel | undefined, current: ModelS
   };
 }
 
-/** Same-model picks retain effort; a different model starts at its own default. */
+/**
+ * Same-model picks retain effort; a different model lands on the stop the slider
+ * marks as its default, stated explicitly so the thumb and the marker agree.
+ */
 export function modelSelection(provider: string, model: ModelCatalogModel, current: ModelSelection | null): ModelSelection {
-  const effort = current?.provider === provider && current.model === model.id
-    ? current.reasoningEffort ?? model.reasoning?.defaultEffort : model.reasoning?.defaultEffort;
+  const fallback = model.reasoning?.efforts[effortDefaultIndex(model)]?.id;
+  const effort = current?.provider === provider && current.model === model.id ? current.reasoningEffort ?? fallback : fallback;
   return { provider, model: model.id, ...(effort === undefined ? {} : { reasoningEffort: effort }) };
 }
 

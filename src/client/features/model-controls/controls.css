@@ -1,7 +1,7 @@
-/* Separate model/effort controls, sharing the official Composer's selection seat. */
+/* The model and effort control, sharing the official Composer's selection seat. */
 html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items: center; gap: var(--ccd-cluster-gap, 4px); min-width: 0; max-width: var(--ccd-model-max-width, 45cqw); }
 /*
- * Both controls are the status bar's value chips, and a chip's fill is one
+ * The control is one of the status bar's value chips, and a chip's fill is one
  * label line tall rather than one control row: `--ccd-chip-height` (20px)
  * inside the row's own 28px, so the model name and the effort beside it sit
  * 5.5px from the chip's edge instead of the 10px a full-height box leaves. The
@@ -17,13 +17,17 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
  * mounted without tokens.css still draws a chip rather than collapsing the
  * control to its text.
  */
-.ccd-model-trigger, .ccd-effort-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; height: var(--ccd-chip-height, 20px); padding: 0 var(--ccd-chip-padding-inline, 7px); border: 0; border-radius: var(--ccd-chip-radius, 6px); background: transparent; color: var(--ccd-text-strong); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
-.ccd-model-trigger { flex: 1 1 auto; overflow: hidden; gap: 6px; }
+.ccd-model-trigger { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 6px; min-width: 0; overflow: hidden; height: var(--ccd-chip-height, 20px); padding: 0 var(--ccd-chip-padding-inline, 7px); border: 0; border-radius: var(--ccd-chip-radius, 6px); background: transparent; color: var(--ccd-text-strong); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
 .ccd-model-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.ccd-effort-trigger { flex: 0 0 auto; }
-.ccd-model-trigger:hover, .ccd-effort-trigger:hover, .ccd-model-trigger[aria-expanded="true"], .ccd-effort-trigger[aria-expanded="true"] { background: var(--ccd-hover); }
-.ccd-model-trigger:disabled, .ccd-effort-trigger:disabled { opacity: .55; cursor: default; }
-.ccd-model-trigger:focus-visible, .ccd-effort-trigger:focus-visible { outline: 2px solid var(--ccd-effort-color-1); outline-offset: 2px; }
+/*
+ * The effort is the name's quiet companion in the same chip: secondary ink, and
+ * the slider's violet at the strongest tier. It never shrinks; the name does.
+ */
+.ccd-model-effort { flex: 0 0 auto; color: var(--ccd-text-secondary); }
+.ccd-model-effort[data-peak], .ccd-model-value[data-peak] { color: var(--ccd-effort-color-1); }
+.ccd-model-trigger:hover, .ccd-model-trigger[aria-expanded="true"] { background: var(--ccd-hover); }
+.ccd-model-trigger:disabled { opacity: .55; cursor: default; }
+.ccd-model-trigger:focus-visible { outline: 2px solid var(--ccd-effort-color-1); outline-offset: 2px; }
 /*
  * The chosen value is marked by ink, not by weight: full black for the model
  * name and the effort, the row's own 400 for both, and the panel's option rows
@@ -37,7 +41,6 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
  * heading above it stays `--ccd-text-secondary`.
  */
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-trigger,
-html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-effort-trigger,
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { color: var(--ccd-text-strong); }
 /*
  * The model card is a popup of the plugin's own making, so it answers to the
@@ -57,6 +60,8 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
  * cell, the loading and failure notes stay in view while the list moves.
  */
 .ccd-model-options { max-height: min(320px, calc(100vh - 24px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: auto; }
+/* Four rows and two openers never scroll, and a focus ring must clear the card. */
+.ccd-model-menu .ccd-model-options { overflow: visible; }
 /* Native top-layer placement keeps the existing anchor coordinates. The
    backdrop stays click-through so usePopup still owns outside dismissal. */
 .ccd-model-panel[popover], .ccd-effort[popover] { inset: auto; margin: 0; }
@@ -84,16 +89,13 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { 
    one — neither may reach the card. */
 .ccd-model-search:focus, .ccd-model-search:focus-visible { outline: none; }
 /*
- * The provider heading is a chip on the same 24px rhythm as the rows it opens,
- * not a block with a size of its own: one 20px line with 2px above and below,
- * in the control-label size (12px — the document's scale has no 11px step).
- * It is appearance only — the heading stays out of the button flow and the
- * keyboard never reaches it — but the inverted fill is what makes one
- * provider's block read apart from the next on a crowded card: the dark
- * scheme paints it white on near-black and the light scheme paints it
- * black on near-white, so the mark is legible on either canvas.
+ * The provider heading is a quiet label on the same 24px rhythm as the rows it
+ * opens, in the main card's heading ink and the control-label size (12px — the
+ * document's scale has no 11px step). It is appearance only: the heading stays
+ * out of the button flow and the keyboard never reaches it.
  */
-.ccd-model-provider { width: max-content; margin: 2px 0; padding: 1px 8px; border-radius: 6px; background: var(--ccd-text-strong); color: var(--ccd-text-inverse); font-size: 12px; line-height: 18px; }
+.ccd-model-provider { margin-top: 4px; padding: 2px 8px; color: var(--ccd-text-secondary); font-size: 12px; line-height: 20px; }
+.ccd-model-provider:first-child { margin-top: 0; }
 /*
  * One row is 24px (DESIGN.md §6.7): a 13px label on a 20px line with 2px above
  * and below — the reference's 48 device px at @2x, against the 34px this card
@@ -142,6 +144,35 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .ccd-model-options butt
 .ccd-model-glyph svg { width: 16px; height: 16px; }
 .ccd-model-glyph-fallback { color: var(--ccd-text-strong); font-size: 11px; line-height: 1; }
 /*
+ * The main card: a heading, up to four rows, then the two rows that open a card
+ * beside it. Digit hints and values take secondary ink; an open row keeps the
+ * pointer's fill. The container takes focus on open so Escape and the digits
+ * work before any row is reached, and draws nothing for it.
+ */
+.ccd-model-heading { padding: 2px 8px; color: var(--ccd-text-secondary); font-size: 12px; line-height: 20px; }
+.ccd-model-options:focus { outline: none; }
+.ccd-model-divider { height: 1px; margin: 4px 8px; background: var(--ccd-border-soft); }
+.ccd-model-hint, .ccd-model-value, .ccd-model-chevron { flex: 0 0 auto; color: var(--ccd-text-secondary); }
+.ccd-model-value { flex-shrink: 1; min-width: 0; }
+.ccd-model-chevron { width: 16px; height: 16px; }
+.ccd-model-options .ccd-model-submenu { gap: 4px; }
+.ccd-model-options .ccd-model-submenu[aria-expanded="true"] { background: var(--ccd-hover); }
+/*
+ * A row carries one more control: the pin that puts a model on the main card.
+ * It stays out of sight until the row is pointed at, or the pin is reached by
+ * Tab, and sits just ahead of the trailing seat. A pin at the card's limit is
+ * still shown, disabled, so its tooltip can say why.
+ */
+.ccd-model-row { position: relative; }
+.ccd-model-options .ccd-model-pin { position: absolute; top: 2px; right: 26px; justify-content: center; width: 20px; min-height: 20px; padding: 0; color: var(--ccd-text-secondary); opacity: 0; }
+.ccd-model-options .ccd-model-pin svg { width: 14px; height: 14px; }
+.ccd-model-options .ccd-model-pin[data-pinned] { color: var(--ccd-accent); }
+.ccd-model-options .ccd-model-pin[data-pinned] svg { fill: currentColor; }
+.ccd-model-row:hover .ccd-model-pin, .ccd-model-options .ccd-model-pin:focus-visible { opacity: 1; }
+.ccd-model-row:has(.ccd-model-pin) .ccd-model-name { padding-right: 24px; }
+.ccd-model-options .ccd-model-pin:disabled { opacity: 0; }
+.ccd-model-row:hover .ccd-model-pin:disabled { opacity: .4; }
+/*
  * Keyboard focus is more than the fill the walk shares with the pointer: the
  * row the keyboard is on and the row the pointer is on look the same, so the
  * card states the keyboard's seat twice — the fill for "this row is live" and
@@ -166,6 +197,6 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .ccd-model-options butt
 .ccd-model-retry:hover { text-decoration: underline; }
 .ccd-model-retry:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 .ccd-model-error { bottom: 60px; right: 16px; }
-@container ccd-composer (max-width: 420px) { .ccd-model-trigger { padding-inline: 4px; } .ccd-effort-trigger { padding-inline: 4px; } }
+@container ccd-composer (max-width: 420px) { .ccd-model-trigger { padding-inline: 4px; } }
 
 /* Price information stays quiet until the model is hovered or focused. */

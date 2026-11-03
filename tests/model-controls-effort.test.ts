@@ -71,15 +71,9 @@ test('the caption names the stop the thumb rests on until a tier is saved explic
 });
 
 test('a catalog with stops never captions the trigger with the removed Default stop', () => {
-  /* Switching model drops the saved tier for the new route's own default: a
-     route that advertises stops but names no default — or names one its own
-     stops do not carry — arrives with no explicit pick at all. The caption
-     used to read as the host's "Default" wording there while the panel drew no
-     such stop, so the trigger and the thumb contradicted each other. */
-  const switched = modelSelection('provider', bare, { provider: 'provider', model: 'reasoner', reasoningEffort: 'high' });
-  assert.equal(switched.reasoningEffort, undefined);
-  assert.equal(effortView(bare, switched, copy).preview, 0);
-  assert.equal(effortView(bare, switched, copy).caption, 'Off');
+  /* A route can still arrive with no explicit pick. The caption used to read as
+     the host's "Default" wording there while the panel drew no such stop, so
+     the trigger and the thumb contradicted each other. */
 
   for (const catalogue of [model, bare, odd, single]) {
     const stops = catalogue.reasoning?.efforts ?? [];
@@ -92,6 +86,20 @@ test('a catalog with stops never captions the trigger with the removed Default s
       assert.notEqual(view.caption, copy.defaultName, 'the panel offers no Default stop to caption');
     }
   }
+});
+
+test('switching model lands on the stop the slider marks as default', () => {
+  const previous: ModelSelection = { provider: 'provider', model: 'reasoner', reasoningEffort: 'max' };
+  for (const [catalogue, expected] of [[model, 'high'], [bare, 'high'], [odd, 'high']] as const) {
+    const switched = modelSelection('provider', { ...catalogue, id: `${catalogue.id}-2` }, previous);
+    assert.equal(switched.reasoningEffort, expected);
+    assert.equal(effortView(catalogue, switched, copy).preview, effortDefaultIndex(catalogue));
+  }
+  /* Nothing marked, nothing to state: the route stays on the provider default. */
+  const unmarked = { id: 'unmarked', name: 'Unmarked', reasoning: { efforts: [{ id: 'low', name: 'Low' }, { id: 'max', name: 'Max' }] } };
+  assert.equal(modelSelection('provider', unmarked, previous).reasoningEffort, undefined);
+  /* Re-picking the same model keeps the tier the user chose. */
+  assert.equal(modelSelection('provider', model, previous).reasoningEffort, 'max');
 });
 
 test('a tier the catalog no longer advertises keeps the retained caption', () => {

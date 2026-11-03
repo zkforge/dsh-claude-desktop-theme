@@ -79,15 +79,9 @@ const source = path => readFile(join(root, path), 'utf8');
  * only the field's clock has to be driven. */
 const card = `<div class="ccd-effort" id="card" role="dialog" aria-label="Effort" data-ultra style="--effort-progress: 1">
 <section class="panel">
-  <div class="header">
-    <div class="title"><span>Effort</span>
-      <span class="level-stage" data-longest="${longest}" aria-live="polite" aria-atomic="true"><span class="level-outgoing" aria-hidden="true"></span><span class="level-current">${levels[top]}</span></span>
-    </div>
-    <div class="help-wrap"><button type="button" class="help-button" aria-label="About effort levels" aria-describedby="effort-help">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" /><path d="M9.8 9.2a2.35 2.35 0 0 1 4.55.82c0 1.8-2.35 2.05-2.35 3.7M12 17.2h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-    </button><div class="tooltip" id="effort-help" role="tooltip">思考强度越高，回答越深入，但耗时更长，也会更快消耗余额。</div></div>
-  </div>
-  <div class="axis" aria-hidden="true"><span>Faster</span><span>Smarter</span></div>
+  <div class="axis"><span>Faster</span>
+    <span class="level-stage" data-longest="${longest}" aria-live="polite" aria-atomic="true"><span class="level-outgoing" aria-hidden="true"></span><span class="level-current">${levels[top]}</span></span>
+    <span>Smarter</span></div>
   <div class="track-shell"><div class="track" aria-hidden="true"><div class="track-fill"></div><div class="ultra-fallback"></div><canvas class="pixel-field"></canvas><div class="ticks">${levels.map(() => '<span class="tick" style="opacity: 0"></span>').join('')}</div></div>
     <input class="range" type="range" min="0" max="${top}" step="0.001" value="${top}" aria-label="Effort level" aria-valuetext="${levels[top]}">
   </div>

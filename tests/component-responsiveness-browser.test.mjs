@@ -145,20 +145,18 @@ test('effort opens, responds to keyboard choice, draws ultra and cancels animati
   assert.ok(await page.evaluate('document.querySelector(".pixel-field").width') > 0);
 }));
 
-test('effort language changes update the open panel and help without changing the selected tier', options, async () => fixture(async page => {
+test('effort language changes update the open panel without changing the selected tier', options, async () => fixture(async page => {
   await page.evaluate("measure('effort:locale-open',()=>mount('effort'),()=>!!document.querySelector('.ccd-effort:popover-open'))");
   await page.evaluate("measure('effort:locale-select',()=>document.querySelector('.ccd-effort .range').dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true})),()=>window.committed===3)");
-  for (const [language,title,tier,faster,smarter,marker] of [
-    ['en-US','Effort','Ultra','Faster','Smarter','Default'],
-    ['zh-CN','努力程度','超高','更快','更深入','默认'],
+  for (const [language,title,tier,faster,smarter] of [
+    ['en-US','Effort','Ultra','Faster','Smarter'],
+    ['zh-CN','思考强度','超高','更快','更深入'],
   ]) {
     await page.evaluate(`measure('effort:language',()=>document.documentElement.lang=${JSON.stringify(language)},()=>document.querySelector('.ccd-effort').getAttribute('aria-label')===${JSON.stringify(title)})`);
     const state=await page.evaluate(`(()=>{const panel=document.querySelector('.ccd-effort');return {
       tier:panel.querySelector('.level-current').textContent,value:panel.querySelector('.range').value,
-      axis:[...panel.querySelectorAll('.axis span')].map(e=>e.textContent),marker:panel.querySelector('.default-marker').textContent,
-      help:panel.querySelector('.tooltip').textContent};})()`);
-    assert.equal(state.tier,tier);assert.equal(state.value,'3');assert.deepEqual(state.axis,[faster,smarter]);assert.equal(state.marker,marker);
-    assert.equal(/[\u3400-\u9fff]/u.test(state.help),language.startsWith('zh'));
+      axis:[...panel.querySelectorAll('.axis > span:not(.level-stage)')].map(e=>e.textContent)};})()`);
+    assert.equal(state.tier,tier);assert.equal(state.value,'3');assert.deepEqual(state.axis,[faster,smarter]);
     assert.equal(await page.evaluate('window.committed'),3);
   }
 }));

@@ -129,15 +129,13 @@ test('the pointer’s state is the flat fill and the keyboard’s is the documen
   assert.ok(!/background|box-shadow|border/u.test(ring), ring);
 });
 
-test('the provider heading is an inverted chip within the same row rhythm', () => {
-  const body = ruleFor(controls, '.ccd-model-provider').body;
+test('the provider heading is a quiet label within the same row rhythm', () => {
+  const body = exactRule(controls, '.ccd-model-provider').body;
   assert.match(body, /font-size:\s*12px/u);
-  assert.match(body, /line-height:\s*18px/u);
-  assert.match(body, /padding:\s*1px 8px/u);
-  assert.match(body, /margin:\s*2px 0/u);
-  assert.match(body, /border-radius:\s*6px/u);
-  assert.match(body, /background:\s*var\(--ccd-text-strong\)/u);
-  assert.match(body, /color:\s*var\(--ccd-text-inverse\)/u);
+  assert.match(body, /line-height:\s*20px/u);
+  assert.match(body, /padding:\s*2px 8px/u);
+  assert.match(body, /color:\s*var\(--ccd-text-secondary\)/u);
+  assert.ok(!/background/u.test(body), body);
 });
 
 test('the card’s search cell is a bare line, not a box', () => {
@@ -218,7 +216,6 @@ test('the card’s model names keep the chosen-value ink through the row’s cas
      0-2-2, so the card's rows only stay black under this guarded selector. */
   const ink = exactRule(controls,
     'html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-trigger,'
-    + ' html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-effort-trigger,'
     + ' html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button').body;
   assert.match(ink, /color:\s*var\(--ccd-text-strong\)/u);
 });

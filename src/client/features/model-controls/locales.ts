@@ -2,12 +2,21 @@ import { useSyncExternalStore } from 'react';
 
 export const EFFORT_COPY = {
   zh: {
-    title: '努力程度', level: '努力程度档位', about: '关于努力程度', faster: '更快', smarter: '更深入', default: '默认',
+    title: '思考强度', level: '思考强度档位', faster: '更快', smarter: '更深入',
     help: '思考强度越高，回答越深入，但耗时更长，也会更快消耗余额。',
   },
   en: {
-    title: 'Effort', level: 'Effort level', about: 'About effort levels', faster: 'Faster', smarter: 'Smarter', default: 'Default',
+    title: 'Effort', level: 'Effort level', faster: 'Faster', smarter: 'Smarter',
     help: 'Higher effort produces more thorough answers, but takes longer and uses more of your balance.',
+  },
+} as const;
+
+export const MODEL_COPY = {
+  zh: {
+    session: '本次会话', more: '更多模型', pin: '设为常用模型', unpin: '从常用模型移除', full: '最多 4 个常用模型，请先移除一个',
+  },
+  en: {
+    session: 'this session', more: 'More models', pin: 'Add to main menu', unpin: 'Remove from main menu', full: 'The menu holds 4 models. Remove one first',
   },
 } as const;
 

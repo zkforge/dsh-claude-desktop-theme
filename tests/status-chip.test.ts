@@ -66,8 +66,8 @@ test('the chip carries the reference box, not the control row it sits in', () =>
   assert.equal(declared(tokensSheet, 'ccd-cluster-gap'), '6px');
 });
 
-test('both value chips read their box from the chip tokens alone', () => {
-  const body = ruleFor(controls, '.ccd-model-trigger, .ccd-effort-trigger').body;
+test('the value chip reads its box from the chip tokens alone', () => {
+  const body = controls.find(rule => rule.selector === '.ccd-model-trigger')?.body ?? '';
   assert.match(body, /height:\s*var\(--ccd-chip-height,\s*20px\)/u);
   assert.match(body, /border-radius:\s*var\(--ccd-chip-radius,\s*6px\)/u);
   assert.match(body, /padding:\s*0 var\(--ccd-chip-padding-inline,\s*7px\)/u);
@@ -82,12 +82,15 @@ test('the fill is the one flat hover step, on hover and while a panel is open', 
     /background:\s*var\(--ccd-hover\)/u.test(rule.body) && rule.selector.includes('.ccd-model-trigger'));
   assert.equal(fills.length, 1, 'one rule paints the chip fill');
   const selector = fills[0]?.selector ?? '';
-  for (const trigger of ['.ccd-model-trigger', '.ccd-effort-trigger']) {
-    assert.ok(selector.includes(`${trigger}:hover`), selector);
-    assert.ok(selector.includes(`${trigger}[aria-expanded="true"]`), selector);
-  }
+  assert.ok(selector.includes('.ccd-model-trigger:hover'), selector);
+  assert.ok(selector.includes('.ccd-model-trigger[aria-expanded="true"]'), selector);
   /* The flat step is the whole fill: no gradient, no second surface layer. */
   assert.ok(!/gradient|box-shadow/u.test(fills[0]?.body ?? ''), fills[0]?.body ?? '');
+});
+
+test('the effort is grey beside the name and violet at the strongest tier', () => {
+  assert.match(ruleFor(controls, '.ccd-model-effort').body, /color:\s*var\(--ccd-text-secondary\)/u);
+  assert.match(ruleFor(controls, '.ccd-model-effort[data-peak], .ccd-model-value[data-peak]').body, /color:\s*var\(--ccd-effort-color-1\)/u);
 });
 
 test('row controls keep the chip box while the inset plus shares send geometry', () => {

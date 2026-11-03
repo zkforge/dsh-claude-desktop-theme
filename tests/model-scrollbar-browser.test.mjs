@@ -86,7 +86,7 @@ test('model native scrollbar reaches both ends and preserves popup interaction',
       await page.send('Input.dispatchMouseEvent', {type:'mouseReleased',x:geometry.x,y:geometry.bottom+100,button:'left',clickCount:1});
       await settle();
       assert.equal(await page.evaluate(`(()=>{
-        const list=document.querySelector('.ccd-model-options'), last=list.querySelector('[data-model-option]:last-child');
+        const list=document.querySelector('.ccd-model-options'), last=[...list.querySelectorAll('[data-model-option]')].at(-1);
         return Math.abs(list.scrollTop-(list.scrollHeight-list.clientHeight))<1
           && last.getBoundingClientRect().bottom<=list.getBoundingClientRect().bottom+1;
       })()`), true, 'drag reaches the bottom and fully exposes the last model');

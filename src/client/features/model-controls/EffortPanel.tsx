@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
 import type { EffortChoice } from './selection.ts';
 import { clamp, drawPixelField, magnet } from './pixels.ts';
@@ -15,14 +15,14 @@ export interface EffortPanelProps {
   readonly error: string | null;
   readonly onCommit: (index: number) => void;
   readonly onClose: () => void;
+  readonly autofocus?: boolean;
 }
 
 /** Presentation-only slider: continuous local preview, one supported choice on release. */
-export function EffortPanel({ anchor, choices, selected, defaultIndex, disabled, busy, error, onCommit, onClose }: EffortPanelProps) {
+export function EffortPanel({ anchor, choices, selected, defaultIndex, disabled, busy, error, onCommit, onClose, autofocus = true }: EffortPanelProps) {
   const language = useEffortLanguage();
   const copy = EFFORT_COPY[language];
-  const helpId = useId();
-  const { panel, position } = usePopup(anchor, onClose);
+  const { panel, position } = usePopup(anchor, onClose, { beside: true, autofocus });
   const [value, setValue] = useState(selected);
   const canvas = useRef<HTMLCanvasElement>(null);
   const frame = useRef(0);
@@ -113,17 +113,19 @@ export function EffortPanel({ anchor, choices, selected, defaultIndex, disabled,
     const currentElement = currentLabel.current;
     const outgoingElement = outgoingLabel.current;
     if (!currentElement || !outgoingElement) return;
-    cancelAnimationFrame(labelFrame.current);
-    window.clearTimeout(labelTimer.current);
-    labelFrame.current = 0;
-    labelTimer.current = 0;
     const nextName = effortLabel(choices[labelIndex]?.name ?? '', language);
     const previousName = currentElement.textContent ?? '';
     const previousIndex = previousLabelIndex.current;
     previousLabelIndex.current = labelIndex;
+    /* A catalog refresh reruns this with the name unchanged. A swap in flight
+       must finish, or its timer dies and the outgoing tier stays on screen. */
+    if (previousName === nextName) return;
+    cancelAnimationFrame(labelFrame.current);
+    window.clearTimeout(labelTimer.current);
+    labelFrame.current = 0;
+    labelTimer.current = 0;
     currentElement.classList.remove('is-preparing');
     outgoingElement.classList.remove('is-exiting');
-    if (previousName === nextName) return;
     outgoingElement.textContent = previousName;
     currentElement.textContent = nextName;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -153,15 +155,12 @@ export function EffortPanel({ anchor, choices, selected, defaultIndex, disabled,
   /* Two stops are the least a slider can travel between; a catalog that
      advertises fewer has nothing to pick, so the card draws no empty track. */
   if (max < 1) return null;
-  return <div ref={panel} className="ccd-effort" role="dialog" aria-label={copy.title} data-ultra={ultra ? '' : undefined}
+  return <div ref={panel} className="ccd-effort" role="dialog" aria-label={copy.title} data-ultra={ultra ? '' : undefined} data-ccd-model-surface
     style={{ ...position, '--effort-progress': max > 0 ? value / max : 0 } as CSSProperties}>
     <section className="panel">
-      <div className="header"><div className="title"><span>{copy.title}</span>
+      <div className="axis"><span>{copy.faster}</span>
         <span className="level-stage" data-longest={choices.map(choice => effortLabel(choice.name, language)).reduce((longest, label) => label.length > longest.length ? label : longest, '')} aria-live="polite" aria-atomic="true"><span ref={outgoingLabel} className="level-outgoing" aria-hidden="true" /><span ref={currentLabel} className="level-current">{initialLabel.current}</span></span>
-      </div><div className="help-wrap"><button type="button" className="help-button" aria-label={copy.about} aria-describedby={helpId}>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" /><path d="M9.8 9.2a2.35 2.35 0 0 1 4.55.82c0 1.8-2.35 2.05-2.35 3.7M12 17.2h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-      </button><div className="tooltip" id={helpId} role="tooltip">{copy.help}</div></div></div>
-      <div className="axis" aria-hidden="true"><span>{copy.faster}</span><span>{copy.smarter}</span></div>
+        <span>{copy.smarter}</span></div>
       <div className="track-shell"><div className="track" aria-hidden="true"><div className="track-fill" /><div className="ultra-fallback" /><canvas ref={canvas} className="pixel-field" /><div className="ticks">{choices.map((choice, i) => <span key={choice.id ?? i} className={`tick${i === defaultIndex ? ' is-default' : ''}`} style={{ opacity: ultra ? 0 : i === index ? 1 : .82 }} />)}</div></div>
         <input data-autofocus className="range" type="range" min="0" max={Math.max(0, max)} step="0.001" value={value} disabled={disabled || max < 1}
           aria-label={copy.level} aria-valuetext={name} aria-disabled={busy || disabled}
@@ -177,7 +176,6 @@ export function EffortPanel({ anchor, choices, selected, defaultIndex, disabled,
             event.preventDefault(); if (busy) return; committed.current = true; cancelAnimationFrame(frame.current); const next = clamp(target, 0, max); publish(next); setLabelIndex(next); onCommit(next);
           }} />
       </div>
-      {defaultIndex >= 0 && defaultIndex <= max && <div className="default-marker-row"><span className={`default-marker${index === defaultIndex ? ' is-selected' : ''}`}>{copy.default}</span></div>}
       {error && <div className="selection-error" role="alert">{error}</div>}
     </section>
   </div>;

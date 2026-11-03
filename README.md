@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-0078D4?style=for-the-badge" alt="Platform"/>
 </p>
 
-[安装](#快速安装) · [功能](#功能) · [界面预览](#界面预览) · [配置](#配置) · [架构](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [设计规范](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/DESIGN.md) · [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
+[安装](#快速安装) · [界面预览](#界面预览) · [配置](#配置) · [架构](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/ARCHITECTURE.md) · [设计规范](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/DESIGN.md) · [安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md) · [问题反馈](https://github.com/zkforge/dsh-claude-desktop-theme/issues)
 
 </div>
 
@@ -28,12 +28,12 @@
 
 源码安装见[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
 
-### 0.8.0 更新
+### 0.9.0 更新
 
-- 重做会话右侧的环境、上下文与用量卡片；支持折叠、拖动排序，从工作目录、技能和指令文件直接打开右栏。
-- 会话标题的「打开方式」列出本机已安装的文件管理器、编辑器、Git 客户端与终端。
-- 统一「自定义」与「定时任务」页面布局，调整插件卡片、返回导航与任务详情，支持中英文切换。
-- 首页灰色字符背景支持心形与不规则圆形点击波纹，修正 Claude 宠物敲键盘时的电脑跳动，并更新浅深色界面截图。
+- 模型与思考强度合成一个按钮，强度用灰字，最高档转紫色。
+- 选单最多放四个常用模型，悬停行尾图钉可增减，选择保存在本机；数字 1–4 直接选模型，其余模型收进支持搜索的「更多模型」。
+- 思考强度悬停弹出滑杆，档位名称与「更快 / 更深入」排成一行；最高档保留像素流光，支持中英文即时切换与键盘操作。
+- 修正目录刷新时档位切换动画残留，更新浅深色模型选择器截图与思考强度动图。
 
 会话中输入 `/clear` 可以清空当前对话上下文，继续使用同一个会话：会话 ID、名称、项目、模型、项目指令与技能目录保留，旧消息和工具结果不再发送给模型。原始日志仍在，「查看历史记录」可展开旧内容，查看不会恢复模型上下文。命令不调用模型、不生成摘要；请在回复结束且没有排队消息时执行。安装后需完整退出并重新打开 DSH，加载宿主命令。
 

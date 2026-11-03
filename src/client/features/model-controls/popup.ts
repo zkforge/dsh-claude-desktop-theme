@@ -24,10 +24,20 @@ export function cachedSize(surface: Element): { current: () => Size; refresh: ()
   return { current: () => size ?? read(), refresh: read };
 }
 
+/** A row's flyout stands 4px off the card: the row's 6px inset plus this gap. */
+const FLYOUT_GAP = 10;
+
+export interface PopupOptions {
+  /** Open beside the anchor row, flipping left where the window has no room. */
+  readonly beside?: boolean;
+  /** A pointer passing over a row must not pull focus into its flyout. */
+  readonly autofocus?: boolean;
+}
+
 /** Viewport-clamped top-layer surface; focus and observers die with the panel. */
-export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void) {
+export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void, { beside = false, autofocus: focusOnOpen = true }: PopupOptions = {}) {
   const panel = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ left: 0, top: 0, visibility: 'hidden' as 'hidden' | 'visible' });
+  const [position, setPosition] = useState<{ left: number; top: number | 'auto'; bottom: number | 'auto'; visibility: 'hidden' | 'visible' }>({ left: 0, top: 0, bottom: 'auto', visibility: 'hidden' });
   useLayoutEffect(() => {
     const surface = panel.current, trigger = anchor.current;
     if (!surface || !trigger) return;
@@ -40,10 +50,16 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
     const size = cachedSize(surface);
     const place = () => {
       const a = trigger.getBoundingClientRect(), p = size.current();
-      const left = Math.max(12, Math.min(a.right - p.width, innerWidth - p.width - 12));
-      const top = Math.max(12, Math.min(a.top - p.height - 8, innerHeight - p.height - 12));
-      setPosition(previous => previous.left === left && previous.top === top && previous.visibility === 'visible'
-        ? previous : { left, top, visibility: 'visible' });
+      const roomRight = a.right + FLYOUT_GAP + p.width <= innerWidth - 12;
+      const preferredLeft = !beside ? a.right - p.width : roomRight ? a.right + FLYOUT_GAP : a.left - FLYOUT_GAP - p.width;
+      const left = Math.max(12, Math.min(preferredLeft, innerWidth - p.width - 12));
+      /* A card above its trigger hangs from its bottom edge: a row added or
+         removed then moves only the top, within the same frame, instead of the
+         whole card sliding until the resize observer's next placement. */
+      const top = beside ? Math.max(12, Math.min(a.top - 7, innerHeight - p.height - 12)) : 'auto';
+      const bottom = beside ? 'auto' : Math.max(12, Math.min(innerHeight - a.top + 8, innerHeight - p.height - 12));
+      setPosition(previous => previous.left === left && previous.top === top && previous.bottom === bottom && previous.visibility === 'visible'
+        ? previous : { left, top, bottom, visibility: 'visible' });
     };
     place();
     /* The panel's own slider writes its inline style on every pointer move, and
@@ -61,7 +77,9 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       const rect = surface.getBoundingClientRect();
       const insideSurface = event.clientX >= rect.left && event.clientX <= rect.right
         && event.clientY >= rect.top && event.clientY <= rect.bottom;
-      if (!insideSurface && !surface.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
+      /* The card and its flyouts are one menu: a press in either keeps both. */
+      const insideMenu = (event.target as Element).closest?.('[data-ccd-model-surface]');
+      if (!insideSurface && !insideMenu && !surface.contains(event.target as Node) && !trigger.contains(event.target as Node)) close();
     };
     /* Native scrollbar presses can hand focus to the host outside this React
        tree. Focus alone must not dismiss the panel: pointer coordinates above
@@ -87,7 +105,7 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
     window.addEventListener('resize', onResize);
     document.addEventListener('pointerdown', onPointer, true);
     surface.addEventListener('keydown', onKey);
-    const autofocus = requestAnimationFrame(() => surface.querySelector<HTMLElement>('[data-autofocus]')?.focus());
+    const autofocus = requestAnimationFrame(() => { if (focusOnOpen) surface.querySelector<HTMLElement>('[data-autofocus]')?.focus(); });
     return () => {
       cancelAnimationFrame(autofocus);
       if (placed !== 0) cancelAnimationFrame(placed);
@@ -98,6 +116,6 @@ export function usePopup(anchor: RefObject<HTMLButtonElement>, close: () => void
       surface.removeEventListener('keydown', onKey);
       if (surface.matches(':popover-open')) surface.hidePopover();
     };
-  }, [anchor, close]);
+  }, [anchor, close, beside, focusOnOpen]);
   return { panel, position };
 }
