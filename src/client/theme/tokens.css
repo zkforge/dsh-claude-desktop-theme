@@ -61,6 +61,7 @@ html[data-dsh-ccd-style="true"] {
   --ccd-composer-min-height: 42px;
   /* Input reference: 26 device pixels at @2x. */
   --ccd-composer-radius: 13px;
+  --ccd-composer-thumbnail-size: 120px;
   --ccd-composer-padding: 8px 14px;
   --ccd-composer-padding-block: 8px;
   --ccd-composer-padding-inline: 14px;

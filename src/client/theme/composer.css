@@ -150,37 +150,65 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_input:focus) .yhfFVG_sc
   border-color: var(--ccd-composer-focus-border);
 }
 
-/* Attachments: the `ui-attachment` plugin renders the draft-image rail as a
-   sibling of the input panel inside the card (`conversation.input.attachments`
-   slot, class pinned in src/client/compat/host-dom.ts — ComposerAttachments
-   .module.css, `dVdiKa_`). With the card transparent the previews would float
-   on the page above the surface, and the send control, pinned to the card's
-   top-right corner, would leave the surface with them. When the rail is
-   present the two merge back into one surface: the rail draws the top cap and
-   the panel drops its own, while the card's zero gap keeps the 1px side
-   borders touching so no seam shows. The host's unstyled card pulled the rail
-   6px into the panel (`margin-bottom: -6px`); that belongs to the old card and
-   is dropped. The send control stays beside the bottom text line, so the rail
-   needs only the same side padding as the input. */
+/* The attachment rail and editor share one painted surface. Two separate
+   shadows cast onto each other at their join, creating a visible hairline.
+   A grid backdrop spans just these two rows and follows their actual heights;
+   the optional accessory and the control row keep their own rows outside it.
+   Host nodes and the attachment slot's display:contents outlet stay intact. */
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail)::before {
+  content: "";
+  grid-area: 2 / 1 / 4 / 2;
+  border-radius: var(--ccd-composer-radius);
+  background: var(--ccd-card);
+  box-shadow: var(--ccd-composer-shadow);
+  pointer-events: none;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .yhfFVG_accessory {
+  grid-area: 1 / 1;
+}
+
 html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .dVdiKa_rail {
+  grid-area: 2 / 1;
   box-sizing: border-box;
   margin-bottom: 0;
   padding: 10px var(--ccd-composer-padding-inline) 0;
+  padding-left: calc(var(--ccd-composer-padding-inline) + var(--ccd-composer-add-reserve));
   border: 1px solid var(--ccd-composer-border);
   border-bottom: 0;
   border-radius: var(--ccd-composer-radius) var(--ccd-composer-radius) 0 0;
-  background: var(--ccd-card);
-  box-shadow: var(--ccd-composer-shadow);
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.dVdiKa_rail) .yhfFVG_scroll {
+  grid-area: 3 / 1;
   border-top: 0;
   border-radius: 0 0 var(--ccd-composer-radius) var(--ccd-composer-radius);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* The attachment cap shares the editor's focused border colour. */
 html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_input:focus) .dVdiKa_rail {
   border-color: var(--ccd-composer-focus-border);
+}
+
+/* Let the host's 64px rail item grow with the larger draft-image preview.
+   File cards keep their own dimensions. */
+html[data-dsh-ccd-style="true"] .dVdiKa_rail :has(> .dVdiKa_imageItem) {
+  height: auto;
+}
+
+html[data-dsh-ccd-style="true"] .yhfFVG_card .dVdiKa_imageItem,
+html[data-dsh-ccd-style="true"] .yhfFVG_card .dVdiKa_thumbnail {
+  width: var(--ccd-composer-thumbnail-size);
+  height: var(--ccd-composer-thumbnail-size);
 }
 
 /* Match the image tile to the outer editable surface, including its clipping. */
@@ -301,6 +329,8 @@ html[data-dsh-ccd-style="true"] .yhfFVG_card:has(.yhfFVG_primary + .yhfFVG_prima
    its cap; allowed to shrink, the chip settles on what is actually there and
    ellipsizes, which is the one reading the reference is willing to shorten. */
 html[data-dsh-ccd-style="true"] .yhfFVG_row {
+  /* Used by the shared attachment surface; ignored by the plain flex card. */
+  grid-area: 4 / 1;
   position: relative;
   flex-wrap: nowrap;
   gap: var(--ccd-cluster-gap);
