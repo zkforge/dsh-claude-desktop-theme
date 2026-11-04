@@ -342,6 +342,13 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
           onChange={value => void write([setOperation(['view', 'showModelIcons'], value)])}
         />
         <SwitchRow
+          id="ccd-settings-split-model-controls"
+          label={translate('field.splitModelControls')}
+          hint={translate('hint.splitModelControls')}
+          checked={served.view.splitModelControls}
+          onChange={value => void write([setOperation(['view', 'splitModelControls'], value)])}
+        />
+        <SwitchRow
           id="ccd-settings-show-api-balance"
           label={translate('field.showApiBalance')}
           hint={translate('hint.showApiBalance')}

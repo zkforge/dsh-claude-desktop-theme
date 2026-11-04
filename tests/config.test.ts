@@ -116,6 +116,15 @@ test('hero ripples default on and can be disabled independently of the new-sessi
 });
 
 
+test('split model controls default off and preserve explicit choices', () => {
+  assert.equal(resolveConfig().view.splitModelControls, false);
+  assert.equal(adoptConfig({}).view.splitModelControls, false);
+  for (const splitModelControls of [true, false]) {
+    assert.equal(resolveConfig({ view: { splitModelControls } }).view.splitModelControls, splitModelControls);
+  }
+  assert.throws(() => resolveConfig({ view: { splitModelControls: 'true' } }), /view.splitModelControls/);
+});
+
 test('model icons default on, preserve explicit choices and reject invalid writes', () => {
   assert.equal(resolveConfig().view.showModelIcons, true);
   assert.equal(adoptConfig({}).view.showModelIcons, true);

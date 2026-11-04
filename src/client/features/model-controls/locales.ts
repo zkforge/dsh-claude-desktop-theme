@@ -2,11 +2,11 @@ import { useSyncExternalStore } from 'react';
 
 export const EFFORT_COPY = {
   zh: {
-    title: '思考强度', level: '思考强度档位', faster: '更快', smarter: '更深入',
+    title: '思考强度', level: '思考强度档位', about: '关于思考强度', faster: '更快', smarter: '更深入', default: '默认', recommended: '推荐',
     help: '思考强度越高，回答越深入，但耗时更长，也会更快消耗余额。',
   },
   en: {
-    title: 'Effort', level: 'Effort level', faster: 'Faster', smarter: 'Smarter',
+    title: 'Effort', level: 'Effort level', about: 'About effort levels', faster: 'Faster', smarter: 'Smarter', default: 'Default', recommended: 'Recommended',
     help: 'Higher effort produces more thorough answers, but takes longer and uses more of your balance.',
   },
 } as const;

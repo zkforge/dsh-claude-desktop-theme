@@ -84,6 +84,8 @@ export const Config = z.object({
       .description('显示 DeepSeek API 余额与峰谷时段，关闭后停止余额查询（默认开启）'),
     showModelIcons: z.boolean().default(DEFAULT_VIEW.showModelIcons)
       .description('显示模型选单中的前置图标（默认开启）'),
+    splitModelControls: z.boolean().default(DEFAULT_VIEW.splitModelControls)
+      .description('模型与思考强度分成两个按钮，思考强度使用滑杆（默认关闭）'),
     showSidebarBrand: z.boolean().default(DEFAULT_VIEW.showSidebarBrand)
       .description('显示侧栏 DeepSeek Harness 品牌条目（默认关闭）'),
     showHeaderSubagents: z.boolean().default(DEFAULT_VIEW.showHeaderSubagents)

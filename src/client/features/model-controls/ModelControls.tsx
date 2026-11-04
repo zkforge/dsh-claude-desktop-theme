@@ -15,6 +15,8 @@ import type { ModelEntry } from './favorites.ts';
 
 export type ModelControlsProps = Omit<ModelSelectInjected, 'directory'> & PropsLocale<'model'> & {
   readonly showModelIcons: boolean;
+  /** Two chips — the model card and the effort slider — instead of the one combined menu. */
+  readonly splitControls: boolean;
   readonly locked: boolean;
   readonly useDirectory: () => ModelDirectoryState;
   readonly selectEffort: (route: ModelSelection, effort: string | undefined) => void;
@@ -27,13 +29,13 @@ const PIN = <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.
 const atPeak = ({ choices, preview }: EffortView) => choices.length > 1 && preview === choices.length - 1;
 
 /** SDK-derived values/hooks and callbacks only; DSH retains all business state. */
-export function ModelControls({ showModelIcons, locked, available, useDirectory, load, select, selectEffort, t }: ModelControlsProps) {
+export function ModelControls({ showModelIcons, splitControls, locked, available, useDirectory, load, select, selectEffort, t }: ModelControlsProps) {
   const language = useEffortLanguage();
   const state = useDirectory();
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const [open, setOpen] = useState(false);
-  const modelAnchor = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState<'menu' | 'effort' | null>(null);
+  const modelAnchor = useRef<HTMLButtonElement>(null), effortAnchor = useRef<HTMLButtonElement>(null);
   const busy = state.pending !== null || state.status === 'selecting';
   /* A selection settles in moments: the menu stays as it is meanwhile, and only
      a second pick waits, rather than the whole control greying for one frame. */
@@ -49,22 +51,40 @@ export function ModelControls({ showModelIcons, locked, available, useDirectory,
   const { caption } = view;
   const label = model?.name ?? current?.model ?? t('trigger.fallback');
   const effort = caption === undefined ? undefined : effortLabel(caption, language);
-  const close = useCallback(() => setOpen(false), []);
+  const peak = atPeak(view) ? '' : undefined;
+  const close = useCallback(() => setOpen(null), []);
+  const commitEffort = (index: number) => { const choice = view.choices[index]; if (current && choice && choice.id !== view.effort) selectEffort(current, choice.id); };
+  const onSelect = (selection: ModelSelection) => { if (busy) return; void select(selection).then(result => { if (!alive.current) return; if (result?.ok) { modelAnchor.current?.focus(); close(); } }).catch(() => {}); };
   useEffect(() => { if (available && state.status === 'idle') load(); }, [available, state.status, load]);
-  useEffect(() => { close(); }, [current?.provider, current?.model, locked, available, close]);
+  useEffect(() => { close(); }, [current?.provider, current?.model, locked, available, splitControls, close]);
   if (!available) return null;
+  const modelAria = current ? t('trigger.aria', { model: label }) : t('trigger.selectAria');
   return <div className="ccd-model-controls" data-ccd-model-controls>
     <button ref={modelAnchor} className="ccd-model-trigger" data-ccd-model-trigger type="button" disabled={disabled}
-      aria-label={[current ? t('trigger.aria', { model: label }) : t('trigger.selectAria'), ...(effort === undefined ? [] : [`${EFFORT_COPY[language].title}: ${effort}`])].join(', ')}
-      aria-haspopup="dialog" aria-expanded={open} onClick={() => { setOpen(!open); load(); }}>
+      aria-label={splitControls || effort === undefined ? modelAria : `${modelAria}, ${EFFORT_COPY[language].title}: ${effort}`}
+      aria-haspopup="dialog" aria-expanded={open === 'menu'} onClick={() => { setOpen(open === 'menu' ? null : 'menu'); load(); }}>
       <span className="ccd-model-label">{label}</span>
-      {effort !== undefined && <span className="ccd-model-effort" data-peak={atPeak(view) ? '' : undefined}>{effort}</span>}
+      {!splitControls && effort !== undefined && <span className="ccd-model-effort" data-peak={peak}>{effort}</span>}
     </button>
-    {open && <ModelMenu showModelIcons={showModelIcons} anchor={modelAnchor} state={state} view={view} disabled={disabled} busy={busy} load={load} t={t} onClose={close}
-      onSelectEffort={index => { const choice = view.choices[index]; if (current && choice && choice.id !== view.effort) selectEffort(current, choice.id); }}
-      onSelect={selection => { if (busy) return; void select(selection).then(result => { if (!alive.current) return; if (result?.ok) { modelAnchor.current?.focus(); close(); } }).catch(() => {}); }} />}
-    {!open && state.error && <div className="ccd-model-error" role="alert">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
+    {splitControls && effort !== undefined && <button ref={effortAnchor} className="ccd-effort-trigger" type="button" disabled={disabled || view.choices.length < 2}
+      aria-label={`${EFFORT_COPY[language].title}: ${effort}`} aria-haspopup="dialog" aria-expanded={open === 'effort'}
+      onClick={() => setOpen(open === 'effort' ? null : 'effort')}><span data-peak={peak}>{effort}</span></button>}
+    {open === 'menu' && (splitControls
+      ? <ModelPanel showModelIcons={showModelIcons} anchor={modelAnchor} state={state} disabled={disabled} notes={<DirectoryNotes state={state} load={load} t={t} />} t={t} onClose={close} onSelect={onSelect} />
+      : <ModelMenu showModelIcons={showModelIcons} anchor={modelAnchor} state={state} view={view} defaultIndex={effortDefaultIndex(model)} disabled={disabled} busy={busy} load={load} t={t} onClose={close}
+        onSelectEffort={index => { commitEffort(index); modelAnchor.current?.focus(); close(); }} onSelect={onSelect} />)}
+    {open === 'effort' && current && view.choices.length > 1 && <EffortPanel key={`${current.provider}/${current.model}`} anchor={effortAnchor} beside={false} choices={view.choices} selected={view.preview} defaultIndex={effortDefaultIndex(model)} disabled={disabled} busy={busy} error={state.error}
+      onClose={close} onCommit={commitEffort} />}
+    {open === null && state.error && <div className="ccd-model-error" role="alert">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
   </div>;
+}
+
+/** The directory's error and per-provider failures, each with a retry. */
+function DirectoryNotes({ state, load, t }: PropsLocale<'model'> & { readonly state: ModelDirectoryState; readonly load: () => void }) {
+  return <>
+    {state.error && <div role="alert" className="ccd-model-note">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
+    {state.failures.map(failure => <div key={failure.id} role="status" className="ccd-model-note">{failure.name}: {failure.message}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>)}
+  </>;
 }
 
 /** Pin state a row needs; omitted, the row offers no pin at all. */
@@ -102,11 +122,12 @@ function walkRows(event: KeyboardEvent<HTMLElement>) {
 type Flyout = { readonly kind: 'effort' | 'more'; readonly focus: boolean } | null;
 
 /** The Composer's one card: up to four models, Effort, and the rest of the catalog beside it. */
-function ModelMenu({ showModelIcons, anchor, state, view, disabled, busy, load, t, onClose, onSelect, onSelectEffort }: PropsLocale<'model'> & {
+function ModelMenu({ showModelIcons, anchor, state, view, defaultIndex, disabled, busy, load, t, onClose, onSelect, onSelectEffort }: PropsLocale<'model'> & {
   readonly showModelIcons: boolean;
   readonly anchor: React.RefObject<HTMLButtonElement>;
   readonly state: ModelDirectoryState;
   readonly view: EffortView;
+  readonly defaultIndex: number;
   readonly disabled: boolean;
   readonly busy: boolean;
   readonly load: () => void;
@@ -145,8 +166,7 @@ function ModelMenu({ showModelIcons, anchor, state, view, disabled, busy, load, 
   const currentInRest = rest.find(({ group, model }) => state.current?.provider === group.id && state.current.model === model.id);
   const notes: ReactNode = <>
     {state.status === 'loading' && primary.length === 0 && <p role="status" className="ccd-model-note">{t('status.loading')}</p>}
-    {state.error && <div role="alert" className="ccd-model-note">{state.error}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>}
-    {state.failures.map(failure => <div key={failure.id} role="status" className="ccd-model-note">{failure.name}: {failure.message}<button type="button" className="ccd-model-retry" onClick={load}>{t('action.reload')}</button></div>)}
+    <DirectoryNotes state={state} load={load} t={t} />
     {primary.length === 0 && state.status !== 'loading' && <p className="ccd-model-note">{t('empty.models')}</p>}
   </>;
   return <>
@@ -176,16 +196,55 @@ function ModelMenu({ showModelIcons, anchor, state, view, disabled, busy, load, 
         </>}
       </div>
     </div>
-    {flyout?.kind === 'effort' && state.current && pickable && <EffortPanel key={`${state.current.provider}/${state.current.model}`} anchor={effortRow} choices={view.choices} selected={view.preview} defaultIndex={effortDefaultIndex(state.groups.find(group => group.id === state.current?.provider)?.models.find(model => model.id === state.current?.model))} disabled={disabled} busy={busy} error={state.error}
-      autofocus={flyout.focus} onClose={closeFlyout} onCommit={onSelectEffort} />}
+    {flyout?.kind === 'effort' && pickable && <EffortMenu anchor={effortRow} view={view} defaultIndex={defaultIndex} disabled={disabled} busy={busy}
+      autofocus={flyout.focus} onClose={closeFlyout} onSelect={onSelectEffort} />}
     {flyout?.kind === 'more' && <ModelPanel showModelIcons={showModelIcons} anchor={moreRow} state={state} entries={rest} pinFor={pinFor} disabled={disabled} beside autofocus={flyout.focus} t={t} onClose={closeFlyout} onSelect={onSelect} />}
   </>;
 }
 
-export function ModelPanel({ showModelIcons, anchor, state, entries, pinFor, disabled, beside = false, autofocus = true, t, onClose, onSelect }: PropsLocale<'model'> & {
+/**
+ * The tier list beside the Effort row: what effort costs, then one row per
+ * advertised tier — the provider default badged, the tier in use checked.
+ * A pick commits at once and closes the whole menu.
+ */
+function EffortMenu({ anchor, view, defaultIndex, disabled, busy, autofocus, onClose, onSelect }: {
+  readonly anchor: React.RefObject<HTMLButtonElement>;
+  readonly view: EffortView;
+  readonly defaultIndex: number;
+  readonly disabled: boolean;
+  readonly busy: boolean;
+  readonly autofocus: boolean;
+  readonly onClose: () => void;
+  readonly onSelect: (index: number) => void;
+}) {
+  const language = useEffortLanguage();
+  const copy = EFFORT_COPY[language];
+  const { panel, position } = usePopup(anchor, onClose, { beside: true, autofocus });
+  return <div ref={panel} className="ccd-model-panel ccd-effort-menu" role="dialog" aria-label={copy.title} style={position} data-ccd-model-surface>
+    <p className="ccd-effort-help">{copy.help}</p>
+    <div className="ccd-model-options" onKeyDown={event => {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); anchor.current?.focus(); onClose(); return; }
+      walkRows(event);
+    }}>
+      {view.choices.map((choice, index) => {
+        const chosen = index === view.preview;
+        return <button key={choice.id} type="button" data-model-option data-autofocus={chosen ? '' : undefined} aria-pressed={chosen} disabled={disabled}
+          onClick={() => { if (!busy) onSelect(index); }}>
+          <span className="ccd-model-name"><span className="ccd-model-name-text">{effortLabel(choice.name, language)}</span>
+            {index === defaultIndex && <span className="ccd-effort-badge">{copy.recommended}</span>}</span>
+          <span aria-hidden="true">{chosen ? '✓' : ''}</span>
+        </button>;
+      })}
+    </div>
+  </div>;
+}
+
+export function ModelPanel({ showModelIcons, anchor, state, entries, pinFor, notes, disabled, beside = false, autofocus = true, t, onClose, onSelect }: PropsLocale<'model'> & {
   readonly showModelIcons: boolean;
   readonly anchor: React.RefObject<HTMLButtonElement>;
   readonly state: ModelDirectoryState;
+  /** Directory errors shown under the search cell. */
+  readonly notes?: ReactNode;
   /** The models this card lists; the whole directory when omitted. */
   readonly entries?: readonly ModelEntry[];
   readonly pinFor?: (entry: ModelEntry) => RowPin;
@@ -203,7 +262,8 @@ export function ModelPanel({ showModelIcons, anchor, state, entries, pinFor, dis
   return <div ref={panel} className="ccd-model-panel" role="dialog" aria-label={t('menu.model')} style={position} data-ccd-model-surface>
     <input data-autofocus className="ccd-model-search" aria-label={t('search.placeholder')} placeholder={t('search.placeholder')} value={query} onChange={e => setQuery(e.currentTarget.value)}
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); panel.current?.querySelector<HTMLButtonElement>('[data-model-option]')?.focus(); } }} />
-    {groups.length === 0 && <p className="ccd-model-note">{query ? t('search.empty') : t('empty.models')}</p>}
+    {notes}
+    {groups.length === 0 && <p role={state.status === 'loading' ? 'status' : undefined} className="ccd-model-note">{query ? t('search.empty') : state.status === 'loading' ? t('status.loading') : t('empty.models')}</p>}
     <div className="ccd-model-options" onKeyDown={walkRows}>
       {groups.map(({ group, entries }) => <div key={group.id}><div className="ccd-model-provider">{group.name}</div>{entries.map(entry =>
         <ModelRow key={entry.model.id} entry={entry} state={state} disabled={disabled} showModelIcons={showModelIcons} pin={pinFor?.(entry)} onSelect={onSelect} />)}</div>)}

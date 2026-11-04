@@ -39,6 +39,7 @@ export function mountModelControls(ctx: Context, environment: FeatureEnvironment
         return {
           available,
           showModelIcons: environment.config.view.showModelIcons,
+          splitControls: environment.config.view.splitModelControls,
           useDirectory: () => useSyncExternalStore(directory.store.subscribe, directory.store.getSnapshot),
           load: () => { if (available) void directory.load().catch(() => {}); },
           select: (selection: Parameters<typeof directory.select>[0]) => available ? directory.select(selection) : Promise.resolve(undefined),

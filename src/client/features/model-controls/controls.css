@@ -25,9 +25,15 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
  */
 .ccd-model-effort { flex: 0 0 auto; color: var(--ccd-text-secondary); }
 .ccd-model-effort[data-peak], .ccd-model-value[data-peak] { color: var(--ccd-effort-color-1); }
-.ccd-model-trigger:hover, .ccd-model-trigger[aria-expanded="true"] { background: var(--ccd-hover); }
-.ccd-model-trigger:disabled { opacity: .55; cursor: default; }
-.ccd-model-trigger:focus-visible { outline: 2px solid var(--ccd-effort-color-1); outline-offset: 2px; }
+/*
+ * The split layout (view.splitModelControls) puts the effort in a chip of its
+ * own beside the name, the same chip box, never shrinking, opening the slider.
+ */
+.ccd-effort-trigger { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; height: var(--ccd-chip-height, 20px); padding: 0 var(--ccd-chip-padding-inline, 7px); border: 0; border-radius: var(--ccd-chip-radius, 6px); background: transparent; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.ccd-effort-trigger [data-peak] { color: var(--ccd-effort-color-1); }
+.ccd-model-trigger:hover, .ccd-model-trigger[aria-expanded="true"], .ccd-effort-trigger:hover, .ccd-effort-trigger[aria-expanded="true"] { background: var(--ccd-hover); }
+.ccd-model-trigger:disabled, .ccd-effort-trigger:disabled { opacity: .55; cursor: default; }
+.ccd-model-trigger:focus-visible, .ccd-effort-trigger:focus-visible { outline: 2px solid var(--ccd-effort-color-1); outline-offset: 2px; }
 /*
  * The chosen value is marked by ink, not by weight: full black for the model
  * name and the effort, the row's own 400 for both, and the panel's option rows
@@ -42,6 +48,7 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
  */
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-trigger,
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { color: var(--ccd-text-strong); }
+html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-effort-trigger { color: var(--ccd-text-strong); }
 /*
  * The model card is a popup of the plugin's own making, so it answers to the
  * popup section of the design document rather than to the Composer it hangs
@@ -197,6 +204,14 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .ccd-model-options butt
 .ccd-model-retry:hover { text-decoration: underline; }
 .ccd-model-retry:focus-visible { outline: 2px solid var(--ccd-accent); outline-offset: 2px; }
 .ccd-model-error { bottom: 60px; right: 16px; }
-@container ccd-composer (max-width: 420px) { .ccd-model-trigger { padding-inline: 4px; } }
+/*
+ * The Effort row's flyout, after Claude's own: a secondary-ink paragraph on
+ * what effort costs, then one row per tier — the provider default carries a
+ * hairline "Recommended" badge and the tier in use the accent check.
+ */
+.ccd-effort-menu { width: min(260px, calc(100vw - 24px)); }
+.ccd-effort-help { margin: 0; padding: 4px 8px 6px; color: var(--ccd-text-secondary); font-size: 12px; line-height: 18px; }
+.ccd-effort-badge { flex: 0 0 auto; padding: 0 6px; border: 1px solid var(--ccd-border); border-radius: 999px; color: var(--ccd-text-secondary); font-size: 11px; line-height: 16px; }
+@container ccd-composer (max-width: 420px) { .ccd-model-trigger, .ccd-effort-trigger { padding-inline: 4px; } }
 
 /* Price information stays quiet until the model is hovered or focused. */
