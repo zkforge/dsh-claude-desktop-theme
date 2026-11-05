@@ -494,9 +494,9 @@ assert.equal(settingsScopes, 1);
 // Re-enabling through the settings transport activates without a reload.
 configForms.published({ ...disabled, enabled: true });
 assert.equal(attributes.get('data-dsh-ccd-style'), 'true');
-// Settings plus ten shared theme sheets, including base, schedule, navigation,
-// plugin catalog and management surfaces.
-assert.equal(styles.size, 11); // settings + ten shared theme sheets
+// Settings plus eleven shared theme sheets, including the queue, schedule,
+// navigation, plugin catalog and management surfaces.
+assert.equal(styles.size, 12); // settings + eleven shared theme sheets
 assert.equal(paletteLayers, 1);
 // Exercise the actual bundled model-seat registration and its cleanup scope.
 configForms.published({ ...disabled, enabled: true, features: { ...disabled.features, conversation: true } });
@@ -506,7 +506,7 @@ assert.equal(headerViews.size, 3);
 assert.equal(cornerSeats.size, 1);
 assert.equal(headerScopes, 1);
 assert.equal(paneScopes, 0, 'conversation controls do not activate the disabled right sidebar');
-assert.equal(styles.size, 16); // shared sheets + model controls, effort, conversation and two header sheets
+assert.equal(styles.size, 17); // shared sheets + model controls, effort, conversation and two header sheets
 /* The whale has its own switch, so the conversation feature alone mounts none. */
 assert.equal(blankPetSeats.size, 0);
 assert.equal(petScopes, 0);
@@ -553,7 +553,7 @@ configForms.published({
 assert.equal(blankPetSeats.size, 1);
 assert.equal(petScopes, 1);
 // Conversation sheets plus the new-session and pet sheets.
-assert.equal(styles.size, 18);
+assert.equal(styles.size, 19);
 const petFace = [...blankPetSeats][0].inject();
 // The pet is decoration: the seat injects its visual variant and the measured
 // corner, but no session, reaction state, timer or copy.
@@ -571,7 +571,7 @@ assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Sessi
 /* The sidebar feature mounts its column, account-menu and navigation artwork
    sheets, plus the view-options card's, the search palette's and the Edit
    sidebar dialog's own. */
-assert.equal(styles.size, 17);
+assert.equal(styles.size, 18);
 assert.equal(sidebarEditorSeats.size, 1, 'the sidebar draws the Edit sidebar dialog');
 assert.deepEqual(Object.keys([...sidebarEditorSeats][0].inject()).sort(), ['glyph', 'hidden', 'port', 'state']);
 assert.deepEqual([...moreCardRows].map(row => [row.id, Object.keys(row.inject()).sort()]), [
@@ -599,7 +599,7 @@ for (const sidebar of [false, true]) {
       features: { ...disabled.features, sidebar, 'right-panel': right } });
     assert.equal(paneScopes, right ? 1 : 0, 'pane layout follows only the right-sidebar switch');
     assert.equal(editorScopes, sidebar ? 1 : 0, 'left-sidebar tools follow only the left-sidebar switch');
-    assert.equal(styles.size, 11 + (sidebar ? 6 : 0) + (right ? 2 : 0),
+    assert.equal(styles.size, 12 + (sidebar ? 6 : 0) + (right ? 2 : 0),
       'left and right styles are mounted and removed independently');
   }
 }

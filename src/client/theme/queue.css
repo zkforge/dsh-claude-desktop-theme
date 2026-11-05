@@ -1,0 +1,114 @@
+/* QueueDock owns a stable data attribute. Match its direct structural children
+   and local class suffixes only inside that boundary, across host build hashes.
+   Native collapse, edit, remove and steer controls remain in their React tree. */
+html[data-dsh-ccd-style="true"] [data-queue-dock] {
+  width: calc(100% - 2 * var(--dsh-composer-side-clearance, 16px));
+  max-width: var(--ccd-composer-width);
+  margin: 0 auto;
+  padding: 0;
+  color: var(--ccd-text);
+  font-family: var(--ccd-font-ui);
+  font-size: var(--ccd-font-size-muted);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] > div {
+  box-sizing: border-box;
+  padding: 4px;
+  border: 1px solid var(--ccd-border-soft);
+  border-radius: var(--ccd-radius-panel);
+  background: var(--ccd-card);
+  box-shadow: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] > div::before,
+html[data-dsh-ccd-style="true"] [data-queue-dock] > div::after {
+  content: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] button[aria-expanded] {
+  height: 30px;
+  gap: 8px;
+  padding: 2px 8px;
+  border-radius: var(--ccd-radius-row);
+  color: var(--ccd-text);
+  font: inherit;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] ul {
+  max-height: 180px;
+  scrollbar-width: thin;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] li {
+  min-width: 0;
+  min-height: 36px;
+  gap: 8px;
+  padding: 4px 6px 4px 8px;
+  border-radius: 0;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] li + li {
+  box-shadow: inset 0 1px 0 var(--ccd-border-soft);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] :is([class$="_count"], [class$="_preview"], [class$="_fileName"], [role="status"]) {
+  font-family: inherit;
+  font-size: var(--ccd-font-size-muted);
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] :is([class$="_preview"], [class$="_fileName"]) {
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] :is([class$="_lead"], [class$="_chevron"], [class$="_fileSize"], [role="status"]) {
+  color: var(--ccd-text-muted);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] [class$="_actions"] {
+  gap: 2px;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] li button {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ccd-chip-radius);
+  color: var(--ccd-text-secondary);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] button:hover:not(:disabled) {
+  background: var(--ccd-hover);
+  color: var(--ccd-text);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] button:focus-visible {
+  outline: 2px solid var(--ccd-accent);
+  outline-offset: -2px;
+}
+
+/* Attachments may yield space to the message and its three actions. */
+html[data-dsh-ccd-style="true"] [data-queue-dock] [class$="_attachments"] {
+  flex-shrink: 1;
+  max-width: 40%;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] :is([class$="_file"], [class$="_thumb"]) {
+  border: 1px solid var(--ccd-border-soft);
+  border-radius: var(--ccd-chip-radius);
+  background: var(--ccd-canvas);
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] textarea {
+  min-width: 0;
+  border: 1px solid var(--ccd-composer-border);
+  border-radius: var(--ccd-chip-radius);
+  background: var(--ccd-canvas);
+  color: var(--ccd-text);
+  font: inherit;
+  line-height: 20px;
+}
+
+html[data-dsh-ccd-style="true"] [data-queue-dock] textarea:focus {
+  border-color: var(--ccd-composer-focus-border);
+  outline: none;
+}

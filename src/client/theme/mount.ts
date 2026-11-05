@@ -2,6 +2,7 @@ import type { FeatureEnvironment } from '../contracts/feature.ts';
 import type { CleanupScope } from '../core/cleanup.ts';
 import { resolveThemeTokens, THEME_OVERRIDE_SOURCE } from './tokens.ts';
 import composerCss from './composer.css';
+import queueCss from './queue.css';
 import menuCss from './menus.css';
 import dialogCss from './dialogs.css';
 import scrollbarCss from './scrollbars.css';
@@ -29,6 +30,7 @@ export function mountTheme(environment: FeatureEnvironment, scope: CleanupScope)
   scope.add(environment.dom.mountStyles(tokenCss));
   scope.add(environment.dom.mountStyles(baseCss));
   scope.add(environment.dom.mountStyles(composerCss));
+  scope.add(environment.dom.mountStyles(queueCss));
   scope.add(environment.dom.mountStyles(menuCss));
   scope.add(environment.dom.mountStyles(dialogCss));
   scope.add(environment.dom.mountStyles(scrollbarCss));
