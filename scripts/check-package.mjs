@@ -13,7 +13,7 @@ import { BASELINE_MODULES } from './lib/platform.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 assert.equal(pkg.name, PLUGIN_ID);
-assert.equal(pkg.engines.dsh, `${TARGET_DSH_VERSION} || 0.2.1-rc.5`);
+assert.equal(pkg.engines.dsh, `>=${TARGET_DSH_VERSION} <0.3.0-0`);
 assert.equal(pkg.dsh.engines, undefined, 'DSH reads engines.dsh at the package root');
 for (const [name, version] of Object.entries(pkg.devDependencies)) {
   if (name.startsWith('@deepseek-ai/dsh-')) assert.equal(version, TARGET_DSH_VERSION);

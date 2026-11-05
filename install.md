@@ -1,6 +1,6 @@
 # 安装指南
 
-环境：DeepSeek Harness Desktop `0.2.1-rc.3` 或 `0.2.1-rc.5`，已在 macOS（Apple 芯片）核验；本次发布使用 rc5 实机验证。下方保留 Windows 10 及以上（64 位）的安装步骤；新版宿主的 Windows 构建尚未完成验证。首次安装前启动一次 DSH，初始化 desktop profile。源码构建另需 Node.js `>=22.18.0`、npm 和 Git。
+环境：DeepSeek Harness Desktop `>=0.2.1-rc.3 <0.3.0-0`，允许后续 `0.2.x` 正式版与预发布版（含 `0.2.2-rc.1`）安装；放宽版本声明不代表已完成所有版本的实机验证。macOS（Apple 芯片）已使用 `0.2.1-rc.5` 实机验证。下方保留 Windows 10 及以上（64 位）的安装步骤；新版宿主的 Windows 构建尚未完成验证。首次安装前启动一次 DSH，初始化 desktop profile。源码构建另需 Node.js `>=22.18.0`、npm 和 Git。
 
 ## 从 npm 安装（推荐）
 

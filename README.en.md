@@ -75,7 +75,7 @@ Custom background colours apply in light mode. The default font stacks begin wit
 
 ## Requirements
 
-DSH Desktop `0.2.1-rc.3` or `0.2.1-rc.5` is supported. The macOS Apple silicon build has been tested with rc5. Windows 10 and later (64-bit) installation is supported, though the newer Windows host build has yet to be verified. Building from source requires Node.js 22.18.0 or newer.
+The DSH Desktop version range is `>=0.2.1-rc.3 <0.3.0-0`, allowing later `0.2.x` releases and prereleases, including `0.2.2-rc.1`. This range does not imply every version has been tested. The macOS Apple silicon build has been tested with rc5. Windows 10 and later (64-bit) installation is supported, though the newer Windows host build has yet to be verified. Building from source requires Node.js 22.18.0 or newer.
 
 Fully quit and reopen DSH after upgrading to load host interfaces and session projections.
 
