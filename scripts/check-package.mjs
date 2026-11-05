@@ -656,9 +656,9 @@ const result = spawnSync('npm', ['pack', '--dry-run', '--ignore-scripts', '--jso
 if (result.error) throw result.error;
 assert.equal(result.status, 0, result.stderr);
 const packed = JSON.parse(result.stdout)[0].files.map(file => file.path);
-for (const file of ['lib/index.js', 'lib/client.js', 'lib/types/host/index.d.ts', 'cordis.patch.yml', 'README.md', 'LICENSE']) {
+for (const file of ['lib/index.js', 'lib/client.js', 'lib/types/host/index.d.ts', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE']) {
   assert.ok(packed.includes(file), `Missing package file: ${file}`);
 }
-assert.ok(packed.every(file => /^(lib\/|cordis\.patch\.yml$|README\.md$|LICENSE$|package\.json$)/.test(file)),
+assert.ok(packed.every(file => /^(lib\/|cordis\.patch\.yml$|README(?:\.en)?\.md$|LICENSE$|package\.json$)/.test(file)),
   'Unexpected source, screenshot, cache, or development asset in package');
 console.log(`DSH loader envelope, activation cleanup fixture, Host entry, and ${packed.length} package files passed.`);

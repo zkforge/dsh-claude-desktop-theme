@@ -91,11 +91,10 @@ const FEATURE_KEYS: Record<FeatureId, SettingsKey> = {
  * says what the switch draws and whether it starts on, the way each row of the
  * reference settings page carries a line under its title.
  */
-const FEATURE_HINTS: Record<FeatureId, SettingsKey> = {
+const FEATURE_HINTS: Record<Exclude<FeatureId, 'hero-ripples'>, SettingsKey> = {
   sidebar: 'hint.sidebar',
   'right-panel': 'hint.right-panel',
   'new-session': 'hint.new-session',
-  'hero-ripples': 'hint.hero-ripples',
   conversation: 'hint.conversation',
   'tool-calls': 'hint.tool-calls',
   statistics: 'hint.statistics',
@@ -246,7 +245,14 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
 
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.features')}</h4>
-        {OFFERED_FEATURES.map(id => (
+        {OFFERED_FEATURES.map(id => id === 'hero-ripples' ? (
+          <ChoiceRow key={id} id="ccd-settings-hero-background" label={translate(FEATURE_KEYS[id])}
+            value={served.features[id] ? served.personalization.heroBackground : 'none'}
+            options={[{ value: 'none', label: translate('style.none') }, { value: 'ripples', label: translate('background.ripples') }, { value: 'space', label: translate('background.space') }]}
+            onChange={value => void write(value === 'none' ? [setOperation(['features', id], false)] : [
+              setOperation(['personalization', 'heroBackground'], value), setOperation(['features', id], true),
+            ])} />
+        ) : (
           <SwitchRow
             key={id}
             id={`ccd-settings-feature-${id}`}

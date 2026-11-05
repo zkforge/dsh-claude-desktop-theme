@@ -6,3 +6,11 @@ export interface HeroRippleImpulse {
 }
 
 export const HERO_RIPPLE_DURATION = 2800;
+
+export interface HeroPointer { readonly x: number; readonly y: number }
+
+/** The space scene spans the hero and its caption strip in one coordinate system. */
+export interface HeroSpaceRenderer {
+  draw(canvas: HTMLCanvasElement, title: HTMLCanvasElement | null, elapsed: number,
+    clicks: readonly HeroRippleImpulse[], pointer: HeroPointer | null): void;
+}

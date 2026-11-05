@@ -1,12 +1,12 @@
 import type { Disposer } from '../contracts/ports.ts';
 import { hostSelectors } from './host-dom.ts';
 import { HERO_RIPPLE_DURATION } from '../contracts/hero-canvas.ts';
-import type { HeroRippleImpulse } from '../contracts/hero-canvas.ts';
+import type { HeroPointer, HeroRippleImpulse, HeroSpaceRenderer } from '../contracts/hero-canvas.ts';
 import { recordsIntroduce } from './mutation-scope.ts';
 
 /** One decorative canvas per visible hero; no timers survive its phase change. */
 export function mountHeroCanvas(document: Document,
-  draw: (canvas: HTMLCanvasElement, elapsed: number, impulses: readonly HeroRippleImpulse[]) => void,
+  renderer: HeroSpaceRenderer | ((canvas: HTMLCanvasElement, elapsed: number, impulses: readonly HeroRippleImpulse[]) => void),
   report: (error: unknown) => void): Disposer {
   const win = document.defaultView!;
   const host = hostSelectors(document);
@@ -19,6 +19,19 @@ export function mountHeroCanvas(document: Document,
   let nextPaintAt = 0;
   let elapsed = 0;
   let impulses: HeroRippleImpulse[] = [];
+  let pointer: HeroPointer | null = null;
+  const leave = () => { pointer = null; };
+  const move = (event: PointerEvent) => {
+    if (!canvas || canvas.hidden || !root) return;
+    const rect = root.getBoundingClientRect();
+    pointer = { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height };
+  };
+  const detachPointer = () => {
+    if (typeof renderer === 'function') return;
+    root?.removeEventListener('pointermove', move, true);
+    root?.removeEventListener('pointerleave', leave);
+    leave();
+  };
   let disposed = false;
   const stop = () => { win.cancelAnimationFrame(frame); frame = 0; last = 0; nextPaintAt = 0; };
   const resize = new ResizeObserver(() => {
@@ -62,8 +75,10 @@ export function mountHeroCanvas(document: Document,
       last = time;
       impulses = impulses.filter(impulse => elapsed - impulse.startedAt < HERO_RIPPLE_DURATION);
       try {
-        draw(canvas, elapsed, impulses);
-        if (titleCanvas && titleCanvas.height) draw(titleCanvas, elapsed, []);
+        if (typeof renderer === 'function') {
+          renderer(canvas, elapsed, impulses);
+          if (titleCanvas && titleCanvas.height) renderer(titleCanvas, elapsed, []);
+        } else renderer.draw(canvas, titleCanvas, elapsed, impulses, pointer);
       }
       catch (error) { stop(); report(error); return; }
     }
@@ -88,6 +103,7 @@ export function mountHeroCanvas(document: Document,
     const next = document.querySelector<HTMLElement>(`${host.conversationRoot}[data-phase="hero"]`);
     if (next !== root) {
       stop(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
+      detachPointer();
       root = next; canvas = null; titleCanvas = null; elapsed = 0; impulses = [];
       if (root) {
         canvas = document.createElement('canvas');
@@ -98,13 +114,18 @@ export function mountHeroCanvas(document: Document,
         titleCanvas.className = 'ccd-hero-ripples ccd-hero-ripples-titlebar';
         titleCanvas.setAttribute('aria-hidden', 'true');
         document.body.prepend(titleCanvas);
+        if (typeof renderer !== 'function') {
+          canvas.classList.add('ccd-hero-space');
+          root.addEventListener('pointermove', move, { capture: true, passive: true });
+          root.addEventListener('pointerleave', leave);
+        }
         resize.observe(root);
       }
     }
     if (!canvas || !root || !canvas.width || !canvas.height || document.hidden
       || reduced.matches || !root.getClientRects().length) {
       stop();
-      impulses = [];
+      impulses = []; leave();
       if (canvas) canvas.hidden = true;
       if (titleCanvas) titleCanvas.hidden = true;
       return;
@@ -147,17 +168,19 @@ export function mountHeroCanvas(document: Document,
   // Capture typing even if an editor stops propagation.
   document.addEventListener('keydown', engage, { capture: true, passive: true });
   document.addEventListener('keyup', release, { capture: true, passive: true });
-  win.addEventListener('blur', release);
+  const blur = () => { leave(); release(); };
+  win.addEventListener('blur', blur);
   reduced.addEventListener('change', sync);
   win.addEventListener('resize', sync);
   sync();
   return () => {
+    detachPointer();
     disposed = true; stop(); observer.disconnect(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
     document.removeEventListener('visibilitychange', sync);
     document.removeEventListener('click', click);
     document.removeEventListener('keydown', engage, { capture: true });
     document.removeEventListener('keyup', release, { capture: true });
-    win.removeEventListener('blur', release);
+    win.removeEventListener('blur', blur);
     reduced.removeEventListener('change', sync); win.removeEventListener('resize', sync);
     root = null; canvas = null; titleCanvas = null; impulses = [];
   };

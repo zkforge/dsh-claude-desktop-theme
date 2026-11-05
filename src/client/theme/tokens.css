@@ -401,6 +401,8 @@ html[data-dsh-ccd-style="true"] {
   --ccd-check-fill: #2f7cf3;
   --ccd-check-ink: #ffffff;
   /* Lavender ink keeps the light reference's crests visible on the pale page. */
+  --ccd-hero-space-dot: #87867f;
+  --ccd-hero-space-shot: #d2cdbf;
   --ccd-hero-ripple-ink: #8574c4;
   --ccd-hero-ripple-idle-ink: #9a9a9a;
 
@@ -620,6 +622,7 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
   --ccd-plugin-installed-text: #a1dfb5;
   --ccd-price-off-peak: #a1c9aa;
   --ccd-price-peak: #dfb77d;
+  --ccd-hero-space-shot: #a8a294;
   --ccd-hero-ripple-ink: #60bdeb;
   --ccd-hero-ripple-idle-ink: #8e8e8e;
   /* Reference surfaces: near-black page and sidebar, charcoal popup and input.

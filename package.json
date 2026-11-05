@@ -1,6 +1,6 @@
 {
   "name": "dsh-claude-desktop-theme",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "license": "MIT",
   "description": "Claude Code Desktop-style theme for DeepSeek Harness (DSH) Desktop on macOS and Windows, with light/dark themes, model/effort pickers and an interactive pixel whale",
   "author": "zkforge",
@@ -52,7 +52,8 @@
   "files": [
     "lib",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "README.en.md"
   ],
   "engines": {
     "node": ">=22.18.0",

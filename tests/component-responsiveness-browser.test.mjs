@@ -21,6 +21,7 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
   import {ClaudePet} from './src/client/features/composer-pet/ClaudePet.tsx';
   import {ComposerPet} from './src/client/features/composer-pet/ComposerPet.tsx';
   import {mountHeroCanvas} from './src/client/compat/hero-canvas.ts';
+  import {createHeroSpace} from './src/client/features/new-session/space.ts';
   import {drawHeroRipples} from './src/client/features/new-session/ripples.ts';
   import {mountStatisticsCard} from './src/client/features/statistics/mount.ts';
   import {CleanupScope} from './src/client/core/cleanup.ts';
@@ -47,8 +48,9 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
   };
   window.mount=kind=>{
     window.unmount();
-    if(kind==='ripples'){
-      release=mountHeroCanvas(document,drawHeroRipples,e=>window.errors.push(String(e)));return;
+    if(kind==='ripples'||kind==='space'){
+      const renderer=kind==='space'?createHeroSpace():drawHeroRipples;
+      release=mountHeroCanvas(document,renderer,e=>window.errors.push(String(e)));return;
     }
     if(kind==='schedule'){
       release=mountSchedulePage(document,e=>window.errors.push(String(e)),prompt=>window.template=prompt);return;
@@ -131,6 +133,10 @@ const options = { skip: chrome ? false : 'Chrome unavailable', timeout: 30000 };
 test('settings mounts, saves switches, opens choice/font/colour controls and cleans up', options, async () => fixture(async page => {
   await page.evaluate("measure('settings:mount',()=>mount('settings'),()=>!!document.querySelector('#ccd-settings-enabled'))");
   await page.evaluate("measure('settings:toggle',()=>document.querySelector('#ccd-settings-enabled').click(),()=>document.querySelector('#ccd-settings-enabled').getAttribute('aria-checked')==='false')");
+  for (const label of ['关闭', '宠物畅游', '字符水波纹']) {
+    await page.evaluate(`measure('background:open',()=>document.querySelector('#ccd-settings-hero-background').click(),()=>!!document.querySelector('[role=listbox]'))`);
+    await page.evaluate(`measure('background:select',()=>Array.from(document.querySelectorAll('[role=option]')).find(button=>button.textContent===${JSON.stringify(label)}).click(),()=>document.querySelector('#ccd-settings-hero-background').textContent===${JSON.stringify(label)})`);
+  }
   await page.evaluate("measure('settings:choice',()=>document.querySelector('#ccd-settings-pet-style').click(),()=>!!document.querySelector('.ccd-settings-menu'))");
   await page.evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
   await page.evaluate("measure('settings:font',()=>document.querySelector('#ccd-settings-font-uiLatin').click(),()=>!!document.querySelector('.ccd-settings-font-menu'))");
@@ -197,6 +203,13 @@ test('hero ripple and statistics respond to phase changes, tabs, ranges and snap
   `);
   await page.evaluate('new Promise(r=>setTimeout(r,500))');
   await page.evaluate("measure('ripples:leave-hero',()=>document.querySelector('[data-phase]').setAttribute('data-phase','active'),()=>!document.querySelector('canvas.ccd-hero-ripples'))");
+  await page.evaluate("document.querySelector('[data-phase]').setAttribute('data-phase','hero')");
+  await page.evaluate("measure('space:mount',()=>mount('space'),()=>!!document.querySelector('.ccd-hero-space'))");
+  await page.evaluate("window.previousSpaceCanvas = new WeakRef(document.querySelector('.ccd-hero-space'))");
+  await page.evaluate(`document.querySelector('[data-phase]').dispatchEvent(new PointerEvent('pointermove',{clientX:120,clientY:310}));`);
+  await page.evaluate("measure('space:leave-hero',()=>document.querySelector('[data-phase]').setAttribute('data-phase','active'),()=>!document.querySelector('canvas.ccd-hero-ripples'))");
+  await page.send('HeapProfiler.collectGarbage');
+  assert.equal(await page.evaluate('previousSpaceCanvas.deref() === undefined'), true, 'chat releases the previous space canvas');
   await page.evaluate("document.querySelector('[data-phase]').setAttribute('data-phase','hero')");
   await page.evaluate("measure('statistics:mount',()=>mount('statistics'),()=>!!document.querySelector('[data-ccd-stats-card]'))");
   await page.evaluate("measure('statistics:models',()=>document.querySelector('[data-option=\"models\"]').click(),()=>!!document.querySelector('[aria-label=\"各模型每日 Token 用量\"]'))");

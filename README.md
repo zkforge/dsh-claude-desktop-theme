@@ -4,10 +4,12 @@
 
 为 DeepSeek Harness（DSH）Desktop 换上 Claude Code Desktop 外观
 
+简体中文 · [English](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/README.en.md)
+
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License"/>
-  <img src="https://img.shields.io/npm/v/dsh-claude-desktop-theme?style=for-the-badge&color=4D6BFE&logo=npm&logoColor=white" alt="npm"/>
-  <img src="https://img.shields.io/badge/DSH-latest-4D6BFE?style=for-the-badge" alt="DSH"/>
+  <a href="https://www.npmjs.com/package/dsh-claude-desktop-theme"><img src="https://img.shields.io/badge/npm-package-4D6BFE?style=for-the-badge&logo=npm&logoColor=white" alt="npm"/></a>
+  <img src="https://img.shields.io/badge/DSH-Desktop-4D6BFE?style=for-the-badge" alt="DSH"/>
   <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-0078D4?style=for-the-badge" alt="Platform"/>
 </p>
 
@@ -28,27 +30,11 @@
 
 源码安装见[安装指南](https://github.com/zkforge/dsh-claude-desktop-theme/blob/main/install.md)。
 
-### 0.9.2 更新
+## 使用
 
-- 将输入框中的图片附件预览放大至 120px，并与正文和占位文字左侧对齐。
-- 合并附件区与编辑区的背景和阴影，消除两者之间的接缝。
-- 保持添加按钮独立占位，窄窗口下多张附件与长草稿仍可分别滚动。
-
-### 0.9.1 更新
-
-- 修正切换会话后，隐藏的旧右栏导致信息卡片覆盖当前正文的问题。
-- 修正未登录账号菜单中「更多」的文字与图标对齐。
-- 恢复反馈弹窗标题与分类选项之间的间距，保留紧凑确认框原有布局。
-
-### 0.9.0 更新
-
-- 模型与思考强度合成一个按钮，强度用灰字，最高档转紫色。
-- 选单最多放四个常用模型，悬停行尾图钉可增减，选择保存在本机；数字 1–4 直接选模型，其余模型收进支持搜索的「更多模型」。
-- 思考强度悬停弹出滑杆，档位名称与「更快 / 更深入」排成一行；最高档保留像素流光，支持中英文即时切换与键盘操作。
-- 修正目录刷新时档位切换动画残留，更新浅深色模型选择器截图与思考强度动图。
+在「设置 → Claude 主题 → 模块 → 主页背景动效」选择「宠物畅游」，像素宇航员会缓缓跟随鼠标，点击空白处会划过流星。也可切回默认的字符水波纹或关闭背景动效。
 
 会话中输入 `/clear` 可以清空当前对话上下文，继续使用同一个会话：会话 ID、名称、项目、模型、项目指令与技能目录保留，旧消息和工具结果不再发送给模型。原始日志仍在，「查看历史记录」可展开旧内容，查看不会恢复模型上下文。命令不调用模型、不生成摘要；请在回复结束且没有排队消息时执行。安装后需完整退出并重新打开 DSH，加载宿主命令。
-
 
 ## 界面预览
 
@@ -124,10 +110,10 @@
 
 | 分组 | 可调项 |
 | --- | --- |
-| 模块 | 左侧栏、右侧栏（独立启停）、新建页、主页字符水波纹（默认开启）、聊天页、工具调用展示、输入框宠物、统计卡片（默认开启）、状态栏统计读数（默认关闭）、上下文分解面板 |
+| 模块 | 左侧栏、右侧栏（独立启停）、新建页、主页背景动效（字符水波纹、宠物畅游或关闭，默认水波纹）、聊天页、工具调用展示、输入框宠物、统计卡片（默认开启）、状态栏统计读数（默认关闭）、上下文分解面板 |
 | 外观 | 主题（浅色 / 深色 / 跟随系统）、会话背景色、侧栏背景色 |
-| 视图 | 显示 API 余额、显示模型图标、过程默认展开（默认开启）；DeepSeek Harness 品牌条目、顶栏子代理入口、顶栏团队入口、顶栏后台任务入口、显示空分组（默认均关闭） |
-| 个性化 | 宠物样式、输出中状态、回复签名、首页问候（默认 Claude 样式，可分别关闭） |
+| 视图 | 显示 API 余额、显示模型图标、分开显示模型与思考强度、过程默认展开（默认开启）；DeepSeek Harness 品牌条目、顶栏子代理入口、顶栏团队入口、顶栏后台任务入口、显示空分组（默认均关闭） |
+| 个性化 | 宠物样式、输出中状态、回复签名、首页问候（默认 Claude 样式，宠物、签名与问候可分别关闭） |
 | 字体 | 界面字体、代码与等宽字体；界面中文字体在设置页不列，需写进 profile 的 `cordis.patch.yml` |
 
 > [!NOTE]

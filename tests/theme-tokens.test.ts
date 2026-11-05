@@ -136,6 +136,7 @@ test('surface colours have dark counterparts while artwork and tooltips keep fix
   const artwork = new Map([
     // Tooltips deliberately use the same high-contrast palette in both themes.
     ['ccd-command-tooltip-fill', '#111111'], ['ccd-command-tooltip-ink', '#ffffff'],
+    ['ccd-hero-space-dot', '#87867f'],
     ['ccd-claude-coral', '#d87657'], ['ccd-claude-shade', '#bd6145'],
     ['ccd-claude-eye', '#000000'], ['ccd-claude-laptop', '#888984'],
   ]);
