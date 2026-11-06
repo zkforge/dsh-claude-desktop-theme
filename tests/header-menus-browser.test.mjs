@@ -60,7 +60,7 @@ test('macOS sidebar collapse preserves the session title and its actions', { ski
           await page.evaluate(`(()=>{document.querySelector('._6Qf49G_frame').toggleAttribute('data-sidebar-collapsed',${collapsed});
             document.documentElement.toggleAttribute('data-fullscreen',${fullscreen});
             document.querySelector('main').style.marginLeft=${JSON.stringify(collapsed ? '0' : '114px')};
-            document.querySelector('._6Qf49G_frame').style.setProperty('--dsh-frame-leading-clearance',${JSON.stringify(collapsed ? (fullscreen ? '124px' : '200px') : '0px')});})()`);
+            document.querySelector('._6Qf49G_frame').style.setProperty('--dsh-frame-leading-clearance',${JSON.stringify(collapsed ? (fullscreen ? '136px' : '212px') : '0px')});})()`);
           for (const title of ['问候', '这是一个用于验证收起侧栏后标题仍能显示且长名称正确截断的会话标题'.repeat(8)]) {
             await page.evaluate(`document.querySelector('.ST7X_W_crumb').textContent=${JSON.stringify(title)}`);
             const view = await page.evaluate(`(()=>{

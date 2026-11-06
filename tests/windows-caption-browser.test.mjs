@@ -107,7 +107,7 @@ test('Windows caption controls survive branding and collapse with equal seats, n
           assert.equal(control.icons[0].width, 16);
           assert.equal(control.icons[0].height, 16);
         }
-        assert.deepEqual(geometry.controls.map(c => c.rect.x), collapsed ? [12, 40, 64, 92] : [12, 40, 64]);
+        assert.deepEqual(geometry.controls.map(c => c.rect.x), collapsed ? [12, 40, 68, 96] : [12, 40, 68]);
         assert.ok(geometry.menu.x >= geometry.controls.at(-1).rect.right + 8, 'native menus do not overlap the icon controls');
       };
       for (const collapsed of [false, true, false]) {

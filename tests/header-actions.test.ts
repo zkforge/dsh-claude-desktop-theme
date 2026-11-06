@@ -56,7 +56,7 @@ test('the project folder follows the browser, before the session menu', () => {
   const utilities = VIEWS.map(view => utilitiesEntry(view, labels, open));
   assert.deepEqual(
     utilities.map(entry => [entry.id, entry.order]),
-    [['ccd-terminal', -3], ['ccd-browser', -2], ['ccd-folder', -1]],
+    [['ccd-terminal', -13], ['ccd-browser', -12], ['ccd-folder', -11]],
   );
   const folder = utilities[2]?.inject('session-1');
   assert.deepEqual([folder?.kind, folder?.label], ['files', '打开项目文件夹']);

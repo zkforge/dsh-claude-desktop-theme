@@ -62,6 +62,8 @@ test('the Session row takes the host\'s own row-action seat out of the line', ()
   const rule = hiding[0] as Rule;
   assert.ok(rule.selector.startsWith(MARKER), rule.selector);
   assert.ok(rule.selector.includes(`${ACTIONS} > ${SEAT}`), rule.selector);
+  /* DSH 0.2.2-rc.1 wraps the outlet in its own `rowQuickActions` span. */
+  assert.ok(rule.selector.includes(`${ACTIONS} > .jJkEga_rowQuickActions`), rule.selector);
   /* Only a Session row: the Workspace row's own actions keep their line. */
   assert.ok(rule.selector.includes(ROW), rule.selector);
   /* The outlet carries `display: contents` inline, so the hide has to be

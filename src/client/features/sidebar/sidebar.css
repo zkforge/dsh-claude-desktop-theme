@@ -86,6 +86,7 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-shell-leading] {
   left: var(--ccd-sidebar-toggle-left);
   display: flex;
   align-items: center;
+  gap: var(--ccd-icon-button-gap);
   height: 24px;
 }
 
@@ -640,7 +641,7 @@ html[data-dsh-ccd-style="true"] .jJkEga_projectRow .jJkEga_rowActions {
   display: inline-flex;
   order: 2;
   margin-left: auto;
-  gap: 4px;
+  gap: var(--ccd-icon-button-gap);
 }
 
 /* Workspace actions share the Search/View options button treatment, including
@@ -656,6 +657,9 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._7514NG_s
   justify-content: center;
   width: 22px;
   height: 22px;
+  /* The host's Rows `iconButton` carries `margin: -4px`, which would fold the
+     row's ⋯ and + onto each other. */
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 6px;
@@ -734,9 +738,10 @@ html[data-dsh-ccd-style="true"] .jJkEga_sessionRow {
   height: 28px;
 }
 
-/* Hide the session hover card's surface, including its padding and shadow.
-   Status lines distinguish session cards from workspace path cards. */
-html[data-dsh-ccd-style="true"] :has(> .jJkEga_hoverContent > .jJkEga_hoverStatus) {
+/* Hide the sidebar's hover cards — a Session's and a Workspace's (name, path,
+   creation time) alike — including their padding and shadow. Both bodies are
+   the Rows module's `hoverContent`, the direct child of the card surface. */
+html[data-dsh-ccd-style="true"] :has(> .jJkEga_hoverContent) {
   display: none;
 }
 
@@ -944,8 +949,11 @@ html[data-dsh-ccd-style="true"] .jJkEga_searchResultRow:focus-visible {
  * The `!important` answers an inline style rather than a host rule: `renderSlot`
  * renders its outlet as a `div[data-slot]` carrying the renderer's own anchor
  * style, `display: contents`, which keeps the wrapper out of layout, and an
- * author declaration only outranks an inline one with it. */
-html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions > div[data-slot="sidebar.workspaces.session.row.action"] {
+ * author declaration only outranks an inline one with it. DSH 0.2.2-rc.1 wraps
+ * that outlet in its own `rowQuickActions` span, which leaves the line the same
+ * way. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions > div[data-slot="sidebar.workspaces.session.row.action"],
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow .jJkEga_rowActions > .jJkEga_rowQuickActions {
   display: none !important;
 }
 
@@ -1309,9 +1317,23 @@ html[data-dsh-ccd-style="true"] [data-ccd-status-order] .jJkEga_title {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The section heading already identifies pinned Sessions. */
-html[data-dsh-ccd-style="true"] [data-ccd-status-group="pinned"] > .jJkEga_pinIndicator {
+/* The section heading already identifies pinned Sessions. DSH 0.2.2-rc.1 moves
+   the pin mark into the row's `rowResting` cluster. */
+html[data-dsh-ccd-style="true"] [data-ccd-status-group="pinned"] > .jJkEga_pinIndicator,
+html[data-dsh-ccd-style="true"] [data-ccd-status-group="pinned"] > .jJkEga_rowResting > .jJkEga_pinIndicator {
   display: none;
+}
+/* DSH 0.2.2-rc.1's resting cluster (time, pin mark, and the
+   `sidebar.session.row.trailing` seat where the forge panel draws its
+   worktree / change-request marks) is the row's idle face: the host swaps it
+   for the ⋯ trigger on interaction, but only answers keyboard focus, while this
+   theme also shows the ⋯ on any `:focus-within` — so a clicked row drew the
+   non-interactive branch mark flush against the ⋯ as if it were a second
+   button. It now leaves whenever the ⋯ shows, and keeps its box so the title's
+   measure does not change under the pointer. */
+html[data-dsh-ccd-style="true"] .jJkEga_sessionRow:is(:hover, :focus-within, .jJkEga_menuOpen) > .jJkEga_rowResting {
+  display: inline-flex;
+  visibility: hidden;
 }
 /* Reserve the native overflow button's seat so hovering a long title does not
    change its measure. Focusing the row also exposes its real menu control. */

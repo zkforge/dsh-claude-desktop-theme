@@ -29,6 +29,10 @@ html[data-dsh-ccd-style="true"] {
      pitch — contiguous, not separated — against the host's own 36px/7px row. */
   --ccd-nav-row-height: 26px;
   --ccd-nav-gap: 1px;
+  /* Space between neighbouring icon buttons in one control cluster — the
+     title-bar toggle and history arrows, a Workspace row's ⋯ and +, matching
+     the host's own 4px between Search and View options. */
+  --ccd-icon-button-gap: 4px;
   --ccd-radius-row: 8px;
   --ccd-radius-panel: 12px;
   /* Shared controls on Customize and Scheduled tasks. */

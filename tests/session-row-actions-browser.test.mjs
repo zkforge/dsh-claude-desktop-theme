@@ -230,6 +230,64 @@ test('a Session row ends at one ⋮, and the seat it replaces takes no box', {
       assert.equal(view.more.fill, 'rgb(225, 224, 221)', `the ⋮ takes ${view.strong} on hover`);
       assert.equal(view.more.ink, 'rgb(31, 31, 29)', 'and the row\'s own ink with it');
       assert.ok(view.archive.width === 0 && view.pin.width === 0, 'the seat stays out while the menu\'s trigger is pointed at');
+
+      /* DSH 0.2.2-rc.1 wraps the seat in a `rowQuickActions` span after the ⋯
+         trigger; the two hover buttons still leave the line. */
+      await devtools.evaluate(`(() => {
+        const seat = document.querySelector('[data-slot="sidebar.workspaces.session.row.action"]');
+        const wrapper = document.createElement('span');
+        wrapper.className = ${JSON.stringify(aliasHostClasses('jJkEga_rowQuickActions', PINNED_BUILD))};
+        seat.replaceWith(wrapper);
+        wrapper.append(seat);
+      })()`);
+      await hoverRow();
+      view = await devtools.evaluate(readout);
+      assert.equal(view.archive.width, 0, 'the rc.1 archive button takes no box');
+      assert.equal(view.pin.width, 0, 'the rc.1 pin button takes no box');
+      assert.equal(view.actions.width, view.more.width, `the rc.1 cluster is the ⋮ alone (${view.actions.width})`);
+
+      /* rc.1 also gathers the time, the `sidebar.session.row.trailing` seat (the
+         forge panel's worktree mark) and the pin mark into a `rowResting` span
+         before the actions. The mark is the row's idle face: it shows at rest,
+         and steps out — keeping its box — whenever the ⋮ shows, including a
+         clicked row whose focus stays inside while the pointer is elsewhere. */
+      await devtools.evaluate(`(() => {
+        const row = document.querySelector('[data-row-key="session:a"]');
+        const resting = document.createElement('span');
+        resting.className = ${JSON.stringify(aliasHostClasses('jJkEga_rowResting', PINNED_BUILD))};
+        resting.style.cssText = 'display:inline-flex;align-items:center;gap:6px;flex:none';
+        resting.innerHTML = '<div data-slot="sidebar.session.row.trailing" style="display: contents"><span id="worktree-a" role="img" style="display:inline-flex;width:13px;height:20px"></span></div>'
+          + '<span id="pin-mark-a" class=${JSON.stringify(aliasHostClasses('jJkEga_pinIndicator', PINNED_BUILD))}>📌</span>';
+        row.querySelector(${JSON.stringify(aliasHostClasses('.jJkEga_time', PINNED_BUILD))}).replaceWith(resting);
+        resting.prepend(document.createElement('span'));
+        resting.firstChild.className = ${JSON.stringify(aliasHostClasses('jJkEga_time', PINNED_BUILD))};
+        document.activeElement?.blur();
+      })()`);
+      const resting = () => devtools.evaluate(`(() => {
+        const mark = document.querySelector('#worktree-a');
+        return { visibility: getComputedStyle(mark).visibility, width: mark.getBoundingClientRect().width,
+          more: getComputedStyle(document.querySelector('#more-a')).visibility,
+          pin: document.querySelector('#pin-mark-a').getBoundingClientRect().width };
+      })()`);
+      await devtools.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 2, y: 150 });
+      let face = await resting();
+      assert.equal(face.visibility, 'visible', 'the worktree mark shows on an idle row');
+      assert.equal(face.more, 'hidden', 'beside the ⋮ seat it does not share');
+      await devtools.evaluate(`(() => {
+        const row = document.querySelector('[data-row-key="session:a"]');
+        row.tabIndex = 0;
+        row.focus();
+      })()`);
+      face = await resting();
+      assert.equal(face.more, 'visible', 'a focused row shows its ⋮');
+      assert.equal(face.visibility, 'hidden', 'and the worktree mark steps out beside it');
+      assert.equal(face.width, 13, 'keeping its box, so the title keeps its measure');
+      await devtools.evaluate(`document.activeElement.blur()`);
+      await hoverRow();
+      assert.equal((await resting()).visibility, 'hidden', 'the pointer swaps it the same way');
+      assert.ok((await resting()).pin > 0, 'outside the pinned group the pin mark stays');
+      await devtools.evaluate(`document.querySelector('[data-row-key="session:a"]').dataset.ccdStatusGroup = 'pinned'`);
+      assert.equal((await resting()).pin, 0, "the pinned group's heading replaces the rc.1 pin mark");
     });
   } finally {
     await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });

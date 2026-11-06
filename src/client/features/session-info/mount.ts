@@ -18,7 +18,7 @@ export function mountSessionCards(ctx: Context, environment: FeatureEnvironment,
   }, SessionCards)));
   scope.add(() => { void registration.dispose(); });
   const button = ctx.inject(['slots'], child => child.slots.inject(DSH_SLOTS.sessionHeaderUtilities, () => child.slots.register({
-    name: DSH_SLOTS.sessionHeaderUtilities, id: 'ccd-session-info-toggle', order: -4,
+    name: DSH_SLOTS.sessionHeaderUtilities, id: 'ccd-session-info-toggle', order: -20,
     inject: () => ({ port }),
   }, SessionInfoButton)));
   scope.add(() => { void button.dispose(); });

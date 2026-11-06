@@ -680,6 +680,38 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-pane-previe
   padding-left: var(--ccd-files-tree-width);
 }
 
+/* DSH 0.2.2 embeds the Files navigator in the preview and, beside it, floats
+   it as a raised card on the trailing edge. Here it keeps the joined layout of
+   the separate tree: flush on the leading edge under the card's header, one
+   divider, no card of its own. The width comes from the plugin's seam
+   (`compat/right-panes.ts`), so the host's trailing-edge separator — whose
+   drag math assumes that edge — is hidden. The host's own small-window layout
+   (a full-card navigator below 768px) is left as it is. */
+@media (width >= 768px) {
+  html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-navigator]:is([data-files-navigator-mode="push"], [data-files-navigator-mode="overlay"]) {
+    order: -1;
+    width: var(--ccd-files-tree-width, var(--files-navigator-width));
+    height: auto;
+    margin: 0;
+    border: 0;
+    border-right: 1px solid var(--ccd-border);
+    border-radius: 0 0 0 var(--ccd-right-panel-radius);
+    background: var(--ccd-card);
+    box-shadow: none;
+  }
+
+  html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-navigator][data-files-navigator-mode="overlay"] {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+  }
+
+  html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-navigator]:is([data-files-navigator-mode="push"], [data-files-navigator-mode="overlay"]) > [data-files-navigator-resize] {
+    display: none;
+  }
+}
+
 /* The empty preview half remains part of Files even before a file is opened.
    Restrict the grid to tiled leaves: native DockKit fixtures keep their layout. */
 html[data-dsh-ccd-style="true"] [data-ccd-files-landing] {

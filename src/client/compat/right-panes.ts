@@ -474,6 +474,12 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       const embedded = (preview?.querySelector('[data-files-navigator-toggle], [data-files-navigator]') ?? null) !== null;
       const combined = !embedded && tree !== undefined && preview?.hasAttribute('data-dockkit-float') === true;
       const treeHidden = tree?.querySelector('[data-files-root]')?.getAttribute('data-ccd-files-tree') === 'hidden';
+      /* DSH 0.2.2 draws the navigator inside the preview. Side by side
+         (`push`/`overlay`) it is moved to the card's leading edge, where the
+         host's own separator would resize backwards, so its width follows
+         this plugin's `fileShare` seam instead. */
+      const navigator = embedded ? preview?.querySelector<HTMLElement>('[data-files-navigator]:is([data-files-navigator-mode="push"], [data-files-navigator-mode="overlay"])') ?? null : null;
+      const navigatorTop = navigator?.getBoundingClientRect().top;
       const compact = !combined && rect.width < 420;
       const width = treeHidden ? 0 : compact ? rect.width : Math.min(Math.max(140, rect.width * state.fileShare), Math.max(0, rect.width - 140));
       for (const tabId of group.tabs) {
@@ -518,6 +524,11 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       if (!embedded && tree !== undefined && !compact && !treeHidden && !hiddenGroup && width > 0) {
         boundaries.push({ key: 'files:tree', seam: { axis: 'column', column: 0, index: 0,
           rect: { x: rect.x + width - GAP / 2, y: rect.y + HEADER, width: GAP, height: Math.max(0, rect.height - HEADER) } },
+          extent: rect.width, minimum: Math.min(0.4, 140 / rect.width), files: true, value: width / rect.width });
+      }
+      if (navigatorTop !== undefined && !compact && !hiddenGroup && width > 0) {
+        boundaries.push({ key: 'files:tree', seam: { axis: 'column', column: 0, index: 0,
+          rect: { x: rect.x + width - GAP / 2, y: navigatorTop, width: GAP, height: Math.max(0, rect.y + rect.height - navigatorTop) } },
           extent: rect.width, minimum: Math.min(0.4, 140 / rect.width), files: true, value: width / rect.width });
       }
     }

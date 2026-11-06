@@ -35,9 +35,8 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
 .ccd-model-trigger:disabled, .ccd-effort-trigger:disabled { opacity: .55; cursor: default; }
 .ccd-model-trigger:focus-visible, .ccd-effort-trigger:focus-visible { outline: 2px solid var(--ccd-effort-color-1); outline-offset: 2px; }
 /*
- * The chosen value is marked by ink, not by weight: full black for the model
- * name and the effort, the row's own 400 for both, and the panel's option rows
- * the same. That only holds if each control names its colour here — the
+ * The chosen value is marked by ink: full black for the model name and the
+ * effort, and the panel's option rows the same. That only holds if each control names its colour here — the
  * Composer's tool row paints every button it contains with its own secondary
  * grey (`html[data-dsh-ccd-style="true"] .yhfFVG_row button`, theme/composer.css,
  * specificity 0-2-2), and both triggers and the menu sit inside that row (the
@@ -49,6 +48,9 @@ html[data-dsh-ccd-style="true"] .ccd-model-controls { display: flex; align-items
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-trigger,
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-model-options button { color: var(--ccd-text-strong); }
 html[data-dsh-ccd-style="true"] .ccd-model-controls .ccd-effort-trigger { color: var(--ccd-text-strong); }
+/* The Composer's chips name the model and the effort a step heavier than the
+   row's 400; the panel's option rows keep the row weight. */
+.ccd-model-trigger, .ccd-effort-trigger { font-weight: 500; }
 /*
  * The model card is a popup of the plugin's own making, so it answers to the
  * popup section of the design document rather than to the Composer it hangs

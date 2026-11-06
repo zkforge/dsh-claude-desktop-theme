@@ -533,6 +533,11 @@ for (const standalone of [false, true]) {
     assert.equal(await page.evaluate('window.calls.open.length'),0,'embedded navigator needs no extra Files tab');
     assert.equal(await page.evaluate(`!!document.querySelector('${preview} [data-ccd-files-switch]')`),true);
     assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('${preview} [data-files-navigator]')).display`),'flex','legacy Files grid must not reshape navigator');
+    const side=await page.evaluate(`(()=>{const nav=document.querySelector('${preview} [data-files-navigator]').getBoundingClientRect();const main=document.querySelector('${preview} main').getBoundingClientRect();return{leading:nav.right<=main.left+0.5,width:nav.width,separator:getComputedStyle(document.querySelector('${preview} [data-files-navigator-resize]')).display,seam:!!document.querySelector('[data-ccd-pane-seam][aria-label="调整文件树宽度"],[data-ccd-pane-seam][aria-label="Resize file tree"]')}})()`);
+    assert.equal(side.leading,true,'the navigator sits on the card\'s leading edge, before the preview');
+    assert.notEqual(side.width,220,'its width follows the plugin seam, not the host width');
+    assert.equal(side.separator,'none','the host\'s trailing-edge separator is hidden');
+    assert.equal(side.seam,true,'the plugin seam resizes the navigator');
     await click(page,`${preview} [data-ccd-pane-search]`);await wait(page);
     assert.equal(await page.evaluate(`document.activeElement===document.querySelector('${preview} [data-ccd-files-filter] input')`),true);
     await click(page,`${preview} [data-ccd-files-switch]`);await wait(page);
@@ -546,7 +551,7 @@ for (const standalone of [false, true]) {
     assert.equal(await page.evaluate(`!!document.querySelector('[data-files-navigator-resize]')`),true,'native resize survives teardown');
   },`
     const originalBody=window.bodyFor;
-    window.bodyFor=tab=>tab.kind==='text' ? '<div style="display:flex;flex:1"><main>Preview</main><aside data-files-navigator="p1" data-files-navigator-mode="push" data-files-root="/repo" style="display:flex;flex-direction:column;width:220px"><div data-files-navigator-resize role="separator" tabindex="0"></div><div data-files-body><ul><li data-files-entry="file" data-files-path="/repo/app.ts"><div><button>app.ts</button><div></div></div></li></ul></div></aside><button data-files-navigator-toggle aria-expanded="true">Tree</button></div>' : originalBody(tab);
+    window.bodyFor=tab=>tab.kind==='text' ? '<div style="display:flex;flex:1"><main>Preview</main><aside data-files-navigator="p1" data-files-navigator-mode="push" data-files-root="/repo" style="display:flex;flex-direction:column;--files-navigator-width:220px"><div data-files-navigator-resize role="separator" tabindex="0"></div><div data-files-body><ul><li data-files-entry="file" data-files-path="/repo/app.ts"><div><button>app.ts</button><div></div></div></li></ul></div></aside><button data-files-navigator-toggle aria-expanded="true">Tree</button></div>' : originalBody(tab);
     ${standalone ? "window.add('native-files','files');" : ''}
     window.add('native-preview','text','s1','dsh-resource://file/session/s1/repo/app.ts');
     window.navigatorCalls=0;

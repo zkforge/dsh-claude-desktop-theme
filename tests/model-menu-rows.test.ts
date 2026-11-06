@@ -206,9 +206,10 @@ test('selection adds a hover fill only in the dark theme', () => {
   ]);
   assert.equal(selected[0]?.body.trim(), 'background: var(--ccd-hover);');
   assert.deepEqual(controls.filter(rule => /--ccd-selected/u.test(rule.body)), []);
-  /* No weight on any row. */
+  /* No weight on any row; only the Composer's two chips step up to 500. */
   const weights = controls.filter(rule => /font-weight/u.test(rule.body));
-  assert.deepEqual(weights.map(rule => rule.selector), []);
+  assert.deepEqual(weights.map(rule => rule.selector), ['.ccd-model-trigger, .ccd-effort-trigger']);
+  assert.match(weights[0]?.body ?? '', /font-weight:\s*500/u);
 });
 
 test('the card’s model names keep the chosen-value ink through the row’s cascade', () => {

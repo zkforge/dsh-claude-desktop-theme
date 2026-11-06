@@ -23,12 +23,14 @@ export const FILES_KIND = 'files';
 /**
  * List orders inside `conversation.session.header.utilities`.
  *
- * Terminal, browser and project folder sit directly before the native session
- * menu at 0, in that order.
+ * Terminal, browser and project folder lead the trailing cluster, right after
+ * the session info toggle (-20), so the host's own entries — `ui-forge`'s change
+ * request button (-8), the scheduled-tasks entry (-5) — follow the folder and
+ * sit before the native session menu at 0.
  */
-export const TERMINAL_ORDER = -3;
-export const BROWSER_ORDER = -2;
-export const FOLDER_ORDER = -1;
+export const TERMINAL_ORDER = -13;
+export const BROWSER_ORDER = -12;
+export const FOLDER_ORDER = -11;
 
 /** The views this plugin exposes in the utilities group, in cluster order. */
 export const VIEWS = [
