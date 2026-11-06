@@ -1,4 +1,4 @@
-import { aliasHostClasses, detectHostBuild, type HostBuild } from './host-builds.ts';
+import { aliasHostSelectors, SHARED_HOST_CLASSES, detectHostBuild, type HostBuild } from './host-builds.ts';
 
 /**
  * Version-pinned host DOM facts.
@@ -347,6 +347,7 @@ export const HOST = Object.freeze({
       the static web frontend's bundle, identical in both installers, so it needs
       no entry in `host-builds.ts` — the same fact `tokens.css` records for the
       primitive's check mark. */
+  buttonPrimary: '._primary_1rv3m_36',
   menuItemLabel: '._itemLabel_4ub78_190',
   /** Menu.module.css: `MenuItemButton`'s wrap, its button and the separator a
       wrap may lead with — the markup the plugin's own rows in a host menu
@@ -454,7 +455,7 @@ function resolveTable<T extends Record<string, string>>(
   const known = cache.get(build.id);
   if (known !== undefined) return known;
   const resolved = Object.freeze(Object.fromEntries(
-    Object.entries(table).map(([key, value]) => [key, aliasHostClasses(value, build)]),
+    Object.entries(table).map(([key, value]) => [key, aliasHostSelectors(value, build)]),
   )) as unknown as T;
   cache.set(build.id, resolved);
   return resolved;
@@ -480,14 +481,16 @@ export interface MenuRowClasses {
 }
 
 /** The `Menu` primitive's row classes, for rows this plugin renders into a host menu. */
-export function menuRowClasses(document: Document): MenuRowClasses {
-  const host = hostSelectors(document);
-  const name = (selector: string) => selector.slice(1);
+export function menuRowClasses(_document: Document): MenuRowClasses {
+  const name = (selector: string) => {
+    const oldName = selector.slice(1);
+    return `${oldName} ${SHARED_HOST_CLASSES[oldName]}`;
+  };
   return {
-    itemWrap: name(host.menuItemWrap),
-    item: name(host.menuItemButton),
-    itemLabel: name(host.menuItemLabel),
-    separator: name(host.menuSeparator),
+    itemWrap: name(HOST.menuItemWrap),
+    item: name(HOST.menuItemButton),
+    itemLabel: name(HOST.menuItemLabel),
+    separator: name(HOST.menuSeparator),
   };
 }
 

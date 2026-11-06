@@ -165,7 +165,7 @@ Host `Config` 的 `.volatile()` 字段通过 DSH 设置服务投影到 `configFo
 
 平台差异由宿主属性分流：`data-platform="darwin"` 只标记 macOS，交通灯与折叠侧栏的窗口控件几何都限制在该作用域内；Windows 由 `data-windows-titlebar` 标记，宿主在窗口上方另加 40px 标题栏条带，侧栏开关、原生「应用／编辑」菜单和窗口按钮都在其中，插件只让该条带沿用配置的侧栏配色，不移动其中的控件。
 
-同一版本号的 macOS 与 Windows 安装包是两次不同构建（`0.2.0-rc.2` 分别是 commit `5e9e301d` 与 `04f392c9`），宿主 CSS Module 的类名前缀在两者间不同。`compat/host-builds.ts` 保留原有两套前缀表，并登记 macOS 与 Windows `0.2.1-rc.3`（两者 commit 均为 `be72761e`，类名前缀仍不同）的各 24 组映射，Windows 当前构建 id 带 `-win32` 以区分选择器缓存，`dom.mountStyles` 在挂载样式前改写类名，`hostSelectors`/`hostAnchors` 按当前构建解析选择器表，因此样式表与适配代码都只写一套类名。两个平台的首屏在 frame 尚未挂载时均使用各自的最新版映射，frame 出现后按实际类名识别构建；未登记的构建不会静默失效：`watchHostBuild` 在窗口骨架渲染后报告一次，配置页同时给出提示。前缀表由 `node scripts/host-prefixes.mjs --windows <app.asar>` 从该构建的 `app.asar` 重新读出（整版重绑用 `--pinned`），已登记的参照构建可通过现有映射还原 authored 前缀，配对以参照构建里每个模块的完整类名集合为指纹，配不上就报错而不是猜。
+同一版本号的 macOS 与 Windows 安装包是两次不同构建（`0.2.0-rc.2` 分别是 commit `5e9e301d` 与 `04f392c9`），宿主 CSS Module 的类名前缀在两者间不同。`compat/host-builds.ts` 保留原有两套前缀表，并登记 macOS 与 Windows `0.2.1-rc.3`（两者 commit 均为 `be72761e`，类名前缀仍不同）的各 24 组映射，Windows 当前构建 id 带 `-win32` 以区分选择器缓存，`dom.mountStyles` 在挂载样式前改写类名，`hostSelectors`/`hostAnchors` 按当前构建解析选择器表，因此样式表与适配代码都只写一套类名。两个平台的首屏在 frame 尚未挂载时均使用各自的最新版映射，frame 出现后按实际类名识别构建；未登记的构建不会静默失效：`watchHostBuild` 在窗口骨架渲染后报告一次，配置页同时给出提示。前缀表由 `node scripts/host-prefixes.mjs --windows <app.asar>` 从该构建的 `app.asar` 重新读出（整版重绑用 `--pinned`），已登记的参照构建可通过现有映射还原 authored 前缀，参照 rc5 的已核对身份可还原 authored 前缀；目标沿用已登记 hash 且 owning bundle 相同时允许 local 增删，否则要求完整 local 集合唯一匹配，配不上就报错。frame 标识的是布局前缀族，不能证明共享前端代次：Windows rc22 保留 24 组模块前缀但改变 Menu、Modal、MarkdownText 的共享类名及行号。`aliasHostSelectors` 让样式与 DOM 查询同时匹配核对过的新旧两代；`menuRowClasses` 为插件生成的原生菜单行同时携带两代类。
 
 ## 统计数据
 
@@ -230,3 +230,11 @@ Claude 宠物使用 36×24 的可点击盒，距输入面右端 9px。`claude-fr
 `compat/schedule-locales.ts` 统一提供定时任务页、内置模板与预填指令、详情和操作菜单的中英文文案，跟随文档 `lang`。语言切换原地更新插件持有的文字和标签，不重建工具栏、模板按钮或原生任务行；搜索值、页签和展开状态保留，已保存任务的标题与指令不翻译。详情的时间与字段标题同步切换，删除确认沿用原有明确确认流程。
 
 `compat/schedule-page.ts` 从宿主稳定的 `data-testid="task-manager-page"` 定位页面，按已核对的四个直属内容块添加可撤销标记；不搬移 React 节点，保留宿主的新建、搜索、状态筛选、任务列表和详情操作。`theme/schedule.css` 绘制「我的 / 模板」工具栏、秒表空状态与双列模板建议，窄窗口下改为单列。模板是插件内置的创建提示词建议，不是已创建的任务；点击后通过宿主按钮打开新会话，`compat/schedule-draft.ts` 等待空白会话的编辑器就绪后，通过宿主输入接口预填对应提示词并聚焦；用户可编辑后自行发送，不覆盖已有草稿或附件。发布说明模板采用每周汇总，未模拟宿主不支持的 PR 事件触发。关闭插件会移除新增节点、标记和事件监听，并恢复仍由插件持有的原始文案。`compat/schedule-detail.ts` 在捕获阶段接管任务卡片点击，不再打开宿主右侧详情栏，而是在页面内渲染整页详情（面包屑、标题、下次运行、历史记录、指令、重复频率）；任务按 `aria-describedby` 中的完整 ID 匹配目录，并给卡片补一行截断的指令正文。立即运行、启用开关与面包屑下拉暂未实现。
+
+Windows rc22 的 Files 使用原生 `FileNavigator`：适配为其独立页与预览树添加自有搜索工具栏，不把 resize separator 当页头。新版 Entry 的主操作位于行包装层，配件操作保持原样。预览自带树时不另开 Files；已有独立 Files 与预览并存时以预览内树为当前控件目标。树开合转发原生 toggle，关闭会卸载 navigator，搜索等待新树及过滤框挂载后聚焦。旧版 Files 的独立树与预览拼接布局保留。
+
+定时任务 rc22 以四状态筛选和嵌套 searchTools 结构识别，保留宿主原生详情、运行、暂停、编辑、手动创建、清理与删除确认；旧版继续使用插件全页详情和删除菜单。新版不经旧 `schedule.delete` / 带 sessionId 的 history 路径，暂停任务文案也不由旧详情改写成已结束。搜索框单独折叠，清理菜单保持可见，列表排在其下一行。
+
+Windows rc22 自定义页的 `data-plugin-body` 是受约束的滚动容器，外层 root 保持 flex；`data-plugin-bar` 内页头沿用原生 header-scroll 的 sticky/compact 与测量驱动，不能再套旧 root grid 的 `display:contents`，否则克隆测量、inline 定位与滚动高度会失配。新版详情/更多的返回行仍保留 47px 顶距。对应浏览器回归加载原生 CSS、MainPanel 包装及真实 header-scroll 函数，并用 mouseWheel 验收末项可达。
+
+macOS rc22 原生 layout 为非 drawer 侧栏新增高优先级的浅深渐变规则。sidebar 的平面底色覆盖须带准确的非 drawer frame 边界以胜过它，drawer 自己的位移/遮罩分支保持宿主所有；Windows 原生 sidebar root 与标题栏仍读取同一主题 surface。实际颜色回归覆盖两平台、浅深、默认/自定义、drawer，并检验实际 computed background 及背景图层。

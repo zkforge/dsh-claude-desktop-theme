@@ -68,11 +68,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-tab-tit
    square with the glyph. So its seat is taken by a plugin node
    (`compat/files-pane.ts` marks the tab and inserts it): the square is that
    node's background and the ink a masked pseudo-element. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-tab] [data-dockkit-tab-title] svg {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-tab] [data-dockkit-tab-title] svg {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-mark] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-mark] {
   box-sizing: border-box;
   flex: none;
   width: var(--ccd-right-panel-glyph-size);
@@ -81,7 +81,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-mark]
   background: var(--ccd-right-panel-glyph-bg);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-mark]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-mark]::before {
   content: "";
   display: block;
   width: var(--ccd-right-panel-glyph-size);
@@ -91,11 +91,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-mark]
   mask: var(--ccd-icon-files-list) center / var(--ccd-right-panel-glyph-size) var(--ccd-right-panel-glyph-size) no-repeat;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-switch][aria-expanded="false"] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-switch][aria-expanded="false"] {
   background: transparent;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-switch][aria-expanded="false"]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-switch][aria-expanded="false"]::before {
   color: var(--ccd-right-panel-tab-ink);
 }
 
@@ -150,8 +150,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-divider
    in the reference. The host's own root path is not drawn: the filter field
    takes its seat, while its reload and open-in-app controls keep theirs at the
    row's end. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-root] > [data-ccd-files-header] {
   box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
   height: var(--ccd-right-panel-strip-height);
   margin: 0;
   padding: 0 var(--ccd-right-panel-gutter);
@@ -159,7 +162,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > d
   border-bottom: 0;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) > [data-files-path] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-root] > [data-ccd-files-header] > [data-files-path] {
   display: none;
 }
 
@@ -167,7 +170,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > d
    reload / open-in-app actions out left to right, and the reference's row leads
    with its field and trails its affordances. The plugin's own two controls lead
    the row instead, so they are kept out of this seat. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) > :last-child:not([data-ccd-files-filter]):not([data-ccd-files-toggle]) {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-root] > [data-ccd-files-header] > :last-child:not([data-ccd-files-filter]):not([data-ccd-files-toggle]) {
   margin-left: auto;
 }
 
@@ -177,7 +180,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root] > d
    reference's own pane hides the tree from a control on the divider between its
    two columns; this pane has no second column, so the control lives in the
    header line where the reference's own leading seat is. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-toggle] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-toggle] {
   box-sizing: border-box;
   flex: none;
   display: inline-flex;
@@ -193,11 +196,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-toggl
   cursor: pointer;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-toggle]:hover {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-toggle]:hover {
   background: var(--ccd-hover);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-toggle]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-toggle]::before {
   content: "";
   width: var(--ccd-files-glyph-size);
   height: var(--ccd-files-glyph-size);
@@ -208,12 +211,12 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-toggl
   transition: transform 0.15s var(--ds-ease-in-out, ease-in-out);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root][data-ccd-files-tree="hidden"] [data-ccd-files-toggle]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-root][data-ccd-files-tree="hidden"] [data-ccd-files-toggle]::before {
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-toggle]::before {
+  html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-toggle]::before {
     transition: none;
   }
 }
@@ -222,7 +225,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root][dat
    the magnifier leading the words. It is the row's one interactive box, so the
    reference's focused state — the accent's hairline and its soft halo — is what
    it shows while the input holds focus. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filter] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-filter] {
   box-sizing: border-box;
   flex: 1 1 auto;
   min-width: 0;
@@ -236,12 +239,12 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filte
   background: var(--ccd-card);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filter]:focus-within {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-filter]:focus-within {
   border-color: var(--ccd-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ccd-accent) 11%, transparent);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filter]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-filter]::before {
   content: "";
   flex: none;
   width: var(--ccd-files-glyph-size);
@@ -251,7 +254,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filte
   mask: var(--ccd-icon-search) center / var(--ccd-files-glyph-size) var(--ccd-files-glyph-size) no-repeat;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filter] > input {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-filter] > input {
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
@@ -264,11 +267,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filte
   font-size: 13px;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-filter] > input::placeholder {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-filter] > input::placeholder {
   color: var(--ccd-text-placeholder);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-clear] {
   box-sizing: border-box;
   flex: none;
   display: inline-flex;
@@ -284,11 +287,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear
   cursor: pointer;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear]:hover {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-clear]:hover {
   color: var(--ccd-files-ink);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-clear]::before {
   content: "";
   width: 12px;
   height: 12px;
@@ -298,7 +301,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear
   transform: rotate(45deg);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear][hidden] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-clear][hidden] {
   display: none;
 }
 
@@ -306,12 +309,12 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-clear
    the body's 8px side gutter is what puts the first row's mark 16px in from the
    card's edge; the 28px above the first row is the reference's own band between
    its field and its first entry. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-body] {
   padding: 8px var(--ccd-right-panel-gutter) 8px;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry] > button,
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry] > span {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-body] :is([data-files-entry] > button, [data-files-entry] > div > button),
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-body] :is([data-files-entry] > span, [data-files-entry] > div > span) {
   box-sizing: border-box;
   min-height: var(--ccd-files-row-height);
   /* The reference puts the mark's box 3px into the row and the name 5px after
@@ -325,7 +328,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [da
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry] > button:hover {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-body] :is([data-files-entry] > button, [data-files-entry] > div > button):hover {
   background: var(--ccd-hover);
 }
 
@@ -333,11 +336,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [da
    replaced by the shared chevron (the same geometry the sidebar's rows draw),
    turned a quarter when the directory is open — the host's `aria-expanded` on
    the row is the state, so the mark needs no observer. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button > svg {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) :is([data-files-entry="directory"] > button, [data-files-entry="directory"] > div > button) > svg {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) :is([data-files-entry="directory"] > button, [data-files-entry="directory"] > div > button)::before {
   content: "";
   flex: none;
   width: var(--ccd-files-glyph-size);
@@ -348,12 +351,12 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="di
   transition: transform 0.15s var(--ds-ease-in-out, ease-in-out);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button[aria-expanded="true"]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) :is([data-files-entry="directory"] > button, [data-files-entry="directory"] > div > button)[aria-expanded="true"]::before {
   transform: rotate(90deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="directory"] > button::before {
+  html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) :is([data-files-entry="directory"] > button, [data-files-entry="directory"] > div > button)::before {
     transition: none;
   }
 }
@@ -363,11 +366,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="di
    configuration-free files, an angle-bracket pair for code — and both are drawn
    8–9px wide in the 16px seat the host's glyphs occupied, so the name after them
    keeps its measured position. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="file"] > button > svg {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) :is([data-files-entry="file"] > button, [data-files-entry="file"] > div > button) > svg {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="file"] > button::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) :is([data-files-entry="file"] > button, [data-files-entry="file"] > div > button)::before {
   content: "";
   flex: none;
   width: var(--ccd-files-glyph-size);
@@ -382,7 +385,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="fi
    configuration extension takes the brackets. The host's classifier is a
    different set (it reads `.gitignore` as git, `LICENSE` as plain text), so the
    list is stated here rather than inherited from the icon the host would draw. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="file"]:is(
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-entry="file"]:is(
   [data-files-path$=".c"], [data-files-path$=".cc"], [data-files-path$=".clj"],
   [data-files-path$=".cpp"], [data-files-path$=".cs"], [data-files-path$=".css"],
   [data-files-path$=".dart"], [data-files-path$=".ex"], [data-files-path$=".exs"],
@@ -403,22 +406,22 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-entry="fi
   [data-files-path$=".yaml"], [data-files-path$=".yml"], [data-files-path$=".zig"],
   [data-files-path$=".cjs"], [data-files-path$=".mts"], [data-files-path$=".cts"],
   [data-files-path$="/Dockerfile"], [data-files-path$="/Makefile"]
-) > button::before {
+) :is([data-files-entry] > button, [data-files-entry] > div > button)::before {
   mask-image: var(--ccd-icon-file-code);
 }
 
 /* The tree put away: the rows are not drawn and the pane keeps an affordance of
    its own for bringing them back — a row of the same 24px pitch under the
    header, its chevron facing the list it would open. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root][data-ccd-files-tree="hidden"] [data-files-body] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-root][data-ccd-files-tree="hidden"] [data-files-body] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-expand] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-expand] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root][data-ccd-files-tree="hidden"] [data-ccd-files-expand] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-root][data-ccd-files-tree="hidden"] [data-ccd-files-expand] {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -437,11 +440,11 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-root][dat
   cursor: pointer;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-expand]:hover {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-expand]:hover {
   background: var(--ccd-hover);
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-expand]::before {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-expand]::before {
   content: "";
   flex: none;
   width: var(--ccd-files-glyph-size);
@@ -453,18 +456,18 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-expan
 
 /* A row the filter excludes is not drawn, and its descendants leave with it;
    the line under the list answers for a query that matched nothing. */
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-files-body] [data-files-entry][data-ccd-files-hidden] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-files-body] [data-files-entry][data-ccd-files-hidden] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-nomatch] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-nomatch] {
   padding: 0 8px;
   color: var(--ccd-text-muted);
   font-size: 13px;
   line-height: 20px;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-nomatch][hidden] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-nomatch][hidden] {
   display: none;
 }
 
@@ -487,7 +490,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-dockkit-empty] 
   text-align: center;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-empty-mark] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-empty-mark] {
   width: 28px;
   height: 28px;
   color: var(--ccd-text-muted);
@@ -495,7 +498,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-empty
   mask: var(--ccd-icon-folder) center / 28px 28px no-repeat;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-empty-title] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-empty-title] {
   margin: 12px 0 0;
   color: var(--ccd-files-ink);
   font-size: 13px;
@@ -503,7 +506,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-empty
   line-height: 19px;
 }
 
-html[data-dsh-ccd-style="true"] [data-sidebar-right-panel] [data-ccd-files-empty-body] {
+html[data-dsh-ccd-style="true"] :is([data-sidebar-right-panel], [data-files-page]) [data-ccd-files-empty-body] {
   margin: 4px 0 0;
   color: var(--ccd-text-muted);
   font-size: 12px;
@@ -683,7 +686,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-files-landing] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-ccd-files-combined]) {
+html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-files-navigator]):not([data-ccd-files-combined]) {
   position: relative;
   display: grid;
   grid-template-columns: var(--ccd-files-tree-width, 34%) minmax(0, 1fr);
@@ -691,7 +694,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-
 }
 
 /* One divider spans both grid rows, independent of the host body's margins. */
-html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-ccd-files-combined]):not([data-ccd-files-compact]):not([data-ccd-files-tree="hidden"])::after {
+html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-files-navigator]):not([data-ccd-files-combined]):not([data-ccd-files-compact]):not([data-ccd-files-tree="hidden"])::after {
   content: "";
   position: absolute;
   top: 0;
@@ -702,19 +705,19 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-
   pointer-events: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) {
+html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-files-navigator]) > [data-ccd-files-header] {
   grid-column: 1;
   grid-row: 1;
   border-right: 0;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root] > [data-files-body] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-files-navigator]) > [data-files-body] {
   grid-column: 1;
   grid-row: 2;
   border-right: 0;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-ccd-files-combined]) > [data-ccd-files-landing] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-files-root]:not([data-files-navigator]):not([data-ccd-files-combined]) > [data-ccd-files-landing] {
   display: flex;
   grid-column: 2;
   grid-row: 1 / 3;
@@ -727,12 +730,12 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane]:not([data-ccd-pane-tree]) [data-
   text-align: center;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-tree="hidden"] > div:not([data-ccd-files-landing]),
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-tree="hidden"] > div:not([data-ccd-files-landing]),
 html[data-dsh-ccd-style="true"] [data-ccd-pane-tree] [data-ccd-files-landing] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-tree="hidden"] > [data-ccd-files-expand] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-tree="hidden"] > [data-ccd-files-expand] {
   grid-column: 1;
   grid-row: 1;
   width: 26px;
@@ -781,17 +784,17 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-ccd-files-toggle] {
 
 /* A narrow Files card prioritizes the list; an empty preview would leave both
    halves too narrow to use. Widening/zooming the card reveals that empty half. */
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact]:not([data-ccd-files-tree="hidden"]) {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-compact]:not([data-ccd-files-tree="hidden"]) {
   display: flex;
   flex-direction: column;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact]:not([data-ccd-files-tree="hidden"]) > [data-ccd-files-landing] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-compact]:not([data-ccd-files-tree="hidden"]) > [data-ccd-files-landing] {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact] > [data-files-body],
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-compact] > div:not([data-files-body]):not([data-ccd-files-landing]) {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-compact] > [data-files-body],
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-compact] > [data-ccd-files-header] {
   border-right: 0;
 }
 
@@ -860,7 +863,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-pane-controls] > button:disabled {
   cursor: default;
 }
 /* The native directory actions live in More; the filter has the whole row. */
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root] > div:not([data-files-body]):not([data-ccd-files-landing]) > :not([data-ccd-files-filter]) {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator]) > [data-ccd-files-header] > :not([data-ccd-files-filter]) {
   display: none;
 }
 html[data-dsh-ccd-style="true"] [data-ccd-pane-menu] {
@@ -1132,7 +1135,7 @@ html[data-dsh-ccd-style="true"] [data-sidebar-right-panel][data-ccd-pane-expande
   padding-inline: 8px 4px;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root][data-ccd-files-tree="hidden"] > [data-ccd-files-expand] {
+html[data-dsh-ccd-style="true"] [data-ccd-pane] [data-files-root]:not([data-files-navigator])[data-ccd-files-tree="hidden"] > [data-ccd-files-expand] {
   display: none;
 }
 

@@ -31,10 +31,7 @@ import { mountClearHistory } from './compat/clear-history.ts';
 import { permissionPlanPort } from './compat/permission-plan-port.ts';
 import { mountPermissionConfirmation } from './compat/permission-confirmation.ts';
 import { mountAgentPresetMenu, mountPermissionMenu } from './compat/permission-menu.ts';
-import { mountWorkspaceMenu } from './compat/workspace-menu.ts';
-import { workspacePickerPort } from './compat/workspace-picker-port.ts';
-import { mountWorktreeSupport } from './compat/workspace-worktree-port.ts';
-import { mountWorktreeChip } from './compat/workspace-worktree.ts';
+import { mountWorkspaceControls } from './compat/workspace-controls.ts';
 import { mountScrollPills } from './compat/scroll-pill.ts';
 import { mountOpenTargetMode } from './compat/open-target.ts';
 import { mountSidebarSearch } from './compat/sidebar-search.ts';
@@ -198,18 +195,11 @@ export function apply(ctx: Context): void {
         /* The workspace picker's labels come from the host's own locale namespace,
            so the add row is rewritten in the rendered text nodes; the search line
            and the branch row are the plugin's own nodes in that card. */
-        const worktrees = mountWorktreeSupport(ctx, document, error => logger.error('worktree: preparation failed', error));
-        scope.add(worktrees.dispose);
-        scope.add(mountWorktreeChip(
+        scope.add(mountWorkspaceControls(
+          ctx,
           document,
-          worktrees.choices,
           session => ctx.workspaces.list.getSnapshot().items.find(item => (item.sessionIds as readonly string[]).includes(session))?.workspaceId,
-          error => logger.error('worktree: chip observer failed', error),
-        ));
-        scope.add(mountWorkspaceMenu(
-          document,
-          workspacePickerPort(ctx, worktrees.choices),
-          error => logger.error('workspace menu: picker extension failed', error),
+          error => logger.error('workspace: controls failed', error),
         ));
         /* The window's scrollbars span every feature the plugin draws — the
            sidebar's tree, the Files pane, the agent-team panel and the

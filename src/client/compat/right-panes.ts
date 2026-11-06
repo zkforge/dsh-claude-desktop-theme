@@ -160,6 +160,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
     opened: boolean,
   ): void => {
     if (previews.length === 0) state.requestedFiles = false;
+    if (panel.querySelector('[data-files-navigator-toggle], [data-files-navigator]') !== null) return;
     if (!opened || state.requestedFiles || records.some(record => record.kind === 'files')) return;
     state.requestedFiles = true;
     window.setTimeout(() => {
@@ -167,6 +168,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       /* Re-read the tab set: the host may have opened the tree by another path,
          or dropped the preview that asked for it, since this pass. */
       const live = (sidebar.openTabs?.getSnapshot?.() ?? []).filter(record => record.sessionId === session);
+      if (panel.querySelector('[data-files-navigator-toggle], [data-files-navigator]') !== null) return;
       if (live.some(record => record.kind === 'files') || !live.some(isFile)) return;
       try { sidebar.openTab('files'); } catch (error) { report(error); }
     }, 0);
@@ -202,9 +204,10 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         if (!terminalsAdded) { groups.push({ id: TERMINAL_GROUP, tabs: terminalIds, ...(state.terminal === null ? {} : { terminal: state.terminal }) }); terminalsAdded = true; }
       } else if (record.kind === 'browser') {
         if (!browsersAdded) { groups.push({ id: BROWSER_GROUP, tabs: browserIds, ...(state.browser === null ? {} : { browser: state.browser }) }); browsersAdded = true; }
-      } else if (tree !== undefined && (record.tabId === tree.tabId || isFile(record))) {
+      } else if ((tree !== undefined && record.tabId === tree.tabId) || isFile(record)) {
         if (!filesAdded) {
-          groups.push({ id: FILE_GROUP, tabs: [tree.tabId, ...previews], tree: tree.tabId,
+          groups.push({ id: FILE_GROUP, tabs: [...(tree === undefined ? [] : [tree.tabId]), ...previews],
+            ...(tree === undefined ? {} : { tree: tree.tabId }),
             ...(state.preview === null ? {} : { preview: state.preview }) });
           filesAdded = true;
         }
@@ -254,7 +257,8 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       controls.set(node, chrome);
     }
     const record = records.find(record => record.tabId === node.getAttribute('data-dockkit-content'));
-    const filesRoot = group.tree === undefined ? null : root.querySelector<HTMLElement>(`[data-dockkit-content="${group.tree}"] [data-files-root]`);
+    const filesRoot = node.querySelector<HTMLElement>('[data-files-navigator]')
+      ?? (node.querySelector('[data-files-navigator-toggle]') !== null || group.tree === undefined ? null : root.querySelector<HTMLElement>(`[data-dockkit-content="${group.tree}"] [data-files-root]`));
     const filepath = (id: string) => {
       const source = root.querySelector<HTMLElement>(`[data-dockkit-content="${id}"] [data-textpreview-path]`);
       let path = source?.title || records.find(record => record.tabId === id)?.contentId || id;
@@ -467,7 +471,8 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       const tree = group.tree === undefined ? undefined : nodes.get(group.tree);
       const preview = group.preview === undefined ? undefined : nodes.get(group.preview);
       // Leave the tree usable while React is committing the preview's float.
-      const combined = tree !== undefined && preview?.hasAttribute('data-dockkit-float') === true;
+      const embedded = (preview?.querySelector('[data-files-navigator-toggle], [data-files-navigator]') ?? null) !== null;
+      const combined = !embedded && tree !== undefined && preview?.hasAttribute('data-dockkit-float') === true;
       const treeHidden = tree?.querySelector('[data-files-root]')?.getAttribute('data-ccd-files-tree') === 'hidden';
       const compact = !combined && rect.width < 420;
       const width = treeHidden ? 0 : compact ? rect.width : Math.min(Math.max(140, rect.width * state.fileShare), Math.max(0, rect.width - 140));
@@ -489,7 +494,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         liveNodes.add(node);
         place(node, group.id, paneRect);
         if (paneRect.x === area.x && paneRect.y === area.y) setAttribute(node, LEADING, ''); else node.removeAttribute(LEADING);
-        const inactive = hiddenGroup || (treeNode && treeHidden) || (group.tree !== undefined && tabId !== group.tree && tabId !== group.preview) || (group.terminal !== undefined && tabId !== group.terminal) || (group.browser !== undefined && tabId !== group.browser);
+        const inactive = hiddenGroup || (embedded && tabId === group.tree) || (treeNode && treeHidden) || (group.tree !== undefined && tabId !== group.tree && tabId !== group.preview) || (group.terminal !== undefined && tabId !== group.terminal) || (group.browser !== undefined && tabId !== group.browser);
         if (inactive) setAttribute(node, INACTIVE, ''); else node.removeAttribute(INACTIVE);
         if (treeNode) setAttribute(node, TREE, ''); else node.removeAttribute(TREE);
         if (combined && tabId === group.preview) {
@@ -510,7 +515,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
         if (!treeNode && !inactive) decorate(node, group, root, state, records);
         else { controls.get(node)?.release(); controls.delete(node); }
       }
-      if (tree !== undefined && !compact && !treeHidden && !hiddenGroup && width > 0) {
+      if (!embedded && tree !== undefined && !compact && !treeHidden && !hiddenGroup && width > 0) {
         boundaries.push({ key: 'files:tree', seam: { axis: 'column', column: 0, index: 0,
           rect: { x: rect.x + width - GAP / 2, y: rect.y + HEADER, width: GAP, height: Math.max(0, rect.height - HEADER) } },
           extent: rect.width, minimum: Math.min(0.4, 140 / rect.width), files: true, value: width / rect.width });
@@ -653,6 +658,9 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
           && (node.matches('[data-ccd-header-view]') || node.querySelector('[data-ccd-header-view]') !== null))) return true;
         if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') return target.matches(host.rightbarSession);
         if (target.closest(host.rightbarPanel) !== null) {
+          if (target.matches('[data-files-navigator-toggle]')) return true;
+          if (mutation.type === 'childList' && [...mutation.addedNodes, ...mutation.removedNodes].some(node =>
+            node instanceof Element && (node.matches('[data-files-navigator]') || node.querySelector('[data-files-navigator]')))) return true;
           if (target.closest(host.dockFloatGrip) !== null) return true;
           const body = target.closest(host.dockContent);
           return body === null || body === target || (mutation.type === 'attributes' && mutation.attributeName === 'data-ccd-files-tree');
@@ -664,7 +672,7 @@ function createRightPanes(document: Document, sidebar: SidebarRightPort, report:
       if (relevant) schedule();
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true,
-      attributeFilter: ['hidden', 'data-conversation-session', 'data-rightbar-collapsed', 'data-sidebar-right-open', 'data-sidebar-right-panel', 'data-sidebar-right-session',
+      attributeFilter: ['aria-expanded', 'hidden', 'data-conversation-session', 'data-rightbar-collapsed', 'data-sidebar-right-open', 'data-sidebar-right-panel', 'data-sidebar-right-session',
         'data-dockkit-content', 'data-dockkit-float', 'data-dockkit-float-active', 'data-dockkit-pane', 'data-dockkit-host', 'data-ccd-files-tree'] });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     if (typeof ResizeObserver === 'function') resize = new ResizeObserver(schedule);

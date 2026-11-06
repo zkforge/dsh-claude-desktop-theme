@@ -72,12 +72,12 @@ export function mountWorktreeChip(document: Document, port: WorktreePickerPort,
   const { zh } = menuCopy(document);
   const reasons: Record<ChipState | 'no-session', string> = zh ? {
     ready: '首次发送时创建独立工作树；未提交改动保留在原目录', loading: '检查工作树支持…',
-    disabled: '请先在 DSH 插件中启用「Git 工作树」', 'not-repo': '当前文件夹不是 Git 仓库',
+    disabled: '请先在 DSH 自定义中启用工作树服务（worktree）', 'not-repo': '当前文件夹不是 Git 仓库',
     'no-commit': '仓库至少需要一个提交', 'unknown-workspace': '无法识别当前工作区',
     error: '无法读取工作树支持', 'no-session': '请先选择新会话', restart: '需重启 DSH：宿主尚未加载工作树接口',
   } : {
     ready: 'Create an isolated worktree on first send; uncommitted changes stay in the source folder',
-    loading: 'Checking worktree support…', disabled: 'Enable Git Worktrees in DSH plugins first',
+    loading: 'Checking worktree support…', disabled: 'Enable the Worktree service (worktree) in DSH first',
     'not-repo': 'This folder is not a Git repository', 'no-commit': 'The repository needs at least one commit',
     'unknown-workspace': 'Workspace not recognised', error: 'Could not check worktree support',
     'no-session': 'Select a new session first', restart: 'Restart DSH to load the worktree interface',

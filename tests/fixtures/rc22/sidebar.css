@@ -1,0 +1,4 @@
+/* Native SidebarRoot paint and collapsed rules, Windows rc22 c59d10af. */
+.wtg9ga_root{--dsh-sidebar-inline-padding:8px;--dsh-sidebar-row-padding:12px;--dsh-sidebar-label-gap:6px;--dsh-sidebar-paint-inset:3px;height:100%;padding:6px var(--dsh-sidebar-inline-padding);box-sizing:border-box;background:var(--dsw-specific-sidebar-fill);color:var(--dsw-alias-label-primary);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);flex-direction:column;font-size:14px;display:flex}
+[data-platform=darwin] .wtg9ga_root{background:0 0}
+.wtg9ga_root.wtg9ga_collapsed{padding:18px 10px 6px}

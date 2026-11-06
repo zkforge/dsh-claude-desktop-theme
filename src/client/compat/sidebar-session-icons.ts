@@ -1,8 +1,10 @@
 import type { Disposer } from '../contracts/ports.ts';
+import { hostSelectors } from './host-dom.ts';
 import { recordsInTranscript } from './mutation-scope.ts';
 
 /** Identify the two shared Claude actions; unknown/localized actions keep host art. */
 export function mountSidebarSessionIcons(document: Document): Disposer {
+  const host = hostSelectors(document);
   const attribute = 'data-ccd-sidebar-session-icon';
   const shortcutAttribute = 'data-ccd-sidebar-session-shortcut';
   const workspaceAttribute = 'data-ccd-sidebar-workspace-menu';
@@ -11,7 +13,7 @@ export function mountSidebarSessionIcons(document: Document): Disposer {
     // rows identify it without depending on the last menu opened elsewhere.
     for (const menu of document.querySelectorAll<HTMLElement>('[data-menu-material][role="menu"]')) {
       const labels = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')]
-        .map(row => row.querySelector('._itemLabel_4ub78_190')?.textContent?.trim() ?? '');
+        .map(row => row.querySelector(host.menuItemLabel)?.textContent?.trim() ?? '');
       const workspace = labels.length === 2
         && /^(重命名|Rename)$/u.test(labels[0] ?? '')
         && /^(删除工作区|Delete workspace)$/u.test(labels[1] ?? '');

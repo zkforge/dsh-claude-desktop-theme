@@ -101,7 +101,11 @@ function buildId(identity) {
 function pair(prefixes, reference, target) {
   /* The installed reference may be newer than the authored build. Its
      registered table identifies the same modules under their current hashes. */
-  const id = buildId(reference.identity);
+  // rc5 and rc22's 24 module prefixes were verified against installed archives.
+  // Shared frontend selectors are versioned independently of this table.
+  const referenceId = buildId(reference.identity);
+  const id = ['dsh-0.2.1-rc.5-d4db512a', 'dsh-0.2.2-rc.1-c59d10af'].includes(referenceId)
+    ? 'dsh-0.2.1-rc.3-be72761e' : referenceId;
   const registered = HOST_BUILDS.find(build =>
     (build.id === id || build.id === `${id}-win32`)
     && reference.modules.get(build.frameClass.slice(0, -'_frame'.length))?.locals.has('frame'));
@@ -110,6 +114,17 @@ function pair(prefixes, reference, target) {
     const actual = registered?.prefixes[prefix];
     const module = actual === undefined ? undefined : reference.modules.get(actual.slice(0, -1));
     if (module !== undefined) modules.set(prefix.slice(0, -1), module);
+  }
+  // A target may retain a previously verified platform table while adding or
+  // removing locals. Require both the retained hash and the same owning file.
+  const targetTable = HOST_BUILDS.find(build =>
+    target.modules.get(build.frameClass.slice(0, -'_frame'.length))?.locals.has('frame'));
+  for (const prefix of prefixes) {
+    const hash = targetTable?.prefixes[prefix]?.slice(0, -1);
+    const source = modules.get(prefix.slice(0, -1));
+    if (hash !== undefined && source !== undefined && target.modules.get(hash)?.file === source.file) {
+      modules.set(hash, source);
+    }
   }
   const { mapping, problems } = mapPrefixes(prefixes, modules, target.modules);
   if (problems.size > 0) {

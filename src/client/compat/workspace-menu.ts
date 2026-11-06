@@ -233,15 +233,18 @@ export function mountWorkspaceMenu(document: Document, port: WorkspacePickerPort
       // A group the host mounted later goes above the branch row, as in the reference.
       menu.append(placed);
     }
-    if (branch === null && workspaceId !== undefined && rows.length === port.workspaceIds().length) {
-      const worktrees = port.worktrees;
-      const releaseBranch = mountWorkspaceBranch(menu, workspaceId, branches, report,
-        worktrees === undefined ? undefined : {
-          enabled: () => { const session = worktrees.session(); return session !== undefined && worktrees.selected(session); },
-          selected: () => { const session = worktrees.session(); return session === undefined ? undefined : worktrees.base(session); },
-          select: name => { const session = worktrees.session(); if (session !== undefined) worktrees.setBase(session, name); },
-          subscribe: listener => worktrees.subscribe(listener),
-        });
+    /* The branch row only picks the base of the plugin's own worktree. A host
+       with a native worktree panel picks it beside the composer, so there the
+       port carries no choices and the row is not mounted. */
+    const worktrees = port.worktrees;
+    if (branch === null && worktrees !== undefined && workspaceId !== undefined
+      && rows.length === port.workspaceIds().length) {
+      const releaseBranch = mountWorkspaceBranch(menu, workspaceId, branches, report, {
+        enabled: () => { const session = worktrees.session(); return session !== undefined && worktrees.selected(session); },
+        selected: () => { const session = worktrees.session(); return session === undefined ? undefined : worktrees.base(session); },
+        select: name => { const session = worktrees.session(); if (session !== undefined) worktrees.setBase(session, name); },
+        subscribe: listener => worktrees.subscribe(listener),
+      });
       branch = { workspaceId, dispose: releaseBranch };
     }
   };

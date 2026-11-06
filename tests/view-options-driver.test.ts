@@ -113,6 +113,9 @@ class FakeElement {
 
   /** Flat descendant-combinator matching; enough for the selectors under test. */
   private matchesChain(selector: string): boolean {
+    const alternatives = /:is\(([^)]+)\)/u.exec(selector);
+    if (alternatives) return alternatives[1]!.split(',').some(part =>
+      this.matchesChain(selector.replace(alternatives[0], part.trim())));
     const parts = selector.trim().split(/\s+/u);
     let node: FakeElement | null = this;
     for (let index = parts.length - 1; index >= 0; index -= 1) {

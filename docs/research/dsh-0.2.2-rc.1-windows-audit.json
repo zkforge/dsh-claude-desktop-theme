@@ -1,0 +1,569 @@
+{
+  "pluginVersion": "0.10.1",
+  "old": {
+    "version": "0.2.1-rc.5",
+    "commit": "d4db512a969fccf0c5cc7ec8fe38e9c1d27af916"
+  },
+  "target": {
+    "version": "0.2.2-rc.1",
+    "commit": "c59d10aff167ad7eefead4b3a9082fb57c8fbfe8"
+  },
+  "classReferencesScanned": 1016,
+  "frame": "mP3x-q_frame",
+  "frameStatus": "identified",
+  "missingClasses": [
+    {
+      "name": "OpZ85W_root",
+      "expected": "hNGZaa_root",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/theme/composer.css"
+      ],
+      "existedOld": false
+    },
+    {
+      "name": "_markdown_1ypvv_5",
+      "expected": "_markdown_1ypvv_5",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/theme/base.css",
+        "client/features/conversation/conversation.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_fileMention_1ypvv_85",
+      "expected": "_fileMention_1ypvv_85",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/features/conversation/conversation.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_linkIcon_1ypvv_94",
+      "expected": "_linkIcon_1ypvv_94",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/features/conversation/conversation.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_itemLabel_4ub78_190",
+      "expected": "_itemLabel_4ub78_190",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/compat/sidebar-session-icons.ts",
+        "client/theme/menus.css",
+        "client/features/sidebar/sidebar.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_itemWrap_4ub78_90",
+      "expected": "_itemWrap_4ub78_90",
+      "files": [
+        "client/compat/host-dom.ts"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_item_4ub78_90",
+      "expected": "_item_4ub78_90",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/theme/tokens.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_separator_4ub78_80",
+      "expected": "_separator_4ub78_80",
+      "files": [
+        "client/compat/host-dom.ts"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_check_4ub78_179",
+      "expected": "_check_4ub78_179",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/theme/menus.css",
+        "client/theme/tokens.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_viewport_4ub78_19",
+      "expected": "_viewport_4ub78_19",
+      "files": [
+        "client/compat/host-dom.ts",
+        "client/theme/menus.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "IzP3Va_bubble",
+      "expected": "LOmM4q_bubble",
+      "files": [
+        "client/theme/base.css",
+        "client/features/conversation/conversation.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_mask_o6lrb_18",
+      "expected": "_mask_o6lrb_18",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_dialog_o6lrb_33",
+      "expected": "_dialog_o6lrb_33",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_header_o6lrb_71",
+      "expected": "_header_o6lrb_71",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_title_o6lrb_79",
+      "expected": "_title_o6lrb_79",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_description_o6lrb_106",
+      "expected": "_description_o6lrb_106",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_body_o6lrb_115",
+      "expected": "_body_o6lrb_115",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_footer_o6lrb_123",
+      "expected": "_footer_o6lrb_123",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_close_o6lrb_87",
+      "expected": "_close_o6lrb_87",
+      "files": [
+        "client/theme/dialogs.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_itemIcon_4ub78_148",
+      "expected": "_itemIcon_4ub78_148",
+      "files": [
+        "client/theme/management.css",
+        "client/theme/menus.css",
+        "client/features/sidebar/sidebar.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_danger_4ub78_226",
+      "expected": "_danger_4ub78_226",
+      "files": [
+        "client/theme/menus.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "_footer_4ub78_62",
+      "expected": "_footer_4ub78_62",
+      "files": [
+        "client/theme/menus.css"
+      ],
+      "existedOld": true
+    },
+    {
+      "name": "ST7X_W_headerSessionless",
+      "expected": "an3WzG_headerSessionless",
+      "files": [
+        "client/features/conversation/conversation.css"
+      ],
+      "existedOld": true
+    }
+  ],
+  "hostHookNamesScanned": 152,
+  "removedHookNames": [],
+  "slots": {
+    "total": 19,
+    "present": [
+      "conversation.composer.bar",
+      "conversation.composer.dock",
+      "conversation.header",
+      "conversation.input.activity",
+      "conversation.input.dock",
+      "conversation.input.model",
+      "conversation.session.header",
+      "conversation.session.header.actions",
+      "conversation.session.header.corner",
+      "conversation.session.header.utilities",
+      "settings.section",
+      "shell.leading",
+      "shell.overlay",
+      "sidebar.panellist",
+      "sidebar.panellist.actions",
+      "sidebar.right.tab.files.actions",
+      "sidebar.settings",
+      "sidebar.workspaces",
+      "sidebar.workspaces.session.menu.item"
+    ],
+    "absent": []
+  },
+  "prefixModules": [
+    {
+      "authored": "-gRAhq_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-tool/lib/client.js",
+      "target": "cr4P6W",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "Da3aKq_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-session-log-export/lib/client.js",
+      "target": "K0RNnq",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "Dws9Sa_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js",
+      "target": "AnXs9G",
+      "addedLocals": [
+        "title"
+      ],
+      "removedLocals": [
+        "content"
+      ]
+    },
+    {
+      "authored": "HiSsxa_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js",
+      "target": "VJlF5q",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "IzP3Va_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js",
+      "target": "LOmM4q",
+      "addedLocals": [],
+      "removedLocals": [
+        "bubble"
+      ]
+    },
+    {
+      "authored": "OpZ85W_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js",
+      "target": "hNGZaa",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "Q2dzhW_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-tool/lib/client.js",
+      "target": "hKdVjq",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "ST7X_W_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-conversation/lib/client.js",
+      "target": "an3WzG",
+      "addedLocals": [],
+      "removedLocals": [
+        "headerSessionless"
+      ]
+    },
+    {
+      "authored": "ZogL4G_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-settings-account/lib/client.js",
+      "target": "_5Qcc8a",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "_2tNPVa_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-experimental-client-ui-agent-team/lib/client.js",
+      "target": "VBK9GG",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "_3WPZCG_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-sidebar/lib/client.js",
+      "target": "wtg9ga",
+      "addedLocals": [
+        "copyVersion"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "_3li69W_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-agent-preset/lib/client.js",
+      "target": "dscfja",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "_6Qf49G_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-layout/lib/client.js",
+      "target": "mP3x-q",
+      "addedLocals": [
+        "drawerMask",
+        "mainPanel"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "_7514NG_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-workspace/lib/client.js",
+      "target": "GAkraW",
+      "addedLocals": [
+        "searchSpacingMotion"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "bocITq_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-conversation/lib/client.js",
+      "target": "WOwLGG",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "cl2Rlq_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-model-selection/lib/client.js",
+      "target": "_9r0rkG",
+      "addedLocals": [
+        "badge",
+        "badgedName",
+        "badgedNameText"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "dVdiKa_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-attachment/lib/client.js",
+      "target": "yTDIAG",
+      "addedLocals": [
+        "failureGlyph",
+        "progressBar",
+        "progressTrack",
+        "thumbnailFailed",
+        "thumbnailRefused"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "gKv1-q_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js",
+      "target": "xMeOpW",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "icaHSq_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-chat/lib/client.js",
+      "target": "V4vHZW",
+      "addedLocals": [
+        "textInteraction"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "iq4beG_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-open-in-app/lib/client.js",
+      "target": "mOxcpG",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "jJkEga_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-workspace/lib/client.js",
+      "target": "wnFoaW",
+      "addedLocals": [
+        "dragPreview",
+        "pinnedAction",
+        "rowQuickActions",
+        "rowResting",
+        "timestamp"
+      ],
+      "removedLocals": []
+    },
+    {
+      "authored": "wXeviG_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-permission-presets/lib/client.js",
+      "target": "_86kJGG",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "y0jqnG_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-conversation/lib/client.js",
+      "target": "A6Bq1a",
+      "addedLocals": [],
+      "removedLocals": []
+    },
+    {
+      "authored": "yhfFVG_",
+      "owner": "dsh/node_modules/@deepseek-ai/dsh-client-ui-conversation/lib/client.js",
+      "target": "GRgSLq",
+      "addedLocals": [
+        "sendingSpinner"
+      ],
+      "removedLocals": []
+    }
+  ],
+  "filesBrowserReproduction": [
+    {
+      "page": true,
+      "rootTag": "ASIDE",
+      "hasFilter": false,
+      "errors": []
+    },
+    {
+      "page": false,
+      "rootTag": "ASIDE",
+      "hasFilter": true,
+      "filterParentRole": "separator",
+      "errors": []
+    }
+  ],
+  "sharedClasses": {
+    "_markdown_1ypvv_5": "_markdown_rve47_5",
+    "_fileMention_1ypvv_85": "_fileMention_rve47_92",
+    "_linkIcon_1ypvv_94": "_linkIcon_rve47_101",
+    "_viewport_4ub78_19": "_viewport_1p5el_19",
+    "_footer_4ub78_62": "_footer_1p5el_67",
+    "_separator_4ub78_80": "_separator_1p5el_89",
+    "_itemWrap_4ub78_90": "_itemWrap_1p5el_105",
+    "_item_4ub78_90": "_item_1p5el_105",
+    "_itemIcon_4ub78_148": "_itemIcon_1p5el_165",
+    "_check_4ub78_179": "_check_1p5el_197",
+    "_itemLabel_4ub78_190": "_itemLabel_1p5el_208",
+    "_danger_4ub78_226": "_danger_1p5el_250",
+    "_mask_o6lrb_18": "_mask_14mp3_18",
+    "_dialog_o6lrb_33": "_dialog_14mp3_33",
+    "_header_o6lrb_71": "_header_14mp3_71",
+    "_title_o6lrb_79": "_title_14mp3_79",
+    "_close_o6lrb_87": "_close_14mp3_87",
+    "_description_o6lrb_106": "_description_14mp3_108",
+    "_body_o6lrb_115": "_body_14mp3_117",
+    "_footer_o6lrb_123": "_footer_14mp3_125"
+  },
+  "implementation": {
+    "date": "2026-11-05",
+    "fixed": [
+      "W01",
+      "W02",
+      "W03",
+      "W04",
+      "W05",
+      "W06",
+      "W07",
+      "W08",
+      "W09"
+    ],
+    "additionalConfirmed": {
+      "W08": "Entry row wrapper with accessory siblings",
+      "W09": "Task manager target/status/action contracts and native editable detail"
+    },
+    "verification": {
+      "tests": 716,
+      "passed": 716,
+      "failed": 0,
+      "skipped": 0,
+      "realFileNavigator": [
+        {
+          "page": true,
+          "hasFilter": true,
+          "filterParentRole": null,
+          "errors": []
+        },
+        {
+          "page": false,
+          "hasFilter": true,
+          "filterParentRole": null,
+          "errors": []
+        }
+      ],
+      "prefixDryRun": 24,
+      "nativeWindowsVerified": false,
+      "macOSrc5Smoke": [
+        "home/statistics/navigation",
+        "view options and grouping submenu",
+        "schedule page/search/three-state filter"
+      ]
+    },
+    "installedTarball": "artifacts/install.xpgzuF/dsh-claude-desktop-theme-0.10.1.tgz",
+    "versionChanged": false,
+    "published": false
+  },
+  "screenshotFollowup": {
+    "date": "2026-11-06",
+    "nativeCssFixtures": true,
+    "nativeHeaderScroll": true,
+    "headerBeforePlugin": true,
+    "regressions": [
+      "plugin body wheel scrolling/header geometry",
+      "schedule split button fill/seam",
+      "account More duplicate glyph",
+      "macOS sidebar native gradient override"
+    ],
+    "computedSurfaceCases": 16,
+    "localHost": {
+      "platform": "darwin",
+      "version": "0.2.2-rc.1",
+      "commit": "c59d10aff167ad7eefead4b3a9082fb57c8fbfe8"
+    },
+    "windowsNativeVerified": false,
+    "verification": {
+      "tests": 720,
+      "passed": 720,
+      "failed": 0,
+      "skipped": 0,
+      "targetedTests": 4,
+      "prefixDryRun": 24,
+      "macOSrc22NativeSmoke": {
+        "sidebarFlat": true,
+        "pluginHeaderAligned": true,
+        "pageDownToEnd": true,
+        "pageUpToTop": true,
+        "stickyHeader": true,
+        "unsentDraftPreserved": true,
+        "nativeWheelVerified": false
+      }
+    },
+    "installedTarball": "artifacts/install.yUpxUA/dsh-claude-desktop-theme-0.10.1.tgz"
+  }
+}

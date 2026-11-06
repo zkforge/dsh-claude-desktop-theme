@@ -367,7 +367,7 @@ html[data-dsh-ccd-style="true"] [data-ccd-account-more] > [data-ccd-account-more
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] [data-ccd-account-more] > span[aria-hidden],
+html[data-dsh-ccd-style="true"] [data-ccd-account-more] > span[aria-hidden]:not([data-ccd-account-more-original]),
 html[data-dsh-ccd-style="true"] [data-ccd-account-more-menu] span[aria-hidden] {
   display: flex;
   flex: none;

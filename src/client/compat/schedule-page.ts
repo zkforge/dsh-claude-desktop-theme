@@ -59,15 +59,31 @@ export function mountSchedulePage(document: Document, report: (error: unknown) =
       const owned: Element[] = [];
       const tagged: Element[] = [];
       const tag = (el: Element, name: string) => { el.setAttribute('data-ccd-schedule-part', name); tagged.push(el); };
-      const [headingBlock, filters, search, list] = Array.from(content.children);
+      const [headingBlock, filters, searchTools, list] = Array.from(content.children);
+      const modern = filters?.querySelectorAll('[role="group"] > button').length === 4;
+      const search = modern ? searchTools?.firstElementChild : searchTools;
       if (!headingBlock || !filters || !search || !list) return;
       owner.setAttribute('data-ccd-schedule', 'mine');
+      if (modern) {
+        owner.setAttribute('data-ccd-schedule-native', '');
+        tag(searchTools!, 'search-tools');
+        const actions = headingBlock.querySelector(':scope > div');
+        if (actions) {
+          tag(actions, 'new-group');
+          const split = actions.querySelector(':scope > [role="group"]');
+          if (split) {
+            tag(split, 'new-split');
+            const method = split.querySelector('button[aria-haspopup="menu"]');
+            if (method) tag(method, 'new-method');
+          }
+        }
+      }
       tag(content, 'content'); tag(headingBlock, 'heading'); tag(filters, 'filters'); tag(search, 'search'); tag(list, 'list');
       let usingTemplate = false;
       const prepare = (event: Event) => {
         if (usingTemplate || !(event.target instanceof Element)) return;
         const button = event.target.closest('button');
-        if (button?.matches('[data-ccd-schedule-part="new"], [data-ccd-schedule-part="empty"] button')) prepareNewTask?.(scheduleCopy(document).defaultPrompt);
+        if ((button?.matches('[data-ccd-schedule-part="new"]') || (!modern && button?.matches('[data-ccd-schedule-part="empty"] button')))) prepareNewTask?.(scheduleCopy(document).defaultPrompt);
       };
       owner.addEventListener('click', prepare, true);
       const nativeNew = headingBlock.querySelector('button');
@@ -95,7 +111,7 @@ export function mountSchedulePage(document: Document, report: (error: unknown) =
       filters.prepend(filterTitle); owned.push(filterTitle);
       const closeSearch = () => {
         // Use the host's controlled clear action rather than changing its input DOM.
-        search.querySelector<HTMLButtonElement>('button:not(.ccd-schedule-search-close)')?.click();
+        search.querySelector<HTMLButtonElement>(':scope > button:not(.ccd-schedule-search-close)')?.click();
         owner.removeAttribute('data-ccd-search-open');
         const trigger = toolbar.querySelector<HTMLButtonElement>('[data-ccd-schedule-tool="search"]');
         trigger?.setAttribute('aria-expanded', 'false'); trigger?.focus();
@@ -243,7 +259,7 @@ export function mountSchedulePage(document: Document, report: (error: unknown) =
           else el.removeAttribute('data-ccd-schedule-part');
         }
         decorations.clear(); tagged.forEach(el => el.removeAttribute('data-ccd-schedule-part'));
-        for (const name of ['data-ccd-schedule', 'data-ccd-search-open', 'data-ccd-filter-open']) owner.removeAttribute(name);
+        for (const name of ['data-ccd-schedule', 'data-ccd-schedule-native', 'data-ccd-search-open', 'data-ccd-filter-open']) owner.removeAttribute(name);
         for (const [node, { from, to }] of texts) if (node.data === to) node.data = from;
         texts.clear();
       };
@@ -259,7 +275,7 @@ export function mountSchedulePage(document: Document, report: (error: unknown) =
     const emptyTitle = empty?.querySelector('h2');
     if (emptyTitle && (texts.has(emptyTitle.firstChild as Text)
       || ['还没有自动化任务，在会话中创建的任务会显示在这里', 'No tasks yet. Tasks created in your sessions appear here.'].includes(emptyTitle.textContent ?? ''))) label(emptyTitle, copy.empty);
-    label(empty?.querySelector('button') ?? null, copy.newTask);
+    if (!page.hasAttribute('data-ccd-schedule-native')) label(empty?.querySelector('button') ?? null, copy.newTask);
     for (const node of texts.keys()) if (!node.isConnected) texts.delete(node);
   };
   const frames = frameScheduler(() => { try { sync(); } catch (error) { report(error); } }, document.defaultView);

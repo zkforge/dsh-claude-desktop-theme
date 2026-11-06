@@ -585,3 +585,42 @@ html[data-dsh-ccd-style="true"] .ccd-schedule-detail-crumbs button:focus-visible
   html[data-dsh-ccd-style="true"] .ccd-schedule-detail-body { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   html[data-dsh-ccd-style="true"] .ccd-schedule-detail-aside { order: -1; }
 }
+
+/* rc22 keeps the host's manual creation, bulk cleanup and editable detail.
+   The search field alone is collapsible; the cleanup menu stays accessible. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="new-group"] {
+  display: flex;
+  grid-column: 2;
+  grid-row: 2;
+  align-items: center;
+  gap: 4px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="search-tools"] {
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-native] [data-ccd-schedule-part="search"] {
+  position: static;
+  flex: 1;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-native] [data-ccd-schedule-part="list"]:has(> ul > li) {
+  grid-row: 4;
+}
+
+/* Both halves are native primary buttons; keep their shared fill and seam. */
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="new-method"] {
+  width: var(--ccd-management-control-height);
+  height: var(--ccd-management-control-height);
+  padding: 0;
+  border-radius: 0 var(--ccd-management-control-radius) var(--ccd-management-control-radius) 0;
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+}
+html[data-dsh-ccd-style="true"] [data-ccd-schedule-part="new-split"] > [data-ccd-schedule-part="new"] {
+  border-radius: var(--ccd-management-control-radius) 0 0 var(--ccd-management-control-radius);
+}

@@ -87,6 +87,8 @@ export const NOMATCH_ATTRIBUTE = 'data-ccd-files-nomatch';
 interface Pane {
   readonly root: HTMLElement;
   readonly body: HTMLElement;
+  readonly header: HTMLElement;
+  readonly ownsHeader: boolean;
   readonly toggle: HTMLButtonElement;
   readonly field: HTMLElement;
   readonly input: HTMLInputElement;
@@ -120,7 +122,10 @@ function enclosingRow(node: Element): Element | null {
  */
 function headerOf(root: HTMLElement): HTMLElement | null {
   for (const child of root.children) {
-    if (!child.hasAttribute('data-files-body')) return child as HTMLElement;
+    if (child.hasAttribute('data-ccd-files-header')) return child as HTMLElement;
+    // FilesBody rc21: only its path row is a header. rc22's aside has a
+    // resize separator instead; that React-owned node must remain untouched.
+    if (root.tagName !== 'ASIDE' && child.querySelector(':scope > [data-files-path]')) return child as HTMLElement;
   }
   return null;
 }
@@ -229,6 +234,11 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
 
   /** Show or hide the tree, and keep its two controls in step with the state. */
   const setTree = (pane: Pane, hidden: boolean) => {
+    // rc22 owns navigator geometry, pane preference and Escape focus return.
+    // Forward its real toggle instead of simulating a second resize/state API.
+    const native = pane.root.hasAttribute('data-files-navigator')
+      ? pane.root.closest('[data-dockkit-content]')?.querySelector<HTMLButtonElement>('[data-files-navigator-toggle]') : null;
+    if (native && (native.getAttribute('aria-expanded') === 'true') === hidden) native.click();
     if (hidden) pane.root.setAttribute(TREE_ATTRIBUTE, 'hidden');
     else pane.root.removeAttribute(TREE_ATTRIBUTE);
     labelToggle(pane);
@@ -284,8 +294,11 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
   };
 
   const adopt = (root: HTMLElement, body: HTMLElement) => {
-    const header = headerOf(root);
-    if (header === null) return;
+    const existing = headerOf(root);
+    const header = existing ?? document.createElement('div');
+    const ownsHeader = existing === null;
+    header.setAttribute('data-ccd-files-header', '');
+    if (ownsHeader) root.prepend(header);
     const toggle = iconButton(document, TOGGLE_ATTRIBUTE);
     const { field, input, clear } = buildField(document);
     const expand = iconButton(document, EXPAND_ATTRIBUTE);
@@ -302,12 +315,14 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
     landing.removeAttribute(EMPTY_ATTRIBUTE);
     landing.setAttribute('data-ccd-files-landing', '');
     root.append(landing);
-    const key = `${root.closest('[data-sidebar-right-session]')?.getAttribute('data-sidebar-right-session')}:${root.closest('[data-dockkit-content]')?.getAttribute('data-dockkit-content')}`;
+    const key = `${root.getAttribute('data-files-navigator') ?? 'legacy'}:${root.closest('[data-sidebar-right-session]')?.getAttribute('data-sidebar-right-session')}:${root.closest('[data-dockkit-content]')?.getAttribute('data-dockkit-content')}`;
     const saved = preferences.get(key);
     const language = paneLanguage(document);
     const pane: Pane = {
       root,
       body,
+      header,
+      ownsHeader,
       toggle,
       field,
       input,
@@ -339,11 +354,13 @@ export function mountFilesPane(document: Document, report: (error: unknown) => v
       setTree(pane, false);
       toggle.focus();
     });
-    setTree(pane, saved?.hidden ?? false);
+    setTree(pane, root.hasAttribute('data-files-navigator') ? false : saved?.hidden ?? false);
     setQuery(pane, saved?.query ?? '');
   };
 
   const release = (pane: Pane) => {
+    if (pane.ownsHeader) pane.header.remove();
+    else pane.header.removeAttribute('data-ccd-files-header');
     pane.toggle.remove();
     pane.field.remove();
     pane.expand.remove();

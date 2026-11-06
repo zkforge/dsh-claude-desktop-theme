@@ -1,0 +1,39 @@
+/* Selected native CSS from official Windows DSH 0.2.2-rc.1, c59d10af.
+   Preserves actual layout/cascade; never load alone as a plugin stylesheet. */
+.olCj9W_page{width:100%;min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);font-size:14px;line-height:1.6;display:flex;overflow:hidden}
+.olCj9W_listPane{flex-direction:column;flex:1;min-width:0;min-height:0;display:flex}
+.olCj9W_pageScroll{scrollbar-gutter:stable;--dsh-scrollbar-width:9px;--dsh-scrollbar-thumb-border:2px;flex:1;min-height:0;overflow:auto}
+.olCj9W_pageContent{max-width:960px;margin:0 auto;padding:0 clamp(24px,4vw,48px) 48px}
+@media (width<=767px){.olCj9W_pageContent{padding-inline:20px}}
+.olCj9W_pageHeading{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px;padding-top:28px;display:flex}
+[data-platform=darwin] .olCj9W_pageHeading{padding-top:calc(28px + var(--dsh-frame-top-clearance,0px))}
+.olCj9W_pageHeading h1{flex:0 auto;min-width:0;max-width:100%;margin:0;font-size:20px;font-weight:500;line-height:28px}
+.olCj9W_creationActions{white-space:nowrap;flex:none;align-items:center;gap:16px;display:flex}
+.olCj9W_headerAction{border-radius:16px;height:32px;padding:0 12px;font-size:13px;line-height:20px}
+.olCj9W_createGroup{align-items:stretch;display:inline-flex}
+.olCj9W_createPrimary{border-top-right-radius:0;border-bottom-right-radius:0}
+.olCj9W_createMore{border-radius:0 var(--dsw-radius-lg) var(--dsw-radius-lg) 0;border-left:.5px solid color-mix(in srgb, var(--dsw-alias-label-primary-foreground) 30%, transparent);width:32px;height:32px;padding:0}
+.olCj9W_createMenu [role=menuitem]{gap:10px;padding:6px 12px}
+.olCj9W_filters{flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:14px;display:flex}
+.olCj9W_filterTabs{flex-wrap:wrap;align-items:center;gap:8px 12px;display:flex}
+.olCj9W_filterTab{height:28px;color:var(--dsw-alias-label-tertiary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:14px;flex:none;align-items:center;padding:0 10px;font-size:14px;line-height:22px;display:inline-flex}
+@media (hover:hover){.olCj9W_filterTab:hover{background:var(--dsw-alias-interactive-bg-hover)}}
+.olCj9W_filterTabActive{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.olCj9W_searchTools{--task-search-height:36px;align-items:center;gap:8px;margin-bottom:16px;display:flex}
+.olCj9W_searchField{box-sizing:border-box;min-width:0;height:var(--task-search-height);border:.5px solid var(--dsw-alias-border-l3);color:var(--dsw-alias-label-tertiary);border-radius:12px;flex:1;align-items:center;margin:0;padding:0 10px;transition:border-color .15s;display:flex}
+@media (hover:hover){.olCj9W_searchField:hover{border-color:var(--dsw-alias-border-l2)}}
+.olCj9W_searchField:focus-within{border-color:var(--dsw-alias-state-business-primary)}
+.olCj9W_searchField>:first-child{background:0 0;border:0;border-radius:0;flex:1;min-width:0;height:100%;padding:0}
+.olCj9W_searchField>:first-child:focus-within{border-color:#0000}
+.olCj9W_searchField>:first-child svg{width:14px;height:14px}
+.olCj9W_searchField input::placeholder{color:var(--dsw-alias-label-caption)}
+.olCj9W_searchField input:focus-visible{outline:none}
+.olCj9W_searchField input::-webkit-search-cancel-button{display:none}
+.olCj9W_searchClear{width:28px;height:28px;color:var(--dsw-alias-label-tertiary);flex:none;margin-right:-6px;padding:0}
+.olCj9W_searchClear svg{width:14px;height:14px}
+.olCj9W_list{display:block}
+.olCj9W_createTitle{font:inherit;margin:0;font-weight:500}
+.olCj9W_page :focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}
+.olCj9W_page .olCj9W_editorField input:focus-visible,.olCj9W_page .olCj9W_instruction:focus-visible{outline:none}
+@media (width<=760px){.olCj9W_hasDetails .olCj9W_listPane{display:none}}
+@media (pointer:coarse){.olCj9W_searchField input,.olCj9W_editorField input,.olCj9W_instruction,.olCj9W_ruleInput,.olCj9W_zoneSearch{font-size:16px}}

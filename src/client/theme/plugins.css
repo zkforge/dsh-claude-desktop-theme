@@ -462,3 +462,36 @@ html[data-dsh-ccd-style="true"] [data-plugin-tab="discover"] > :not([data-ccd-pl
   html[data-dsh-ccd-style="true"] .ccd-plugin-list-heading:not(.ccd-plugin-list-heading-basic) { grid-template-columns: 38% minmax(0, 1fr) 60px; }
   html[data-dsh-ccd-style="true"] [data-ccd-plugin-part="market-toolbar"] { grid-column: 1 / -1; grid-row: 3; }
 }
+
+/* rc22 owns one bounded scrolling body and measures a sticky header inside it.
+   Keep that native driver (including its compact clone/inline geometry) intact;
+   the older page's grid cannot also own the measured header's layout. */
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page]:has(> [data-plugin-body]) {
+  display: flex;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page] > [data-plugin-body] {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  margin-inline: 0;
+  padding-inline: var(--ccd-management-page-inset);
+  align-items: stretch;
+}
+html[data-dsh-ccd-style="true"] [data-plugin-body] > * {
+  max-width: none;
+}
+html[data-dsh-ccd-style="true"] [data-plugin-body] [data-plugin-bar] [data-ccd-plugin-part="manager-pageHead"] {
+  display: flex;
+  max-width: none;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="detail"] > [data-plugin-body] {
+  padding-top: 47px;
+}
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-page="more"]:has(> [data-plugin-body]) > [data-ccd-plugin-part="manager-moreHead"] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 47px var(--ccd-management-page-inset) 0;
+}

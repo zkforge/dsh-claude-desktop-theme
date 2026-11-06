@@ -93,3 +93,11 @@ test('the shipped Windows table is exactly what a re-read of its build would pro
   const rendered = renderWindowsBuild({ id: WINDOWS_BUILD.id, frameClass: WINDOWS_BUILD.frameClass, prefixes: new Map(entries) });
   assert.equal((rendered.match(/': '/gu) ?? []).length, entries.length);
 });
+
+test('a verified unchanged module hash and owner tolerate added or removed locals', () => {
+  const reference = new Map([['actual', {file:'ui-layout/client.js',locals:new Set(['root','old'])}]]);
+  const target = new Map([['actual', {file:'ui-layout/client.js',locals:new Set(['root','new'])}]]);
+  assert.equal(mapPrefixes(['actual_'],reference,target).mapping.get('actual_'),'actual_');
+  target.set('actual',{file:'unrelated/client.js',locals:new Set(['root','new'])});
+  assert.equal(mapPrefixes(['actual_'],reference,target).problems.size,1);
+});

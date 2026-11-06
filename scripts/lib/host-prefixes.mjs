@@ -115,6 +115,14 @@ export function mapPrefixes(prefixes, reference, target) {
       problems.set(prefix, 'the reference build has no module with this prefix');
       continue;
     }
+    // A retained hash in the same owning bundle is stronger evidence than a
+    // local-name fingerprint. References can also be indexed by authored hash.
+    const retained = [...reference].filter(([, entry]) => entry === module)
+      .filter(([hash]) => target.get(hash)?.file === module.file);
+    if (retained.length === 1) {
+      mapping.set(prefix, `${retained[0][0]}_`);
+      continue;
+    }
     const candidates = [...target].filter(([, entry]) => sameSet(entry.locals, module.locals));
     if (candidates.length === 0) {
       problems.set(prefix, `no target module carries the same ${module.locals.size} local names`);

@@ -52,7 +52,7 @@ function row(entry, name, { expanded, children = '' } = {}) {
 
 /** The Files pane as `FilesBody.tsx` renders it, with a level open. */
 const filesPane = `<div class="AmqDYq_root" data-files-state="tree" data-files-root="/Users/zoukai/code/dsh-ccd-style">
-<div class="AmqDYq_header"><span class="AmqDYq_path" data-files-path data-path-label title="/Users/zoukai/code/dsh-ccd-style"><span class="AmqDYq_text"><span class="AmqDYq_directory">~/code/</span><span class="AmqDYq_name">dsh-ccd-style</span></span></span><button type="button" class="AmqDYq_tool" data-files-reload aria-label="Reload">${glyphSvg}</button></div>
+<div class="AmqDYq_header" data-ccd-files-header><span class="AmqDYq_path" data-files-path data-path-label title="/Users/zoukai/code/dsh-ccd-style"><span class="AmqDYq_text"><span class="AmqDYq_directory">~/code/</span><span class="AmqDYq_name">dsh-ccd-style</span></span></span><button type="button" class="AmqDYq_tool" data-files-reload aria-label="Reload">${glyphSvg}</button></div>
 <div class="AmqDYq_body" data-files-body><ul class="AmqDYq_level">
 ${[
   row('directory', '.cache'),

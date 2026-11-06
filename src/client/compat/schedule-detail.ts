@@ -141,7 +141,7 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
   const intercept = (event: MouseEvent) => {
     if (!(event.target instanceof Element)) return;
     const row = event.target.closest<HTMLElement>(ROWS);
-    if (!row) return;
+    if (!row || row.closest('[data-ccd-schedule-native]')) return;
     event.preventDefault(); event.stopPropagation();
     const metadata = row.getAttribute('aria-describedby') ?? '';
     const task = taskForMetadata(records, metadata);
@@ -163,6 +163,7 @@ export function mountScheduleDetail(document: Document, port: ScheduleDetailPort
   const decorate = () => {
     for (const prompt of prompts) if (!prompt.isConnected) prompts.delete(prompt);
     for (const row of document.querySelectorAll<HTMLElement>(ROWS)) {
+      if (row.closest('[data-ccd-schedule-native]')) continue;
       const heading = row.querySelector<HTMLElement>(':scope > span > span:first-child');
       if (!heading) continue;
       const task = taskForMetadata(records, row.getAttribute('aria-describedby') ?? '');

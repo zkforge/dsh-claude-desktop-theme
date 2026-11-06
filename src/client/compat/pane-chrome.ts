@@ -33,6 +33,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   if (!grip || !title || !close) return null;
   let options: PaneChromeOptions;
   let signature = '';
+  let searchObserver: MutationObserver | undefined;
   /** This pane's own words, in the document's language (`pane-labels.ts`). */
   let labels = paneLabels(paneLanguage(document));
   let menu: HTMLElement | null = null;
@@ -66,7 +67,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
     if (close.hasAttribute('data-ccd-close-tab') || !options) return;
     // Files owns both its tree and every retained preview. Closing the card
     // must remove the whole group, otherwise the previous file resurfaces.
-    if (!options.filesRoot && options.kind !== 'browser' && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
+    if (!options.filesRoot && !node.querySelector('[data-files-navigator-toggle]') && options.kind !== 'browser' && (options.kind !== 'terminal' || options.terminals.length < 2)) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (options.onCloseGroup) { options.onCloseGroup(); return; }
     const { closeTabs, onClose } = options;
@@ -138,10 +139,11 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       row.addEventListener('click', () => { dismiss(); action(); }); content.append(row);
     };
     const files = options.filesRoot;
-    if (files) {
-      item(files.hasAttribute('data-ccd-files-tree') ? labels.files.show : labels.files.hide, () => files.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
-      item(labels.chrome.refresh, () => files.querySelector<HTMLButtonElement>('[data-files-reload]')?.click());
-      const open = files.querySelector<HTMLButtonElement>('[data-slot="sidebar.right.tab.files.actions"] button');
+    const nativeToggle = node.querySelector<HTMLButtonElement>('[data-files-navigator-toggle]');
+    if (files || nativeToggle) {
+      item((nativeToggle ? nativeToggle.getAttribute('aria-expanded') !== 'true' : files?.hasAttribute('data-ccd-files-tree')) ? labels.files.show : labels.files.hide, () => (nativeToggle ?? files?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]'))?.click());
+      item(labels.chrome.refresh, () => files?.querySelector<HTMLButtonElement>('[data-files-reload]')?.click());
+      const open = files?.querySelector<HTMLButtonElement>('[data-slot="sidebar.right.tab.files.actions"] button');
       if (open) item(open.getAttribute('aria-label') ?? labels.chrome.openFolder, () => open.click());
     }
     for (const file of options.files) item(`${file.selected ? '✓ ' : ''}${file.title}`, () => options.onSelect(file.id));
@@ -378,12 +380,13 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   const update = (next: PaneChromeOptions) => {
     options = next;
     labels = paneLabels(paneLanguage(document));
-    const hidden = next.filesRoot?.hasAttribute('data-ccd-files-tree') ?? false;
+    const nativeToggle = node.querySelector<HTMLButtonElement>('[data-files-navigator-toggle]');
+    const hidden = nativeToggle ? nativeToggle.getAttribute('aria-expanded') !== 'true' : next.filesRoot?.hasAttribute('data-ccd-files-tree') ?? false;
     /* Only the chrome's shape is in the signature. A tab's selection or name
        and the card's own title are rewritten in place by the cells that hold
        them, so a group of T cards does not rebuild T tabs each time one is
        selected. */
-    const value = `${paneLanguage(document)}|${next.kind}|${next.zoomed}|${hidden}|${next.filesRoot === null}|${next.terminals.length > 1}|${next.terminals.map(tab => tab.id).join(',')}|${next.files.map(file => file.id).join(',')}|${next.browsers.map(tab => tab.id).join(',')}`;
+    const value = `${paneLanguage(document)}|${next.kind}|${next.zoomed}|${hidden}|${next.filesRoot === null && nativeToggle === null}|${next.terminals.length > 1}|${next.terminals.map(tab => tab.id).join(',')}|${next.files.map(file => file.id).join(',')}|${next.browsers.map(tab => tab.id).join(',')}`;
     if (value === signature) { updateTabs(next.kind === 'browser' ? next.browsers : next.kind === 'terminal' ? next.terminals : next.files); updateName(next); refreshNative(); return; }
     signature = value;
     dismiss(); addressResize?.disconnect(); navigation?.remove(); navigation = null; addressSlot = null; caption.replaceChildren(); controls.replaceChildren();
@@ -408,8 +411,8 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       navigation.append(addressSlot);
       addressResize?.observe(addressSlot);
     } else {
-      if (next.filesRoot) {
-        const toggle = button(caption, hidden ? labels.files.show : labels.files.hide, 'data-ccd-files-switch', 'Files', () => next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click());
+      if (next.filesRoot || nativeToggle) {
+        const toggle = button(caption, hidden ? labels.files.show : labels.files.hide, 'data-ccd-files-switch', 'Files', () => (nativeToggle ?? next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]'))?.click());
         toggle.setAttribute('data-ccd-files-mark', '');
         toggle.setAttribute('aria-expanded', String(!hidden));
       }
@@ -427,9 +430,21 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
       }
       if (next.kind === 'terminal') button(caption, labels.chrome.newTerminal, 'data-ccd-terminal-add', 'Add', next.onNew);
       else if (next.filesRoot || next.kind === 'text') button(controls, labels.chrome.search, 'data-ccd-pane-search', 'Search', () => {
-        const toggle = next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]');
-        if (hidden) toggle?.click();
-        next.filesRoot?.querySelector<HTMLInputElement>('[data-ccd-files-filter] input')?.focus();
+        searchObserver?.disconnect();
+        const focus = () => {
+          const input = node.querySelector<HTMLInputElement>('[data-ccd-files-filter] input')
+            ?? (nativeToggle ? null : next.filesRoot?.querySelector<HTMLInputElement>('[data-ccd-files-filter] input'));
+          if (!input) return;
+          input.focus(); searchObserver?.disconnect(); searchObserver = undefined;
+        };
+        if (nativeToggle && hidden) {
+          // Opening mounts a new React navigator. Wait for its owned filter,
+          // rather than holding the root from the previous, now unmounted tree.
+          searchObserver = new MutationObserver(focus);
+          searchObserver.observe(node, {childList: true, subtree: true});
+          nativeToggle.click();
+        } else if (hidden) next.filesRoot?.querySelector<HTMLButtonElement>('[data-ccd-files-toggle]')?.click();
+        focus();
       });
       if (next.kind === 'text') button(controls, labels.chrome.reload, 'data-ccd-preview-reload', 'ArrowClockwise', () => node.querySelector<HTMLButtonElement>('[data-textpreview-tool="reload"]')?.click());
     }
@@ -440,6 +455,7 @@ export function mountPaneChrome(node: HTMLElement): PaneChrome | null {
   };
   return { update, release() {
     close.removeEventListener('click', closeGroup, true);
+    searchObserver?.disconnect();
     observer.disconnect(); addressResize?.disconnect(); browserMenus.release(); dismiss(); wait?.remove(); caption.remove(); controls.remove(); navigation?.remove(); closeIcon.remove();
     waitText = null;
     for (const [input, held] of placeholders) if (input.placeholder === held.drawn) input.placeholder = held.original;

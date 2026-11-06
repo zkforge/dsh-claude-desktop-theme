@@ -252,7 +252,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerBlank {
   padding-bottom: 0;
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_headerSessionless {
+html[data-dsh-ccd-style="true"] .ST7X_W_root:not(:has([data-conversation-session])) .ST7X_W_header {
   min-height: 50px;
 }
 
@@ -264,7 +264,7 @@ html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header {
   -webkit-app-region: drag;
 }
 
-html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_header:not(.ST7X_W_headerSessionless) {
+html[data-dsh-ccd-style="true"][data-platform="darwin"] .ST7X_W_root:has([data-conversation-session]) .ST7X_W_header {
   min-height: 40px;
   padding-bottom: 0;
 }
@@ -976,7 +976,7 @@ html[data-dsh-ccd-style="true"] .icaHSq_column {
 }
 
 /* User message: soft raised bubble, as in the reference. */
-html[data-dsh-ccd-style="true"] .IzP3Va_bubble {
+html[data-dsh-ccd-style="true"] :is(.IzP3Va_bubble, [data-message-bubble]) {
   padding: 7px 14px;
   border-radius: var(--ccd-composer-radius);
   background: var(--ccd-raised);
@@ -1285,6 +1285,6 @@ html[data-dsh-ccd-style="true"] [data-changed-files] [data-ccd-changes-title] {
 }
 
 /* Dark reference user bubbles share the input surface's neutral fill. */
-html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] .IzP3Va_bubble {
+html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] :is(.IzP3Va_bubble, [data-message-bubble]) {
   background: var(--ccd-card);
 }

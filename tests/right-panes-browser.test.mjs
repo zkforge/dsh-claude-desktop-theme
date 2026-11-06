@@ -524,3 +524,33 @@ test('right sidebar toggles remove controls and styles together, independent of 
     }
   }
 }));
+
+
+for (const standalone of [false, true]) {
+  test(`rc22 preview navigator owns tree controls with standalone Files=${standalone}`,options,async()=>withFixture(async page=>{
+    await wait(page);
+    const preview='[data-dockkit-content="native-preview"]';
+    assert.equal(await page.evaluate('window.calls.open.length'),0,'embedded navigator needs no extra Files tab');
+    assert.equal(await page.evaluate(`!!document.querySelector('${preview} [data-ccd-files-switch]')`),true);
+    assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('${preview} [data-files-navigator]')).display`),'flex','legacy Files grid must not reshape navigator');
+    await click(page,`${preview} [data-ccd-pane-search]`);await wait(page);
+    assert.equal(await page.evaluate(`document.activeElement===document.querySelector('${preview} [data-ccd-files-filter] input')`),true);
+    await click(page,`${preview} [data-ccd-files-switch]`);await wait(page);
+    assert.equal(await page.evaluate('window.navigatorCalls'),1,'collapse forwards native preference and focus behavior');
+    assert.equal(await page.evaluate(`document.querySelector('${preview} [data-files-navigator]')===null`),true,'host closing unmounts the navigator');
+    await click(page,`${preview} [data-ccd-pane-search]`);await wait(page);
+    assert.equal(await page.evaluate('window.navigatorCalls'),2,'search reopens via host toggle');
+    assert.equal(await page.evaluate(`document.activeElement===document.querySelector('${preview} [data-ccd-files-filter] input')`),true,'search focuses the remounted filter');
+    if(standalone) assert.equal(await page.evaluate(`document.querySelector('[data-dockkit-content="native-files"]').hasAttribute('data-ccd-pane-inactive')`),true,'embedded tree has precedence over a duplicate standalone tree');
+    await page.evaluate('window.release()');
+    assert.equal(await page.evaluate(`!!document.querySelector('[data-files-navigator-resize]')`),true,'native resize survives teardown');
+  },`
+    const originalBody=window.bodyFor;
+    window.bodyFor=tab=>tab.kind==='text' ? '<div style="display:flex;flex:1"><main>Preview</main><aside data-files-navigator="p1" data-files-navigator-mode="push" data-files-root="/repo" style="display:flex;flex-direction:column;width:220px"><div data-files-navigator-resize role="separator" tabindex="0"></div><div data-files-body><ul><li data-files-entry="file" data-files-path="/repo/app.ts"><div><button>app.ts</button><div></div></div></li></ul></div></aside><button data-files-navigator-toggle aria-expanded="true">Tree</button></div>' : originalBody(tab);
+    ${standalone ? "window.add('native-files','files');" : ''}
+    window.add('native-preview','text','s1','dsh-resource://file/session/s1/repo/app.ts');
+    window.navigatorCalls=0;
+    window.navigatorMarkup=document.querySelector('[data-files-navigator]').outerHTML;
+    document.querySelector('[data-files-navigator-toggle]').onclick=event=>{window.navigatorCalls++;const button=event.currentTarget;const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));if(!open)document.querySelector('[data-files-navigator]').remove();else setTimeout(()=>{button.insertAdjacentHTML('beforebegin',window.navigatorMarkup);const restored=document.querySelector('[data-files-navigator]');restored.querySelectorAll('[data-ccd-files-header],[data-ccd-files-expand],[data-ccd-files-landing]').forEach(el=>el.remove())},10)};
+  `));
+}

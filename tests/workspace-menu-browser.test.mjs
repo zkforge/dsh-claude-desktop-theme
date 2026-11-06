@@ -242,3 +242,32 @@ test('workspace picker: search, labels, branch card, base selection, keyboard an
     });
   } finally { await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 }); }
 });
+
+test('workspace picker without plugin worktree choices (native Forge host) mounts no branch row', { skip: !chrome, timeout: 60000 }, async () => {
+  const bundle = await build({
+    stdin: { contents: `import { mountWorkspaceMenu } from './src/client/compat/workspace-menu.ts'; window.mount = mountWorkspaceMenu;`, resolveDir: root },
+    bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2022',
+  });
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-workspace-menu-native-'));
+  try {
+    await withPage({ url: 'about:blank', width: 720, height: 420, scale: 2, profile }, async page => {
+      await page.evaluate(`document.documentElement.setAttribute('data-dsh-ccd-style', 'true');
+        document.documentElement.lang = 'zh-CN';
+        const style = document.createElement('style'); style.textContent = ${JSON.stringify(hostCss + css)}; document.head.append(style);
+        document.body.innerHTML = '<button class="bocITq_workspace" aria-haspopup="menu" aria-expanded="false">chip</button>';
+        window.errors = []; window.requests = [];
+        window.fetch = async url => { requests.push(String(url)); return Response.json({ state: 'ready', current: 'main', detached: false, branches: ['main'], truncated: false }); };`);
+      await page.evaluate(bundle.outputFiles[0].text);
+      await page.evaluate(`window.release = window.mount(document, { workspaceIds: () => ['w1', 'w2', 'w3'] }, error => errors.push(String(error)))`);
+      await page.evaluate(`document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(card)});
+        document.querySelector('.bocITq_workspace').setAttribute('aria-expanded', 'true')`);
+      await page.evaluate('new Promise(resolve => setTimeout(resolve, 50))');
+
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-menu-search]')?.placeholder`), '搜索文件夹…', 'the rest of the picker is still dressed');
+      assert.equal(await page.evaluate(`document.querySelector('[data-ccd-workspace-extra="branch"]')`), null, 'the native composer owns the base branch');
+      assert.deepEqual(await page.evaluate('requests'), [], 'no branch listing is read');
+      assert.deepEqual(await page.evaluate('errors'), []);
+      await page.evaluate('release()');
+    });
+  } finally { await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 }); }
+});

@@ -1,4 +1,5 @@
 import type { Disposer } from '../contracts/ports.ts';
+import { hostSelectors } from './host-dom.ts';
 import { frameScheduler } from './frame.ts';
 import { recordsIntroduce, recordsTouch } from './mutation-scope.ts';
 import type { PluginCatalogEntry, PluginCatalogPort } from './plugin-catalog.ts';
@@ -26,6 +27,7 @@ const MARKET_PARTS = new Set([
  * Installation, pagination, menus, tabs and configuration remain host-owned.
  */
 export function mountPluginPage(document: Document, report: (error: unknown) => void, catalog?: PluginCatalogPort): Disposer {
+  const host = hostSelectors(document);
   let page: HTMLElement | null = null;
   let released = false;
   const headings = new Map<Element, HTMLElement>();
@@ -135,6 +137,10 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
       }
       if (list.previousElementSibling !== header) list.before(header);
     }
+    for (const button of page.querySelectorAll(`[${PART}="manager-detailActions"] button`)) {
+      if (button.matches(host.buttonPrimary)) attribute(button, 'data-ccd-plugin-action', 'primary');
+      else if (button.getAttribute('data-ccd-plugin-action') === 'primary') button.removeAttribute('data-ccd-plugin-action');
+    }
     const root = zh ? '自定义' : 'Customize';
     label(heading, root);
     // Both back actions name the page they return to; the host's says "Plugins".
@@ -165,13 +171,15 @@ export function mountPluginPage(document: Document, report: (error: unknown) => 
   };
   const scheduler = frameScheduler(() => { if (!released) try { sync(); } catch (error) { report(error); } }, document.defaultView);
   const observer = new MutationObserver(records => {
-    if ((page && recordsTouch(records, page)) || recordsIntroduce(records, PANEL)) scheduler.schedule();
+    const relevant = records.filter(record => record.type !== 'attributes'
+      || (record.target instanceof Element && record.target.matches('button')));
+    if ((page && recordsTouch(relevant, page)) || recordsIntroduce(relevant, PANEL)) scheduler.schedule();
   });
   const locale = new MutationObserver(() => scheduler.schedule());
   const unsubscribe = catalog?.subscribe(() => { loaded = false; void loadCatalog(); });
   try {
     sync();
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
     locale.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   } catch (error) { observer.disconnect(); locale.disconnect(); restore(); report(error); }
   return () => {

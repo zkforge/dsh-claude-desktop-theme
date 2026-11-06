@@ -9,9 +9,10 @@
  * {@link aliasHostClasses} before it reaches the document, so one source styles
  * both installers instead of duplicating every selector.
  *
- * Only the prefix differs. The local name after it (`_frame`, `_newSession`)
- * and the static web frontend's markdown classes (`_markdown_1ypvv_5`) are
- * identical in both builds, so neither needs an entry here.
+ * Module prefixes and shared frontend classes are separate contracts. rc22
+ * retains the Windows frame/module prefixes while changing Menu, Modal and
+ * MarkdownText hashes and line suffixes. aliasHostSelectors handles both
+ * verified shared generations independently of frame detection.
  *
  * Keep the authored build stable and register each verified release below.
  * A new release may rehash every prefix; read its tables from `app.asar`.
@@ -146,7 +147,7 @@ export const WINDOWS_LEGACY_BUILD: HostBuild = Object.freeze({
 /** Every build whose class names this plugin knows how to speak. */
 export const HOST_BUILDS: readonly HostBuild[] = Object.freeze([PINNED_BUILD, WINDOWS_BUILD, MACOS_BUILD, WINDOWS_LEGACY_BUILD]);
 
-/** Detection results that came from the document itself, so they never change. */
+/** Cached layout-prefix family, not an exact frontend version identity. */
 const identified = new WeakMap<Document, HostBuild>();
 
 /** How a document's build was decided. */
@@ -268,6 +269,41 @@ export function aliasHostClasses(text: string, build: HostBuild): string {
   let out = text;
   for (const [authored, actual] of Object.entries(build.prefixes)) {
     if (out.includes(authored)) out = out.split(authored).join(actual);
+  }
+  return out;
+}
+
+/** Shared frontend classes read from rc22 c59d10af; independent of frame hashes.
+ * Match both verified generations, including before a menu or modal mounts. */
+export const SHARED_HOST_CLASSES: Readonly<Record<string, string>> = Object.freeze({
+  '_primary_1rv3m_36': '_primary_1ulci_36',
+  '_markdown_1ypvv_5': '_markdown_rve47_5',
+  '_fileMention_1ypvv_85': '_fileMention_rve47_92',
+  '_linkIcon_1ypvv_94': '_linkIcon_rve47_101',
+  '_viewport_4ub78_19': '_viewport_1p5el_19',
+  '_footer_4ub78_62': '_footer_1p5el_67',
+  '_separator_4ub78_80': '_separator_1p5el_89',
+  '_itemWrap_4ub78_90': '_itemWrap_1p5el_105',
+  '_item_4ub78_90': '_item_1p5el_105',
+  '_itemIcon_4ub78_148': '_itemIcon_1p5el_165',
+  '_check_4ub78_179': '_check_1p5el_197',
+  '_itemLabel_4ub78_190': '_itemLabel_1p5el_208',
+  '_danger_4ub78_226': '_danger_1p5el_250',
+  '_mask_o6lrb_18': '_mask_14mp3_18',
+  '_dialog_o6lrb_33': '_dialog_14mp3_33',
+  '_header_o6lrb_71': '_header_14mp3_71',
+  '_title_o6lrb_79': '_title_14mp3_79',
+  '_close_o6lrb_87': '_close_14mp3_87',
+  '_description_o6lrb_106': '_description_14mp3_108',
+  '_body_o6lrb_115': '_body_14mp3_117',
+  '_footer_o6lrb_123': '_footer_14mp3_125',
+});
+
+/** Resolve module prefixes and both generations of shared frontend selectors. */
+export function aliasHostSelectors(text: string, build: HostBuild): string {
+  let out = aliasHostClasses(text, build);
+  for (const [oldName, newName] of Object.entries(SHARED_HOST_CLASSES)) {
+    out = out.replaceAll(`.${oldName}`, `:is(.${oldName}, .${newName})`);
   }
   return out;
 }

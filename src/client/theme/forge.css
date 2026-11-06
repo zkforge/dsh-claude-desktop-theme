@@ -1,0 +1,66 @@
+/* Forge owns intent, branches, progress and review actions. Only dress its
+   stable surfaces; never replace controls, move React nodes or call its APIs. */
+html[data-dsh-ccd-style="true"] [data-forge-worktree] {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ccd-hero-control-gap);
+  min-width: 0;
+  height: var(--ccd-control-row-height);
+  color: var(--ccd-text-secondary);
+}
+html[data-dsh-ccd-style="true"] [data-forge-worktree] :is(button, label) {
+  box-sizing: border-box;
+  height: var(--ccd-control-row-height);
+  border-radius: var(--ccd-chip-radius);
+  font: 400 13px/20px var(--ccd-font-ui);
+  color: inherit;
+}
+html[data-dsh-ccd-style="true"] [data-forge-worktree] button {
+  max-width: clamp(48px, 14cqw, 160px);
+  min-width: 0;
+  padding-inline: var(--ccd-hero-control-padding);
+}
+html[data-dsh-ccd-style="true"] [data-forge-worktree] button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-dsh-ccd-style="true"] [data-forge-worktree] label { flex: none; }
+html[data-dsh-ccd-style="true"] [data-forge-worktree] :is(button:not(:disabled), label:not([data-disabled])):hover {
+  background: var(--ccd-hover);
+}
+html[data-dsh-ccd-style="true"] [data-forge-worktree] input { accent-color: var(--ccd-accent); }
+html[data-dsh-ccd-style="true"] [data-forge-worktree] [data-disabled] { color: var(--ccd-text-muted); }
+
+html[data-dsh-ccd-style="true"] :is([data-forge-creation], [data-forge-missing]) > section {
+  --dsw-specific-menu: var(--ccd-card);
+  --dsw-menu-backdrop-filter: none;
+  border: 1px solid var(--ccd-border);
+  border-radius: 12px;
+  color: var(--ccd-text);
+  box-shadow: var(--ccd-dialog-button-shadow);
+}
+html[data-dsh-ccd-style="true"] :is([data-forge-creation], [data-forge-missing]) button {
+  min-height: var(--ccd-management-control-height);
+  border-radius: var(--ccd-management-control-radius);
+  font-family: var(--ccd-font-ui);
+}
+html[data-dsh-ccd-style="true"] :is([data-forge-creation], [data-forge-missing]) ._primary_1rv3m_36 {
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
+}
+html[data-dsh-ccd-style="true"] :is([data-forge-panel], [data-forge-changes]) {
+  --dsw-alias-bg-base: var(--ccd-card);
+  background: var(--ccd-card);
+  color: var(--ccd-text);
+}
+html[data-dsh-ccd-style="true"] :is([data-forge-checkout], [data-forge-session-hover]) { color: var(--ccd-text); }
+html[data-dsh-ccd-style="true"] [data-forge-header] {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ccd-chip-radius);
+  color: var(--ccd-text-secondary);
+}
+html[data-dsh-ccd-style="true"] [data-forge-header]:hover { background: var(--ccd-hover); }

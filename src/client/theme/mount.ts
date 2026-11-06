@@ -12,6 +12,7 @@ import scheduleCss from './schedule.css';
 import navigationHistoryCss from './navigation-history.css';
 import pluginsCss from './plugins.css';
 import managementCss from './management.css';
+import forgeCss from './forge.css';
 
 /**
  * Plugin-scoped presentation base: the root activation marker, the design
@@ -38,6 +39,7 @@ export function mountTheme(environment: FeatureEnvironment, scope: CleanupScope)
   scope.add(environment.dom.mountStyles(navigationHistoryCss));
   scope.add(environment.dom.mountStyles(pluginsCss));
   scope.add(environment.dom.mountStyles(managementCss));
+  scope.add(environment.dom.mountStyles(forgeCss));
   const tokens = resolveThemeTokens(environment.config);
   if (Object.keys(tokens).length > 0) {
     scope.add(environment.host.theme.overrideTokens(THEME_OVERRIDE_SOURCE, tokens));

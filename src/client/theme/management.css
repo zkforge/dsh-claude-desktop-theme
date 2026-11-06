@@ -63,6 +63,7 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-action="primary"],
   [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
@@ -74,6 +75,7 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-action="primary"],
   [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
@@ -82,6 +84,7 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="manager-addPrimary"],
   [data-ccd-plugin-part="manager-addMore"],
   [data-ccd-plugin-part="manager-addButton"],
+  [data-ccd-plugin-action="primary"],
   [data-ccd-plugin-part="market-cardEnd"] [data-ccd-plugin-install="true"],
   [data-ccd-schedule-part="new"],
   [data-ccd-schedule-part="empty"] button
@@ -93,7 +96,7 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="market-crumb"],
   [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="manager-moreBack"],
-  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"], [data-ccd-plugin-action="primary"]),
   [data-ccd-plugin-tool],
   [data-ccd-plugin-part="market-cardEnd"] button:not([data-ccd-plugin-install="true"], [data-ccd-plugin-installed="true"]),
   .ccd-schedule-toolbar button,
@@ -108,7 +111,7 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="market-crumb"],
   [data-ccd-plugin-part="manager-groupMore"],
   [data-ccd-plugin-part="manager-moreBack"],
-  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"]),
+  [data-ccd-plugin-part="manager-detailActions"] button:not([role="switch"], [data-ccd-plugin-action="primary"]),
   [data-ccd-plugin-tool],
   [data-ccd-plugin-part="market-cardEnd"] button:not([data-ccd-plugin-install="true"], [data-ccd-plugin-installed="true"]),
   .ccd-schedule-toolbar button,
@@ -260,4 +263,9 @@ html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]
 }
 html[data-dsh-ccd-style="true"] [data-menu-material]:has([class$="_addMenuItem"]) :is([class$="_addMenuDescription"], [class$="_description"]) {
   display: none;
+}
+
+html[data-dsh-ccd-style="true"] [data-ccd-plugin-action="primary"] {
+  background: var(--ccd-text-strong);
+  color: var(--ccd-text-inverse);
 }

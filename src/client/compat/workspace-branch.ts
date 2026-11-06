@@ -114,11 +114,11 @@ function rowClasses(card: HTMLElement): RowClasses {
  * @param workspaceId - selected Workspace; the Host resolves its directory.
  * @param cache - listings retained across openings.
  * @param report - sink for unexpected failures.
- * @param choice - optional staged worktree base; absent means read-only.
+ * @param choice - staged base of the plugin's own worktree.
  * @returns disposer that aborts the read and removes every node.
  */
 export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cache: BranchCache,
-  report: (error: unknown) => void, choice?: WorkspaceBranchChoice): Disposer {
+  report: (error: unknown) => void, choice: WorkspaceBranchChoice): Disposer {
   const document = card.ownerDocument;
   const window = document.defaultView;
   const host = hostSelectors(document);
@@ -168,11 +168,11 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   const render = () => {
     // Both Git controls share this group, including its separator.
     group.hidden = view?.state === 'not-repo';
-    const ready = view?.state === 'ready' && view.current !== null && (choice?.enabled() ?? false);
+    const ready = view?.state === 'ready' && view.current !== null && choice.enabled();
     value.textContent = stale ? copy.restart : view === undefined ? copy.loading
-      : view.state === 'ready' ? (choice?.selected() ?? view.current ?? '—') : copy.states[view.state];
+      : view.state === 'ready' ? (choice.selected() ?? view.current ?? '—') : copy.states[view.state];
     row.title = stale ? `${copy.states.error} · ${copy.restart}`
-      : !choice?.enabled() ? (menuCopy(document).zh ? '开启工作树后可选择基准分支' : 'Enable worktree to select a base branch')
+      : !choice.enabled() ? (menuCopy(document).zh ? '开启工作树后可选择基准分支' : 'Enable worktree to select a base branch')
       : view?.state === 'ready' && view.detached ? `${copy.detached} · ${view.current}` : '';
     if (ready) {
       row.removeAttribute('aria-disabled');
@@ -250,7 +250,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
       rows.set(name, item);
     }
     for (const [name, item] of rows) {
-      const current = name === (choice?.selected() ?? view.current);
+      const current = name === (choice.selected() ?? view.current);
       const check = item.querySelector('[data-ccd-branch-check]');
       if (current && check === null) {
         const mark = card.querySelector(host.menuItemCheck)?.cloneNode(true);
@@ -277,7 +277,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
 
   /** Stage a base branch; filesystem changes belong to worktree creation. */
   function selectBase(branch: string): void {
-    if (!choice?.enabled()) return;
+    if (!choice.enabled()) return;
     choice.select(branch);
     render();
     fill();
@@ -293,7 +293,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   }
 
   const openSubmenu = (focus: boolean) => {
-    if (view?.state !== 'ready' || view.current === null || !(choice?.enabled() ?? false)) return;
+    if (view?.state !== 'ready' || view.current === null || !choice.enabled()) return;
     if (submenu !== null) {
       if (focus) submenu.querySelector<HTMLInputElement>(`[${MENU_SEARCH_ATTRIBUTE}]`)?.focus();
       return;
@@ -330,7 +330,7 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
       const item = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-ccd-branch-name]') : null;
       const name = item?.getAttribute('data-ccd-branch-name');
       if (item === null || name == null || item.getAttribute('aria-disabled') === 'true') return;
-      if (name !== (choice?.selected() ?? view?.current) || view?.detached) selectBase(name);
+      if (name !== (choice.selected() ?? view?.current) || view?.detached) selectBase(name);
     });
     node.addEventListener('keydown', event => {
       const items = [search, ...[...list.querySelectorAll<HTMLElement>('[data-ccd-branch-name]')]
@@ -416,11 +416,11 @@ export function mountWorkspaceBranch(card: HTMLElement, workspaceId: string, cac
   }
 
   render();
-  const unsubscribe = choice?.subscribe(() => { render(); fill(); });
+  const unsubscribe = choice.subscribe(() => { render(); fill(); });
   void load();
 
   return () => {
-    unsubscribe?.();
+    unsubscribe();
     disposed = true;
     read.abort();
     card.removeEventListener('pointerover', withdraw);

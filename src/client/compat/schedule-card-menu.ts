@@ -102,6 +102,7 @@ export function mountScheduleCardMenus(document: Document, port: ScheduleDeleteP
       }
     }
     for (const row of document.querySelectorAll<HTMLButtonElement>('[data-ccd-schedule-part="list"] > ul > li > button:not(.ccd-schedule-card-more)')) {
+      if (row.closest('[data-ccd-schedule-native]')) continue;
       const label = copy.actionLabel(row.getAttribute('aria-label') ?? '');
       const existing = controls.get(row);
       if (existing) {
