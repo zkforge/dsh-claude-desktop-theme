@@ -56,8 +56,6 @@
 | 上下文圆环与分解面板 | ![上下文圆环与分解面板 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-light.webp) | ![上下文圆环与分解面板 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/context-panel-dark.webp) |
 | 会话右侧信息卡片 | ![会话信息卡片 · 浅色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-light.webp) | ![会话信息卡片 · 深色](https://raw.githubusercontent.com/zkforge/dsh-claude-desktop-theme/main/assets/screenshots/session-info-dark.webp) |
 
-以下为真实组件的局部截图，使用演示数据。模型选择器展示供应商分组、模型图标与当前选中项；可选模型和 Effort 档位以 DSH 实际提供的目录为准。余额特写使用演示账号与金额，常显于左下角账号上方，右侧突出总余额，左下显示当前峰谷时段，点击可刷新。上下文面板展示分类占比与展开的 MCP 工具明细，右下角保留用量圆环入口。会话信息卡片特写展示环境图标行、按占用排序的上下文分类与会话用量。
-
 ## 细节动效
 
 <div align="center">
