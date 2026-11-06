@@ -85,6 +85,7 @@
     "check": "npm run typecheck && npm run check:architecture && npm test && npm run build && npm run check:package",
     "prepack": "npm run check",
     "pack:local": "npm pack --pack-destination artifacts",
+    "release": "bash scripts/release.sh",
     "pet:gifs": "node scripts/pet-gifs.mjs",
     "effort:gifs": "node scripts/effort-gif.mjs"
   },

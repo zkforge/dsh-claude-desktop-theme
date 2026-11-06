@@ -17,6 +17,8 @@ npm run check
 npm run pack:local --cache .cache/npm
 ```
 
+发版运行 `npm run release`（[scripts/release.sh](scripts/release.sh)）：要求在 main、工作区干净且与 origin 同步，依次改版本号、`npm run check`、提交 `chore: release X.Y.Z` 并打轻量 tag `vX.Y.Z`、确认后推送、把同一个 tarball 装到本地 DSH，最后确认后 `npm publish`。版本号会编进构建产物，所以必须先改版本号再构建。npm 发布由用户本人在终端完成，不要替用户运行这个脚本。
+
 CI（`.github/workflows/check.yml`）在每次 push 到 `main` 和每个 PR 上跑 `npm run check`。浏览器测试依赖 workflow 预装的 Google Chrome（通过 `CHROME` 指向 `/usr/bin/google-chrome`）；本地没有 Chrome 时这部分用例会静默 skip。
 
 DSH 换了构建后，宿主 CSS Module 类名会重新哈希，用下面的命令从新构建的 `app.asar` 重解前缀表（不带 `--write` 只打印）：
