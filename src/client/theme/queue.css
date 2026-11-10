@@ -3,7 +3,7 @@
    Native collapse, edit, remove and steer controls remain in their React tree. */
 html[data-dsh-ccd-style="true"] [data-queue-dock] {
   width: calc(100% - 2 * var(--dsh-composer-side-clearance, 16px));
-  max-width: var(--ccd-composer-width);
+  max-width: var(--dsh-composer-card-max-width, var(--ccd-composer-width));
   margin: 0 auto;
   padding: 0;
   color: var(--ccd-text);

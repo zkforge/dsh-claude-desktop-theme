@@ -1,11 +1,8 @@
 /*
  * Shared composer geometry.
  *
- * Both the blank-session page and the conversation page must place the official
- * Composer at the same width and shape, so the geometry lives here instead of
- * being duplicated in two features (siblings never import each other). The
- * upstream structure is kept: the resident Composer card stays the single
- * editable root, and only where its parts sit changes.
+ * The blank-session and conversation pages share the same Composer shape.
+ * The resident Composer card stays the single editable root.
  *
  * Reference geometry (@2x reference screenshots, logical px at 1374x871):
  * - input surface: 770x42, 1px border, radius 13, text line 24px at 8/14 padding
@@ -17,9 +14,14 @@
  * Host classes are pinned in src/client/compat/host-dom.ts.
  */
 html[data-dsh-ccd-style="true"] .ST7X_W_body {
-  --dsh-chat-content-width: var(--ccd-composer-width);
-  --dsh-composer-card-max-width: var(--ccd-composer-width);
+  --dsh-composer-card-max-width: var(--dsh-chat-content-width);
   --dsh-composer-side-clearance: 16px;
+}
+
+/* Use the host's responsive width and persisted drag preference wherever it
+   supplies width controls. The home and embedded composers keep the theme cap. */
+html[data-dsh-ccd-style="true"] .ST7X_W_body:not(:has(> [data-width-handle])) {
+  --dsh-chat-content-width: var(--ccd-composer-width);
 }
 
 /* The host TodoPanel has a stable test id and semantic children. Scope to that
@@ -433,7 +435,7 @@ html[data-dsh-ccd-style="true"] .yhfFVG_dock {
   position: absolute;
   --ccd-ring-offset: calc(var(--ccd-trailing-width, 120px) + var(--ccd-cluster-gap)
     + var(--ccd-context-ring-seat));
-  right: calc((100% - min(100% - 32px, var(--ccd-composer-width))) / 2
+  right: calc((100% - min(100% - 32px, var(--dsh-composer-card-max-width, var(--ccd-composer-width)))) / 2
     + var(--ccd-composer-row-inset) + var(--ccd-ring-offset));
   bottom: var(--ccd-composer-bottom-gap);
   height: var(--ccd-control-row-height);

@@ -22,27 +22,53 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] .ccd-sessi
 }
 
 html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"]) {
-  padding-right: 316px;
+  --ccd-info-reserve: 316px;
+  padding-right: var(--ccd-info-reserve);
   box-sizing: border-box;
+}
+
+/* The host clamps drags using the body's full offsetWidth, including its
+   padding. Map that range into the narrower reading column: leave 48px for
+   gutters at the maximum and use half of the remaining drag distance while
+   constrained by the rail. The same mapping applies before and during a drag. */
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info="rail"]:has(> [data-width-handle]) {
+  --ccd-info-outer-width: var(--dsh-conversation-column-width, 936px);
+  --ccd-info-native-width: var(--dsh-chat-user-width, clamp(680px, var(--ccd-info-outer-width) * .64, 920px));
+  --ccd-info-native-max: calc(var(--ccd-info-outer-width) - 176px);
+  --ccd-info-reading-max: calc(var(--ccd-info-outer-width) - var(--ccd-info-reserve) - 48px);
+  --dsh-chat-content-width: min(var(--ccd-info-native-width),
+    var(--ccd-info-reading-max) - (var(--ccd-info-native-max) - var(--ccd-info-native-width)) / 2);
+}
+
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info="rail"] > [data-width-handle] {
+  width: 10px;
+}
+
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info="rail"] > [data-width-handle="left"] {
+  right: calc(50% + (var(--ccd-info-reserve) + var(--dsh-chat-content-width)) / 2 + 10px);
+}
+
+html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info="rail"] > [data-width-handle="right"] {
+  left: calc(50% - (var(--ccd-info-reserve) - var(--dsh-chat-content-width)) / 2 + 10px);
 }
 
 html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"])::before,
 html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"])::after {
-  right: 316px;
+  right: var(--ccd-info-reserve);
 }
 
 /* Extend the native chat scroll surface behind the rail, while its content
    keeps the reserved width. Its scrollbar lands beyond the cards on the right. */
 html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"]) > [data-conversation-scroll] {
-  margin-right: -314px;
-  padding-right: 316px;
+  margin-right: calc(2px - var(--ccd-info-reserve));
+  padding-right: var(--ccd-info-reserve);
   box-sizing: border-box;
 }
 
 /* Overlay views (Trajectory) pin the composer seat absolutely, which ignores
    the scroll padding above; keep it centred on the chat column, not the rail. */
 html[data-dsh-ccd-style="true"] [data-conversation-content][data-ccd-session-info]:not([data-ccd-session-info="overlay"]) > [data-conversation-scroll]:has([data-conversation-composer-overlay]) > [data-composer-seat] {
-  right: 316px;
+  right: var(--ccd-info-reserve);
 }
 
 .ccd-session-cards {

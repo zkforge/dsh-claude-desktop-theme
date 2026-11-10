@@ -180,42 +180,6 @@ html[data-dsh-ccd-style="true"] [data-turn-usage-details] > dd > span {
   white-space: normal;
 }
 
-/*
- * Transcript width handles: hidden here, because this interface removed what
- * they control (17).
- *
- * `ui-conversation`'s `ConversationWidthControls` renders one handle per side as
- * the Conversation body's last child (ConversationRoot.module.css,
- * `ST7X_W_widthHandle`, stable hook `data-width-handle`; component
- * `skeleton/ConversationWidthControls.tsx`). Each is a transparent full-height
- * strip — `position: absolute; top: 0; bottom: 0`, `cursor: col-resize`,
- * `width: min(10px, (100% - var(--dsh-chat-content-width)) / 2 - 48px)` — parked
- * 24px outside the transcript column, whose only ink is the 2px rule its own
- * `::after` reveals on hover or while dragging. Dragging one publishes
- * `--dsh-chat-user-width` on the Conversation root.
- *
- * That property has exactly one consumer in the host, the body rule
- * `--dsh-chat-content-width: var(--dsh-chat-user-width, clamp(680px, …))`, and
- * this interface replaces it: `theme/composer.css` pins
- * `--dsh-chat-content-width: var(--ccd-composer-width)` (770px) on the same
- * element with higher specificity. A drag therefore changes nothing — not the
- * transcript column, the user stack, the jump-to-bottom slot or the wide-table
- * bleed — while the handle keeps its pointer capture, its resize cursor and its
- * hover rule. It is a false affordance whose state cannot be reached: hiding it
- * takes away no behaviour, and with the plugin off the host's own rule returns
- * and the handles drag again.
- *
- * `display: none`, not `visibility` or a transparent paint, and scoped to the
- * Conversation root so `ui-layout`'s real column handles (`_6Qf49G_handle`, 8px,
- * on the sidebar and rightbar tracks) are never touched. The handle is an
- * absolutely positioned, empty box outside the body's flex flow, so removing it
- * cannot move a sibling: transcript width, the scroll viewport's stable
- * scrollbar gutter and the page's scroll range keep the values they had.
- */
-html[data-dsh-ccd-style="true"] .ST7X_W_root [data-width-handle] {
-  display: none;
-}
-
 html[data-dsh-ccd-style="true"] .ST7X_W_header {
   background: var(--ccd-canvas);
   color: var(--ccd-text);
@@ -514,27 +478,9 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
   display: none;
 }
 
-/*
- * Narrow columns: the cluster ends on the Composer's own trailing edge.
- *
- * The design's 12px inset (`--ccd-header-trailing-inset`) is measured in a
- * window whose transcript column is wider than the Composer's 770px cap, so the
- * Composer is centred inside the column and the two rows end at different
- * places — an inset the reference keeps at every width. Where the Composer
- * *fills* the column instead, its input surface's right border is a line the
- * cluster sits directly above, and the reference draws the cluster ending on it:
- * the last control's centre on that border, so the ⋮ reads as the row's closing
- * mark rather than as an icon hanging outside the Composer. That state is the
- * one an expanded right panel leaves, and this is where it is answered.
- *
- * The column that fills its Composer is the Composer's own 770px cap plus what
- * surrounds the surface: the root's two clearances and the page scroll
- * viewport's stable gutter and 2px margin, i.e. 810px. Below it the trailing
- * padding is the surface's own edge (`--ccd-composer-trailing-edge`, declared
- * on the header above) less half the closing control, so the box is centred on
- * the border rather than ending on it; `min()` keeps the design's inset as the
- * ceiling, for a deployment that hands the Composer a wider clearance.
- */
+/* When the Composer fills a narrow column, centre the last header control
+ * on the input's trailing edge. Keep the smaller inset throughout the narrow
+ * range so dragging the transcript width does not shift the header. */
 @container ccd-conversation (max-width: 810px) {
   html[data-dsh-ccd-style="true"] .ST7X_W_header {
     padding-right: min(

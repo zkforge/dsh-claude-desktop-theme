@@ -67,8 +67,11 @@ body{margin:0;background:#fbfbfa;font:13px/1.4 system-ui;--dsh-scrollbar-width:5
 .ST7X_W_headerUtilities:empty{display:none}
 .ST7X_W_headerCorner{flex:none;align-items:center;margin-left:8px;margin-right:-16px;display:flex}
 .ST7X_W_headerCorner:empty{display:none}
-.ST7X_W_body{--dsh-chat-content-width:770px;--dsh-composer-card-max-width:calc(var(--dsh-chat-content-width) + 32px);
+.ST7X_W_body{--dsh-chat-content-width:var(--dsh-chat-user-width,clamp(680px,calc(var(--dsh-conversation-column-width,0px) * .64),920px));--dsh-composer-card-max-width:calc(var(--dsh-chat-content-width) + 32px);
   --dsh-composer-side-clearance:16px;flex-direction:column;flex:1;min-height:0;display:flex;position:relative}
+.ST7X_W_widthHandle{z-index:0;width:min(10px,calc((100% - var(--dsh-chat-content-width)) / 2 - 48px));cursor:col-resize;position:absolute;top:0;bottom:0}
+.ST7X_W_widthHandle[data-side=left]{right:calc(50% + var(--dsh-chat-content-width) / 2 + 24px)}
+.ST7X_W_widthHandle[data-side=right]{left:calc(50% + var(--dsh-chat-content-width) / 2 + 24px)}
 .ST7X_W_scrollBody{scrollbar-gutter:stable;flex-direction:column;flex:1;min-height:0;margin-right:2px;display:flex;overflow-y:auto}
 .ST7X_W_composerSeat{flex-direction:column;flex:none;display:flex}
 .ST7X_W_composerStack{gap:6px;flex-direction:column;display:flex}
@@ -106,8 +109,10 @@ body{margin:0;background:#fbfbfa;font:13px/1.4 system-ui;--dsh-scrollbar-width:5
 const styles = (await Promise.all([
   'src/client/theme/tokens.css',
   'src/client/theme/composer.css',
+  'src/client/theme/queue.css',
   'src/client/features/conversation/conversation.css',
   'src/client/features/conversation/header-actions/header-actions.css',
+  'src/client/features/session-info/session-info.css',
 ].map(path => readFile(join(root, path), 'utf8')))).join('\n');
 
 const GLYPH = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor"><path d="M3 8h10"/></svg>';
@@ -135,7 +140,7 @@ function page() {
 ${tabs}
 </div>
 </div>
-<div class="ST7X_W_body" data-conversation-body>
+<div class="ST7X_W_body" data-conversation-body data-conversation-content>
 <div class="ST7X_W_scrollBody" data-conversation-scroll>
 <div class="ST7X_W_composerSeat" data-composer-seat><div class="ST7X_W_composerStack">
 <div class="yhfFVG_root" data-composer-root style="--ccd-model-max-width:320px">
@@ -194,6 +199,72 @@ const lay = (devtools, { width }) => devtools.evaluate(`(() => {
   sheet.textContent = ${JSON.stringify(aliasHostClasses(`${hostCss}\n${styles}`, PINNED_BUILD))};
   document.head.append(sheet);
 })()`);
+
+test('native width changes reach the transcript, composer, queue and dock', {
+  skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 30000,
+}, async () => {
+  const profile = await mkdtemp(join(tmpdir(), 'ccd-chat-width-'));
+  try {
+    await withPage({ url: 'about:blank', width: 1600, height: 800, profile }, async devtools => {
+      await lay(devtools, { width: 1100 });
+      await devtools.evaluate(`(() => {
+        document.querySelector('.ST7X_W_body').insertAdjacentHTML('beforeend',
+          '<div class="ST7X_W_widthHandle" data-width-handle="left" data-side="left"></div>' +
+          '<div class="ST7X_W_widthHandle" data-width-handle="right" data-side="right"></div>');
+        document.querySelector('.ST7X_W_composerSeat').insertAdjacentHTML('beforebegin',
+          '<div id="transcript" style="width:min(100%,var(--dsh-chat-content-width));margin:auto"></div>');
+        document.querySelector('.yhfFVG_root').insertAdjacentHTML('afterbegin', '<div class="yhfFVG_dock"></div>');
+        document.querySelector('.yhfFVG_root').insertAdjacentHTML('beforebegin', '<div data-queue-dock></div>');
+      })()`);
+      const measure = (column, preference = null, rail = false) => devtools.evaluate(`(() => {
+        const root = document.querySelector('.ST7X_W_root');
+        const body = document.querySelector('.ST7X_W_body');
+        root.parentElement.style.width = '${column}px';
+        if (${rail}) body.dataset.ccdSessionInfo = 'rail';
+        else delete body.dataset.ccdSessionInfo;
+        root.style.setProperty('--dsh-conversation-column-width', body.offsetWidth + 'px');
+        const preference = ${preference};
+        const max = Math.max(640, body.offsetWidth - 176);
+        root.style.setProperty('--dsh-chat-user-width',
+          preference === null ? '' : Math.min(Math.max(preference, 640), max) + 'px');
+        const box = selector => document.querySelector(selector).getBoundingClientRect();
+        const card = box('[data-composer-card]');
+        const right = box('[data-width-handle="right"]');
+        const left = box('[data-width-handle="left"]');
+        return {
+          transcript: box('#transcript').width, composer: card.width, queue: box('[data-queue-dock]').width,
+          dockInset: card.right - box('.yhfFVG_dock').right,
+          handles: [left, right].every(handle => handle.width > 0 &&
+            document.elementFromPoint(handle.x + handle.width / 2, handle.y + 100)?.hasAttribute('data-width-handle')),
+          bodyWidth: body.offsetWidth, handleRight: right.right,
+          readingRight: body.getBoundingClientRect().right - parseFloat(getComputedStyle(body).paddingRight),
+        };
+      })()`);
+      const regular = await measure(1100);
+      const wide = await measure(1500);
+      const dragged = await measure(1500, 1050);
+      const rail = await measure(1500, 950, true);
+      const narrowRail = await measure(1000, null, true);
+      const narrowDragged = await measure(1000, 780, true);
+      const minimum = await measure(1000, 0, true);
+      const maximum = await measure(1000, 1000, true);
+      assert.deepEqual([regular.composer, wide.composer, dragged.composer, rail.composer], [704, 920, 1050, 949]);
+      for (const layout of [regular, wide, dragged, rail, narrowRail, narrowDragged, minimum, maximum]) {
+        assert.equal(layout.transcript, layout.composer);
+        assert.equal(layout.queue, layout.composer);
+        assert.equal(layout.dockInset, regular.dockInset);
+        assert.equal(layout.handles, true);
+        assert.ok(layout.handleRight < layout.readingRight, 'the handle stays in the reading column');
+      }
+      assert.equal(rail.bodyWidth, 1500, 'the host measures the full column before reserving the rail');
+      assert.ok(minimum.composer < narrowRail.composer, 'dragging inward narrows the chat beside the rail');
+      assert.ok(narrowDragged.composer > narrowRail.composer, 'dragging outward widens the chat beside the rail');
+      assert.ok(maximum.composer > narrowDragged.composer);
+    });
+  } finally {
+    await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 });
+  }
+});
 
 test('the status bar stays one line at every column width', {
   skip: chrome ? false : 'Chrome unavailable; set CHROME to run browser coverage', timeout: 30000,
