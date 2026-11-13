@@ -273,37 +273,43 @@ export function aliasHostClasses(text: string, build: HostBuild): string {
   return out;
 }
 
-/** Shared frontend classes read from rc22 c59d10af; independent of frame hashes.
- * Match both verified generations, including before a menu or modal mounts. */
-export const SHARED_HOST_CLASSES: Readonly<Record<string, string>> = Object.freeze({
-  '_primary_1rv3m_36': '_primary_1ulci_36',
-  '_markdown_1ypvv_5': '_markdown_rve47_5',
-  '_fileMention_1ypvv_85': '_fileMention_rve47_92',
-  '_linkIcon_1ypvv_94': '_linkIcon_rve47_101',
-  '_viewport_4ub78_19': '_viewport_1p5el_19',
-  '_footer_4ub78_62': '_footer_1p5el_67',
-  '_separator_4ub78_80': '_separator_1p5el_89',
-  '_itemWrap_4ub78_90': '_itemWrap_1p5el_105',
-  '_item_4ub78_90': '_item_1p5el_105',
-  '_itemIcon_4ub78_148': '_itemIcon_1p5el_165',
-  '_check_4ub78_179': '_check_1p5el_197',
-  '_itemLabel_4ub78_190': '_itemLabel_1p5el_208',
-  '_danger_4ub78_226': '_danger_1p5el_250',
-  '_mask_o6lrb_18': '_mask_14mp3_18',
-  '_dialog_o6lrb_33': '_dialog_14mp3_33',
-  '_header_o6lrb_71': '_header_14mp3_71',
-  '_title_o6lrb_79': '_title_14mp3_79',
-  '_close_o6lrb_87': '_close_14mp3_87',
-  '_description_o6lrb_106': '_description_14mp3_108',
-  '_body_o6lrb_115': '_body_14mp3_117',
-  '_footer_o6lrb_123': '_footer_14mp3_125',
+/** Shared frontend classes read from shipped frontend bundles; independent of frame hashes.
+ * Match verified generations, including before a menu or modal mounts. */
+export const SHARED_HOST_CLASSES: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  '_primary_1rv3m_36': ['_primary_1ulci_36'],
+  '_markdown_1ypvv_5': ['_markdown_rve47_5', '_markdown_13jw0_5'],
+  '_fileMention_1ypvv_85': ['_fileMention_rve47_92', '_fileMention_13jw0_92'],
+  '_linkIcon_1ypvv_94': ['_linkIcon_rve47_101', '_linkIcon_13jw0_101'],
+  '_viewport_4ub78_19': ['_viewport_1p5el_19', '_viewport_70kcw_19'],
+  '_footer_4ub78_62': ['_footer_1p5el_67', '_footer_70kcw_158'],
+  '_separator_4ub78_80': ['_separator_1p5el_89', '_separator_70kcw_157'],
+  '_itemWrap_4ub78_90': ['_itemWrap_1p5el_105', '_itemWrap_70kcw_173'],
+  '_item_4ub78_90': ['_item_1p5el_105', '_item_70kcw_173'],
+  '_itemIcon_4ub78_148': ['_itemIcon_1p5el_165', '_itemIcon_70kcw_233'],
+  '_check_4ub78_179': ['_check_1p5el_197', '_check_70kcw_265'],
+  '_itemLabel_4ub78_190': ['_itemLabel_1p5el_208', '_itemLabel_70kcw_276'],
+  '_danger_4ub78_226': ['_danger_1p5el_250', '_danger_70kcw_318'],
+  '_mask_o6lrb_18': ['_mask_14mp3_18', '_mask_1ytzq_18'],
+  '_dialog_o6lrb_33': ['_dialog_14mp3_33', '_dialog_1ytzq_33'],
+  '_header_o6lrb_71': ['_header_14mp3_71', '_header_1ytzq_71'],
+  '_title_o6lrb_79': ['_title_14mp3_79', '_title_1ytzq_79'],
+  '_close_o6lrb_87': ['_close_14mp3_87', '_close_1ytzq_103'],
+  '_description_o6lrb_106': ['_description_14mp3_108', '_description_1ytzq_124'],
+  '_body_o6lrb_115': ['_body_14mp3_117', '_body_1ytzq_99'],
+  '_footer_o6lrb_123': ['_footer_14mp3_125', '_footer_1ytzq_141'],
+  '_confirmation_cjd8z_1': ['_confirmation_1cz0t_1'],
+  '_warning_cjd8z_19': ['_description_1cz0t_19'],
+  '_warningIcon_cjd8z_32': ['_warningIcon_1ytzq_93'],
+  '_acknowledgement_cjd8z_38': ['_acknowledgement_1cz0t_26'],
+  '_modalAction_cjd8z_67': ['_modalAction_1cz0t_41'],
+  '_confirmAction_cjd8z_71': ['_confirmAction_1cz0t_45'],
 });
 
-/** Resolve module prefixes and both generations of shared frontend selectors. */
+/** Resolve module prefixes and all verified generations of shared frontend selectors. */
 export function aliasHostSelectors(text: string, build: HostBuild): string {
   let out = aliasHostClasses(text, build);
-  for (const [oldName, newName] of Object.entries(SHARED_HOST_CLASSES)) {
-    out = out.replaceAll(`.${oldName}`, `:is(.${oldName}, .${newName})`);
+  for (const [oldName, aliases] of Object.entries(SHARED_HOST_CLASSES)) {
+    out = out.replaceAll(`.${oldName}`, `:is(.${[oldName, ...aliases].join(', .')})`);
   }
   return out;
 }

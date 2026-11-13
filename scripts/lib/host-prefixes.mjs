@@ -57,8 +57,8 @@ export function readAsar(path, accept = () => true) {
  */
 export function parseClassMaps(text) {
   const modules = new Map();
-  for (const match of text.matchAll(/"([A-Za-z][A-Za-z0-9_]*)":\s*"([A-Za-z0-9_-]{3,14})_\1"/g)) {
-    const [, local, hash] = match;
+  for (const match of text.matchAll(/"([A-Za-z][A-Za-z0-9_]*)":\s*(["`])([A-Za-z0-9_-]{3,14})_\1\2/g)) {
+    const [, local, , hash] = match;
     if (!modules.has(hash)) modules.set(hash, new Set());
     modules.get(hash).add(local);
   }

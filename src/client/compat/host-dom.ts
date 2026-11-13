@@ -220,6 +220,7 @@ export const HOST = Object.freeze({
   openTargetAppIcon: '.iq4beG_appIcon',
   /** session-log-export/HeaderAction.module.css: native session action menu. */
   sessionMoreButton: '.Da3aKq_moreButton',
+  sessionContextMenuButton: '.ST7X_W_headerMenuButton[data-context-menu-trigger]',
   /**
    * sidebar-right/ExpandButton.tsx: the collapsed rightbar's only re-entry
    * control. This plugin no longer styles it: the corner entry shadows it in
@@ -472,7 +473,7 @@ export interface MenuRowClasses {
 export function menuRowClasses(_document: Document): MenuRowClasses {
   const name = (selector: string) => {
     const oldName = selector.slice(1);
-    return `${oldName} ${SHARED_HOST_CLASSES[oldName]}`;
+    return [oldName, ...(SHARED_HOST_CLASSES[oldName] ?? [])].join(' ');
   };
   return {
     itemWrap: name(HOST.menuItemWrap),

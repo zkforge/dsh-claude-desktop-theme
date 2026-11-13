@@ -231,6 +231,33 @@ function mount(
   }
 }
 
+test('the row joins the portaled context menu opened by the session header', () => {
+  const { header, trigger, viewport } = sessionMenu();
+  const shell = new FakeElement('main');
+  const list = viewport.parentElement!;
+  trigger.setAttribute('class', 'ST7X_W_headerMenuButton');
+  trigger.setAttribute('data-context-menu-trigger', '');
+  list.setAttribute('data-context-menu', '');
+  shell.append(header, list);
+  let selected = false;
+  const mounted = mount(fakeDocument(shell), {
+    label: '打开侧边栏',
+    wanted: () => true,
+    act: () => { selected = true; },
+  });
+  try {
+    const row = viewport.querySelector(`button[${MENU_ROW_ATTRIBUTE}]`);
+    assert.equal(row?.textContent, '打开侧边栏');
+    row?.click();
+    assert.equal(selected, true);
+    assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+    mounted.sync();
+    assert.equal(viewport.querySelector(`button[${MENU_ROW_ATTRIBUTE}]`), null);
+  } finally {
+    mounted.dispose();
+  }
+});
+
 test('the row leads the menu with this module\u2019s label', () => {
   const { header, trigger, viewport } = sessionMenu();
   const document = fakeDocument(header);

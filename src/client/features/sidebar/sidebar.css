@@ -304,6 +304,15 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_p
   margin-bottom: 5px;
 }
 
+/* The shared scrollport adds blank tracks above and below the navigation. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_scrollRegion {
+  margin-top: 0;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_scrollArea {
+  grid-template-rows: 0 max-content 0 max-content;
+}
+
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow {
   min-height: var(--ccd-nav-row-height);
   margin: 0;
@@ -314,11 +323,38 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_p
   line-height: 20px;
 }
 
+/* Use the entry as the single hover and selection surface. Its button still
+   owns focus and leaves room for the native unpin action. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry {
+  border-inline: 0;
+  border-radius: var(--ccd-radius-row);
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry ._3WPZCG_panelRow {
+  border-inline: 0;
+  background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry > ._3WPZCG_panelUnpin {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry:is(:hover, :has(:focus-visible)) {
+  background: var(--ccd-hover);
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_scrollArea ._3WPZCG_moreAnchor > ._3WPZCG_panelRow {
+  border-inline: 0;
+}
+
 /* Current row versus hover. The reference paints the row you are on one step
    darker than the row you are merely pointing at; the host marks the current
    panel with `panelActive`, so the two states take two different steps here
    instead of sharing the hover grey. */
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow._3WPZCG_panelActive {
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow._3WPZCG_panelActive,
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry._3WPZCG_panelEntryActive {
   background: var(--ccd-selected);
   color: var(--ccd-text);
 }
@@ -363,7 +399,8 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed)
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow:hover ._3WPZCG_panelGlyph,
-html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow._3WPZCG_panelActive ._3WPZCG_panelGlyph {
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow:is(._3WPZCG_panelActive, [aria-current="page"]) ._3WPZCG_panelGlyph,
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelRow[aria-current="page"] {
   color: var(--ccd-text);
 }
 

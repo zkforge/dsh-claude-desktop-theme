@@ -5,10 +5,8 @@ import { recordsInTranscript } from './mutation-scope.ts';
 /**
  * The Session header's own ⋮ menu, extended with one row.
  *
- * `session-log-export` owns that menu: a `ui-primitives` `Menu` whose rows are
- * data (`下载 Session 日志`, `反馈`) and whose list is rendered in place, as the
- * second child of the menu's own root span beside its trigger. There is no slot
- * a third-party row could register into, so this module adds one to the list the
+ * Older builds render the session-log-export menu beside its trigger.
+ * DSH 0.2.2-rc.2 opens a shared context menu in a portal. This module adds a row to the list the
  * host drew — its first row, ahead of the host's own — cloned from a native row,
  * which is what makes the addition look native without pinning a single menu
  * class: the clone carries the host's own classes, so whatever draws that menu
@@ -44,6 +42,13 @@ export interface SessionMenuRow {
 /** The open Session menu — its list and its trigger — or null while it is closed. */
 function openSessionMenu(document: Document): { list: HTMLElement; trigger: HTMLElement } | null {
   const host = hostSelectors(document);
+  const contextTrigger = document.querySelector<HTMLElement>(
+    `${host.conversationHeader} ${host.sessionContextMenuButton}[aria-expanded="true"]`,
+  );
+  if (contextTrigger !== null) {
+    const list = document.querySelector<HTMLElement>('[data-context-menu][role="menu"]');
+    return list === null ? null : { list, trigger: contextTrigger };
+  }
   /* The menu's own trigger is the only control in this header that reports an
      expanded popup from the utilities seat; the pinned class keeps the query
      off any other header entry a later build might add there. */

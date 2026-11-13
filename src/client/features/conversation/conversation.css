@@ -409,7 +409,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([r
   border-radius: var(--ccd-radius-row);
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton {
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, .ST7X_W_headerMenuButton) {
   padding: 0;
 }
 

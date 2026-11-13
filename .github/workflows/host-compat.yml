@@ -1,0 +1,79 @@
+name: DSH host compatibility
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package*.json'
+      - 'cordis.patch.yml'
+      - '.github/workflows/host-compat.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsh-host-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    # The feed below contains ARM64 installers; macos-15 is an Apple Silicon runner.
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Discover official DSH build
+        id: upstream
+        run: node scripts/dsh-release.mjs
+      - name: Look up successful host + plugin revision
+        id: passed
+        uses: actions/cache/restore@v4
+        with:
+          path: artifacts/host-smoke-pass
+          key: host-smoke-v1-${{ runner.arch }}-${{ github.sha }}-${{ steps.upstream.outputs.key }}
+          lookup-only: true
+      - name: Download and verify candidate
+        if: steps.passed.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          node scripts/dsh-release.mjs --manifest artifacts/dsh-release.yml --download "$RUNNER_TEMP/dsh.zip"
+          ditto -x -k "$RUNNER_TEMP/dsh.zip" "$RUNNER_TEMP/dsh-candidate"
+      - name: Build the installable plugin
+        if: steps.passed.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          npm run build
+          npm run check:package
+          npm pack --ignore-scripts --pack-destination artifacts
+      - name: Exercise real packaged Desktop
+        id: smoke
+        if: steps.passed.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          npm run test:host -- --app "$RUNNER_TEMP/dsh-candidate/DeepSeek Harness.app" \
+            --tarball "artifacts/dsh-claude-desktop-theme-$(node -p 'require("./package.json").version').tgz"
+          mkdir -p artifacts/host-smoke-pass
+          cp artifacts/dsh-release.yml artifacts/host-smoke-pass/
+      - name: Cache only a successful verification
+        if: steps.smoke.outcome == 'success' && steps.passed.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: artifacts/host-smoke-pass
+          key: host-smoke-v1-${{ runner.arch }}-${{ github.sha }}-${{ steps.upstream.outputs.key }}
+      - name: Retain failure and success evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-host-evidence-${{ github.run_id }}
+          path: |
+            artifacts/dsh-release.yml
+            artifacts/host-smoke/run-*/evidence/**
+          retention-days: 14
+          if-no-files-found: warn

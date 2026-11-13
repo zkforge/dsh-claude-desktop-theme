@@ -10,21 +10,50 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { readFile, rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const chromeCandidates = [
-  process.env.CHROME,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
   '/usr/bin/google-chrome',
   '/usr/bin/chromium',
-].filter(Boolean);
+];
 
 /** Absolute path to an installed Chrome, or a throw naming the override to set. */
 export function findChrome() {
-  const found = chromeCandidates.find(candidate => existsSync(candidate));
+  if (process.env.CHROME) {
+    if (!existsSync(process.env.CHROME)) throw new Error(`CHROME executable not found: ${process.env.CHROME}`);
+    return process.env.CHROME;
+  }
+  const testingCandidates = [];
+  if (process.platform === 'darwin') {
+    const platform = process.arch === 'arm64' ? 'mac_arm' : 'mac';
+    const archive = process.arch === 'arm64' ? 'mac-arm64' : 'mac-x64';
+    for (const product of ['chrome-headless-shell', 'chrome']) {
+      const cache = join(homedir(), '.cache/chrome-for-testing', product);
+      if (!existsSync(cache)) continue;
+      const versions = readdirSync(cache).filter(name => name.startsWith(`${platform}-`))
+        .sort((a, b) => b.localeCompare(a, 'en', { numeric: true }));
+      for (const version of versions) {
+        testingCandidates.push(join(cache, version, `${product}-${archive}`, product === 'chrome'
+          ? 'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'
+          : 'chrome-headless-shell'));
+      }
+    }
+    const playwright = join(homedir(), 'Library/Caches/ms-playwright');
+    if (existsSync(playwright)) {
+      const revisions = readdirSync(playwright).filter(name => /^chromium-\d+$/u.test(name))
+        .sort((a, b) => b.localeCompare(a, 'en', { numeric: true }));
+      for (const revision of revisions) {
+        testingCandidates.push(join(playwright, revision, `chrome-${archive}`,
+          'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'));
+      }
+    }
+  }
+  const found = [...testingCandidates, ...chromeCandidates].find(candidate => existsSync(candidate));
   if (!found) throw new Error('Chrome not found; set CHROME to its executable');
   return found;
 }
@@ -56,7 +85,8 @@ export class Devtools {
     throw new Error('Chrome never exposed a page target');
   }
 
-  constructor(url) {
+  constructor(url, { timeoutMs = 0 } = {}) {
+    this.timeoutMs = timeoutMs;
     this.pending = new Map();
     this.events = new Map();
     this.next = 1;
@@ -72,9 +102,18 @@ export class Devtools {
         return;
       }
       const entry = this.pending.get(message.id);
+      if (!entry) return;
       this.pending.delete(message.id);
+      clearTimeout(entry.timer);
       if (message.error) entry.reject(new Error(`${entry.method}: ${message.error.message}`));
       else entry.resolve(message.result);
+    });
+    this.socket.addEventListener('close', () => {
+      for (const entry of this.pending.values()) {
+        clearTimeout(entry.timer);
+        entry.reject(new Error(`${entry.method}: DevTools connection closed`));
+      }
+      this.pending.clear();
     });
   }
 
@@ -82,7 +121,11 @@ export class Devtools {
     const id = this.next;
     this.next += 1;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject, method });
+      const timer = this.timeoutMs ? setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${method}: DevTools command timed out after ${this.timeoutMs}ms`));
+      }, this.timeoutMs) : undefined;
+      this.pending.set(id, { resolve, reject, method, timer });
       this.socket.send(JSON.stringify({ id, method, params }));
     });
   }

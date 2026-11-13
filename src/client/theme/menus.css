@@ -85,6 +85,11 @@ html[data-dsh-ccd-style="true"] [data-menu-material] {
   --dsw-menu-backdrop-filter: none;
 }
 
+/* The opaque theme surface already supplies the fill and outer shadow. */
+html[data-dsh-ccd-style="true"][data-platform="darwin"] [data-menu-backing] {
+  display: none;
+}
+
 /* Input-trigger menus keep their native anchor and keyboard selection. The
  * description is a separate span in MenuView; labels and aliases stay intact. */
 html[data-dsh-ccd-style="true"] [data-menu-material][data-trigger-menu] {

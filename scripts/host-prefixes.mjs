@@ -101,10 +101,11 @@ function buildId(identity) {
 function pair(prefixes, reference, target) {
   /* The installed reference may be newer than the authored build. Its
      registered table identifies the same modules under their current hashes. */
-  // rc5 and rc22's 24 module prefixes were verified against installed archives.
+  // These builds retain the macOS layout family. rc.2 removes two legacy modules,
+  // which still need an older archive as the reference when pairing those prefixes.
   // Shared frontend selectors are versioned independently of this table.
   const referenceId = buildId(reference.identity);
-  const id = ['dsh-0.2.1-rc.5-d4db512a', 'dsh-0.2.2-rc.1-c59d10af'].includes(referenceId)
+  const id = ['dsh-0.2.1-rc.5-d4db512a', 'dsh-0.2.2-rc.1-c59d10af', 'dsh-0.2.2-rc.2-a6b1b85f'].includes(referenceId)
     ? 'dsh-0.2.1-rc.3-be72761e' : referenceId;
   const registered = HOST_BUILDS.find(build =>
     (build.id === id || build.id === `${id}-win32`)

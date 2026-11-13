@@ -165,7 +165,9 @@ Host `Config` 的 `.volatile()` 字段通过 DSH 设置服务投影到 `configFo
 
 平台差异由宿主属性分流：`data-platform="darwin"` 只标记 macOS，交通灯与折叠侧栏的窗口控件几何都限制在该作用域内；Windows 由 `data-windows-titlebar` 标记，宿主在窗口上方另加 40px 标题栏条带，侧栏开关、原生「应用／编辑」菜单和窗口按钮都在其中，插件只让该条带沿用配置的侧栏配色，不移动其中的控件。
 
-同一版本号的 macOS 与 Windows 安装包是两次不同构建（`0.2.0-rc.2` 分别是 commit `5e9e301d` 与 `04f392c9`），宿主 CSS Module 的类名前缀在两者间不同。`compat/host-builds.ts` 保留原有两套前缀表，并登记 macOS 与 Windows `0.2.1-rc.3`（两者 commit 均为 `be72761e`，类名前缀仍不同）的各 24 组映射，Windows 当前构建 id 带 `-win32` 以区分选择器缓存，`dom.mountStyles` 在挂载样式前改写类名，`hostSelectors`/`hostAnchors` 按当前构建解析选择器表，因此样式表与适配代码都只写一套类名。两个平台的首屏在 frame 尚未挂载时均使用各自的最新版映射，frame 出现后按实际类名识别构建；未登记的构建不会静默失效：`watchHostBuild` 在窗口骨架渲染后报告一次，配置页同时给出提示。前缀表由 `node scripts/host-prefixes.mjs --windows <app.asar>` 从该构建的 `app.asar` 重新读出（整版重绑用 `--pinned`），已登记的参照构建可通过现有映射还原 authored 前缀，参照 rc5 的已核对身份可还原 authored 前缀；目标沿用已登记 hash 且 owning bundle 相同时允许 local 增删，否则要求完整 local 集合唯一匹配，配不上就报错。frame 标识的是布局前缀族，不能证明共享前端代次：Windows rc22 保留 24 组模块前缀但改变 Menu、Modal、MarkdownText 的共享类名及行号。`aliasHostSelectors` 让样式与 DOM 查询同时匹配核对过的新旧两代；`menuRowClasses` 为插件生成的原生菜单行同时携带两代类。
+同一版本的 macOS 和 Windows 安装包可能使用不同的 CSS Module 前缀。各平台的映射登记在 `compat/host-builds.ts`，窗口骨架出现前按平台选择，出现后按 frame 类名识别；遇到未登记的 frame 时，`watchHostBuild` 会记录诊断并在设置页提示。`dom.mountStyles`、`hostSelectors` 和 `hostAnchors` 共用这些映射。用 `scripts/host-prefixes.mjs` 从目标 `app.asar` 提取模块，沿用已知 hash 时核对 owning bundle，否则核对完整的 local 名称集合。
+
+macOS `0.2.2-rc.2` 沿用 `PIRFFq_frame` 所属前缀族，移除了独立的会话日志菜单按钮和实验团队模块，CSS Module 映射改用模板字符串打包。核对这些旧模块时，以保留它们的 `0.2.2-rc.1` 归档通过 `--authored` 提供参照。Menu、Modal、RiskConfirmation 和 MarkdownText 的共享类随前端包更新，独立由 `aliasHostSelectors` 处理；`menuRowClasses` 为插件生成的菜单行提供各代类名。新版会话头部通过宿主共享上下文菜单显示操作，适配从展开的会话按钮定位该菜单。
 
 ## 统计数据
 
@@ -202,6 +204,8 @@ Host 构建为 ESM，运行依赖外置。Client 打成 CommonJS factory，并�
 安装包包含 `lib/`、`cordis.patch.yml`、README、LICENSE 和 package.json。Geist 字体与 OFL 许可保留在仓库中，供本机安装。
 
 `npm run check` 执行类型、模块边界、颜色归属、文档链接、测试、构建和包内容检查；`npm run pack:local` 通过同一套检查后生成 tarball。
+
+真实宿主验收由 `scripts/host-smoke.mjs` 独立执行：在隔离的 DSH_HOME 与 Electron 用户目录中启动打包好的 macOS Desktop，经宿主 CLI 安装 tarball，以原生输入事件检查界面、权限及配置持久化，并保留失败截图、DOM 和日志。`host-compat.yml` 从官方更新清单发现 macOS ARM64 候选，核对下载大小及 SHA-512，再运行同一验收；成功缓存绑定宿主清单和插件提交。范围、命令与证据说明见 [真实宿主兼容性验收](docs/host-compatibility.md)。
 
 权限菜单按参考图排列为「自动、手动、接受编辑、计划、跳过权限确认」，显示数字 1–5。权限与 Agent 预设菜单观察文档 `lang`：语言变化后先撤回旧语言的显示改写，再重建匹配表；原生菜单内原地更新的文字也会重新适配，避免英文启动后切中文时退回原生权限名称。Agent 预设的标题和完整说明始终保留宿主节点与原文，不再隐藏原生说明或插入精简文案；仅附加菜单标记与数字快捷键。前、后四项保留 DSH 的自动审查、只读、工作区修改及完全权限动作与原生确认流程；自动审查保留实验标记，手动说明保留只读限制。`compat/permission-plan-port.ts` 优先读取并订阅当前会话 `projections.faceOf("plan")`（与宿主计划按钮相同，包含 pending 目标状态），仅在没有活动绑定时回退到列表投影；实时值缺失时不回退到旧列表状态，通过宿主命令通道执行 `/plan` 与 `/plan off`；计划开启时菜单与按钮显示计划状态，权限按钮隐藏原权限名称，并隐藏宿主独立的计划按钮，只保留一个模式入口（直接匹配宿主计划按钮的无障碍名称，不依赖单组件槽位外框）；隐藏名称的选择器优先级高于窄栏强制显示名称的规则。切回权限项先退出计划，再转发原生按钮。缺少计划投影时不显示计划项，失败在菜单显示并保留当前状态。仅菜单打开时响应无修饰数字键；输入控件、输入法组合与按键重复不触发。勾选与数字对齐名称行，说明行跨越尾列；名称为 14px 常规字重，说明与数字为 12px 弱化色。权限菜单按内容收窄，最小 202px，Agent 预设菜单保留 280px。输入面圆角采用 12px。
 

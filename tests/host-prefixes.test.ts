@@ -37,6 +37,11 @@ test('pairing is the identity when the target is the reference build', () => {
   assert.deepEqual([...mapping], [['AAA111_', 'AAA111_'], ['BBB222_', 'BBB222_']]);
 });
 
+test('the rc.2 minifier emits CSS module values as template literals', () => {
+  const maps = parseClassMaps('{"frame":`PIRFFq_frame`,"sidebarCol":`PIRFFq_sidebarCol`}');
+  assert.deepEqual([...maps.get('PIRFFq') ?? []], ['frame', 'sidebarCol']);
+});
+
 test('pairing follows the module, not the names the plugin happens to use', () => {
   /* Two target modules both define `body`; only the one carrying the reference
      module's whole set may be chosen. */

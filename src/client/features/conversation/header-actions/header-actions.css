@@ -170,7 +170,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] .ccd-heade
  * The menu and click handler stay the host's own. Explicit flex centring keeps
  * the replacement mark off the text baseline; disabled opacity remains native.
  */
-html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton {
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, .ST7X_W_headerMenuButton) {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
@@ -183,11 +183,17 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton {
   line-height: 1;
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton svg {
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, .ST7X_W_headerMenuButton) svg {
   display: none;
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .Da3aKq_moreButton::before {
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .ST7X_W_headerMenuButton {
+  width: var(--ccd-header-action-size);
+  height: var(--ccd-header-action-size);
+  color: var(--ccd-header-icon-color);
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, .ST7X_W_headerMenuButton)::before {
   content: "";
   display: block;
   flex: none;

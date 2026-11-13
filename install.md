@@ -1,6 +1,6 @@
 # 安装指南
 
-环境：DeepSeek Harness Desktop `>=0.2.1-rc.3 <0.3.0-0`，允许后续 `0.2.x` 正式版与预发布版（含 `0.2.2-rc.1`）安装；放宽版本声明不代表已完成所有版本的实机验证。macOS（Apple 芯片）已使用 `0.2.1-rc.5` 实机验证。下方保留 Windows 10 及以上（64 位）的安装步骤；新版宿主的 Windows 构建尚未完成验证。首次安装前启动一次 DSH，初始化 desktop profile。源码构建另需 Node.js `>=22.18.0`、npm 和 Git。
+环境：DeepSeek Harness Desktop `>=0.2.1-rc.3 <0.3.0-0`，允许后续 `0.2.x` 正式版与预发布版（含 `0.2.2-rc.2`）安装；放宽版本声明不代表已完成所有版本的实机验证。macOS（Apple 芯片）已通过 `0.2.2-rc.2` 实机冒烟测试。下方保留 Windows 10 及以上（64 位）的安装步骤；新版宿主的 Windows 构建尚未完成验证。首次安装前启动一次 DSH，初始化 desktop profile。源码构建另需 Node.js `>=22.18.0`、npm 和 Git。
 
 ## 从 npm 安装（推荐）
 
@@ -59,6 +59,8 @@ cd dsh-claude-desktop-theme
 ```
 
 已有仓库时，在当前 checkout 执行对应平台的命令。
+
+浏览器测试和资源脚本共用浏览器选择逻辑：优先使用 `CHROME` 指定的可执行文件（路径不存在时报错）；macOS 未设置时，依次查找 `~/.cache/chrome-for-testing` 中的 headless shell、Chrome，再查找 Playwright 缓存中的 Chrome for Testing，最后回退系统 Chrome／Chromium。每个缓存按版本从新到旧选择，不固定本机版本号。在限制浏览器进程或本地 DevTools 连接的沙箱内运行时，仍需允许在沙箱外执行测试。
 
 ### macOS
 
