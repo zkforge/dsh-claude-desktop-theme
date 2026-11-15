@@ -164,16 +164,15 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] .ccd-heade
  * and the same geometry, transposed to (8, 3), (8, 8) and (8, 13), is painted as
  * a mask over the button's `currentColor` (theme/tokens.css, `--ccd-icon-more`).
  *
- * Menu wraps the button in an inline-flex span: the cluster sizes that span,
- * while Button's native small size remains 28px. Fill the wrapper so the real
- * button also becomes 24px in a narrow column, including its hover surface.
- * The menu and click handler stay the host's own. Explicit flex centring keeps
- * the replacement mark off the text baseline; disabled opacity remains native.
+ * The current host renders a context-menu trigger directly. Older hosts use
+ * the Menu anchor; the same square fits both. Center the artwork in the
+ * button itself, including when the native Button keeps an icon wrapper.
  */
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, .ST7X_W_headerMenuButton) {
   box-sizing: border-box;
-  width: 100%;
-  height: 100%;
+  position: relative;
+  width: var(--ccd-header-control-size);
+  height: var(--ccd-header-control-size);
   min-width: 0;
   min-height: 0;
   flex: none;
@@ -188,15 +187,15 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, 
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities .ST7X_W_headerMenuButton {
-  width: var(--ccd-header-action-size);
-  height: var(--ccd-header-action-size);
   color: var(--ccd-header-icon-color);
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities :is(.Da3aKq_moreButton, .ST7X_W_headerMenuButton)::before {
   content: "";
-  display: block;
-  flex: none;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  pointer-events: none;
   width: var(--ccd-header-icon-size);
   height: var(--ccd-header-icon-size);
   background-color: currentColor;

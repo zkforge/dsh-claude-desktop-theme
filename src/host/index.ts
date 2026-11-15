@@ -67,8 +67,10 @@ export const Config = z.object({
       .pattern(FONT_NAME),
   }).default({ ...DEFAULT_FONTS }).description('字体').volatile(),
   personalization: z.object({
-    heroBackground: z.union(['ripples', 'space']).default(DEFAULT_PERSONALIZATION.heroBackground)
+    heroBackground: z.union(['ripples', 'space', 'whale']).default(DEFAULT_PERSONALIZATION.heroBackground)
       .description('主页背景动效样式'),
+    chatBackground: z.union(['none', 'ripples', 'space']).default(DEFAULT_PERSONALIZATION.chatBackground)
+      .description('聊天页背景动效样式'),
     petStyle: z.union(['whale', 'claude', 'none']).default(DEFAULT_PERSONALIZATION.petStyle)
       .description('输入框宠物样式'),
     runningStyle: z.union(['whale', 'claude']).default(DEFAULT_PERSONALIZATION.runningStyle)

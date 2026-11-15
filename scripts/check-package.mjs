@@ -194,11 +194,6 @@ const rowConfigPages = new Set();
     interface is switched back on from the column. */
 const themePanels = new Set();
 const themeRows = new Set();
-/** Edit sidebar: the dialog's overlay seat, and the More card's hidden-panel
-    rows and 编辑侧边栏… row. */
-const sidebarEditorSeats = new Set();
-const moreCardRows = new Set();
-let editorScopes = 0;
 const dictionaries = [];
 let modelScopes = 0;
 let headerScopes = 0;
@@ -232,11 +227,9 @@ const slots = {
       'settings.section',
       'main',
       'sidebar.panellist',
-      'sidebar.panellist.actions',
     ].includes(name), `unexpected slot: ${name}`);
     return register();
   },
-  /* The sidebar's panel list as the Edit sidebar port reads it. */
   entriesOfSlot: () => [],
   subscribe: () => () => {},
   register(options) {
@@ -252,13 +245,6 @@ const slots = {
       assert.equal(options.label(), '主题');
       themeRows.add(options);
       return () => themeRows.delete(options);
-    }
-    if (options.name === 'sidebar.panellist.actions') {
-      // The hidden panels lead the More card; 编辑侧边栏… follows the host's rows (order 0).
-      assert.deepEqual([options.id, options.order], options.id === 'ccd-hidden-panels'
-        ? ['ccd-hidden-panels', -10] : ['ccd-edit-sidebar', 10]);
-      moreCardRows.add(options);
-      return () => moreCardRows.delete(options);
     }
     if (options.name === 'conversation.session.header.actions') {
       assert.ok(['subagent-catalog', 'agent-team', 'job-list'].includes(options.id));
@@ -290,10 +276,6 @@ const slots = {
       if (options.id === 'ccd-search-palette') {
         searchPaletteSeats.add(options);
         return () => searchPaletteSeats.delete(options);
-      }
-      if (options.id === 'ccd-sidebar-editor') {
-        sidebarEditorSeats.add(options);
-        return () => sidebarEditorSeats.delete(options);
       }
       assert.equal(options.id, 'ccd-blank-pet');
       blankPetSeats.add(options);
@@ -429,12 +411,6 @@ function injectService(dependencies, mount) {
     scope = 'panes';
     release = mount({ sidebarRight });
     paneScopes += 1;
-  } else if (names === 'slots,layout') {
-    scope = 'editor';
-    const effects = [];
-    mount({ slots, layout, effect(callback) { effects.push(callback()); } });
-    release = () => { for (const dispose of effects.reverse()) dispose?.(); };
-    editorScopes += 1;
   } else if (names === 'remote.forgePanel') {
     /* The fixture host has no Forge panel, so Cordis never runs this injection
        and the plugin keeps its own worktree controls. */
@@ -455,7 +431,6 @@ function injectService(dependencies, mount) {
       else if (scope === 'model') modelScopes -= 1;
       else if (scope === 'pet') petScopes -= 1;
       else if (scope === 'panes') paneScopes -= 1;
-      else if (scope === 'editor') editorScopes -= 1;
       else if (scope === 'settings') {
         settingsScopes -= 1;
         for (const effect of settingsEffects.splice(0).reverse()) effect();
@@ -559,7 +534,7 @@ configForms.published({
 assert.equal(blankPetSeats.size, 1);
 assert.equal(petScopes, 1);
 // Conversation sheets plus the new-session and pet sheets.
-assert.equal(styles.size, 20);
+assert.equal(styles.size, 21);
 const petFace = [...blankPetSeats][0].inject();
 // The pet is decoration: the seat injects its visual variant and the measured
 // corner, but no session, reaction state, timer or copy.
@@ -575,16 +550,8 @@ configForms.published({ ...disabled, enabled: true, features: { ...disabled.feat
 assert.equal(blankRow.getAttribute('data-ccd-blank-session'), '', 'the blank Session row must be tagged');
 assert.equal(chatRow.getAttribute('data-ccd-blank-session'), null, 'a real Session row stays in the list');
 /* The sidebar feature mounts its column, account-menu and navigation artwork
-   sheets, plus the view-options card's, the search palette's and the Edit
-   sidebar dialog's own. */
-assert.equal(styles.size, 19);
-assert.equal(sidebarEditorSeats.size, 1, 'the sidebar draws the Edit sidebar dialog');
-assert.deepEqual(Object.keys([...sidebarEditorSeats][0].inject()).sort(), ['glyph', 'hidden', 'port', 'state']);
-assert.deepEqual([...moreCardRows].map(row => [row.id, Object.keys(row.inject()).sort()]), [
-  ['ccd-hidden-panels', ['classes', 'hidden', 'port']],
-  ['ccd-edit-sidebar', ['classes', 'state']],
-], 'the More card lists hidden panels and opens the Edit sidebar dialog');
-assert.equal(editorScopes, 1);
+   sheets, plus the view-options card's and the search palette's. */
+assert.equal(styles.size, 18);
 assert.equal(viewOptionsSeats.size, 1, 'the sidebar draws the view-options card');
 assert.deepEqual(
   Object.keys([...viewOptionsSeats][0].inject()).sort(),
@@ -604,8 +571,7 @@ for (const sidebar of [false, true]) {
     configForms.published({ ...disabled, enabled: true,
       features: { ...disabled.features, sidebar, 'right-panel': right } });
     assert.equal(paneScopes, right ? 1 : 0, 'pane layout follows only the right-sidebar switch');
-    assert.equal(editorScopes, sidebar ? 1 : 0, 'left-sidebar tools follow only the left-sidebar switch');
-    assert.equal(styles.size, 13 + (sidebar ? 6 : 0) + (right ? 2 : 0),
+    assert.equal(styles.size, 13 + (sidebar ? 5 : 0) + (right ? 2 : 0),
       'left and right styles are mounted and removed independently');
   }
 }
@@ -624,9 +590,6 @@ assert.equal(headerScopes, 0);
 assert.equal(paneScopes, 0, 'the pane layer releases the panel face with the interface');
 assert.equal(blankPetSeats.size, 0);
 assert.equal(searchPaletteSeats.size, 0, 'disabling releases the search palette');
-assert.equal(sidebarEditorSeats.size, 0, 'disabling releases the Edit sidebar dialog');
-assert.equal(moreCardRows.size, 0, 'disabling gives the More card back to the host');
-assert.equal(editorScopes, 0);
 assert.equal(themeRows.size, 1, 'the Theme row stays while the interface is off');
 assert.equal(petScopes, 0);
 assert.equal(rowConfigPages.size, 1);

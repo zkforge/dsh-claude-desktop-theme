@@ -225,6 +225,11 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) [data-slot
   height: auto;
 }
 
+/* Match the inline edges of Search and the panel entries. */
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_newSessionRow {
+  margin-inline: 0;
+}
+
 /* "+ New": a flat navigation row rather than a raised button. Its trailing gap
    is the panel list's own row gap, so New Session, the global panels and the
    automation panel read as one stack instead of two blocks. The row is the
@@ -334,6 +339,10 @@ html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_p
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry ._3WPZCG_panelRow {
   border-inline: 0;
   background: transparent;
+}
+
+html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry:has(._3WPZCG_panelUnpin) ._3WPZCG_panelRow {
+  padding-inline-end: 38px;
 }
 
 html[data-dsh-ccd-style="true"] ._3WPZCG_root:not(._3WPZCG_collapsed) ._3WPZCG_panelEntry > ._3WPZCG_panelUnpin {
@@ -1439,83 +1448,6 @@ html[data-dsh-ccd-style="true"] .ccd-status-heading:focus-visible {
 html[data-dsh-ccd-style="true"] [data-ccd-status-order][data-ccd-status-hidden] {
   display: none;
 }
-html[data-dsh-ccd-style="true"] [data-ccd-pin-dragging] {
-  /* Keep the original slot while the overlay follows the pointer. */
-  visibility: hidden;
-}
-html[data-dsh-ccd-style="true"][data-ccd-pin-gesture],
-html[data-dsh-ccd-style="true"][data-ccd-pin-gesture] * {
-  cursor: grabbing !important;
-  user-select: none;
-}
-html[data-dsh-ccd-style="true"] .ccd-pin-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-  min-height: 32px;
-  box-sizing: border-box;
-  margin-bottom: 12px;
-  padding: 4px 8px;
-  color: var(--ccd-text-secondary);
-  font-size: var(--ccd-font-size-muted);
-  line-height: 20px;
-}
-html[data-dsh-ccd-style="true"][data-ccd-pin-gesture] .ccd-status-heading[data-ccd-status-owned="pinned"] {
-  padding-top: 8px;
-}
-html[data-dsh-ccd-style="true"] .ccd-pin-hint svg {
-  flex: none;
-}
-html[data-dsh-ccd-style="true"] .ccd-pin-target-frame {
-  position: fixed;
-  z-index: 2147483646;
-  box-sizing: border-box;
-  pointer-events: none;
-  border: 1px solid var(--ccd-view-menu-accent);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--ccd-view-menu-accent) 8%, transparent);
-}
-html[data-dsh-ccd-style="true"] .ccd-pin-floating {
-  position: fixed;
-  z-index: 2147483647;
-  box-sizing: border-box;
-  pointer-events: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--ccd-canvas);
-  color: var(--ccd-text);
-  box-shadow: var(--ccd-font-menu-shadow);
-  font-family: var(--ccd-font-ui);
-  font-size: var(--ccd-font-size-muted);
-  font-weight: 400;
-  line-height: 20px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background-color 80ms, color 80ms, box-shadow 80ms;
-}
-html[data-dsh-ccd-style="true"] .ccd-pin-floating[data-action="unpin"] {
-  background: color-mix(in srgb, var(--ccd-dialog-danger) 14%, var(--ccd-canvas));
-  color: var(--ccd-dialog-danger);
-  box-shadow: none;
-  font-size: 12px;
-  line-height: 18px;
-}
-html[data-dsh-ccd-style="true"] :is(.ccd-pin-floating, .ccd-pin-target-frame, [data-ccd-pin-title], [data-ccd-pin-warning])[hidden] {
-  display: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] .ccd-pin-floating {
-    transition: none;
-  }
-}
-html[data-dsh-ccd-style="true"] .ccd-pin-error {
-  padding: 4px 8px;
-  font-size: 12px;
-  color: var(--ccd-text-secondary);
-}
-/* Empty Pinned is revealed on pickup; activity sections hide when empty. */
 html[data-dsh-ccd-style="true"] .ccd-status-heading[hidden] {
   display: none;
 }
@@ -1582,4 +1514,12 @@ html[data-dsh-ccd-style="true"] [data-ccd-sidebar-more-menu] {
   width: max-content;
   min-width: 0;
   max-width: min(288px, calc(100vw - 24px));
+}
+
+/* An icon-only pin shares the host's small Button class with text buttons.
+   Keep their inline padding from squeezing its 14px glyph. */
+html[data-dsh-ccd-style="true"] [data-ccd-sidebar-more-menu] button[role="menuitem"]:is([class$="_pinButton"], [class*="_pinButton "]) {
+  height: 22px;
+  min-height: 0;
+  padding: 0;
 }

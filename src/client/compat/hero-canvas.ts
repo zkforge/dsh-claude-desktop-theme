@@ -4,12 +4,13 @@ import { HERO_RIPPLE_DURATION } from '../contracts/hero-canvas.ts';
 import type { HeroPointer, HeroRippleImpulse, HeroSpaceRenderer } from '../contracts/hero-canvas.ts';
 import { recordsIntroduce } from './mutation-scope.ts';
 
-/** One decorative canvas per visible hero; no timers survive its phase change. */
+/** One decorative canvas per visible conversation phase; no timers survive its phase change. */
 export function mountHeroCanvas(document: Document,
   renderer: HeroSpaceRenderer | ((canvas: HTMLCanvasElement, elapsed: number, impulses: readonly HeroRippleImpulse[]) => void),
-  report: (error: unknown) => void): Disposer {
+  report: (error: unknown) => void, phase: 'hero' | 'active' = 'hero'): Disposer {
   const win = document.defaultView!;
   const host = hostSelectors(document);
+  const selector = `${host.conversationRoot}[data-phase="${phase}"]`;
   const reduced = win.matchMedia('(prefers-reduced-motion: reduce)');
   let root: HTMLElement | null = null;
   let canvas: HTMLCanvasElement | null = null;
@@ -100,7 +101,7 @@ export function mountHeroCanvas(document: Document,
   };
   function sync() {
     if (disposed) return;
-    const next = document.querySelector<HTMLElement>(`${host.conversationRoot}[data-phase="hero"]`);
+    const next = document.querySelector<HTMLElement>(selector);
     if (next !== root) {
       stop(); resize.disconnect(); canvas?.remove(); titleCanvas?.remove();
       detachPointer();
@@ -109,11 +110,13 @@ export function mountHeroCanvas(document: Document,
         canvas = document.createElement('canvas');
         canvas.className = 'ccd-hero-ripples'; canvas.setAttribute('aria-hidden', 'true');
         root.prepend(canvas);
-        // The native caption strip sits outside the conversation root.
-        titleCanvas = document.createElement('canvas');
-        titleCanvas.className = 'ccd-hero-ripples ccd-hero-ripples-titlebar';
-        titleCanvas.setAttribute('aria-hidden', 'true');
-        document.body.prepend(titleCanvas);
+        if (phase === 'hero') {
+          // The native caption strip sits outside the conversation root.
+          titleCanvas = document.createElement('canvas');
+          titleCanvas.className = 'ccd-hero-ripples ccd-hero-ripples-titlebar';
+          titleCanvas.setAttribute('aria-hidden', 'true');
+          document.body.prepend(titleCanvas);
+        }
         if (typeof renderer !== 'function') {
           canvas.classList.add('ccd-hero-space');
           root.addEventListener('pointermove', move, { capture: true, passive: true });
@@ -156,11 +159,11 @@ export function mountHeroCanvas(document: Document,
   };
   const observer = new MutationObserver(records => {
     // Streaming text, menu portals and our own canvases cannot change which
-    // conversation is in its hero phase. Only discover a new root or phase.
+    // conversation is in the selected phase. Only discover a new root or phase.
     if ((root !== null && !root.isConnected)
       || records.some(record => record.type === 'attributes'
         && (record.target === root || (record.target as Element).matches(host.conversationRoot)))
-      || recordsIntroduce(records, `${host.conversationRoot}[data-phase="hero"]`)) sync();
+      || recordsIntroduce(records, selector)) sync();
   });
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-phase'] });
   document.addEventListener('visibilitychange', sync);

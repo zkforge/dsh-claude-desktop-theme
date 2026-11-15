@@ -210,9 +210,9 @@ html[data-dsh-ccd-style="true"] :is(
   [data-ccd-plugin-part="market-description"],
   [data-ccd-plugin-part="market-meta"]
 ) { font: 400 13px/20px var(--ccd-font-ui); }
-/* Native market/filter/add menus are portaled outside the page. Account menus
-   retain their own layout; multi-line installation entries keep their height. */
-html[data-dsh-ccd-style="true"]:has([data-ccd-plugin-page], [data-ccd-schedule]) [data-menu-material]:not([data-ccd-account-menu]) [role="menuitem"] {
+/* Market and schedule menus render through portals. The account and sidebar
+   More menus keep their own layout while either management page is open. */
+html[data-dsh-ccd-style="true"]:has([data-ccd-plugin-page], [data-ccd-schedule]) [data-menu-material]:not([data-ccd-account-menu], [data-ccd-sidebar-more-menu]) [role="menuitem"] {
   min-height: 30px;
   padding: 4px 8px;
   border-radius: 8px;

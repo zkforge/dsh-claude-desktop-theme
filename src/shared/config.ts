@@ -32,7 +32,8 @@ export type FontsConfig = Readonly<Record<FontField, string>>;
 export type ViewConfig = Readonly<Record<ViewField, boolean>>;
 
 export interface PersonalizationConfig {
-  readonly heroBackground: 'ripples' | 'space';
+  readonly heroBackground: 'ripples' | 'space' | 'whale';
+  readonly chatBackground: 'none' | 'ripples' | 'space';
   readonly petStyle: 'whale' | 'claude' | 'none';
   readonly runningStyle: 'whale' | 'claude';
   readonly replySignatureStyle: 'whale' | 'claude' | 'none';
@@ -40,7 +41,7 @@ export interface PersonalizationConfig {
   readonly greetingName: string;
 }
 export const DEFAULT_PERSONALIZATION: PersonalizationConfig = Object.freeze({
-  heroBackground: 'ripples', petStyle: 'claude', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: '',
+  heroBackground: 'ripples', chatBackground: 'none', petStyle: 'claude', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: '',
 });
 
 export function normalizeGreetingName(value: unknown): string {
@@ -49,7 +50,9 @@ export function normalizeGreetingName(value: unknown): string {
 
 function personalization(input: Partial<Record<keyof PersonalizationConfig, unknown>> = {}, strict = false): PersonalizationConfig {
   const heroBackground = input.heroBackground ?? DEFAULT_PERSONALIZATION.heroBackground;
-  if (strict && heroBackground !== 'ripples' && heroBackground !== 'space') throw new TypeError('personalization.heroBackground is invalid');
+  if (strict && heroBackground !== 'ripples' && heroBackground !== 'space' && heroBackground !== 'whale') throw new TypeError('personalization.heroBackground is invalid');
+  const chatBackground = input.chatBackground ?? DEFAULT_PERSONALIZATION.chatBackground;
+  if (strict && chatBackground !== 'none' && chatBackground !== 'ripples' && chatBackground !== 'space') throw new TypeError('personalization.chatBackground is invalid');
   const petStyle = input.petStyle ?? DEFAULT_PERSONALIZATION.petStyle;
   const runningStyle = input.runningStyle ?? DEFAULT_PERSONALIZATION.runningStyle;
   const replySignatureStyle = input.replySignatureStyle ?? DEFAULT_PERSONALIZATION.replySignatureStyle;
@@ -62,7 +65,8 @@ function personalization(input: Partial<Record<keyof PersonalizationConfig, unkn
     throw new TypeError('personalization.greetingName must be a string');
   }
   return Object.freeze({
-    heroBackground: heroBackground === 'space' ? 'space' : 'ripples',
+    heroBackground: heroBackground === 'space' || heroBackground === 'whale' ? heroBackground : DEFAULT_PERSONALIZATION.heroBackground,
+    chatBackground: chatBackground === 'space' || chatBackground === 'ripples' ? chatBackground : DEFAULT_PERSONALIZATION.chatBackground,
     petStyle: petStyle === 'whale' || petStyle === 'claude' || petStyle === 'none' ? petStyle : DEFAULT_PERSONALIZATION.petStyle,
     runningStyle: runningStyle === 'whale' || runningStyle === 'claude' ? runningStyle : DEFAULT_PERSONALIZATION.runningStyle,
     replySignatureStyle: replySignatureStyle === 'whale' || replySignatureStyle === 'claude' || replySignatureStyle === 'none' ? replySignatureStyle : DEFAULT_PERSONALIZATION.replySignatureStyle,

@@ -10,7 +10,7 @@ import { CLAUDE_IDLE, CLAUDE_TRACK, CLAUDE_FRAMES } from '../src/client/features
 test('missing personalization uses Claude defaults; explicit choices are independent', () => {
   assert.deepEqual(adoptConfig({}).personalization, DEFAULT_PERSONALIZATION);
   assert.deepEqual(resolveConfig({ personalization: { petStyle: 'whale' } }).personalization,
-    { heroBackground: 'ripples', petStyle: 'whale', runningStyle: 'claude', replySignatureStyle: 'claude', greetingStyle: 'claude', greetingName: '' });
+    { ...DEFAULT_PERSONALIZATION, petStyle: 'whale' });
   assert.deepEqual(adoptConfig({ personalization: {
     greetingStyle: 'claude', greetingName: '  Kai\n  Zou  ',
   } }).personalization, { ...DEFAULT_PERSONALIZATION, greetingName: 'Kai Zou' });
@@ -18,7 +18,7 @@ test('missing personalization uses Claude defaults; explicit choices are indepen
 
 test('off choices survive strict config, stored config and host schema independently', () => {
   const schema = Config as unknown as (input: unknown) => unknown;
-  for (const field of ['petStyle', 'replySignatureStyle', 'greetingStyle'] as const) {
+  for (const field of ['chatBackground', 'petStyle', 'replySignatureStyle', 'greetingStyle'] as const) {
     const personalization = { [field]: 'none' };
     const expected = { ...DEFAULT_PERSONALIZATION, [field]: 'none' };
     assert.deepEqual(resolveConfig({ personalization }).personalization, expected);
@@ -34,6 +34,7 @@ test('disabled reply signature never queries the document or starts an observer'
 
 test('invalid stored variants fall back, strict writes are rejected', () => {
   assert.deepEqual(adoptConfig({ personalization: {
+    heroBackground: 'unknown', chatBackground: 'whale',
     petStyle: 'unknown', replySignatureStyle: 'unknown', greetingStyle: false, greetingName: 1,
   } }).personalization, DEFAULT_PERSONALIZATION);
   assert.throws(() => resolveConfig({ personalization: { petStyle: 'unknown' } }), /petStyle/);

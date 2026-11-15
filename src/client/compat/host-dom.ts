@@ -338,10 +338,7 @@ export const HOST = Object.freeze({
       primitive's check mark. */
   buttonPrimary: '._primary_1rv3m_36',
   menuItemLabel: '._itemLabel_4ub78_190',
-  /** Menu.module.css: `MenuItemButton`'s wrap, its button and the separator a
-      wrap may lead with — the markup the plugin's own rows in a host menu
-      repeat (`features/sidebar-editor/MoreCardRows.tsx`), so the card's
-      keyboard walk and every popup rule reach them as host rows. */
+  /** Menu.module.css: the row's wrapper, button and leading separator. */
   menuItemWrap: '._itemWrap_4ub78_90',
   menuItemButton: '._item_4ub78_90',
   menuSeparator: '._separator_4ub78_80',

@@ -32,13 +32,6 @@ const navigationCopy = (document: Document): Readonly<Record<Renamed, string>> =
   ? { newSession: '新建', plugins: '自定义', routines: '定时任务' }
   : { newSession: 'New session', plugins: 'Customize', routines: 'Scheduled tasks' };
 
-/** The name a panel row shows once this module has renamed it: 插件 reads 自定义
-    and 自动化任务 reads 定时任务, every other panel keeps its own label. */
-export function panelDisplayName(document: Document, name: string): string {
-  const kind = panelKind(name);
-  return kind === null ? name : navigationCopy(document)[kind];
-}
-
 /** Rename and decorate the native buttons without replacing React-owned nodes
  * or handlers. Every write is conditional and reversible, including delayed
  * mounts, locale changes, wide/rail rerenders and the native tooltip portals. */

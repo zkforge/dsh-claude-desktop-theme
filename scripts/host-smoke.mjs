@@ -202,10 +202,12 @@ try {
     await waitFor(() => page.evaluate('!!document.querySelector(".ccd-sidebar-search-row") && !!document.querySelector("[data-ccd-nav=plugins]")'), 'sidebar navigation is themed');
     const geometry = await page.evaluate(`(() => {
       const search = document.querySelector('.ccd-sidebar-search-row');
-      const rows = [...document.querySelectorAll('[data-ccd-panel][data-ccd-nav], [data-ccd-nav=more]')];
-      const boxes = [search, ...rows].map(row => row.getBoundingClientRect());
+      const rows = [...document.querySelectorAll('nav button[class$="_panelRow"]')];
+      const create = document.querySelector('[data-ccd-nav="newSession"]');
+      const boxes = [create, search, ...rows].map(row => row.getBoundingClientRect());
       const tokens = getComputedStyle(search);
       return {
+        inlineEdges: boxes.map(box => [box.left - boxes[0].left, box.right - boxes[0].right]),
         heights: boxes.map(box => box.height),
         gaps: boxes.slice(1).map((box, i) => box.top - boxes[i].bottom),
         pins: rows.flatMap(row => {
@@ -219,6 +221,7 @@ try {
         gap: parseFloat(tokens.getPropertyValue('--ccd-nav-gap')),
       };
     })()`);
+    assert.ok(geometry.inlineEdges.every(edges => edges.every(offset => Math.abs(offset) < 1)), JSON.stringify(geometry));
     assert.ok(geometry.heights.every(height => Math.abs(height - geometry.height) < 1), JSON.stringify(geometry));
     assert.ok(geometry.gaps.every(gap => Math.abs(gap - geometry.gap) < 1), JSON.stringify(geometry));
     if (await page.evaluate('!!document.querySelector("[data-sidebar-scrollport]")')) {
@@ -242,6 +245,27 @@ try {
     await capture('sidebar-more');
     await key('Escape', 'Escape', 27);
     await waitFor(() => page.evaluate('!document.querySelector("[data-ccd-sidebar-more-menu]")'), 'sidebar More card closes');
+    await click('[data-ccd-nav="routines"]');
+    await waitFor(() => page.evaluate('!!document.querySelector("[data-ccd-schedule]")'), 'scheduled tasks page opens');
+    await click('[class$="_panelEntryActive"] button[class$="_panelUnpin"]');
+    await waitFor(() => page.evaluate(`!document.querySelector('[data-ccd-nav="routines"]')`), 'the active scheduled tasks page is unpinned');
+    await click('[data-ccd-nav=more]');
+    await waitFor(() => page.evaluate(`!!document.querySelector('[data-ccd-sidebar-more-menu] button[class*="_pinButton"]')`), 'native pin button is available in More');
+    const pin = await page.evaluate(`(() => {
+      const menu = document.querySelector('[data-ccd-sidebar-more-menu]');
+      const button = menu.querySelector('button[class*="_pinButton"]');
+      const {width, height} = button.querySelector('svg').getBoundingClientRect();
+      return {
+        schedule: !!document.querySelector('[data-ccd-schedule]'),
+        padding: getComputedStyle(button).paddingInlineStart,
+        buttonHeight: button.offsetHeight,
+        icon: [width, height],
+      };
+    })()`);
+    assert.deepEqual(pin, { schedule: true, padding: '0px', buttonHeight: 22, icon: [14, 14] });
+    await click('[data-ccd-sidebar-more-menu] button[class*="_pinButton"]');
+    await waitFor(() => page.evaluate(`!!document.querySelector('[data-ccd-nav="routines"]')`), 'native pin returns scheduled tasks to the sidebar');
+    await click('[data-ccd-nav="newSession"]');
   });
   await step('composer', async () => {
     await click('[contenteditable="true"]');

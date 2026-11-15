@@ -260,6 +260,7 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities {
   margin-left: 0;
   /* One uniform gap, so every visible space in the cluster is equal. */
   gap: var(--ccd-header-action-gap);
+  --ccd-header-control-size: var(--ccd-header-action-size);
 }
 
 /*
@@ -278,19 +279,17 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerCorner {
   margin: 0;
 }
 
-/* The host needs a 288px measured row to keep both native tabs mounted.
-   Reserve only their 64px of visible text and spacing in this single-line
-   header. The transparent budget overlaps preceding chrome, so only the real
-   tablist receives pointer input. No selection handlers or nodes are replaced. */
+/* DSH measures this row to choose which registered views fit. */
 html[data-dsh-ccd-style="true"] .ST7X_W_header .ST7X_W_tabs {
   order: 2;
-  flex: 0 0 288px;
-  width: 288px;
-  min-width: 288px;
+  flex: 1 0 118px;
+  width: auto;
+  min-width: 0;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  margin: 0 16px 0 -224px;
+  gap: 8px;
+  margin: 0 12px 0 8px;
   padding: 0;
   pointer-events: none;
   -webkit-app-region: no-drag;
@@ -303,12 +302,24 @@ html[data-dsh-ccd-style="true"] .ST7X_W_viewTabs {
   pointer-events: auto;
 }
 
-/* Withdrawing the real launcher also removes its hover/focus tooltip source.
-   Hide an already-open native menu as well, without driving it or its state. */
-html[data-dsh-ccd-style="true"] .ST7X_W_viewsMoreAnchor,
-html[data-dsh-ccd-style="true"] .ST7X_W_tabs button[aria-haspopup="menu"],
-html[data-dsh-ccd-style="true"] .ST7X_W_viewsMoreMenu {
-  display: none;
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_viewsMoreAnchor {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  pointer-events: auto;
+}
+
+html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_viewsMore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  width: 22px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
 }
 
 html[data-dsh-ccd-style="true"] .ST7X_W_tabs .ST7X_W_tab {
@@ -404,8 +415,8 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerActions ._2tNPVa_trigger {
 html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([role="tooltip"]) {
   box-sizing: border-box;
   flex: none;
-  width: var(--ccd-header-action-size);
-  height: var(--ccd-header-action-size);
+  width: var(--ccd-header-control-size);
+  height: var(--ccd-header-control-size);
   border-radius: var(--ccd-radius-row);
 }
 
@@ -500,9 +511,8 @@ html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities [data-ccd-open-mode="dir
       calc(var(--ccd-composer-trailing-edge) - var(--ccd-header-action-compact) / 2));
   }
 
-  html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities > [data-slot] > *:not([role="tooltip"]) {
-    width: var(--ccd-header-action-compact);
-    height: var(--ccd-header-action-compact);
+  html[data-dsh-ccd-style="true"] .ST7X_W_headerUtilities {
+    --ccd-header-control-size: var(--ccd-header-action-compact);
   }
 }
 

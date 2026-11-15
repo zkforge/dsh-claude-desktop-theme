@@ -15,8 +15,8 @@ import { mountHeaderVisibility } from './header-actions/visibility.ts';
  * rows, approvals and the resident Composer are all DSH's; this module only
  * adapts the header chrome, the transcript column and the message surfaces.
  *
- * DSH owns the View tabs and selection. The plugin keeps Chat and Trajectory
- * together before the header utilities and hides the overflow launcher.
+ * DSH owns the View tabs, overflow and selection. The plugin lays out the
+ * native controls before the header utilities.
  *
  * The transcript's own edge fade is published the same way: the host owns the
  * scroll position, `compat/conversation-fade.ts` turns it into two attributes,

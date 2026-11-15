@@ -1,0 +1,27 @@
+html[data-dsh-ccd-style="true"] .ST7X_W_root:has(> .ccd-hero-ripples) {
+  isolation: isolate;
+}
+html[data-dsh-ccd-style="true"] .ccd-hero-ripples {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-dsh-ccd-style="true"] .ccd-hero-ripples { display: none; }
+}
+
+/* The caption strip is outside the hero; this decorative layer never receives
+   pointer events, so native caption buttons and window dragging stay native. */
+html[data-dsh-ccd-style="true"] .ccd-hero-ripples-titlebar {
+  position: fixed;
+  inset: 0 auto auto;
+  z-index: 1;
+}
+
+/* Keep the animation behind active chat content at a softer intensity. */
+html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="active"] > .ccd-hero-ripples {
+  opacity: 0.35;
+}

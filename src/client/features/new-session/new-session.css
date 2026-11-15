@@ -74,32 +74,9 @@ html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_composer
   padding-bottom: 0;
 }
 
-html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] {
-  isolation: isolate;
-}
-html[data-dsh-ccd-style="true"] .ccd-hero-ripples {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  html[data-dsh-ccd-style="true"] .ccd-hero-ripples { display: none; }
-}
-
-/* Let the background show through the conversation's own header. */
+/* Let the selected home background show through the conversation header. */
 html[data-dsh-ccd-style="true"] .ST7X_W_root[data-phase="hero"] .ST7X_W_header {
   background: transparent;
-}
-
-/* The caption strip is outside the hero; this decorative layer never receives
-   pointer events, so native caption buttons and window dragging stay native. */
-html[data-dsh-ccd-style="true"] .ccd-hero-ripples-titlebar {
-  position: fixed;
-  inset: 0 auto auto;
-  z-index: 1;
 }
 
 /* The original React heading stays in place for instant restoration. */

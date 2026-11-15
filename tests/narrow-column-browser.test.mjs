@@ -323,6 +323,23 @@ test('the header cluster ends on the Composer where the Composer fills the colum
         await lay(devtools, { width });
         const view = await devtools.evaluate(geometry);
         const neighbour = view.views[2];
+        const direct = await devtools.evaluate(`(() => {
+          const old = document.querySelector('.Da3aKq_moreButton');
+          const anchor = old.parentElement;
+          const slot = document.createElement('div');
+          slot.dataset.slot = 'contextMenu.button';
+          anchor.replaceWith(slot);
+          slot.append(old.cloneNode(true));
+          const button = slot.firstElementChild;
+          button.classList.replace('Da3aKq_moreButton','ST7X_W_headerMenuButton');
+          button.innerHTML = '<span style="width:16px"></span>';
+          const rect = button.getBoundingClientRect();
+          const art = getComputedStyle(button,'::before');
+          const measured = [rect.width, rect.height, rect.y + rect.height / 2, art.position, art.left, art.right];
+          slot.replaceWith(anchor);
+          return measured;
+        })()`);
+        assert.deepEqual(direct, [neighbour.width, neighbour.height, neighbour.y + neighbour.height / 2, 'absolute', '0px', '0px']);
         assert.equal(view.dots.width, neighbour.width, `${width}px: the nested menu button shares the neighbouring control width`);
         assert.equal(view.dots.height, neighbour.height, `${width}px: the nested menu button shares the neighbouring control height`);
         assert(Math.abs(view.dots.top + view.dots.height / 2 - neighbour.top - neighbour.height / 2) < 0.5,
@@ -357,7 +374,7 @@ test('native View tabs align before utilities on a single header row', {
   const profile = await mkdtemp(join(tmpdir(), 'ccd-native-tabs-narrow-'));
   try {
     await withPage({ url: 'about:blank', width: 1400, height: 800, scale: 1, profile }, async devtools => {
-      for (const width of [380, 400, 460, 560]) {
+      for (const width of [380, 400, 460, 560, 900]) {
         await lay(devtools, { width });
         const view = await devtools.evaluate(geometry);
         assert.notEqual(view.title, null, `${width}px: the title stays drawn`);
@@ -372,10 +389,12 @@ test('native View tabs align before utilities on a single header row', {
           const title = document.querySelector('.ST7X_W_crumbs').getBoundingClientRect();
           const utilities = document.querySelector('.ST7X_W_headerUtilities').getBoundingClientRect();
           const team = document.querySelector('.ST7X_W_headerActions').getBoundingClientRect();
-          const more = document.querySelector('button[aria-haspopup=menu]');
+          const more = document.querySelector('.ST7X_W_viewsMore');
+          const moreBox = more.getBoundingClientRect();
           return { top: tabs.top, bottom: tabs.bottom, left: tabs.left, right: tabs.right,
             titleTop: title.top, titleBottom: title.bottom, teamRight: team.right, utilitiesLeft: utilities.left,
             budget, moreDisplay: getComputedStyle(more).display,
+            moreHit: document.elementFromPoint(moreBox.left + moreBox.width / 2, moreBox.top + moreBox.height / 2)?.closest('button') === more,
             titleHit: document.elementFromPoint(title.left + title.width / 2, title.top + title.height / 2)?.closest('.ST7X_W_crumbs') !== null,
             tabHit: document.elementFromPoint(tabs.right - 13, tabs.top + 14)?.closest('[role=tab]') !== null,
             activeColor: getComputedStyle(document.querySelector('[role=tab][aria-selected=true]')).color,
@@ -385,10 +404,37 @@ test('native View tabs align before utilities on a single header row', {
         assert(tabs.top < tabs.titleBottom && tabs.bottom > tabs.titleTop, `${width}px: native tabs share the title row`);
         assert(tabs.left >= tabs.teamRight - .5, `${width}px: tabs follow the team entry`);
         assert(tabs.right <= tabs.utilitiesLeft + .5, `${width}px: tabs clear the utilities`);
-        assert.equal(tabs.moreDisplay, 'none');
-        assert.equal(tabs.budget, 288, 'the host retains room for both native tabs');
-        assert(tabs.titleHit, 'the transparent budget does not intercept title clicks');
+        assert.notEqual(tabs.moreDisplay, 'none', 'overflow views keep their native launcher');
+        assert(tabs.moreHit, 'the launcher remains clickable');
+        if (width === 380) assert(tabs.budget < 288, 'the host sees the narrow row');
+        if (width === 900) assert(tabs.budget >= 408, 'the host can seat at least three views');
+        assert(tabs.titleHit, 'the view row does not intercept title clicks');
         assert(tabs.tabHit, 'the visible native tabs remain clickable');
+        if (width === 900) {
+          const dynamic = await devtools.evaluate(`(() => {
+            const list = document.querySelector('[role=tablist]');
+            const statistics = list.lastElementChild.cloneNode(true);
+            statistics.querySelector('span').textContent = '统计';
+            statistics.onclick = () => {
+              list.querySelector('[aria-selected=true]').setAttribute('aria-selected','false');
+              statistics.setAttribute('aria-selected','true');
+            };
+            list.append(statistics);
+            const extra = statistics.cloneNode(true);
+            extra.querySelector('span').textContent = '其他视图';
+            list.append(extra);
+            statistics.click();
+            const hit = node => {
+              const rect = node.getBoundingClientRect();
+              return document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.closest('button') === node;
+            };
+            const tabsHit = [hit(statistics), hit(extra)];
+            const selected = getComputedStyle(statistics,'::after').backgroundColor === getComputedStyle(statistics).color;
+            extra.remove();
+            return [tabsHit, selected, hit(document.querySelector('.ST7X_W_viewsMore'))];
+          })()`);
+          assert.deepEqual(dynamic, [[true, true], true, true], 'views can be registered and removed without breaking native selection or overflow');
+        }
         assert.notEqual(tabs.activeColor, tabs.inactiveColor, 'the selected View remains distinct');
         assert.equal(tabs.underline, tabs.activeColor, 'the underline follows the native selected state');
       }

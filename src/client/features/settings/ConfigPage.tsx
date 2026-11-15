@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { Fragment, useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import type { MouseEvent, ReactElement } from 'react';
 import type {
   ConfigFormPort, SettingsPathOp, ThemePreference, ThemePreferencePort,
@@ -246,12 +246,18 @@ export function ConfigPage(props: ConfigPageProps): ReactElement {
       <section className="ccd-settings-section">
         <h4 className="ccd-settings-title">{translate('section.features')}</h4>
         {OFFERED_FEATURES.map(id => id === 'hero-ripples' ? (
-          <ChoiceRow key={id} id="ccd-settings-hero-background" label={translate(FEATURE_KEYS[id])}
-            value={served.features[id] ? served.personalization.heroBackground : 'none'}
-            options={[{ value: 'none', label: translate('style.none') }, { value: 'ripples', label: translate('background.ripples') }, { value: 'space', label: translate('background.space') }]}
-            onChange={value => void write(value === 'none' ? [setOperation(['features', id], false)] : [
-              setOperation(['personalization', 'heroBackground'], value), setOperation(['features', id], true),
-            ])} />
+          <Fragment key={id}>
+            <ChoiceRow id="ccd-settings-hero-background" label={translate(FEATURE_KEYS[id])}
+              value={served.features[id] ? served.personalization.heroBackground : 'none'}
+              options={[{ value: 'none', label: translate('style.none') }, { value: 'ripples', label: translate('background.ripples') }, { value: 'space', label: translate('background.space') }, { value: 'whale', label: translate('background.whale') }]}
+              onChange={value => void write(value === 'none' ? [setOperation(['features', id], false)] : [
+                setOperation(['personalization', 'heroBackground'], value), setOperation(['features', id], true),
+              ])} />
+            <ChoiceRow id="ccd-settings-chat-background" label={translate('background.chat')}
+              value={served.personalization.chatBackground}
+              options={[{ value: 'none', label: translate('style.none') }, { value: 'ripples', label: translate('background.ripples') }, { value: 'space', label: translate('background.space') }]}
+              onChange={value => void write([setOperation(['personalization', 'chatBackground'], value)])} />
+          </Fragment>
         ) : (
           <SwitchRow
             key={id}

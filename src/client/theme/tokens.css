@@ -399,11 +399,6 @@ html[data-dsh-ccd-style="true"] {
      mode, and it shares the stats heat ramp's hue
      family (hsl(217 …)), which keeps every blue in the interface one voice. */
   --ccd-accent: #4b76ce;
-  /* The Edit sidebar dialog's checked box: the reference's system blue, a step
-     brighter than the accent because it fills a 20px square rather than
-     drawing a stroke. */
-  --ccd-check-fill: #2f7cf3;
-  --ccd-check-ink: #ffffff;
   /* Lavender ink keeps the light reference's crests visible on the pale page. */
   --ccd-hero-space-dot: #87867f;
   --ccd-hero-space-shot: #d2cdbf;
@@ -790,8 +785,6 @@ html[data-dsh-ccd-style="true"] body[data-ds-dark-theme] {
      reference's measured blue (220) rather than the ramp's 217, but the two sit
      in one family. */
   --ccd-accent: #789be3;
-  --ccd-check-fill: #3d86f2;
-  --ccd-check-ink: #ffffff;
 
   /* State colours that DSH already owns semantics for. */
   --ccd-diff-added: #7cbd72;

@@ -49,13 +49,12 @@ import { mountContextPanel } from './features/context-panel/mount.ts';
 import { mountHeaderActions } from './features/conversation/header-actions/mount.ts';
 import { mountComposerPet } from './features/composer-pet/mount.ts';
 import { mountSearchPalette } from './features/search-palette/mount.ts';
-import { mountSidebarEditor } from './features/sidebar-editor/mount.ts';
 import { SIDEBAR_NAVIGATION_ICONS } from './features/sidebar/navigation-icons.ts';
 import { mountSettingsPage } from './features/settings/mount.ts';
 import { mountRightPanel } from './features/right-panel/mount.ts';
 import { mountSessionCards } from './features/session-info/mount.ts';
 import { sidebarFeature } from './features/sidebar/index.ts';
-import { newSessionFeature } from './features/new-session/index.ts';
+import { mountConversationBackgrounds, newSessionFeature } from './features/new-session/index.ts';
 import { conversationFeature } from './features/conversation/index.ts';
 import { toolCallsFeature } from './features/tool-calls/index.ts';
 import { statisticsFeature } from './features/statistics/index.ts';
@@ -246,9 +245,6 @@ export function apply(ctx: Context): void {
             document,
             error => logger.error('sidebar: more menu placement failed', error),
           ));
-          /* More's 编辑侧边栏… chooses which panels the column lists; the
-             ones left out move to the head of the same card. */
-          mountSidebarEditor(ctx, environment, scope);
           if (next.view.groupByStatus) {
             scope.add(mountStatusGroups(document, ctx,
               error => logger.error('sidebar: status grouping failed', error)));
@@ -273,6 +269,7 @@ export function apply(ctx: Context): void {
           mountContextPanel(ctx, environment, scope);
         }
         mountFeatures(FEATURES, environment, scope);
+        mountConversationBackgrounds(environment, scope);
         /* Host class names are hashed per DSH build, so a build this plugin has
            never seen makes every host selector miss. That failure is silent by
            nature — the native interface simply stays — so it is reported as

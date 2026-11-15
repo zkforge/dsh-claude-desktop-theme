@@ -20,6 +20,8 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
   import {SearchPalette} from './src/client/features/search-palette/SearchPalette.tsx';
   import {ClaudePet} from './src/client/features/composer-pet/ClaudePet.tsx';
   import {ComposerPet} from './src/client/features/composer-pet/ComposerPet.tsx';
+  import {mountConversationBackgrounds} from './src/client/features/new-session/index.ts';
+  import {createDomPort} from './src/client/compat/dom.ts';
   import {mountHeroCanvas} from './src/client/compat/hero-canvas.ts';
   import {createHeroSpace} from './src/client/features/new-session/space.ts';
   import {drawHeroRipples} from './src/client/features/new-session/ripples.ts';
@@ -45,6 +47,13 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
     const detail=mountScheduleDetail(document,{list:async()=>[task],history:async()=>({id:task.id,records:[]}),subscribe:()=>()=>{}},e=>window.errors.push(String(e)));
     const menus=mountScheduleCardMenus(document,{find:async()=>task,remove:async()=>window.deleted=true},e=>window.errors.push(String(e)));
     const previous=release;release=()=>{menus();detail();previous?.();};
+  };
+  window.mountBackgrounds=(personalization,features)=>{
+    window.unmount();
+    const scope=new CleanupScope(e=>window.errors.push(String(e)));
+    mountConversationBackgrounds({config:adoptConfig({personalization,features}),
+      dom:createDomPort(document),logger:{error:(m,e)=>window.errors.push(m+String(e))}},scope);
+    release=()=>scope.dispose();
   };
   window.mount=kind=>{
     window.unmount();
@@ -93,12 +102,12 @@ const bundle = await build({ stdin: { resolveDir: root, loader: 'tsx', contents:
       kind==='claude'?<ClaudePet/>:<ComposerPet/>;
     app.render(node);
   };
-` }, bundle: true, write: false, format: 'iife', jsx: 'automatic' });
+` }, bundle: true, write: false, format: 'iife', jsx: 'automatic', loader: { '.css': 'text' } });
 const styles = (await Promise.all([
   'src/client/theme/tokens.css', 'src/client/theme/menus.css', 'src/client/theme/composer.css',
   'src/client/theme/schedule.css', 'src/client/features/settings/settings.css',
   'src/client/features/model-controls/controls.css', 'src/client/features/model-controls/effort.css',
-  'src/client/features/composer-pet/pet.css', 'src/client/features/new-session/new-session.css',
+  'src/client/features/composer-pet/pet.css', 'src/client/features/new-session/background.css',
   'src/client/features/statistics/statistics.css',
 ].map(path => readFile(join(root, path), 'utf8')))).join('\n');
 
@@ -194,6 +203,31 @@ test('both pets mount and animate without retaining frames after unmount', optio
     await page.evaluate("measure('pet:unmount',()=>window.unmount())");
     assert.equal(await page.evaluate('pendingFrames.size'), 0);
   }
+}));
+
+test('home and chat background choices own one visible canvas per phase', options, async () => fixture(async page => {
+  await page.evaluate(`
+    document.querySelector('#root').innerHTML='<div class="ST7X_W_root" data-phase="hero" style="position:relative;width:900px;height:600px"><canvas data-home-whale></canvas><button>Native control</button></div>';
+    window.rootPhase=phase=>document.querySelector('[data-phase]').dataset.phase=phase;
+    window.backgrounds=()=>[getComputedStyle(document.querySelector('[data-home-whale]')).display,
+      document.querySelectorAll('[data-phase] > .ccd-hero-ripples').length,
+      document.querySelectorAll('.ccd-hero-ripples-titlebar').length,
+      document.querySelectorAll('.ccd-hero-space').length];
+    mountBackgrounds({heroBackground:'ripples',chatBackground:'space'});
+  `);
+  assert.deepEqual(await page.evaluate('backgrounds()'), ['none', 1, 1, 0]);
+  await page.evaluate("rootPhase('active')");
+  assert.deepEqual(await page.evaluate('backgrounds()'), ['none', 1, 0, 1]);
+  assert.equal(await page.evaluate("getComputedStyle(document.querySelector('.ccd-hero-space')).pointerEvents"), 'none');
+  await page.evaluate("rootPhase('hero');mountBackgrounds({heroBackground:'whale'})");
+  assert.deepEqual(await page.evaluate('backgrounds()'), ['inline', 0, 0, 0]);
+  await page.evaluate("mountBackgrounds({heroBackground:'whale'},{'hero-ripples':false})");
+  assert.deepEqual(await page.evaluate('backgrounds()'), ['none', 0, 0, 0]);
+  await page.evaluate("rootPhase('active');mountBackgrounds({chatBackground:'ripples'},{'new-session':false})");
+  assert.deepEqual(await page.evaluate('backgrounds()'), ['inline', 1, 0, 0]);
+  await page.evaluate('unmount()');
+  assert.deepEqual(await page.evaluate('backgrounds()'), ['inline', 0, 0, 0]);
+  assert.equal(await page.evaluate('pendingFrames.size'), 0);
 }));
 
 test('hero ripple and statistics respond to phase changes, tabs, ranges and snapshots', options, async () => fixture(async page => {

@@ -215,12 +215,13 @@ test('the corner control paints the project folder, once', () => {
 
 test('the utilities seat sizes controls, never the tooltip bubble beside one', () => {
   const seats = conversation.filter(rule => rule.selector.includes('headerUtilities > [data-slot] > *'));
-  assert.ok(seats.length >= 2, 'the box is sized at both cluster widths');
+  assert.equal(seats.length, 1, 'the same box rule applies at both cluster widths');
+  assert(conversation.some(rule => /--ccd-header-control-size:\s*var\(--ccd-header-action-compact\)/u.test(rule.body)));
   for (const rule of seats) {
     /* `ui-primitives`' Tooltip renders its bubble as a sibling of the control it
        clones, so both nodes land in the seat: the box belongs to the control. */
     assert.ok(rule.selector.includes(':not([role="tooltip"])'), rule.selector);
-    assert.match(rule.body, /width:\s*var\(--ccd-header-action/u);
+    assert.match(rule.body, /width:\s*var\(--ccd-header-control-size/u);
   }
 });
 

@@ -26,7 +26,7 @@ For installation from source and platform-specific CLI paths, see the [installat
 
 ## Using the theme
 
-Under **Settings → Claude Theme → Modules → Home background animation**, choose **Space explorer** for a pixel astronaut that drifts toward the mouse. Click an empty area to send a shooting star across the sky. You can also choose character ripples or turn the animation off.
+Under **Settings → Claude Theme → Modules → Home background animation**, choose **Space explorer** for a pixel astronaut that drifts toward the mouse. Click an empty area to send a shooting star across the sky. You can also choose character ripples, select the native pixel whale on supported DSH versions, or turn the animation off. **Chat background animation** independently enables character ripples or Space explorer in a conversation.
 
 Enter `/clear` in a conversation to clear its model context while keeping the same session, name, project, model, project instructions and skills. The original log remains available through **View history**. Run the command after the response finishes and the message queue is empty. Fully quit and reopen DSH after installation to load the host command.
 
@@ -65,7 +65,7 @@ Open **Theme** in the sidebar or **Settings → Claude Theme**. Changes take eff
 
 | Group | Options |
 | --- | --- |
-| Modules | Sidebars, new session, home background animation, conversation, tool calls, composer companion, statistics card, status-bar statistics and context breakdown |
+| Modules | Sidebars, new session, home background animation, conversation, chat background animation, tool calls, composer companion, statistics card, status-bar statistics and context breakdown |
 | Appearance | System, light or dark theme, conversation background and sidebar background |
 | View | API balance, model icons, separate model and effort controls, conversation process, sidebar brand, header entries and empty groups |
 | Personalization | Companion, running status, reply signature and home greeting styles |
